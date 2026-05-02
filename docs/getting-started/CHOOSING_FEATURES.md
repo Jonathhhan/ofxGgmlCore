@@ -186,12 +186,14 @@ Some features require companion addons:
 | Feature | Requires | Optional? |
 |---------|----------|-----------|
 | Image generation | `ofxStableDiffusion` | Yes |
-| CLIP embeddings | `clip.cpp` binaries | Yes |
+| CLIP embeddings | Built-in (bundled) | No - included |
 | AceStep music | `acestep.cpp` server | Yes |
 | VLC preview | `ofxVlc4` | Yes |
 | Holoscan bridge | Holoscan runtime | Yes |
 
-**All are optional** - core features work standalone.
+**Note**: CLIP support is now bundled directly in `libs/clip/` and automatically available after building ggml.
+
+**All optional addons** can be added as needed - core features work standalone.
 
 ## Compile Time Impact
 
