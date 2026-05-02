@@ -1,32 +1,66 @@
 #ifndef CLIP_H
 #define CLIP_H
 
-#include <stddef.h>
+#include "ggml/ggml.h"
 #include <stdint.h>
+#include <stddef.h>
 
-#ifdef LLAMA_SHARED
-#    if defined(_WIN32) && !defined(__MINGW32__)
-#        ifdef LLAMA_BUILD
-#            define CLIP_API __declspec(dllexport)
-#        else
-#            define CLIP_API __declspec(dllimport)
-#        endif
-#    else
-#        define CLIP_API __attribute__ ((visibility ("default")))
-#    endif
-#else
-#    define CLIP_API
-#endif
+struct clip_ctx;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct clip_ctx;
+struct clip_text_hparams {
+    int32_t n_vocab;
+    int32_t num_positions;
+    int32_t hidden_size;
+    int32_t n_intermediate;
+    int32_t projection_dim;
+    int32_t n_head;
+    int32_t n_layer;
+    float eps;
+};
 
-struct clip_image_size {
-    int width;
-    int height;
+struct clip_vision_hparams {
+    int32_t image_size;
+    int32_t patch_size;
+    int32_t hidden_size;
+    int32_t n_intermediate;
+    int32_t projection_dim;
+    int32_t n_head;
+    int32_t n_layer;
+    float eps;
+};
+
+typedef int32_t clip_vocab_id;
+struct clip_tokens {
+    clip_vocab_id * data;
+    size_t size;
+};
+
+struct clip_ctx * clip_model_load(const char * fname, const int verbosity);
+
+void clip_free(struct clip_ctx * ctx);
+
+struct clip_text_hparams * clip_get_text_hparams(struct clip_ctx * ctx);
+struct clip_vision_hparams * clip_get_vision_hparams(struct clip_ctx * ctx);
+
+// RGB uint8 image
+struct clip_image_u8 {
+    int nx;
+    int ny;
+    uint8_t * data;
+    size_t size;
+};
+
+// RGB float32 image (NHWC)
+// Memory layout: RGBRGBRGB...
+struct clip_image_f32 {
+    int nx;
+    int ny;
+    float * data;
+    size_t size;
 };
 
 struct clip_image_u8_batch {
@@ -39,53 +73,40 @@ struct clip_image_f32_batch {
     size_t size;
 };
 
-CLIP_API struct clip_ctx * clip_model_load    (const char * fname, int verbosity);
-CLIP_API struct clip_ctx * clip_model_load_cpu(const char * fname, int verbosity);
+bool clip_tokenize(const struct clip_ctx * ctx, const char * text, struct clip_tokens * tokens);
 
-CLIP_API void clip_free(struct clip_ctx * ctx);
+struct clip_image_u8 * clip_image_u8_make();
+struct clip_image_f32 * clip_image_f32_make();
 
-CLIP_API size_t clip_embd_nbytes(const struct clip_ctx * ctx);
+void clip_image_u8_clean(struct clip_image_u8 * img);
+void clip_image_f32_clean(struct clip_image_f32 * res);
 
-CLIP_API int32_t clip_image_size (const struct clip_ctx * ctx);
-CLIP_API int32_t clip_patch_size (const struct clip_ctx * ctx);
-CLIP_API int32_t clip_hidden_size(const struct clip_ctx * ctx);
+void clip_image_u8_free(struct clip_image_u8 * img);
+void clip_image_f32_free(struct clip_image_f32 * res);
 
-// TODO: should be enum, not string
-CLIP_API const char * clip_patch_merge_type(const struct clip_ctx * ctx);
+bool clip_image_load_from_file(const char * fname, struct clip_image_u8 * img);
+bool clip_image_preprocess(const struct clip_ctx * ctx, const struct clip_image_u8 * img, struct clip_image_f32 * res);
 
-CLIP_API const int32_t * clip_image_grid(const struct clip_ctx * ctx);
+bool clip_text_encode(const struct clip_ctx * ctx, const int n_threads, const struct clip_tokens * tokens, float * vec,
+                      const bool normalize);
+bool clip_image_encode(const struct clip_ctx * ctx, const int n_threads, struct clip_image_f32 * img, float * vec,
+                       const bool normalize);
 
-CLIP_API int clip_n_patches    (const struct clip_ctx * ctx);
-CLIP_API int clip_n_mmproj_embd(const struct clip_ctx * ctx);
+void clip_image_batch_preprocess(const struct clip_ctx * ctx, const int n_threads,
+                                 const struct clip_image_u8_batch * img_inputs, struct clip_image_f32_batch * imgs_resized);
+bool clip_image_batch_encode(const struct clip_ctx * ctx, const int n_threads, const struct clip_image_f32_batch * imgs,
+                             float * vec, const bool normalize);
 
-CLIP_API int clip_uhd_num_image_embeds_col(struct clip_ctx * ctx_clip);
-CLIP_API void clip_add_load_image_size(struct clip_ctx * ctx_clip, struct clip_image_size * load_image_size);
+// bool image_normalize(const clip_image_u8 *img, clip_image_f32 *res);
 
-CLIP_API struct clip_image_size * clip_image_size_init();
-CLIP_API struct clip_image_u8  * clip_image_u8_init ();
-CLIP_API struct clip_image_f32 * clip_image_f32_init();
+bool clip_compare_text_and_image(const struct clip_ctx * ctx, const int n_threads, const char * text,
+                                 const struct clip_image_u8 * image, float * score);
+float clip_similarity_score(const float * vec1, const float * vec2, const int vec_dim);
+bool softmax_with_sorting(float * arr, const int length, float * sorted_scores, int * indices);
+bool clip_zero_shot_label_image(struct clip_ctx * ctx, const int n_threads, const struct clip_image_u8 * input_img,
+                                const char ** labels, const size_t n_labels, float * scores, int * indices);
 
-CLIP_API void clip_image_u8_free (struct clip_image_u8  * img);
-CLIP_API void clip_image_f32_free(struct clip_image_f32 * img);
-CLIP_API void clip_image_u8_batch_free (struct clip_image_u8_batch  * batch);
-CLIP_API void clip_image_f32_batch_free(struct clip_image_f32_batch * batch);
-
-CLIP_API bool clip_image_load_from_file(const char * fname, struct clip_image_u8 * img);
-
-/** interpret bytes as an image file with length bytes_length, and use the result to populate img */
-CLIP_API bool clip_image_load_from_bytes(const unsigned char * bytes, size_t bytes_length, struct clip_image_u8 * img);
-
-/** preprocess img and store the result in res_imgs, pad_to_square may be overridden to false depending on model configuration */
-CLIP_API bool clip_image_preprocess(struct clip_ctx * ctx, const struct clip_image_u8 * img, struct clip_image_f32_batch * res_imgs );
-
-CLIP_API struct ggml_tensor * clip_get_newline_tensor(const struct clip_ctx * ctx);
-
-CLIP_API bool clip_image_encode      (struct clip_ctx * ctx, int n_threads, struct clip_image_f32 * img, float * vec);
-CLIP_API bool clip_image_batch_encode(struct clip_ctx * ctx, int n_threads, const struct clip_image_f32_batch * imgs, float * vec);
-
-CLIP_API bool clip_model_quantize(const char * fname_inp, const char * fname_out, int itype);
-
-CLIP_API int clip_is_minicpmv(const struct clip_ctx * ctx);
+bool clip_model_quantize(const char * fname_inp, const char * fname_out, const int itype);
 
 #ifdef __cplusplus
 }
