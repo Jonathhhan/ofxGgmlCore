@@ -20,6 +20,12 @@ std::filesystem::path makeWorkspaceTestDir(const std::string & name) {
 	const auto dir = base / (name + "_" + std::to_string(std::rand()));
 	std::error_code ec;
 	std::filesystem::remove_all(dir, ec);
+	if (ec) {
+		throw std::filesystem::filesystem_error(
+			"Failed to clear workspace test directory",
+			dir,
+			ec);
+	}
 	std::filesystem::create_directories(dir);
 	return dir;
 }
