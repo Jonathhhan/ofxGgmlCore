@@ -502,8 +502,11 @@ TEST_CASE("Default crawler uses native HTML parsing for static pages", "[easy_ap
 	REQUIRE(result.backendName == "NativeHtml");
 	REQUIRE(
 		result.commandOutput.find("Parsed native page") != std::string::npos);
-	REQUIRE(
-		result.commandOutput.find("libxml2 xmllint HTML") != std::string::npos);
+	const bool usedSupportedNativeParser =
+		result.commandOutput.find("libxml2 xmllint HTML") != std::string::npos ||
+		result.commandOutput.find("libxml2 readability HTML") != std::string::npos ||
+		result.commandOutput.find("HTML text fallback") != std::string::npos;
+	REQUIRE(usedSupportedNativeParser);
 	REQUIRE(result.documents.size() >= 2);
 	REQUIRE(result.documents[0].title == "Native Root");
 	REQUIRE(

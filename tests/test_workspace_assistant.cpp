@@ -18,6 +18,8 @@ std::filesystem::path makeWorkspaceTestDir(const std::string & name) {
 		std::filesystem::temp_directory_path() / "ofxggml_workspace_tests";
 	std::filesystem::create_directories(base);
 	const auto dir = base / (name + "_" + std::to_string(std::rand()));
+	std::error_code ec;
+	std::filesystem::remove_all(dir, ec);
 	std::filesystem::create_directories(dir);
 	return dir;
 }
