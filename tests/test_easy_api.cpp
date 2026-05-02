@@ -444,6 +444,24 @@ TEST_CASE("Easy API exposes the coding agent wrapper", "[easy_api][coding_agent]
 	REQUIRE_FALSE(result.summary.empty());
 }
 
+TEST_CASE("Easy API lazily applies text config to late-created helpers", "[easy_api]") {
+	const std::string modelPath = createEasyApiDummyModel();
+	const std::string exePath = createEasyApiExecutable("lazy helper summary");
+
+	ofxGgmlEasy easy;
+	ofxGgmlEasyTextConfig textConfig;
+	textConfig.modelPath = modelPath;
+	textConfig.completionExecutable = exePath;
+	easy.configureText(textConfig);
+
+	auto & conversation = easy.getConversationManager();
+	conversation.addUserTurn("Summarize this short conversation.");
+
+	const auto summary = conversation.summarizeHistory(modelPath);
+	REQUIRE(summary.success);
+	REQUIRE(summary.summary.find("lazy helper summary") != std::string::npos);
+}
+
 TEST_CASE("Mojo crawler keeps canonical source URLs and filters allowed domains", "[easy_api][crawler]") {
 	const std::string fakeMojo = createFakeMojoCrawlerExecutable();
 
