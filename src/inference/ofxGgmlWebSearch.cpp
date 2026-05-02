@@ -142,6 +142,11 @@ std::string normalizeReaderBaseUrl(const std::string & baseUrl) {
 	if (normalized.empty()) {
 		normalized = "https://r.jina.ai/";
 	}
+	const std::string lower = lowerCopy(normalized);
+	const bool hasValidScheme = (lower.rfind("http://", 0) == 0 || lower.rfind("https://", 0) == 0);
+	if (!hasValidScheme) {
+		normalized = "https://r.jina.ai/";
+	}
 	if (normalized.back() != '/') {
 		normalized.push_back('/');
 	}
@@ -153,6 +158,12 @@ std::string buildJinaReaderUrl(
 	const std::string & targetUrl) {
 	const std::string trimmedTarget = trimCopy(targetUrl);
 	if (trimmedTarget.empty()) {
+		return {};
+	}
+	const std::string targetLower = lowerCopy(trimmedTarget);
+	const bool targetHasValidScheme =
+		(targetLower.rfind("http://", 0) == 0 || targetLower.rfind("https://", 0) == 0);
+	if (!targetHasValidScheme) {
 		return {};
 	}
 	return normalizeReaderBaseUrl(baseUrl) + trimmedTarget;
