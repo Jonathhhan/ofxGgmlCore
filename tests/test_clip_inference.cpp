@@ -1,7 +1,19 @@
 #include "catch2.hpp"
 #include "../src/inference/ofxGgmlClipInference.h"
+#include "../src/inference/ofxGgmlClipCppAdapters.h"
 
+#include <cstdlib>
 #include <cmath>
+#include <filesystem>
+
+namespace {
+
+std::string getEnvOrEmpty(const char * name) {
+	const char * value = std::getenv(name);
+	return value ? std::string(value) : std::string();
+}
+
+} // namespace
 
 TEST_CASE("CLIP Inference initialization", "[clip_inference]") {
 	ofxGgmlClipInference clip;
@@ -329,6 +341,70 @@ TEST_CASE("CLIP image ranking result structure", "[clip_inference]") {
 		REQUIRE(result.hits[0].score == 0.9f);
 		REQUIRE(result.hits[1].score == 0.8f);
 	}
+}
+
+TEST_CASE("Bundled clip.cpp adapter symbols are linked into tests", "[clip_inference][clip_cpp]") {
+	REQUIRE(OFXGGML_HAS_CLIPCPP == 1);
+	auto * image = clip_image_u8_make();
+	REQUIRE(image != nullptr);
+	clip_image_u8_free(image);
+}
+
+TEST_CASE("Bundled clip.cpp adapter reports load errors cleanly", "[clip_inference][clip_cpp]") {
+	std::string error;
+	const auto model = ofxGgmlClipCppAdapters::loadModel("", 0, &error);
+	REQUIRE_FALSE(model);
+	REQUIRE(error == "CLIP model path is empty");
+
+	ofxGgmlClipInference clip;
+	ofxGgmlClipCppAdapters::RuntimeOptions options;
+	options.verbosity = 0;
+	ofxGgmlClipCppAdapters::attachBackend(
+		clip,
+		"/definitely/missing/ofxGgml-test-clip-model.gguf",
+		options,
+		"clip.cpp");
+
+	const auto result = clip.embedText("A photo of a cat");
+	REQUIRE_FALSE(result.success);
+	REQUIRE(result.backendName == "clip.cpp");
+	REQUIRE(
+		result.error.find("failed to load clip.cpp model:") != std::string::npos);
+}
+
+TEST_CASE("Bundled clip.cpp adapter can run an end-to-end smoke test", "[clip_inference][clip_cpp][integration]") {
+	const std::string modelPath = getEnvOrEmpty("OFXGGML_TEST_CLIP_MODEL");
+	if (modelPath.empty()) {
+		SUCCEED("Skipping optional real clip.cpp smoke test. Set OFXGGML_TEST_CLIP_MODEL to enable.");
+		return;
+	}
+
+	REQUIRE(std::filesystem::exists(modelPath));
+
+	ofxGgmlClipInference clip;
+	ofxGgmlClipCppAdapters::RuntimeOptions options;
+	options.verbosity = 0;
+	ofxGgmlClipCppAdapters::attachBackend(clip, modelPath, options, "clip.cpp");
+
+	const auto textResult = clip.embedText("A photo of a cat");
+	REQUIRE(textResult.success);
+	REQUIRE(textResult.backendName == "clip.cpp");
+	REQUIRE_FALSE(textResult.embedding.empty());
+	REQUIRE(textResult.elapsedMs >= 0.0f);
+
+	const std::string imagePath = getEnvOrEmpty("OFXGGML_TEST_CLIP_IMAGE");
+	if (imagePath.empty()) {
+		return;
+	}
+
+	REQUIRE(std::filesystem::exists(imagePath));
+	const auto imageResult = clip.embedImage(imagePath);
+	REQUIRE(imageResult.success);
+	REQUIRE(imageResult.embedding.size() == textResult.embedding.size());
+	const float score = ofxGgmlClipInference::cosineSimilarity(
+		textResult.embedding,
+		imageResult.embedding);
+	REQUIRE(std::isfinite(score));
 }
 
 TEST_CASE("CLIP rank images with mock backend", "[clip_inference]") {

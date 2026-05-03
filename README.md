@@ -783,6 +783,8 @@ The lightweight examples are keyboard-driven so you can rerun compute and benchm
 
 The test suite lives in `tests/` and covers core runtime behavior, model loading, inference helpers, chat/code/text assistants, and project memory support. When you change backend setup, Windows linking, or inference command assembly, it is worth rerunning the tests or at least rebuilding one example project.
 
+The CLIP bridge tests now compile the bundled `libs/clip/src/clip.cpp` adapter into `ofxGgml-tests`. To run the optional real-model smoke test, set `OFXGGML_TEST_CLIP_MODEL=/absolute/path/to/model.gguf` before `./tests/run-tests.sh`. If you also set `OFXGGML_TEST_CLIP_IMAGE=/absolute/path/to/image.png`, the same test will verify image embedding too.
+
 Windows quick check:
 
 ```powershell
