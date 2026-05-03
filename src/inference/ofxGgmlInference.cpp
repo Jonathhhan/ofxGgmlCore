@@ -377,6 +377,7 @@ struct ofxGgmlHttpChunkDecoder {
 	bool done = false;
 	size_t remaining = 0;
 	std::string buffer;
+	std::string error;
 
 	std::string decode(const std::string & input) {
 		if (!chunked) {
@@ -398,6 +399,7 @@ struct ofxGgmlHttpChunkDecoder {
 				try {
 					remaining = static_cast<size_t>(std::stoull(sizeText, nullptr, 16));
 				} catch (...) {
+					error = "malformed chunked response size";
 					done = true;
 					break;
 				}
@@ -535,7 +537,7 @@ static ofxGgmlPortableStreamResult postHttpSsePortable(
 	std::ostringstream request;
 	request << "POST " << parts.path << " HTTP/1.1\r\n"
 		<< "Host: " << parts.host << "\r\n"
-		<< "User-Agent: ofxGgml/" << OFX_GGML_VERSION_STRING << "\r\n"
+		<< "User-Agent: ofxGgml/" << OFXGGML_VERSION_STRING << "\r\n"
 		<< "Content-Type: application/json\r\n"
 		<< "Accept: text/event-stream\r\n"
 		<< "Connection: close\r\n"
@@ -597,6 +599,11 @@ static ofxGgmlPortableStreamResult postHttpSsePortable(
 			headersParsed = true;
 		}
 		const std::string bodyBytes = decoder.decode(bytes);
+		if (!decoder.error.empty()) {
+			closeSocket();
+			result.error = decoder.error;
+			return result;
+		}
 		if (bodyBytes.empty()) {
 			continue;
 		}
