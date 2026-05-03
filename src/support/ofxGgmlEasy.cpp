@@ -1,5 +1,13 @@
 #include "support/ofxGgmlEasy.h"
 
+#include "core/ofxGgmlCore.h"
+#include "core/ofxGgmlMetrics.h"
+#include "ofJson.h"
+
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <sstream>
 #include <utility>
 
 namespace {
@@ -77,6 +85,137 @@ void applySpeechBackend(
 			config.cliExecutable.empty()
 				? "whisper-cli"
 				: config.cliExecutable));
+}
+
+std::vector<std::filesystem::path> modelCatalogCandidates(const std::string & explicitPath) {
+	if (!explicitPath.empty()) {
+		return {std::filesystem::path(explicitPath)};
+	}
+	const std::filesystem::path cwd = std::filesystem::current_path();
+	return {
+		cwd / "scripts" / "model-catalog.json",
+		cwd / ".." / "scripts" / "model-catalog.json",
+		cwd / ".." / ".." / "scripts" / "model-catalog.json",
+		cwd / ".." / ".." / ".." / "scripts" / "model-catalog.json"
+	};
+}
+
+std::optional<std::pair<ofJson, std::filesystem::path>> loadModelCatalogJson(
+	const std::string & catalogPath) {
+	for (const auto & candidate : modelCatalogCandidates(catalogPath)) {
+		std::ifstream in(candidate);
+		if (!in) {
+			continue;
+		}
+		const std::string text{
+			std::istreambuf_iterator<char>(in),
+			std::istreambuf_iterator<char>()};
+		const ofJson parsed = ofJson::parse(text, nullptr, false);
+		if (!parsed.is_discarded()) {
+			return std::make_pair(parsed, std::filesystem::weakly_canonical(candidate));
+		}
+	}
+	return std::nullopt;
+}
+
+std::string jsonStringOrEmpty(const ofJson & json, const char * key) {
+	if (!json.contains(key) || !json[key].is_string()) {
+		return "";
+	}
+	try {
+		return json[key].get<std::string>();
+	} catch (...) {
+		return "";
+	}
+}
+
+std::vector<ofxGgmlEasyModelPreset> parseModelPresets(const ofJson & root) {
+	std::vector<ofxGgmlEasyModelPreset> presets;
+	if (!root.contains("models") || !root["models"].is_array()) {
+		return presets;
+	}
+	for (const auto & item : root["models"]) {
+		ofxGgmlEasyModelPreset preset;
+		if (item.contains("preset") && item["preset"].is_number_integer()) {
+			preset.preset = item["preset"].get<int>();
+		}
+		preset.name = jsonStringOrEmpty(item, "name");
+		preset.filename = jsonStringOrEmpty(item, "filename");
+		preset.url = jsonStringOrEmpty(item, "url");
+		preset.size = jsonStringOrEmpty(item, "size");
+		preset.bestFor = jsonStringOrEmpty(item, "best_for");
+		preset.sha256 = jsonStringOrEmpty(item, "sha256");
+		if (item.contains("provenance") && item["provenance"].is_object()) {
+			const auto & provenance = item["provenance"];
+			preset.publisher = jsonStringOrEmpty(provenance, "publisher");
+			preset.sourceType = jsonStringOrEmpty(provenance, "source_type");
+			preset.sourceUrl = jsonStringOrEmpty(provenance, "source_url");
+			preset.verificationStatus = jsonStringOrEmpty(provenance, "verification_status");
+			preset.catalogUpdatedAt = jsonStringOrEmpty(provenance, "catalog_updated_at");
+		}
+		if (preset.catalogUpdatedAt.empty()) {
+			preset.catalogUpdatedAt = jsonStringOrEmpty(root, "catalog_updated_at");
+		}
+		presets.push_back(std::move(preset));
+	}
+	return presets;
+}
+
+std::optional<int> lookupTaskDefault(
+	const ofJson & root,
+	const std::string & task) {
+	if (task.empty() ||
+		!root.contains("task_defaults") ||
+		!root["task_defaults"].is_object() ||
+		!root["task_defaults"].contains(task) ||
+		!root["task_defaults"][task].is_number_integer()) {
+		return std::nullopt;
+	}
+	try {
+		return root["task_defaults"][task].get<int>();
+	} catch (...) {
+		return std::nullopt;
+	}
+}
+
+std::optional<ofxGgmlEasyModelPreset> findPresetByNumber(
+	const std::vector<ofxGgmlEasyModelPreset> & presets,
+	int presetNumber) {
+	for (const auto & preset : presets) {
+		if (preset.preset == presetNumber) {
+			return preset;
+		}
+	}
+	return std::nullopt;
+}
+
+bool pathLooksExplicit(const std::string & path) {
+	return path.find('/') != std::string::npos || path.find('\\') != std::string::npos;
+}
+
+std::string quoteShellArg(const std::string & text) {
+	if (text.empty()) {
+		return "\"\"";
+	}
+	std::string quoted = "\"";
+	for (char ch : text) {
+		if (ch == '"' || ch == '\\') {
+			quoted.push_back('\\');
+		}
+		quoted.push_back(ch);
+	}
+	quoted.push_back('"');
+	return quoted;
+}
+
+std::string configuredModelMetricKey(const ofxGgmlEasyTextConfig & config) {
+	if (!config.modelPath.empty()) {
+		return config.modelPath;
+	}
+	if (!config.serverModel.empty()) {
+		return config.serverModel;
+	}
+	return "default";
 }
 
 } // namespace
@@ -298,6 +437,248 @@ ofxGgmlConversationManager & ofxGgmlEasy::getConversationManager() {
 
 const ofxGgmlConversationManager & ofxGgmlEasy::getConversationManager() const {
 	return ensureConversationManager();
+}
+
+std::vector<ofxGgmlEasyModelPreset> ofxGgmlEasy::listTextModelPresets(
+	const std::string & catalogPath) const {
+	const auto catalog = loadModelCatalogJson(catalogPath);
+	if (!catalog) {
+		return {};
+	}
+	return parseModelPresets(catalog->first);
+}
+
+std::optional<ofxGgmlEasyModelPreset> ofxGgmlEasy::recommendTextModelForTask(
+	const std::string & task,
+	const std::string & catalogPath) const {
+	const auto catalog = loadModelCatalogJson(catalogPath);
+	if (!catalog) {
+		return std::nullopt;
+	}
+	const auto presetNumber = lookupTaskDefault(catalog->first, task);
+	if (!presetNumber) {
+		return std::nullopt;
+	}
+	return findPresetByNumber(parseModelPresets(catalog->first), *presetNumber);
+}
+
+ofxGgmlEasyModelSetupReport ofxGgmlEasy::inspectTextSetup(
+	const std::string & task,
+	const std::string & catalogPath) const {
+	ofxGgmlEasyModelSetupReport report;
+	report.prefersServer = m_textConfig.preferServer;
+	report.serverConfigured = !m_textConfig.serverUrl.empty();
+
+	const auto catalog = loadModelCatalogJson(catalogPath);
+	std::vector<ofxGgmlEasyModelPreset> presets;
+	if (catalog) {
+		report.catalogAvailable = true;
+		report.resolvedCatalogPath = catalog->second.string();
+		presets = parseModelPresets(catalog->first);
+	}
+
+	if (!task.empty() && catalog) {
+		const auto presetNumber = lookupTaskDefault(catalog->first, task);
+		if (presetNumber) {
+			report.recommendedPreset = findPresetByNumber(presets, *presetNumber);
+		}
+	}
+
+	if (m_textConfig.modelPath.empty()) {
+		report.errors.push_back(
+			"No text model is configured. Call configureText(...) with a GGUF model path.");
+	} else {
+		const std::filesystem::path modelPath(m_textConfig.modelPath);
+		report.modelPathExists = std::filesystem::exists(modelPath);
+		if (!report.modelPathExists) {
+			report.errors.push_back(
+				"Configured text model path does not exist: " + m_textConfig.modelPath);
+		}
+		for (const auto & preset : presets) {
+			if (!preset.filename.empty() && modelPath.filename() == preset.filename) {
+				report.configuredPreset = preset;
+				break;
+			}
+		}
+		if (modelPath.extension() != ".gguf") {
+			report.warnings.push_back(
+				"Configured text model does not use a .gguf extension, so llama.cpp-compatible local inference may fail.");
+		}
+	}
+
+	if (m_textConfig.preferServer && m_textConfig.serverUrl.empty()) {
+		report.errors.push_back(
+			"preferServer is enabled, but no serverUrl is configured.");
+	}
+	if (!m_textConfig.preferServer && m_textConfig.completionExecutable.empty()) {
+		report.warnings.push_back(
+			"No completion executable is configured, so local text inference cannot run until llama-cli tooling is available.");
+	}
+	if (m_textConfig.preferServer && m_textConfig.serverModel.empty()) {
+		report.warnings.push_back(
+			"preferServer is enabled without a serverModel. Requests may still work, but explicit model routing is safer.");
+	}
+	if ((task == "rag" || task == "research" || task == "citation" || task == "script") &&
+		m_textConfig.embeddingExecutable.empty() &&
+		!(m_textConfig.settings.useServerBackend && !m_textConfig.serverUrl.empty())) {
+		report.warnings.push_back(
+			"Embedding support is not configured, so hybrid retrieval will fall back to lexical ranking.");
+	}
+
+	if (!m_textConfig.completionExecutable.empty() &&
+		pathLooksExplicit(m_textConfig.completionExecutable) &&
+		!std::filesystem::exists(std::filesystem::path(m_textConfig.completionExecutable))) {
+		report.warnings.push_back(
+			"Configured completion executable path was not found: " +
+			m_textConfig.completionExecutable);
+	}
+
+	if (report.configuredPreset && !report.configuredPreset->hasChecksum()) {
+		report.warnings.push_back(
+			"Configured preset is present in the model catalog but is still missing a published SHA256 checksum.");
+	}
+
+	if (report.configuredPreset &&
+		!task.empty() &&
+		report.recommendedPreset &&
+		report.configuredPreset->preset != report.recommendedPreset->preset) {
+		report.warnings.push_back(
+			"Configured model is usable, but the catalog recommends a different preset for task '" +
+			task + "'.");
+	}
+
+	if (report.recommendedPreset) {
+		report.recommendations.push_back(
+			"Recommended preset for '" + task + "': #" +
+			std::to_string(report.recommendedPreset->preset) + " " +
+			report.recommendedPreset->name);
+	}
+
+	if (!report.catalogAvailable) {
+		report.warnings.push_back(
+			"Model catalog was not found. Pass a catalogPath to enable preset recommendations.");
+	}
+
+	if (!report.modelPathExists && report.recommendedPreset) {
+		report.recommendations.push_back(
+			"Use scripts/download-model.sh --preset " +
+			std::to_string(report.recommendedPreset->preset) +
+			" to fetch the recommended text model.");
+	}
+
+	report.ready = report.errors.empty();
+	return report;
+}
+
+std::optional<ofxGgmlEasyModelDownloadPlan> ofxGgmlEasy::planTextModelDownload(
+	const std::string & task,
+	int preset,
+	const std::string & catalogPath,
+	const std::string & outputDir) const {
+	const auto catalog = loadModelCatalogJson(catalogPath);
+	if (!catalog) {
+		return std::nullopt;
+	}
+
+	std::optional<ofxGgmlEasyModelPreset> selectedPreset;
+	if (preset > 0) {
+		selectedPreset = findPresetByNumber(parseModelPresets(catalog->first), preset);
+	} else if (!task.empty()) {
+		const auto taskPreset = lookupTaskDefault(catalog->first, task);
+		if (taskPreset) {
+			selectedPreset = findPresetByNumber(parseModelPresets(catalog->first), *taskPreset);
+		}
+	}
+	if (!selectedPreset) {
+		return std::nullopt;
+	}
+
+	ofxGgmlEasyModelDownloadPlan plan;
+	plan.available = true;
+	plan.preset = selectedPreset->preset;
+	plan.task = task;
+	plan.name = selectedPreset->name;
+	plan.filename = selectedPreset->filename;
+	plan.url = selectedPreset->url;
+	plan.sha256 = selectedPreset->sha256;
+	plan.size = selectedPreset->size;
+	plan.outputDir = outputDir;
+	plan.catalogPath = catalog->second.string();
+	plan.downloadScriptPath = (catalog->second.parent_path() / "download-model.sh").string();
+	plan.verifiedCatalogEntry = selectedPreset->checksumVerified();
+
+	std::ostringstream command;
+	command << quoteShellArg(plan.downloadScriptPath) << " --preset " << plan.preset;
+	if (!outputDir.empty()) {
+		command << " --output " << quoteShellArg(outputDir);
+	}
+	plan.suggestedCommand = command.str();
+
+	if (!plan.verifiedCatalogEntry) {
+		plan.warnings.push_back(
+			"Selected preset is present in the catalog but is not yet marked verified-sha256.");
+	}
+	if (plan.downloadScriptPath.empty() ||
+		!std::filesystem::exists(std::filesystem::path(plan.downloadScriptPath))) {
+		plan.warnings.push_back(
+			"Could not confirm that scripts/download-model.sh exists next to the resolved catalog.");
+	}
+	return plan;
+}
+
+ofxGgmlEasyHealthSnapshot ofxGgmlEasy::inspectTextHealth(
+	const ofxGgml * runtime) const {
+	ofxGgmlEasyHealthSnapshot snapshot;
+	snapshot.textConfigured = !m_textConfig.modelPath.empty() || !m_textConfig.serverUrl.empty();
+	snapshot.serverExpected = m_textConfig.preferServer || !m_textConfig.serverUrl.empty();
+
+	const std::string metricKey = configuredModelMetricKey(m_textConfig);
+	const auto & metrics = ofxGgmlMetrics::getInstance();
+	const auto inferenceStats = metrics.getInferenceStats(metricKey);
+	snapshot.averageTokensPerSecond = metrics.getAverageTokensPerSecond(metricKey);
+	snapshot.retrievalCacheHitRate = metrics.getCacheHitRate("rag.retrieval");
+	snapshot.tokenCountCacheHitRate = metrics.getCacheHitRate("token-count");
+	if (inferenceStats.successfulCalls > 0) {
+		snapshot.averageLatencyMs =
+			inferenceStats.totalTimeMs / static_cast<double>(inferenceStats.successfulCalls);
+		snapshot.minLatencyMs =
+			inferenceStats.minTimeMs == std::numeric_limits<double>::max()
+				? 0.0
+				: inferenceStats.minTimeMs;
+		snapshot.maxLatencyMs = inferenceStats.maxTimeMs;
+	}
+
+	if (runtime) {
+		snapshot.localRuntimeAttached = true;
+		snapshot.localRuntimeReady = runtime->isReady();
+		snapshot.memoryUsage = runtime->getMemoryUsage();
+	}
+
+	if (snapshot.serverExpected && !m_textConfig.serverUrl.empty()) {
+		snapshot.serverProbe = ofxGgmlInference::probeServer(m_textConfig.serverUrl, true);
+		snapshot.serverQueue = ofxGgmlInference::getServerQueueStatus(m_textConfig.serverUrl);
+		if (!snapshot.serverProbe.reachable) {
+			snapshot.warnings.push_back(
+				"Configured text server is not currently reachable: " + snapshot.serverProbe.error);
+		}
+		if (!snapshot.serverQueue.available && !snapshot.serverQueue.error.empty()) {
+			snapshot.warnings.push_back(
+				"Queue status is unavailable: " + snapshot.serverQueue.error);
+		}
+	} else if (snapshot.serverExpected) {
+		snapshot.warnings.push_back(
+			"Text health expects a server backend, but no server URL is configured.");
+	}
+
+	if (!snapshot.textConfigured) {
+		snapshot.warnings.push_back(
+			"Text health is limited because no text model or server backend is configured.");
+	}
+	if (snapshot.localRuntimeAttached && !snapshot.localRuntimeReady) {
+		snapshot.warnings.push_back(
+			"Local runtime pointer was provided, but the runtime is not ready.");
+	}
+	return snapshot;
 }
 
 ofxGgmlInferenceSettings ofxGgmlEasy::makeTextSettings() const {

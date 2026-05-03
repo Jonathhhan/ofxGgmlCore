@@ -2,6 +2,8 @@
 
 `ofxGgml` is an openFrameworks wrapper around [ggml](https://github.com/ggml-org/ggml) with backend selection, graph execution, GGUF model loading, server-first `llama-server` plus optional llama.cpp CLI inference helpers, prompt-memory utilities, and a GUI example aimed at local AI workflows.
 
+The long-term direction is broader than model access alone: `ofxGgml` is evolving into a **local creative AI operating system for openFrameworks**. The focus is on reproducible, inspectable, source-grounded, artist-friendly tooling that lets apps compose text, vision, audio, code, and video workflows without depending on opaque cloud orchestration.
+
 ## Layered API Architecture
 
 ofxGgml uses **layered headers** - include only what you need:
@@ -21,6 +23,16 @@ ofxGgml uses **layered headers** - include only what you need:
 See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FEATURES.md) for detailed guidance.
 
 It is aimed at local-first AI tools, lightweight inference utilities, prompt-driven creative apps, and openFrameworks projects that want ggml runtime access without wiring the low-level backend API by hand.
+
+Near-term roadmap priorities focus on:
+
+- easier model onboarding with downloads, verification, compatibility checks, and presets
+- better observability with backend health, queue, memory, VRAM, and latency reporting
+- composable workflow graphs and shared manifests for replayable creative pipelines
+- specialist assistants, project memory, and approval-first workspace execution
+- modular example apps that demonstrate stable addon APIs instead of concentrating logic in one giant GUI file
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased roadmap.
 
 ## Note
 
@@ -77,6 +89,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlEasy` now also covers crawler-backed citation research, subtitle-montage planning/export, AI-assisted video-edit planning, and MilkDrop preset generation/editing so apps can reuse the higher-level workflow helpers without depending on the full GUI example
 - `ofxGgmlEasy` now also covers cross-media prompt translation plus general music-prompt / ABC-sketch generation so apps can build `Music -> Image` and `Image -> Music` flows without wiring the lower-level helpers directly
 - `ofxGgmlEasy` now keeps text inference, crawling, and citation search on one persistent helper path, so `configureText()`, `configureWebCrawler()`, `getWebCrawler()`, `getCitationSearch()`, and `findCitations()` operate on the same configured pipeline
+- `ofxGgmlEasy` now also exposes lightweight onboarding helpers for text-model preset discovery, per-task recommendations, and setup diagnostics backed by `scripts/model-catalog.json`
   - `ofxGgmlEasy` now also exposes `planVideoEssay(...)` so apps can reuse the new citation-to-script workflow, including visual concept plus scene/edit handoff data, without copying the GUI example glue
   - the `Video Essay` workflow can now also hand that Phase 3 output into an optional `ofxVlc4` preview/render lane in the GUI example, including source-video subtitle preview, inline playback controls, and texture-recorded essay renders muxed with the generated narration track
 - `ofxGgmlChatAssistant` for reusable chat prompts, response-language control, and UI-thin conversation flows
@@ -249,6 +262,22 @@ if (summary.inference.success) {
 }
 ```
 
+Onboarding helpers for the first roadmap step:
+
+```cpp
+auto presets = ai.listTextModelPresets("scripts/model-catalog.json");
+auto recommendation = ai.recommendTextModelForTask("script", "scripts/model-catalog.json");
+auto setup = ai.inspectTextSetup("script", "scripts/model-catalog.json");
+auto download = ai.planTextModelDownload("script", 0, "scripts/model-catalog.json", "models");
+
+if (!setup.ready && recommendation) {
+    ofLogNotice() << "Suggested preset: #" << recommendation->preset
+                  << " " << recommendation->name;
+}
+```
+
+`inspectTextSetup()` now also reports GGUF compatibility hints, missing embedding support for hybrid retrieval, and server-model routing warnings. `planTextModelDownload()` turns a recommended preset into a concrete download plan with checksum/provenance metadata and a ready-to-run `download-model.sh` command.
+
 Chat and translation:
 
 ```cpp
@@ -300,7 +329,8 @@ auto interceptedCitations = ai.findCitationsFromInput(
 
 // Citation search now rewrites/refines the topic and reuses the shared
 // RAG retrieval path for hybrid lexical + embedding-aware source chunk ranking
-// when embeddings are configured, with lexical fallback otherwise.
+// when embeddings are configured, with lexical fallback otherwise. Repeated
+// retrievals now also reuse an in-memory RAG cache by default.
 
 auto montage = ai.planMontageFromSrt(
     "data/subtitles/scene.srt",
@@ -522,6 +552,16 @@ if (queueStatus.available) {
     std::cout << "Processing: " << queueStatus.processingCount << std::endl;
     std::cout << "Completed: " << queueStatus.completedCount << std::endl;
 }
+
+ofxGgmlEasy ai;
+ofxGgmlEasyTextConfig text;
+text.modelPath = "data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf";
+text.completionExecutable = "llama-completion";
+ai.configureText(text);
+
+auto health = ai.inspectTextHealth(&runtime);
+std::cout << "Avg latency: " << health.averageLatencyMs << " ms" << std::endl;
+std::cout << "Retrieval cache hit rate: " << health.retrievalCacheHitRate << std::endl;
 ```
 
 These monitoring APIs are essential for:

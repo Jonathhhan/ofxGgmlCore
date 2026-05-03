@@ -3,7 +3,10 @@
 #include "inference/ofxGgmlInference.h"
 
 #include <functional>
+#include <list>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 /// A single source document for the RAG pipeline.
@@ -42,6 +45,7 @@ struct ofxGgmlRAGQuery {
 	bool includeSourceHeaders = true;
 	bool enableSemanticRanking = true;
 	bool allowQueryRefinement = true;
+	bool enableRetrievalCache = true;
 	float keywordWeight = 0.55f;
 	float semanticWeight = 0.35f;
 	float qualityWeight = 0.10f;
@@ -59,6 +63,7 @@ struct ofxGgmlRAGRetrievalResult {
 	std::vector<ofxGgmlRAGChunk> chunks;
 	std::string augmentedContext;
 	bool usedSemanticRanking = false;
+	bool cacheHit = false;
 	size_t refinementCount = 0;
 	std::vector<std::string> queriesUsed;
 };
@@ -97,6 +102,7 @@ public:
 		const std::string & uri = "");
 	void clearDocuments();
 	size_t documentCount() const;
+	void clearRetrievalCache();
 
 	ofxGgmlInference & getInference();
 	const ofxGgmlInference & getInference() const;
@@ -134,6 +140,22 @@ public:
 		const std::string & promptPrefix = "");
 
 private:
+	struct RetrievalCacheEntry {
+		std::string key;
+		ofxGgmlRAGRetrievalResult result;
+	};
+
+	std::string buildRetrievalCacheKey(const ofxGgmlRAGQuery & query) const;
+	void invalidateRetrievalCache();
+	void storeRetrievalCacheEntry(
+		const std::string & key,
+		const ofxGgmlRAGRetrievalResult & result) const;
+
 	std::vector<ofxGgmlRAGDocument> m_documents;
 	ofxGgmlInference m_inference;
+	mutable uint64_t m_documentRevision = 0;
+	mutable std::mutex m_retrievalCacheMutex;
+	mutable std::unordered_map<std::string, RetrievalCacheEntry> m_retrievalCache;
+	mutable std::list<std::string> m_retrievalCacheLru;
+	static constexpr size_t RETRIEVAL_CACHE_MAX_SIZE = 64;
 };

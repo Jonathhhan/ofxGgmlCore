@@ -3,6 +3,7 @@
 #include "assistants/ofxGgmlCodingAgent.h"
 #include "assistants/ofxGgmlChatAssistant.h"
 #include "assistants/ofxGgmlTextAssistant.h"
+#include "core/ofxGgmlTypes.h"
 #include "inference/ofxGgmlCitationSearch.h"
 #include "inference/ofxGgmlAceStepBridge.h"
 #include "inference/ofxGgmlMediaPromptGenerator.h"
@@ -20,8 +21,11 @@
 #include "support/ofxGgmlConversationManager.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
+
+class ofxGgml;
 
 struct ofxGgmlEasyTextConfig {
 	std::string modelPath;
@@ -95,6 +99,77 @@ struct ofxGgmlEasyWorkflowResult {
 	}
 };
 
+struct ofxGgmlEasyModelPreset {
+	int preset = 0;
+	std::string name;
+	std::string filename;
+	std::string url;
+	std::string size;
+	std::string bestFor;
+	std::string sha256;
+	std::string publisher;
+	std::string sourceType;
+	std::string sourceUrl;
+	std::string verificationStatus;
+	std::string catalogUpdatedAt;
+
+	bool hasChecksum() const {
+		return !sha256.empty();
+	}
+
+	bool checksumVerified() const {
+		return verificationStatus == "verified-sha256";
+	}
+};
+
+struct ofxGgmlEasyModelSetupReport {
+	bool ready = false;
+	bool catalogAvailable = false;
+	bool modelPathExists = false;
+	bool prefersServer = false;
+	bool serverConfigured = false;
+	std::string resolvedCatalogPath;
+	std::optional<ofxGgmlEasyModelPreset> configuredPreset;
+	std::optional<ofxGgmlEasyModelPreset> recommendedPreset;
+	std::vector<std::string> errors;
+	std::vector<std::string> warnings;
+	std::vector<std::string> recommendations;
+};
+
+struct ofxGgmlEasyModelDownloadPlan {
+	bool available = false;
+	int preset = 0;
+	std::string task;
+	std::string name;
+	std::string filename;
+	std::string url;
+	std::string sha256;
+	std::string size;
+	std::string outputDir;
+	std::string catalogPath;
+	std::string downloadScriptPath;
+	std::string suggestedCommand;
+	bool verifiedCatalogEntry = false;
+	std::vector<std::string> warnings;
+};
+
+struct ofxGgmlEasyHealthSnapshot {
+	bool textConfigured = false;
+	bool localRuntimeAttached = false;
+	bool localRuntimeReady = false;
+	bool serverExpected = false;
+	double averageLatencyMs = 0.0;
+	double minLatencyMs = 0.0;
+	double maxLatencyMs = 0.0;
+	double averageTokensPerSecond = 0.0;
+	double retrievalCacheHitRate = 0.0;
+	double tokenCountCacheHitRate = 0.0;
+	ofxGgmlMemoryUsage memoryUsage;
+	ofxGgmlServerProbeResult serverProbe;
+	ofxGgmlServerQueueStatus serverQueue;
+	std::vector<std::string> warnings;
+};
+
 /// High-level convenience facade for common text, vision, and speech workflows.
 ///
 /// This wrapper keeps the underlying addon classes available, but gives apps a
@@ -157,6 +232,21 @@ public:
 	const ofxGgmlRAGPipeline & getRAGPipeline() const;
 	ofxGgmlConversationManager & getConversationManager();
 	const ofxGgmlConversationManager & getConversationManager() const;
+	std::vector<ofxGgmlEasyModelPreset> listTextModelPresets(
+		const std::string & catalogPath = "") const;
+	std::optional<ofxGgmlEasyModelPreset> recommendTextModelForTask(
+		const std::string & task,
+		const std::string & catalogPath = "") const;
+	ofxGgmlEasyModelSetupReport inspectTextSetup(
+		const std::string & task = "",
+		const std::string & catalogPath = "") const;
+	std::optional<ofxGgmlEasyModelDownloadPlan> planTextModelDownload(
+		const std::string & task = "",
+		int preset = 0,
+		const std::string & catalogPath = "",
+		const std::string & outputDir = "") const;
+	ofxGgmlEasyHealthSnapshot inspectTextHealth(
+		const ofxGgml * runtime = nullptr) const;
 
 	ofxGgmlInferenceResult complete(const std::string & prompt) const;
 	ofxGgmlChatAssistantResult chat(

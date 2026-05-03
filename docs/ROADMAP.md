@@ -1,352 +1,331 @@
-# ofxGgml Development Roadmap
+# ofxGgml Strategic Roadmap
 
-This document tracks planned features and enhancements for ofxGgml, organized by timeframe and priority.
+This document tracks the next major direction for ofxGgml as it evolves from a collection of local AI helpers into a **local creative AI operating system for openFrameworks**.
 
-**Last Updated**: 2026-04-21
+**Last Updated**: 2026-05-03  
 **Current Version**: 1.0.4
 
 ---
 
-## Legend
+## North Star
 
-- ✅ **Complete** - Implemented and merged
-- 🚧 **In Progress** - Currently being developed
-- 📋 **Planned** - Designed and ready to implement
-- 💡 **Proposed** - Under consideration
+ofxGgml should be the easiest way to build **local-first, source-grounded, reproducible creative AI applications** in openFrameworks.
 
----
+That means prioritizing:
 
-## Immediate (Next 2 Weeks)
-
-### ✅ Complete Model Checksums
-**Status**: Complete
-**Effort**: 2-4 hours
-**Priority**: HIGH - Security
-
-All 6 model presets now have SHA256 checksums populated in `scripts/model-catalog.json`.
-
-### ✅ Enhanced Streaming Progress
-**Status**: Complete
-**Effort**: 4-6 hours
-**Priority**: MEDIUM-HIGH - Developer Experience
-**Completed**: 2026-04-21
-
-**What**: Add rich progress metrics to streaming inference callbacks.
-
-**Implementation**:
-- ✅ Added `ofxGgmlStreamingProgress` struct with metrics:
-  - `tokensGenerated`, `estimatedTotal`, `percentComplete`
-  - `tokensPerSecond`, `elapsedMs`, `currentChunk`
-- ✅ Enhanced `ofxGgmlStreamingContext` with progress tracking methods
-- ✅ Added `getProgress()` to build progress snapshots
-- ✅ Updated README with documentation and examples
-- ✅ Updated CHANGELOG with feature description
-
-**Benefits**:
-- Better UX with progress bars and ETA
-- Token/sec performance metrics
-- Non-breaking (backward compatible)
-
-### ✅ Preset Workflow Helpers
-**Status**: Complete
-**Effort**: 4-6 hours
-**Priority**: MEDIUM - Developer Experience
-**Completed**: 2026-04-21
-
-**What**: Add common workflow presets to `ofxGgmlEasy` API.
-
-**Implemented Methods**:
-- ✅ `summarizeAndTranslate()` - Summarize text then translate
-- ✅ `transcribeAndSummarize()` - Transcribe audio then summarize
-- ✅ `describeAndAnalyze()` - Describe image then analyze with text model
-- ✅ `crawlAndSummarize()` - Crawl website then summarize findings
-
-**Why**: Users manually chain these patterns frequently. Presets reduce boilerplate.
-
-**Files Modified**:
-- `src/support/ofxGgmlEasy.h` - Added declarations and result struct
-- `src/support/ofxGgmlEasy.cpp` - Implemented workflow logic
-- `README.md` - Added usage examples
-- `CHANGELOG.md` - Documented new feature
+- **Local orchestration** over thin model wrappers
+- **Composable workflows** over isolated helper classes
+- **Inspectable outputs** over black-box automation
+- **Approval-first assistants** over unsafe autonomous edits
+- **Creative-media workflows** over generic AI demos
 
 ---
 
-## Short-Term (v1.1.0 - Next 2 Months)
+## Guiding Product Principles
 
-### 📋 Result<T> Ex Variants
-**Status**: Planned (Already in IMPROVEMENTS_ROADMAP.md)
-**Effort**: 12-16 hours
-**Priority**: MEDIUM - API Quality
+1. **Local by default**  
+   Core workflows should run with local models, local tools, and local files whenever possible.
 
-**What**: Add `Result<T>` variants alongside existing bool-returning methods.
+2. **Verifiable by design**  
+   Research, generation, editing, and automation features should expose provenance, warnings, confidence, and reproducibility metadata.
 
-**Approach**:
-- Non-breaking: Add `setupEx()`, `allocGraphEx()`, etc.
-- Keep existing APIs unchanged
-- Migrate one example to demonstrate usage
+3. **Composable across modalities**  
+   Text, speech, vision, video, code, and web ingestion should connect through stable workflow contracts instead of bespoke glue.
 
-### 📋 Semantic Cache
-**Status**: Planned
-**Effort**: 14-18 hours
-**Priority**: MEDIUM-HIGH - Performance
+4. **Useful for artists and developers**  
+   APIs should work for creative coding apps, IDE-like assistants, and media-production tools without forcing a single UX model.
 
-**What**: Cache inference results by semantic similarity.
-
-**Implementation**:
-```cpp
-class ofxGgmlSemanticCache {
-    optional<CachedResult> lookup(string prompt, float threshold = 0.95f);
-    void store(string prompt, string result, float ttlSeconds);
-};
-```
-
-**Mechanism**:
-- Compute embedding of incoming prompt
-- Search cached embeddings with cosine similarity
-- Return cached result if similarity > threshold
-- Time-based TTL for simple invalidation
-
-**Benefits**:
-- 0ms vs 200ms for similar/repeated questions
-- Works across paraphrased prompts
-- Leverages existing embedding infrastructure
-
-### ✅ Memory Usage Reporting
-**Status**: Complete
-**Effort**: 2-3 hours
-**Priority**: LOW-MEDIUM - Monitoring
-**Completed**: 2026-04-21
-
-**What**: Add `getMemoryUsage()` to report current model memory consumption.
-
-**Implementation**:
-- ✅ Added `ofxGgmlMemoryUsage` struct
-- ✅ Implemented `ofxGgml::getMemoryUsage()` method
-- ✅ Tracks model weights, graph allocations, backend memory stats
-- ✅ Updated README and CHANGELOG
-
-### ✅ Server Queue Status API
-**Status**: Complete
-**Effort**: 2-3 hours
-**Priority**: LOW-MEDIUM - Monitoring
-**Completed**: 2026-04-21
-
-**What**: Expose `getServerQueueStatus()` to query llama-server queue state.
-
-**Implementation**:
-- ✅ Added `ofxGgmlServerQueueStatus` struct
-- ✅ Implemented `ofxGgmlInference::getServerQueueStatus()` method
-- ✅ Queries llama-server /metrics endpoint
-- ✅ Updated README and CHANGELOG
+5. **Reference examples, not monoliths**  
+   The GUI example should demonstrate addon APIs, while feature logic continues moving into reusable addon modules.
 
 ---
 
-## Medium-Term (v1.2.0 - 3-6 Months)
+## Delivery Phases
 
-### 📋 Hybrid RAG with Embeddings
-**Status**: Planned
-**Effort**: 16-20 hours
-**Priority**: MEDIUM-HIGH - Quality
+## Phase 1: Quick Wins (0-3 Months)
 
-**What**: Combine keyword-based (BM25) and semantic (embedding) retrieval in `ofxGgmlRAGPipeline`.
+Focus: remove adoption friction and improve day-to-day usability.
 
-**Enhancement**:
-```cpp
-struct ofxGgmlHybridRAGSettings {
-    float keywordWeight = 0.4f;    // BM25 contribution
-    float semanticWeight = 0.6f;   // Embedding contribution
-    bool useReranking = true;
-};
-```
+### 1. Model Onboarding and Compatibility
+**Priority**: HIGH  
+**Status**: 📋 Planned
 
-**Benefits**:
-- Better retrieval accuracy (proven in research)
-- Combines exact match + semantic understanding
-- Builds on newly-added `ofxGgmlRAGPipeline`
+Build a first-class model onboarding flow that combines:
 
-### 📋 Health Monitoring
-**Status**: Planned
-**Effort**: 10-14 hours
-**Priority**: MEDIUM-HIGH - Production Readiness
+- direct model download helpers
+- integrity verification and provenance checks
+- compatibility hints for modality/backend requirements
+- preset recommendations by task and hardware profile
 
-**What**: System health and diagnostics API.
+**Outcome**: new users can go from zero setup to a working local model path with less manual documentation chasing.
 
-**Features**:
-```cpp
-struct ofxGgmlHealthStatus {
-    bool healthy;
-    float cpuUsagePercent;
-    size_t memoryUsedMB, vramUsedMB;
-    float averageLatencyMs;
-    size_t totalRequests, failedRequests;
-    bool serverReachable;
-    int serverQueueLength;
-};
-```
+### 2. Health and Runtime Observability
+**Priority**: HIGH  
+**Status**: 📋 Planned
 
-**Benefits**:
-- Critical for production deployments
-- Auto-recovery triggers
-- GUI status displays
+Expand monitoring beyond point APIs into a unified health surface for:
 
-### 📋 Model Hub Download
-**Status**: Planned
-**Effort**: 10-12 hours (reduced scope)
-**Priority**: MEDIUM - User Experience
+- backend availability
+- queue depth and request pressure
+- CPU, RAM, and VRAM usage
+- latency and throughput trends
+- degraded-mode warnings and fallback hints
 
-**What**: Direct download from Hugging Face Model Hub.
+**Outcome**: the GUI example and host apps can expose operational status instead of only failure logs.
 
-**Scope** (Phase 1):
-- Download by repo ID + filename
-- HTTP resume support
-- SHA256 verification from hub
-- Defer search/browse to later
+### 3. Semantic Cache
+**Priority**: HIGH  
+**Status**: 📋 Planned
 
-**API**:
-```cpp
-// In ofxGgmlEasy
-bool downloadModel(string repoId, string filename, ProgressCallback);
-```
+Add semantic-result caching so repeated or closely related prompts can reuse prior work across chat, assistants, and workflow stages.
 
-### 📋 Complete RAII Integration
-**Status**: Planned (Already in IMPROVEMENTS_ROADMAP.md)
-**Effort**: 8-12 hours
-**Priority**: MEDIUM - Code Quality
+**Outcome**: faster iteration for creative prompting, review loops, and research-heavy tasks.
 
-**What**: Use RAII guards throughout `ofxGgml::Impl`.
+### 4. Hybrid Retrieval
+**Priority**: HIGH  
+**Status**: 📋 Planned
+
+Upgrade retrieval workflows with hybrid keyword + embedding ranking and optional reranking.
+
+**Outcome**: better grounding quality for citation search, RAG, and research-driven assistants.
+
+### 5. Roadmap-Aligned Example Cleanup
+**Priority**: MEDIUM  
+**Status**: 📋 Planned
+
+Continue extracting feature logic out of the giant GUI example and into addon APIs or focused helper modules.
+
+**Outcome**: the example becomes easier to maintain and better demonstrates stable surfaces.
 
 ---
 
-## Long-Term (v2.0.0 - 6-12 Months)
+## Phase 2: Platform Composition (3-6 Months)
 
-### 📋 LoRA Adapter Support
-**Status**: Planned
-**Effort**: 20-24 hours
-**Priority**: HIGH - Customization
+Focus: turn existing helpers into a reusable workflow system.
 
-**What**: Load/swap LoRA adapters for model customization.
+### 1. Workflow Graph Runtime
+**Priority**: HIGH  
+**Status**: 💡 Proposed
 
-**API**:
-```cpp
-class ofxGgmlLoRAAdapter {
-    bool loadAdapter(string loraPath);
-    bool unloadAdapter();
-    void setAdapterWeight(float weight);  // Blend strength
-};
-```
+Introduce reusable workflow graphs so apps can connect stages like:
 
-**Benefits**:
-- Customize models without full fine-tuning
-- Swap styles/behaviors dynamically
-- Much smaller files than full models
+`crawl -> cite -> outline -> script -> TTS -> subtitles -> video plan`
 
-### 📋 Multi-Agent Framework
-**Status**: Planned
-**Effort**: 38-51 hours (increased estimate)
-**Priority**: MEDIUM-HIGH - Advanced Workflows
+Target capabilities:
 
-**What**: Agents collaborate on complex tasks with delegation.
+- typed workflow nodes
+- shared input/output contracts
+- resumable execution
+- inspectable intermediate outputs
+- replay support for deterministic debugging
 
-**Architecture**:
-```cpp
-class ofxGgmlAgent {
-    string role;  // "researcher", "writer", "critic"
-    vector<Tool> availableTools;
+### 2. Shared Workflow Manifest
+**Priority**: HIGH  
+**Status**: 💡 Proposed
 
-    AgentResponse execute(AgentTask task);
-    void delegateTo(ofxGgmlAgent* other, AgentTask subtask);
-};
-```
+Standardize a manifest format that can carry:
 
-**Use Cases**:
-- Research → Write → Critic pipelines
-- Planning → Multiple specialists
-- Iterative refinement loops
+- inputs and resolved assets
+- prompts and settings
+- citations and provenance
+- intermediate artifacts
+- warnings, confidence, and review notes
+- downstream handoff metadata
 
-**Note**: Needs careful design phase first. Start with sequential delegation.
+**Outcome**: outputs from one workflow become reliable inputs for the next.
 
-### 📋 Plugin System
-**Status**: Planned
-**Effort**: 30-38 hours (increased estimate)
-**Priority**: MEDIUM - Extensibility
+### 3. Project Memory Across Creative Runs
+**Priority**: MEDIUM-HIGH  
+**Status**: 💡 Proposed
 
-**What**: Extensible architecture for third-party features.
+Extend memory beyond code assistance into long-lived project context for:
 
-**Design**:
-```cpp
-class ofxGgmlPlugin {
-    virtual string getName() = 0;
-    virtual bool initialize(ofxGgmlPluginContext* context) = 0;
-};
-```
+- prompts and creative intent
+- accepted references and citations
+- style notes and continuity rules
+- preferred tools and workflow settings
 
-**Use Cases**:
-- Custom inference backends
-- Additional modalities (3D, audio gen)
-- Domain-specific assistants
+**Outcome**: long-form creative projects keep context across sessions.
 
-**Note**: API design is critical (hard to change later). Start with backend adapters.
+### 4. Focused Example Applications
+**Priority**: MEDIUM  
+**Status**: 💡 Proposed
+
+Ship more narrowly scoped examples for:
+
+- research and citation workflows
+- video essay generation
+- speech + subtitle tooling
+- coding assistant integration
+- CLIP/image search and visual planning
+
+**Outcome**: easier onboarding and less pressure on a single all-in-one example.
 
 ---
 
-## Deferred Items
+## Phase 3: Assistant Systems and Creative Copilots (6-9 Months)
 
-### ❌ Distributed Inference
-**Reason**: Very complex, limited audience
-**Alternative**: Document using remote llama-server instances
+Focus: move from single assistants to coordinated specialist systems.
 
-### ❌ Web API Server Mode
-**Reason**: Duplicates existing llama-server functionality
-**Alternative**: Document deploying with llama-server
+### 1. Specialist Assistant Teams
+**Priority**: HIGH  
+**Status**: 💡 Proposed
 
-### ⏸️ Full Inference Request Queue
-**Reason**: Server backend handles this internally
-**Alternative**: Add `getActiveRequests()` to query server state
+Evolve assistants toward explicit roles such as:
 
-### ⏸️ Full Model Memory Management
-**Reason**: Most users run one model at a time
-**Alternative**: Add memory usage reporting
-**Revisit**: When multi-model ensemble is added
+- researcher
+- planner
+- critic
+- editor
+- renderer
+
+The key constraint is to preserve approval-first execution and workspace safety while improving delegation and handoff quality.
+
+### 2. Timeline-Aware Creative Copilots
+**Priority**: HIGH  
+**Status**: 💡 Proposed
+
+Invest in assistant patterns tailored to media creation:
+
+- video essay planning
+- montage building
+- music-video planning
+- subtitle editing and revision
+- generative visual pipelines
+
+**Outcome**: ofxGgml becomes purpose-built for AI-native creative tools rather than generic chat wrappers.
+
+### 3. Continuity, Consistency, and Asset Reuse
+**Priority**: MEDIUM-HIGH  
+**Status**: 💡 Proposed
+
+Add system support for:
+
+- scene continuity across long-form video planning
+- style consistency across generated prompts and outputs
+- reusable asset references and project-level constraints
+
+**Outcome**: better long-form coherence for multi-stage creative work.
+
+### 4. Trust and Evaluation Suites
+**Priority**: MEDIUM-HIGH  
+**Status**: 💡 Proposed
+
+Build repeatable evaluation coverage for:
+
+- citation quality
+- workflow correctness
+- latency and throughput
+- multimodal coherence
+- assistant safety and approval behavior
+
+**Outcome**: “local and verifiable” becomes an enforceable product property, not just positioning.
 
 ---
 
-## Implementation Notes
+## Phase 4: Ecosystem and Extensibility (9-12 Months)
 
-### Quick Wins (< 4 hours each)
-1. Memory usage reporting (2-3h)
-2. Server queue status API (2-3h)
-3. Preset workflow helpers (4-6h)
+Focus: let other developers build on the platform.
 
-### High-Value Features
-1. Semantic cache - Huge speedup for repeated/similar queries
-2. Hybrid RAG - Better retrieval accuracy
-3. Health monitoring - Production readiness
-4. LoRA support - Model customization
+### 1. Plugin System
+**Priority**: HIGH  
+**Status**: 💡 Proposed
 
-### Architectural Improvements
-1. Result<T> Ex variants - API consistency
-2. RAII integration - Code quality
-3. Plugin system - Ecosystem growth
+Create a plugin architecture for:
+
+- custom inference backends
+- workflow nodes
+- modalities and renderers
+- search/retrieval providers
+- tool adapters and assistant capabilities
+
+### 2. Third-Party Integration Surface
+**Priority**: MEDIUM-HIGH  
+**Status**: 💡 Proposed
+
+Encourage integrations with:
+
+- editors and IDE-like shells
+- external renderers and media tools
+- search providers and research pipelines
+- hardware/media runtimes
+
+### 3. Personalization and Adaptation
+**Priority**: MEDIUM  
+**Status**: 💡 Proposed
+
+Explore higher-level personalization features such as:
+
+- LoRA adapter support
+- reusable project presets
+- stylistic profiles for media generation
+
+### 4. Collaborative and Real-Time Workflows
+**Priority**: MEDIUM  
+**Status**: 💡 Proposed
+
+After core local flows are stable, evaluate real-time and collaborative creative pipelines that build on the manifest, memory, and plugin foundations.
 
 ---
 
-## Contributing
+## Cross-Cutting Workstreams
 
-To propose new features or changes to this roadmap:
+These themes should shape every phase rather than live in only one release.
 
-1. Open an issue with tag `roadmap-proposal`
-2. Include:
-   - Feature description
-   - Use cases
-   - Estimated effort
-   - Priority justification
-3. Maintainers will review and update roadmap
+### Trust and Provenance
+- keep source trails, warnings, and confidence visible
+- preserve reproducibility metadata in workflow artifacts
+- prefer inspectable structured outputs for handoff-heavy systems
+
+### Stable Addon APIs
+- move logic out of example code and into reusable addon surfaces
+- avoid locking roadmap features inside one GUI-specific implementation
+
+### Performance and Responsiveness
+- prioritize caching, batching, backpressure, and resumable execution
+- expose runtime signals that let hosts adapt to local hardware constraints
+
+### Documentation and Learnability
+- align README, roadmap, and focused examples around the same product story
+- explain not just isolated features, but how they combine into creative systems
 
 ---
 
-## Change Log
+## Suggested Priority Order
 
-- **2026-04-21**: Memory usage reporting and server queue status APIs completed
-- **2026-04-21**: Initial roadmap created from deep review analysis
-- **2026-04-21**: Model checksums verified complete
-- **2026-04-21**: Enhanced streaming progress implementation started
+### First
+- model onboarding
+- health monitoring and runtime dashboards
+- semantic cache
+- hybrid retrieval
+
+### Next
+- workflow graph/runtime
+- shared workflow manifests
+- GUI modularization
+- focused example apps
+
+### Then
+- specialist multi-agent orchestration
+- plugin ecosystem
+- project memory across sessions
+- evaluation suites
+
+### Finally
+- advanced creative copilots
+- personalization and LoRA-style adaptation
+- collaborative and real-time creative pipelines
+
+---
+
+## What Success Looks Like
+
+ofxGgml will have reached this roadmap’s goal when an openFrameworks developer can:
+
+- install and validate the right local model stack quickly
+- compose text, vision, speech, code, and video workflows through stable APIs
+- inspect where outputs came from and why decisions were made
+- build safe assistant-driven tools with approval gates and replayable execution
+- reuse manifests, memory, and plugins across multiple creative applications
+
+At that point, ofxGgml is no longer just a wrapper around model runtimes. It is the **local creative AI systems layer** for openFrameworks.
