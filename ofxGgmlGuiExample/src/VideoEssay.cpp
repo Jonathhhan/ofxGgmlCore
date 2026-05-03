@@ -1653,7 +1653,7 @@ return;
 
 ofJson segmentManifests = ofJson::array();
 ofJson webmPaths = ofJson::array();
-std::string previousLastFramePath;
+std::string lastSegmentFramePath;
 std::filesystem::path lastRenderDirectory;
 std::filesystem::path lastMetadataPath;
 std::filesystem::path lastManifestPath;
@@ -1667,8 +1667,8 @@ const std::string currentSourceImagePath =
 renderFullSequence &&
 chunkOffset > 0 &&
 selectedChunk.usePreviousLastFrame &&
-!previousLastFramePath.empty()
-? previousLastFramePath
+!lastSegmentFramePath.empty()
+? lastSegmentFramePath
 : sourceImagePath;
 
 ofImage sourceImage;
@@ -1856,8 +1856,8 @@ manifest["chunk"] = {
 {"progression_weight", selectedChunk.progressionWeight}
 };
 
-previousLastFramePath = findLastRenderedVideoFramePath(renderDirectory, framePrefix);
-manifest["handoff_frame"] = previousLastFramePath;
+lastSegmentFramePath = findLastRenderedVideoFramePath(renderDirectory, framePrefix);
+manifest["handoff_frame"] = lastSegmentFramePath;
 ofSavePrettyJson(manifestPath.string(), manifest);
 segmentManifests.push_back(manifest);
 if (savedWebm) {
