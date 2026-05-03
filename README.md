@@ -203,7 +203,7 @@ scripts\setup_windows.bat
 ```
 
 > [!WARNING]
-> **First run is not optional:** the examples will usually fail to build or launch until you run the platform setup script, build the bundled ggml libraries, and regenerate the example project with the openFrameworks Project Generator.
+> **First run is not optional:** `libs/ggml/` is intentionally empty when you clone the addon. The examples will usually fail to build or launch until you run the platform setup script, build the bundled ggml libraries, and regenerate the example project with the openFrameworks Project Generator.
 >
 > Minimum first-run flow:
 > - run `./scripts/setup_linux_macos.sh` or `scripts\setup_windows.bat`
@@ -437,7 +437,7 @@ Workflow results include:
 
 ## Quick Wins: Developer Experience Features
 
-ofxGgml includes high-impact features for improved developer experience. See `docs/QUICK_WINS.md` for detailed documentation.
+ofxGgml includes high-impact features for improved developer experience. See `docs/ROADMAP.md` for detailed quick-win and roadmap documentation.
 
 ### Batched Inference API
 
@@ -732,6 +732,12 @@ After building ggml, regenerate your project with the openFrameworks Project Gen
 ### Streaming limitation
 
 `OFXGGML_HAS_SERVER_STREAMING` is currently enabled only for Windows builds that use WinHTTP. On Linux and macOS the addon still supports server requests, but it falls back to non-streaming request/response handling instead of live SSE token streaming for `llama-server` style responses.
+
+| Platform | `OFXGGML_HAS_SERVER_STREAMING` | Server request behavior |
+| --- | --- | --- |
+| Windows | Enabled when building the WinHTTP path | Live token streaming for `llama-server` style responses |
+| Linux | Disabled | Non-streaming request/response fallback |
+| macOS | Disabled | Non-streaming request/response fallback |
 
 ### llama-server on Windows
 

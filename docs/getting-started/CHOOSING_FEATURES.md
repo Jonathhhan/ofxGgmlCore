@@ -26,7 +26,7 @@ What you get:
 
 What you get (includes Core plus):
 - LLM text inference (llama-server and CLI backends)
-- Streaming with backpressure control
+- Streaming with backpressure control (live server-side token streaming is Windows-only; Linux/macOS fall back to non-streaming server responses)
 - Batch processing
 - `ofxGgmlEasy` facade
 - Chat and text assistants

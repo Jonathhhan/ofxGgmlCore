@@ -87,6 +87,17 @@ auto result = inference.generate(
 
 For real-time token-by-token output:
 
+### Platform support
+
+| Platform | `OFXGGML_HAS_SERVER_STREAMING` | Server request behavior |
+| --- | --- | --- |
+| Windows | Enabled when building the WinHTTP path | Live token streaming for `llama-server` style responses |
+| Linux | Disabled | Non-streaming request/response fallback |
+| macOS | Disabled | Non-streaming request/response fallback |
+
+The callback API is still available on every platform; only live server-side SSE token streaming is currently Windows-only.
+
+
 ```cpp
 auto ctx = std::make_shared<ofxGgmlStreamingContext>();
 
