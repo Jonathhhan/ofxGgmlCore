@@ -158,6 +158,9 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         ../src/support/ofxGgmlScriptSource.cpp
         ../src/support/ofxGgmlProcessSecurity.cpp
         ../src/assistants/ofxGgmlCodeAssistant.cpp
+        ../src/assistants/ofxGgmlCodeAssistantPrompt.cpp
+        ../src/assistants/ofxGgmlCodeAssistantSession.cpp
+        ../src/assistants/ofxGgmlCodeAssistantTools.cpp
         ../src/assistants/ofxGgmlCodingAgent.cpp
         ../src/assistants/ofxGgmlWorkspaceAssistant.cpp
         ../src/assistants/ofxGgmlTextAssistant.cpp
