@@ -268,6 +268,7 @@ Onboarding helpers for the first roadmap step:
 auto presets = ai.listTextModelPresets("scripts/model-catalog.json");
 auto recommendation = ai.recommendTextModelForTask("script", "scripts/model-catalog.json");
 auto setup = ai.inspectTextSetup("script", "scripts/model-catalog.json");
+auto download = ai.planTextModelDownload("script", 0, "scripts/model-catalog.json", "models");
 
 if (!setup.ready && recommendation) {
     ofLogNotice() << "Suggested preset: #" << recommendation->preset
@@ -275,7 +276,7 @@ if (!setup.ready && recommendation) {
 }
 ```
 
-`inspectTextSetup()` reports missing model paths, missing server configuration, explicit executable-path issues, and task-specific preset recommendations so apps can present setup guidance before inference fails.
+`inspectTextSetup()` now also reports GGUF compatibility hints, missing embedding support for hybrid retrieval, and server-model routing warnings. `planTextModelDownload()` turns a recommended preset into a concrete download plan with checksum/provenance metadata and a ready-to-run `download-model.sh` command.
 
 Chat and translation:
 
@@ -328,7 +329,8 @@ auto interceptedCitations = ai.findCitationsFromInput(
 
 // Citation search now rewrites/refines the topic and reuses the shared
 // RAG retrieval path for hybrid lexical + embedding-aware source chunk ranking
-// when embeddings are configured, with lexical fallback otherwise.
+// when embeddings are configured, with lexical fallback otherwise. Repeated
+// retrievals now also reuse an in-memory RAG cache by default.
 
 auto montage = ai.planMontageFromSrt(
     "data/subtitles/scene.srt",
@@ -550,6 +552,16 @@ if (queueStatus.available) {
     std::cout << "Processing: " << queueStatus.processingCount << std::endl;
     std::cout << "Completed: " << queueStatus.completedCount << std::endl;
 }
+
+ofxGgmlEasy ai;
+ofxGgmlEasyTextConfig text;
+text.modelPath = "data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf";
+text.completionExecutable = "llama-completion";
+ai.configureText(text);
+
+auto health = ai.inspectTextHealth(&runtime);
+std::cout << "Avg latency: " << health.averageLatencyMs << " ms" << std::endl;
+std::cout << "Retrieval cache hit rate: " << health.retrievalCacheHitRate << std::endl;
 ```
 
 These monitoring APIs are essential for:

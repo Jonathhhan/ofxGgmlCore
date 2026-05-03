@@ -1,5 +1,7 @@
 #include "inference/ofxGgmlRAGPipeline.h"
 
+#include "core/ofxGgmlMetrics.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cctype>
@@ -256,6 +258,7 @@ std::vector<float> computeSemanticScores(
 
 void ofxGgmlRAGPipeline::addDocument(const ofxGgmlRAGDocument & doc) {
 	m_documents.push_back(doc);
+	invalidateRetrievalCache();
 }
 
 void ofxGgmlRAGPipeline::addTextDocument(
@@ -271,14 +274,20 @@ void ofxGgmlRAGPipeline::addTextDocument(
 	doc.sourceLabel = label;
 	doc.sourceUri = uri;
 	m_documents.push_back(std::move(doc));
+	invalidateRetrievalCache();
 }
 
 void ofxGgmlRAGPipeline::clearDocuments() {
 	m_documents.clear();
+	invalidateRetrievalCache();
 }
 
 size_t ofxGgmlRAGPipeline::documentCount() const {
 	return m_documents.size();
+}
+
+void ofxGgmlRAGPipeline::clearRetrievalCache() {
+	invalidateRetrievalCache();
 }
 
 ofxGgmlInference & ofxGgmlRAGPipeline::getInference() {
@@ -291,6 +300,7 @@ const ofxGgmlInference & ofxGgmlRAGPipeline::getInference() const {
 
 ofxGgmlRAGRetrievalResult ofxGgmlRAGPipeline::retrieve(
 	const ofxGgmlRAGQuery & query) const {
+	const auto start = std::chrono::steady_clock::now();
 	ofxGgmlRAGRetrievalResult result;
 	if (trimCopy(query.query).empty()) {
 		result.error = "RAG query is empty.";
@@ -300,6 +310,21 @@ ofxGgmlRAGRetrievalResult ofxGgmlRAGPipeline::retrieve(
 		result.error = "No documents have been added to the RAG pipeline.";
 		return result;
 	}
+
+	const std::string cacheKey = buildRetrievalCacheKey(query);
+	if (query.enableRetrievalCache) {
+		std::lock_guard<std::mutex> lock(m_retrievalCacheMutex);
+		const auto it = m_retrievalCache.find(cacheKey);
+		if (it != m_retrievalCache.end()) {
+			m_retrievalCacheLru.remove(cacheKey);
+			m_retrievalCacheLru.push_front(cacheKey);
+			result = it->second.result;
+			result.cacheHit = true;
+			ofxGgmlMetrics::getInstance().recordCacheHit("rag.retrieval");
+			return result;
+		}
+	}
+	ofxGgmlMetrics::getInstance().recordCacheMiss("rag.retrieval");
 
 	const size_t chunkSize = std::max(size_t(64), query.chunkSize);
 	const size_t overlap = std::min(query.chunkOverlap, chunkSize / 2);
@@ -376,7 +401,15 @@ ofxGgmlRAGRetrievalResult ofxGgmlRAGPipeline::retrieve(
 	const size_t k = std::min(query.topK, allChunks.size());
 	result.chunks.assign(allChunks.begin(), allChunks.begin() + static_cast<std::ptrdiff_t>(k));
 	result.augmentedContext = buildAugmentedContext(result.chunks, query.includeSourceHeaders);
+	result.cacheHit = false;
 	result.success = true;
+	if (query.enableRetrievalCache) {
+		storeRetrievalCacheEntry(cacheKey, result);
+	}
+	const auto end = std::chrono::steady_clock::now();
+	ofxGgmlMetrics::getInstance().recordTiming(
+		"rag.retrieve",
+		std::chrono::duration<double, std::milli>(end - start).count());
 	return result;
 }
 
@@ -560,4 +593,58 @@ std::string ofxGgmlRAGPipeline::buildAugmentedPrompt(
 	out << "Question: " << trimCopy(query) << "\n"
 		<< "Answer:";
 	return out.str();
+}
+
+std::string ofxGgmlRAGPipeline::buildRetrievalCacheKey(
+	const ofxGgmlRAGQuery & query) const {
+	std::ostringstream out;
+	out << m_documentRevision << '\n'
+		<< query.query << '\n'
+		<< query.topK << '\n'
+		<< query.chunkSize << '\n'
+		<< query.chunkOverlap << '\n'
+		<< query.includeSourceHeaders << '\n'
+		<< query.enableSemanticRanking << '\n'
+		<< query.allowQueryRefinement << '\n'
+		<< query.enableRetrievalCache << '\n'
+		<< query.keywordWeight << '\n'
+		<< query.semanticWeight << '\n'
+		<< query.qualityWeight << '\n'
+		<< query.rerankTopN << '\n'
+		<< query.maxRefinementSteps << '\n'
+		<< query.embeddingModelPath << '\n'
+		<< m_inference.getEmbeddingExecutable() << '\n';
+	for (const auto & variant : query.queryVariants) {
+		out << variant << '\n';
+	}
+	return out.str();
+}
+
+void ofxGgmlRAGPipeline::invalidateRetrievalCache() {
+	std::lock_guard<std::mutex> lock(m_retrievalCacheMutex);
+	++m_documentRevision;
+	m_retrievalCache.clear();
+	m_retrievalCacheLru.clear();
+}
+
+void ofxGgmlRAGPipeline::storeRetrievalCacheEntry(
+	const std::string & key,
+	const ofxGgmlRAGRetrievalResult & result) const {
+	std::lock_guard<std::mutex> lock(m_retrievalCacheMutex);
+	const auto existing = m_retrievalCache.find(key);
+	if (existing != m_retrievalCache.end()) {
+		existing->second.result = result;
+		m_retrievalCacheLru.remove(key);
+		m_retrievalCacheLru.push_front(key);
+		return;
+	}
+	if (m_retrievalCache.size() >= RETRIEVAL_CACHE_MAX_SIZE &&
+		!m_retrievalCacheLru.empty()) {
+		const std::string oldestKey = m_retrievalCacheLru.back();
+		m_retrievalCacheLru.pop_back();
+		m_retrievalCache.erase(oldestKey);
+		ofxGgmlMetrics::getInstance().recordCacheEviction("rag.retrieval");
+	}
+	m_retrievalCache.emplace(key, RetrievalCacheEntry{key, result});
+	m_retrievalCacheLru.push_front(key);
 }

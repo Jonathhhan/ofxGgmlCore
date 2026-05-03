@@ -1,9 +1,13 @@
 #include "support/ofxGgmlEasy.h"
 
+#include "core/ofxGgmlCore.h"
+#include "core/ofxGgmlMetrics.h"
 #include "ofJson.h"
 
 #include <filesystem>
 #include <fstream>
+#include <limits>
+#include <sstream>
 #include <utility>
 
 namespace {
@@ -187,6 +191,31 @@ std::optional<ofxGgmlEasyModelPreset> findPresetByNumber(
 
 bool pathLooksExplicit(const std::string & path) {
 	return path.find('/') != std::string::npos || path.find('\\') != std::string::npos;
+}
+
+std::string quoteShellArg(const std::string & text) {
+	if (text.empty()) {
+		return "\"\"";
+	}
+	std::string quoted = "\"";
+	for (char ch : text) {
+		if (ch == '"' || ch == '\\') {
+			quoted.push_back('\\');
+		}
+		quoted.push_back(ch);
+	}
+	quoted.push_back('"');
+	return quoted;
+}
+
+std::string configuredModelMetricKey(const ofxGgmlEasyTextConfig & config) {
+	if (!config.modelPath.empty()) {
+		return config.modelPath;
+	}
+	if (!config.serverModel.empty()) {
+		return config.serverModel;
+	}
+	return "default";
 }
 
 } // namespace
@@ -471,11 +500,29 @@ ofxGgmlEasyModelSetupReport ofxGgmlEasy::inspectTextSetup(
 				break;
 			}
 		}
+		if (modelPath.extension() != ".gguf") {
+			report.warnings.push_back(
+				"Configured text model does not use a .gguf extension, so llama.cpp-compatible local inference may fail.");
+		}
 	}
 
 	if (m_textConfig.preferServer && m_textConfig.serverUrl.empty()) {
 		report.errors.push_back(
 			"preferServer is enabled, but no serverUrl is configured.");
+	}
+	if (!m_textConfig.preferServer && m_textConfig.completionExecutable.empty()) {
+		report.warnings.push_back(
+			"No completion executable is configured, so local text inference cannot run until llama-cli tooling is available.");
+	}
+	if (m_textConfig.preferServer && m_textConfig.serverModel.empty()) {
+		report.warnings.push_back(
+			"preferServer is enabled without a serverModel. Requests may still work, but explicit model routing is safer.");
+	}
+	if ((task == "rag" || task == "research" || task == "citation" || task == "script") &&
+		m_textConfig.embeddingExecutable.empty() &&
+		!(m_textConfig.settings.useServerBackend && !m_textConfig.serverUrl.empty())) {
+		report.warnings.push_back(
+			"Embedding support is not configured, so hybrid retrieval will fall back to lexical ranking.");
 	}
 
 	if (!m_textConfig.completionExecutable.empty() &&
@@ -521,6 +568,117 @@ ofxGgmlEasyModelSetupReport ofxGgmlEasy::inspectTextSetup(
 
 	report.ready = report.errors.empty();
 	return report;
+}
+
+std::optional<ofxGgmlEasyModelDownloadPlan> ofxGgmlEasy::planTextModelDownload(
+	const std::string & task,
+	int preset,
+	const std::string & catalogPath,
+	const std::string & outputDir) const {
+	const auto catalog = loadModelCatalogJson(catalogPath);
+	if (!catalog) {
+		return std::nullopt;
+	}
+
+	std::optional<ofxGgmlEasyModelPreset> selectedPreset;
+	if (preset > 0) {
+		selectedPreset = findPresetByNumber(parseModelPresets(catalog->first), preset);
+	} else if (!task.empty()) {
+		const auto taskPreset = lookupTaskDefault(catalog->first, task);
+		if (taskPreset) {
+			selectedPreset = findPresetByNumber(parseModelPresets(catalog->first), *taskPreset);
+		}
+	}
+	if (!selectedPreset) {
+		return std::nullopt;
+	}
+
+	ofxGgmlEasyModelDownloadPlan plan;
+	plan.available = true;
+	plan.preset = selectedPreset->preset;
+	plan.task = task;
+	plan.name = selectedPreset->name;
+	plan.filename = selectedPreset->filename;
+	plan.url = selectedPreset->url;
+	plan.sha256 = selectedPreset->sha256;
+	plan.size = selectedPreset->size;
+	plan.outputDir = outputDir;
+	plan.catalogPath = catalog->second.string();
+	plan.downloadScriptPath = (catalog->second.parent_path() / "download-model.sh").string();
+	plan.verifiedCatalogEntry = selectedPreset->checksumVerified();
+
+	std::ostringstream command;
+	command << quoteShellArg(plan.downloadScriptPath) << " --preset " << plan.preset;
+	if (!outputDir.empty()) {
+		command << " --output " << quoteShellArg(outputDir);
+	}
+	plan.suggestedCommand = command.str();
+
+	if (!plan.verifiedCatalogEntry) {
+		plan.warnings.push_back(
+			"Selected preset is present in the catalog but is not yet marked verified-sha256.");
+	}
+	if (plan.downloadScriptPath.empty() ||
+		!std::filesystem::exists(std::filesystem::path(plan.downloadScriptPath))) {
+		plan.warnings.push_back(
+			"Could not confirm that scripts/download-model.sh exists next to the resolved catalog.");
+	}
+	return plan;
+}
+
+ofxGgmlEasyHealthSnapshot ofxGgmlEasy::inspectTextHealth(
+	const ofxGgml * runtime) const {
+	ofxGgmlEasyHealthSnapshot snapshot;
+	snapshot.textConfigured = !m_textConfig.modelPath.empty() || !m_textConfig.serverUrl.empty();
+	snapshot.serverExpected = m_textConfig.preferServer || !m_textConfig.serverUrl.empty();
+
+	const std::string metricKey = configuredModelMetricKey(m_textConfig);
+	const auto & metrics = ofxGgmlMetrics::getInstance();
+	const auto inferenceStats = metrics.getInferenceStats(metricKey);
+	snapshot.averageTokensPerSecond = metrics.getAverageTokensPerSecond(metricKey);
+	snapshot.retrievalCacheHitRate = metrics.getCacheHitRate("rag.retrieval");
+	snapshot.tokenCountCacheHitRate = metrics.getCacheHitRate("token-count");
+	if (inferenceStats.successfulCalls > 0) {
+		snapshot.averageLatencyMs =
+			inferenceStats.totalTimeMs / static_cast<double>(inferenceStats.successfulCalls);
+		snapshot.minLatencyMs =
+			inferenceStats.minTimeMs == std::numeric_limits<double>::max()
+				? 0.0
+				: inferenceStats.minTimeMs;
+		snapshot.maxLatencyMs = inferenceStats.maxTimeMs;
+	}
+
+	if (runtime) {
+		snapshot.localRuntimeAttached = true;
+		snapshot.localRuntimeReady = runtime->isReady();
+		snapshot.memoryUsage = runtime->getMemoryUsage();
+	}
+
+	if (snapshot.serverExpected && !m_textConfig.serverUrl.empty()) {
+		snapshot.serverProbe = ofxGgmlInference::probeServer(m_textConfig.serverUrl, true);
+		snapshot.serverQueue = ofxGgmlInference::getServerQueueStatus(m_textConfig.serverUrl);
+		if (!snapshot.serverProbe.reachable) {
+			snapshot.warnings.push_back(
+				"Configured text server is not currently reachable: " + snapshot.serverProbe.error);
+		}
+		if (!snapshot.serverQueue.available && !snapshot.serverQueue.error.empty()) {
+			snapshot.warnings.push_back(
+				"Queue status is unavailable: " + snapshot.serverQueue.error);
+		}
+	} else if (snapshot.serverExpected) {
+		snapshot.warnings.push_back(
+			"Text health expects a server backend, but no server URL is configured.");
+	}
+
+	if (!snapshot.textConfigured) {
+		snapshot.warnings.push_back(
+			"Text health is limited because no text model or server backend is configured.");
+	}
+	if (snapshot.localRuntimeAttached && !snapshot.localRuntimeReady) {
+		snapshot.warnings.push_back(
+			"Local runtime pointer was provided, but the runtime is not ready.");
+	}
+	return snapshot;
 }
 
 ofxGgmlInferenceSettings ofxGgmlEasy::makeTextSettings() const {

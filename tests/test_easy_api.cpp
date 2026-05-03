@@ -1,5 +1,6 @@
 #include "catch2.hpp"
 #include "../src/ofxGgml.h"
+#include "../src/core/ofxGgmlMetrics.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -276,8 +277,23 @@ TEST_CASE("Easy API exposes model preset recommendations and setup diagnostics",
 	REQUIRE(report.recommendedPreset.has_value());
 	REQUIRE(report.recommendedPreset->preset == 2);
 	REQUIRE_FALSE(report.warnings.empty());
-	REQUIRE(report.warnings.front().find("recommends a different preset") != std::string::npos);
+	bool foundRecommendationWarning = false;
+	for (const auto & warning : report.warnings) {
+		if (warning.find("recommends a different preset") != std::string::npos) {
+			foundRecommendationWarning = true;
+			break;
+		}
+	}
+	REQUIRE(foundRecommendationWarning);
 	REQUIRE(report.recommendations.front().find("Recommended preset for 'script'") != std::string::npos);
+
+	const auto downloadPlan = easy.planTextModelDownload("script", 0, catalogPath, "models");
+	REQUIRE(downloadPlan.has_value());
+	REQUIRE(downloadPlan->available);
+	REQUIRE(downloadPlan->preset == 2);
+	REQUIRE(downloadPlan->verifiedCatalogEntry);
+	REQUIRE(downloadPlan->suggestedCommand.find("--preset 2") != std::string::npos);
+	REQUIRE(downloadPlan->suggestedCommand.find("--output") != std::string::npos);
 }
 
 TEST_CASE("Easy API onboarding report flags missing text model and suggests a preset", "[easy_api]") {
@@ -293,6 +309,39 @@ TEST_CASE("Easy API onboarding report flags missing text model and suggests a pr
 	REQUIRE(report.recommendedPreset->preset == 1);
 	REQUIRE(report.errors.front().find("No text model is configured") != std::string::npos);
 	REQUIRE(report.recommendations.back().find("download-model.sh --preset 1") != std::string::npos);
+}
+
+TEST_CASE("Easy API health snapshot combines latency and cache metrics", "[easy_api]") {
+	auto & metrics = ofxGgmlMetrics::getInstance();
+	metrics.reset();
+
+	const std::string modelPath = createEasyApiDummyModel("health.gguf");
+	const std::string exePath = createEasyApiExecutable("easy-api-ok");
+
+	ofxGgmlEasy easy;
+	ofxGgmlEasyTextConfig textConfig;
+	textConfig.modelPath = modelPath;
+	textConfig.completionExecutable = exePath;
+	easy.configureText(textConfig);
+
+	metrics.recordInferenceStart(modelPath);
+	metrics.recordInferenceEnd(modelPath, 120, 60.0, true);
+	metrics.recordCacheHit("rag.retrieval");
+	metrics.recordCacheMiss("rag.retrieval");
+	metrics.recordCacheHit("token-count");
+
+	ofxGgml runtime;
+	const auto health = easy.inspectTextHealth(&runtime);
+	REQUIRE(health.textConfigured);
+	REQUIRE(health.localRuntimeAttached);
+	REQUIRE_FALSE(health.localRuntimeReady);
+	REQUIRE(health.averageLatencyMs == Approx(60.0));
+	REQUIRE(health.averageTokensPerSecond == Approx(2000.0));
+	REQUIRE(health.retrievalCacheHitRate == Approx(0.5));
+	REQUIRE(health.tokenCountCacheHitRate == Approx(1.0));
+	REQUIRE_FALSE(health.warnings.empty());
+
+	metrics.reset();
 }
 
 TEST_CASE("Easy API wraps common text workflows", "[easy_api]") {

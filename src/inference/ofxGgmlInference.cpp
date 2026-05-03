@@ -2036,9 +2036,11 @@ int ofxGgmlInference::countPromptTokens(
 			// Move to front of LRU list (most recently used)
 			m_tokenCountCacheLRU.remove(cacheKey);
 			m_tokenCountCacheLRU.push_front(cacheKey);
+			ofxGgmlMetrics::getInstance().recordCacheHit("token-count");
 			return it->second;
 		}
 	}
+	ofxGgmlMetrics::getInstance().recordCacheMiss("token-count");
 
 	if (!isValidFilePath(modelPath)) {
 		return -1;
@@ -2090,6 +2092,7 @@ int ofxGgmlInference::countPromptTokens(
 				const std::string & lruKey = m_tokenCountCacheLRU.back();
 				m_tokenCountCache.erase(lruKey);
 				m_tokenCountCacheLRU.pop_back();
+				ofxGgmlMetrics::getInstance().recordCacheEviction("token-count");
 			}
 		}
 

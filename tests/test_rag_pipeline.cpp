@@ -321,3 +321,51 @@ TEST_CASE("RAG pipeline uses semantic reranking when embeddings are configured",
 	REQUIRE(retrieval.chunks.front().docId == "doc-transit");
 	REQUIRE(retrieval.chunks.front().semanticScore > 0.9f);
 }
+
+TEST_CASE("RAG pipeline caches repeated retrievals until documents change", "[rag]") {
+	ofxGgmlRAGPipeline pipeline;
+	pipeline.addTextDocument(
+		"Creative coding sketches often iterate on realtime visuals and audio-reactive systems.",
+		"doc-creative",
+		"Creative Coding");
+
+	ofxGgmlRAGQuery query;
+	query.query = "audio reactive creative coding";
+	query.topK = 1;
+
+	const auto first = pipeline.retrieve(query);
+	REQUIRE(first.success);
+	REQUIRE_FALSE(first.cacheHit);
+
+	const auto second = pipeline.retrieve(query);
+	REQUIRE(second.success);
+	REQUIRE(second.cacheHit);
+	REQUIRE(second.chunks.front().docId == first.chunks.front().docId);
+
+	pipeline.addTextDocument(
+		"Latency-sensitive live visuals benefit from responsive retrieval and caching.",
+		"doc-latency",
+		"Latency Note");
+	const auto third = pipeline.retrieve(query);
+	REQUIRE(third.success);
+	REQUIRE_FALSE(third.cacheHit);
+}
+
+TEST_CASE("RAG pipeline can disable retrieval cache per query", "[rag]") {
+	ofxGgmlRAGPipeline pipeline;
+	pipeline.addTextDocument(
+		"Hybrid retrieval blends lexical overlap with semantic similarity.",
+		"doc-hybrid",
+		"Hybrid Retrieval");
+
+	ofxGgmlRAGQuery query;
+	query.query = "hybrid retrieval similarity";
+	query.enableRetrievalCache = false;
+
+	const auto first = pipeline.retrieve(query);
+	const auto second = pipeline.retrieve(query);
+	REQUIRE(first.success);
+	REQUIRE(second.success);
+	REQUIRE_FALSE(first.cacheHit);
+	REQUIRE_FALSE(second.cacheHit);
+}
