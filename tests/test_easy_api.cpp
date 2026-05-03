@@ -370,6 +370,7 @@ TEST_CASE("Easy API wraps common text workflows", "[easy_api]") {
 	REQUIRE(chat.inference.success);
 	REQUIRE(chat.prepared.prompt.find("How are you?") != std::string::npos);
 
+#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
 	const std::string musicPromptExePath = createEasyApiExecutable(
 		"Music prompt: cinematic synthwave soundtrack, neon pulses, reflective pacing, instrumental");
 	textConfig.completionExecutable = musicPromptExePath;
@@ -434,6 +435,7 @@ TEST_CASE("Easy API wraps common text workflows", "[easy_api]") {
 		(saveDir / "preset").string());
 	REQUIRE_FALSE(savedPath.empty());
 	REQUIRE(std::filesystem::exists(savedPath));
+#endif
 }
 
 TEST_CASE("Easy API can reuse a custom speech backend", "[easy_api]") {
@@ -453,7 +455,7 @@ TEST_CASE("Easy API can reuse a custom speech backend", "[easy_api]") {
 	REQUIRE(translation.text == "translated speech");
 }
 
-TEST_CASE("Easy API wraps crawler and montage helpers", "[easy_api]") {
+TEST_CASE("Easy API wraps crawler helpers", "[easy_api]") {
 	ofxGgmlEasy easy;
 	ofxGgmlEasyCrawlerConfig crawlerConfig;
 	crawlerConfig.outputDir = makeEasyApiTestDir("crawl").string();
@@ -464,7 +466,11 @@ TEST_CASE("Easy API wraps crawler and montage helpers", "[easy_api]") {
 	REQUIRE(crawlResult.success);
 	REQUIRE(crawlResult.backendName == "FakeEasyCrawler");
 	REQUIRE(crawlResult.documents.size() == 1);
+}
 
+#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
+TEST_CASE("Easy API wraps companion montage helpers", "[easy_api][companion]") {
+	ofxGgmlEasy easy;
 	const auto srtDir = makeEasyApiTestDir("srt");
 	const auto srtPath = srtDir / "sample.srt";
 	{
@@ -489,6 +495,7 @@ TEST_CASE("Easy API wraps crawler and montage helpers", "[easy_api]") {
 	REQUIRE_FALSE(montageResult.srtText.empty());
 	REQUIRE(montageResult.previewBundle.montageTrack.cues.size() == montageResult.montageTrack.cues.size());
 }
+#endif
 
 TEST_CASE("Easy API exposes citation and video edit helpers", "[easy_api]") {
 	const std::string modelPath = createEasyApiDummyModel();

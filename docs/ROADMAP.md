@@ -1,6 +1,6 @@
 # ofxGgml Strategic Roadmap
 
-This document tracks the next major direction for ofxGgml as it evolves from a collection of local AI helpers into a **local creative AI operating system for openFrameworks**.
+This document tracks the Option A direction for ofxGgml: an openFrameworks addon for ggml tensors plus basic local LLM inference, with larger creative-application workflows split into companion addons or example-level integrations.
 
 **Last Updated**: 2026-05-03  
 **Current Version**: 1.0.4
@@ -9,34 +9,34 @@ This document tracks the next major direction for ofxGgml as it evolves from a c
 
 ## North Star
 
-ofxGgml should be the easiest way to build **local-first, source-grounded, reproducible creative AI applications** in openFrameworks.
+ofxGgml should be the easiest way to add **ggml tensors and basic local LLM inference** to openFrameworks projects.
 
 That means prioritizing:
 
-- **Local orchestration** over thin model wrappers
-- **Composable workflows** over isolated helper classes
-- **Inspectable outputs** over black-box automation
-- **Approval-first assistants** over unsafe autonomous edits
-- **Creative-media workflows** over generic AI demos
+- **Stable tensor/model/text APIs** over application-framework scope creep
+- **Small opt-in layers** over implicit all-in-one headers
+- **Inspectable local inference** over opaque cloud orchestration
+- **Examples and companion addons** over monolithic creative workflow growth
+- **Clear feature boundaries** over accumulating unrelated media pipelines
 
 ---
 
 ## Guiding Product Principles
 
 1. **Local by default**  
-   Core workflows should run with local models, local tools, and local files whenever possible.
+   Core inference should run with local models, local tools, and local files whenever possible.
 
 2. **Verifiable by design**  
-   Research, generation, editing, and automation features should expose provenance, warnings, confidence, and reproducibility metadata.
+   Inference, retrieval, and helper features should expose provenance, warnings, confidence, and reproducibility metadata where relevant.
 
 3. **Composable across modalities**  
-   Text, speech, vision, video, code, and web ingestion should connect through stable workflow contracts instead of bespoke glue.
+   Tensor, model, text, and optional modality helpers should connect through stable contracts without making the addon an application framework.
 
 4. **Useful for artists and developers**  
-   APIs should work for creative coding apps, IDE-like assistants, and media-production tools without forcing a single UX model.
+   APIs should work for creative coding apps without forcing the addon to own their application lifecycle.
 
 5. **Reference examples, not monoliths**  
-   The GUI example should demonstrate addon APIs, while feature logic continues moving into reusable addon modules.
+   The GUI example should demonstrate addon APIs. Video essay, montage, music/AceStep, MilkDrop, and Holoscan workflows should move to companion addons or remain example-level integrations.
 
 ---
 
@@ -93,9 +93,9 @@ Upgrade retrieval workflows with hybrid keyword + embedding ranking and optional
 **Priority**: MEDIUM  
 **Status**: 📋 Planned
 
-Continue extracting feature logic out of the giant GUI example and into addon APIs or focused helper modules.
+Reduce the giant GUI example to a showcase for API layers and UI patterns. Complex workflows should move into focused examples, tutorial projects, or companion addons instead of using the GUI example as a test harness.
 
-**Outcome**: the example becomes easier to maintain and better demonstrates stable surfaces.
+**Outcome**: the example becomes easier to maintain, demonstrates stable surfaces clearly, and stops carrying validation responsibility for unrelated workflows.
 
 ---
 
@@ -151,15 +151,15 @@ Extend memory beyond code assistance into long-lived project context for:
 **Priority**: MEDIUM  
 **Status**: 💡 Proposed
 
-Ship more narrowly scoped examples for:
+Ship more narrowly scoped examples or tutorial projects for:
 
 - research and citation workflows
-- video essay generation
+- companion-tier video essay generation
 - speech + subtitle tooling
 - coding assistant integration
 - CLIP/image search and visual planning
 
-**Outcome**: easier onboarding and less pressure on a single all-in-one example.
+**Outcome**: easier onboarding and less pressure on a single all-in-one showcase.
 
 ---
 

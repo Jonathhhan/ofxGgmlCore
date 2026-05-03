@@ -41,6 +41,16 @@ Run tests by name pattern:
 ./build/tests/ofxGgml-tests "*operations"
 ```
 
+### Companion / Example-Tier Tests
+
+Default headless tests focus on the stable addon tier. To include companion/example-tier workflows such as montage, music/AceStep, MilkDrop, and video essay helpers, configure CMake explicitly:
+
+```bash
+cmake -B build/tests-companion -S tests -DOFXGGML_ENABLE_COMPANION_TESTS=ON
+cmake --build build/tests-companion --config Release
+ctest --test-dir build/tests-companion --output-on-failure
+```
+
 ### Code Coverage
 
 Generate code coverage reports locally:
