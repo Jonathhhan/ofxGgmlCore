@@ -221,65 +221,19 @@ std::string runExecutableAndCaptureLine(
 		return {};
 	}
 
+	std::vector<std::string> args;
+	args.reserve(arguments.size() + 1);
+	args.push_back(executable);
+	args.insert(args.end(), arguments.begin(), arguments.end());
+
 	std::string output;
-	SECURITY_ATTRIBUTES sa {};
-	sa.nLength = sizeof(sa);
-	sa.bInheritHandle = TRUE;
-
-	HANDLE readPipe = nullptr;
-	HANDLE writePipe = nullptr;
-	if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) {
+	int exitCode = -1;
+	if (!ofxGgmlProcessSecurity::runCommandCapture(args, output, exitCode, true)) {
 		return {};
 	}
-	SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
-
-	STARTUPINFOW si {};
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-	si.hStdOutput = writePipe;
-	si.hStdError = writePipe;
-
-	std::string commandLine = quoteWindowsArg(executable);
-	for (const auto & arg : arguments) {
-		commandLine.push_back(' ');
-		commandLine += quoteWindowsArg(arg);
-	}
-
-	std::wstring wideCommandLine = ofxGgmlWideFromUtf8(commandLine);
-	std::vector<wchar_t> mutableCommandLine(wideCommandLine.begin(), wideCommandLine.end());
-	mutableCommandLine.push_back(L'\0');
-
-	PROCESS_INFORMATION pi {};
-	const BOOL created = CreateProcessW(
-		nullptr,
-		mutableCommandLine.data(),
-		nullptr,
-		nullptr,
-		TRUE,
-		CREATE_NO_WINDOW,
-		nullptr,
-		nullptr,
-		&si,
-		&pi);
-	CloseHandle(writePipe);
-	if (!created) {
-		CloseHandle(readPipe);
+	if (exitCode != 0) {
 		return {};
 	}
-
-	char buffer[512];
-	DWORD bytesRead = 0;
-	while (ReadFile(readPipe, buffer, sizeof(buffer) - 1, &bytesRead, nullptr) &&
-		bytesRead > 0) {
-		buffer[bytesRead] = '\0';
-		output += buffer;
-	}
-
-	WaitForSingleObject(pi.hProcess, INFINITE);
-	CloseHandle(pi.hThread);
-	CloseHandle(pi.hProcess);
-	CloseHandle(readPipe);
 
 	for (const auto & line : splitLines(output)) {
 		const std::string trimmed = trimCopy(line);

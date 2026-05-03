@@ -372,163 +372,21 @@ bool runProcessCapture(
 	const std::string & workingDirectory,
 	std::string * output,
 	int * exitCode) {
+	std::string buffer;
+	int code = -1;
+	const bool ok = ofxGgmlProcessSecurity::runCommandCapture(
+		args,
+		workingDirectory,
+		buffer,
+		code,
+		true);
 	if (output) {
-		output->clear();
+		*output = std::move(buffer);
 	}
 	if (exitCode) {
-		*exitCode = -1;
+		*exitCode = code;
 	}
-	if (args.empty() || args.front().empty()) {
-		return false;
-	}
-
-#ifdef _WIN32
-	SECURITY_ATTRIBUTES sa {};
-	sa.nLength = sizeof(sa);
-	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = nullptr;
-
-	HANDLE readPipe = nullptr;
-	HANDLE writePipe = nullptr;
-	if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) {
-		return false;
-	}
-	if (!SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0)) {
-		CloseHandle(readPipe);
-		CloseHandle(writePipe);
-		return false;
-	}
-
-	STARTUPINFOW si {};
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	HANDLE nullInput = CreateFileA(
-		"NUL",
-		GENERIC_READ,
-		0,
-		&sa,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		nullptr);
-	si.hStdInput = (nullInput != INVALID_HANDLE_VALUE)
-		? nullInput
-		: GetStdHandle(STD_INPUT_HANDLE);
-	si.hStdOutput = writePipe;
-	si.hStdError = writePipe;
-
-	const std::string cmdLine =
-		ofxGgmlProcessSecurity::buildWindowsCommandLine(args);
-	if (cmdLine.empty()) {
-		CloseHandle(readPipe);
-		CloseHandle(writePipe);
-		if (nullInput != INVALID_HANDLE_VALUE) {
-			CloseHandle(nullInput);
-		}
-		return false;
-	}
-
-	std::wstring wideCmdLine = ofxGgmlWideFromUtf8(cmdLine);
-	std::wstring wideCwd = ofxGgmlWideFromUtf8(workingDirectory);
-	PROCESS_INFORMATION pi {};
-	const BOOL created = CreateProcessW(
-		nullptr,
-		wideCmdLine.data(),
-		nullptr,
-		nullptr,
-		TRUE,
-		CREATE_NO_WINDOW,
-		nullptr,
-		wideCwd.empty() ? nullptr : wideCwd.c_str(),
-		&si,
-		&pi);
-
-	CloseHandle(writePipe);
-	if (nullInput != INVALID_HANDLE_VALUE) {
-		CloseHandle(nullInput);
-	}
-	if (!created) {
-		CloseHandle(readPipe);
-		return false;
-	}
-
-	std::array<char, 4096> buffer {};
-	DWORD bytesRead = 0;
-	while (ReadFile(
-		readPipe,
-		buffer.data(),
-		static_cast<DWORD>(buffer.size()),
-		&bytesRead,
-		nullptr) &&
-		bytesRead > 0) {
-		if (output) {
-			output->append(buffer.data(), static_cast<size_t>(bytesRead));
-		}
-	}
-	CloseHandle(readPipe);
-
-	WaitForSingleObject(pi.hProcess, INFINITE);
-	DWORD processExitCode = 0;
-	GetExitCodeProcess(pi.hProcess, &processExitCode);
-	CloseHandle(pi.hThread);
-	CloseHandle(pi.hProcess);
-	if (exitCode) {
-		*exitCode = static_cast<int>(processExitCode);
-	}
-	return true;
-#else
-	int pipeFds[2] = {-1, -1};
-	if (pipe(pipeFds) != 0) {
-		return false;
-	}
-
-	const pid_t pid = fork();
-	if (pid < 0) {
-		close(pipeFds[0]);
-		close(pipeFds[1]);
-		return false;
-	}
-	if (pid == 0) {
-		close(pipeFds[0]);
-		dup2(pipeFds[1], STDOUT_FILENO);
-		dup2(pipeFds[1], STDERR_FILENO);
-		close(pipeFds[1]);
-		if (!workingDirectory.empty()) {
-			chdir(workingDirectory.c_str());
-		}
-
-		std::vector<char *> argv;
-		argv.reserve(args.size() + 1);
-		for (const auto & arg : args) {
-			argv.push_back(const_cast<char *>(arg.c_str()));
-		}
-		argv.push_back(nullptr);
-		execvp(argv[0], argv.data());
-		_exit(127);
-	}
-
-	close(pipeFds[1]);
-	std::array<char, 4096> buffer {};
-	ssize_t bytesRead = 0;
-	while ((bytesRead = read(pipeFds[0], buffer.data(), buffer.size())) > 0) {
-		if (output) {
-			output->append(buffer.data(), static_cast<size_t>(bytesRead));
-		}
-	}
-	close(pipeFds[0]);
-
-	int status = 0;
-	if (waitpid(pid, &status, 0) < 0) {
-		return false;
-	}
-	if (exitCode) {
-		if (WIFEXITED(status)) {
-			*exitCode = WEXITSTATUS(status);
-		} else if (WIFSIGNALED(status)) {
-			*exitCode = 128 + WTERMSIG(status);
-		}
-	}
-	return true;
-#endif
+	return ok;
 }
 
 std::string buildNormalizedCommand(const std::vector<std::string> & args) {
@@ -1777,6 +1635,11 @@ struct NativeFetchResult {
 	long httpStatus = 0;
 };
 
+bool isSupportedRemoteUrlScheme(const std::string & url) {
+	const std::string lowered = toLowerCopy(trimCopy(url));
+	return lowered.rfind("http://", 0) == 0 || lowered.rfind("https://", 0) == 0;
+}
+
 bool isTransientNetworkError(const NativeFetchResult & result) {
 	if (result.success) {
 		return false;
@@ -1794,6 +1657,11 @@ bool isTransientNetworkError(const NativeFetchResult & result) {
 
 NativeFetchResult fetchUrlWithCurl(const std::string & url, int timeoutSeconds = 300) {
 	NativeFetchResult result;
+	if (!isFileUrl(url) && !isSupportedRemoteUrlScheme(url)) {
+		result.error = "Unsupported URL scheme for native web crawling.";
+		return result;
+	}
+
 	const std::string curlExe = resolveCurlExecutable();
 	if (curlExe.empty()) {
 		result.error = "curl executable was not found for native web crawling. Please ensure curl is installed and in your PATH, or specify the executable path in the request.";
@@ -1813,6 +1681,12 @@ NativeFetchResult fetchUrlWithCurl(const std::string & url, int timeoutSeconds =
 	const std::string metadataMarker = "__OFXGGML_CURL_METADATA__:";
 	std::vector<std::string> args = {
 		curlExe,
+		"--proto",
+		"=http,https,file",
+		"--proto-redir",
+		"=http,https,file",
+		"--max-redirs",
+		"8",
 		"--location",
 		"--silent",
 		"--show-error",

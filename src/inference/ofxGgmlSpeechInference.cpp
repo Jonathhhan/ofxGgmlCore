@@ -1,5 +1,6 @@
 #include "ofxGgmlSpeechInference.h"
 #include "core/ofxGgmlWindowsUtf8.h"
+#include "support/ofxGgmlProcessSecurity.h"
 #include "support/ofxGgmlSimpleSrtSubtitleParser.h"
 #include "ofMain.h"
 
@@ -412,176 +413,15 @@ bool runCommandCapture(
 		return false;
 	}
 
-#ifdef _WIN32
-	SECURITY_ATTRIBUTES sa {};
-	sa.nLength = sizeof(sa);
-	sa.bInheritHandle = TRUE;
-
-	HANDLE readPipe = nullptr;
-	HANDLE writePipe = nullptr;
-	if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) return false;
-	if (!SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0)) {
-		CloseHandle(readPipe);
-		CloseHandle(writePipe);
-		return false;
+	const bool ok = ofxGgmlProcessSecurity::runCommandCapture(
+		args,
+		output,
+		exitCode,
+		mergeStderr);
+	if (!ok && launchError) {
+		*launchError = "runCommandCapture failed";
 	}
-
-	STARTUPINFOW si {};
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	HANDLE nullInput = CreateFileA("NUL", GENERIC_READ, 0, &sa,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	si.hStdInput = (nullInput != INVALID_HANDLE_VALUE)
-		? nullInput
-		: GetStdHandle(STD_INPUT_HANDLE);
-	si.hStdOutput = writePipe;
-
-	HANDLE nullErr = INVALID_HANDLE_VALUE;
-	if (mergeStderr) {
-		si.hStdError = writePipe;
-	} else {
-		nullErr = CreateFileA("NUL", GENERIC_WRITE, 0, &sa,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-		si.hStdError = (nullErr != INVALID_HANDLE_VALUE)
-			? nullErr
-			: GetStdHandle(STD_ERROR_HANDLE);
-	}
-
-	PROCESS_INFORMATION pi {};
-	const std::string resolvedExecutable = resolveWindowsLaunchPath(args.front());
-	const bool useCmdWrapper = isWindowsBatchScript(resolvedExecutable);
-	const std::string comspec = [&]() {
-		const std::string envComspec = getEnvVarString("COMSPEC");
-		return envComspec.empty()
-			? std::string("C:\\Windows\\System32\\cmd.exe")
-			: envComspec;
-	}();
-
-	std::string cmdLine;
-	if (useCmdWrapper) {
-		cmdLine += quoteWindowsArg(comspec);
-		cmdLine += " /d /s /c \"";
-		cmdLine += quoteWindowsArg(resolvedExecutable);
-		for (size_t i = 1; i < args.size(); ++i) {
-			cmdLine.push_back(' ');
-			cmdLine += quoteWindowsArg(args[i]);
-		}
-		cmdLine += "\"";
-	} else {
-		for (size_t i = 0; i < args.size(); ++i) {
-			if (i > 0) cmdLine.push_back(' ');
-			cmdLine += quoteWindowsArg(i == 0 ? resolvedExecutable : args[i]);
-		}
-	}
-
-	std::wstring wideCmdLine = ofxGgmlWideFromUtf8(cmdLine);
-	std::vector<wchar_t> mutableCmd(wideCmdLine.begin(), wideCmdLine.end());
-	mutableCmd.push_back(L'\0');
-
-	const BOOL ok = CreateProcessW(
-		nullptr,
-		mutableCmd.data(),
-		nullptr,
-		nullptr,
-		TRUE,
-		CREATE_NO_WINDOW,
-		nullptr,
-		nullptr,
-		&si,
-		&pi);
-
-	CloseHandle(writePipe);
-	if (nullInput != INVALID_HANDLE_VALUE) CloseHandle(nullInput);
-	if (nullErr != INVALID_HANDLE_VALUE) CloseHandle(nullErr);
-
-	if (!ok) {
-		if (launchError) {
-			*launchError = "CreateProcessW failed for \"" + resolvedExecutable +
-				"\" (Windows error " + std::to_string(static_cast<int>(GetLastError())) + ")";
-		}
-		CloseHandle(readPipe);
-		return false;
-	}
-
-	std::array<char, 4096> buf {};
-	DWORD bytesRead = 0;
-	while (ReadFile(readPipe, buf.data(), static_cast<DWORD>(buf.size()), &bytesRead, nullptr) && bytesRead > 0) {
-		output.append(buf.data(), bytesRead);
-	}
-	CloseHandle(readPipe);
-
-	WaitForSingleObject(pi.hProcess, INFINITE);
-	DWORD code = 1;
-	GetExitCodeProcess(pi.hProcess, &code);
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
-	exitCode = static_cast<int>(code);
-#else
-	int pipeFds[2] = {-1, -1};
-	if (pipe(pipeFds) != 0) {
-		if (launchError) {
-			*launchError = std::string("pipe failed: ") + std::strerror(errno);
-		}
-		return false;
-	}
-
-	const pid_t pid = fork();
-	if (pid < 0) {
-		if (launchError) {
-			*launchError = std::string("fork failed: ") + std::strerror(errno);
-		}
-		close(pipeFds[0]);
-		close(pipeFds[1]);
-		return false;
-	}
-
-	if (pid == 0) {
-		dup2(pipeFds[1], STDOUT_FILENO);
-		if (mergeStderr) {
-			dup2(pipeFds[1], STDERR_FILENO);
-		} else {
-			const int devNull = open("/dev/null", O_WRONLY);
-			if (devNull >= 0) {
-				dup2(devNull, STDERR_FILENO);
-				close(devNull);
-			}
-		}
-		close(pipeFds[0]);
-		close(pipeFds[1]);
-
-		std::vector<char *> argv;
-		argv.reserve(args.size() + 1);
-		for (const auto & arg : args) {
-			argv.push_back(const_cast<char *>(arg.c_str()));
-		}
-		argv.push_back(nullptr);
-		execvp(argv[0], argv.data());
-		_exit(127);
-	}
-
-	close(pipeFds[1]);
-	std::array<char, 4096> buf {};
-	ssize_t bytesRead = 0;
-	while ((bytesRead = read(pipeFds[0], buf.data(), buf.size())) > 0) {
-		output.append(buf.data(), static_cast<size_t>(bytesRead));
-	}
-	close(pipeFds[0]);
-
-	int status = 0;
-	if (waitpid(pid, &status, 0) < 0) {
-		if (launchError) {
-			*launchError = std::string("waitpid failed: ") + std::strerror(errno);
-		}
-		return false;
-	}
-	if (WIFEXITED(status)) {
-		exitCode = WEXITSTATUS(status);
-	} else if (WIFSIGNALED(status)) {
-		exitCode = 128 + WTERMSIG(status);
-	}
-#endif
-
-	return true;
+	return ok;
 }
 
 } // namespace
