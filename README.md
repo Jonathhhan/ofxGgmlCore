@@ -2,6 +2,8 @@
 
 `ofxGgml` is an openFrameworks wrapper around [ggml](https://github.com/ggml-org/ggml) with backend selection, graph execution, GGUF model loading, server-first `llama-server` plus optional llama.cpp CLI inference helpers, prompt-memory utilities, and a GUI example aimed at local AI workflows.
 
+The long-term direction is broader than model access alone: `ofxGgml` is evolving into a **local creative AI operating system for openFrameworks**. The focus is on reproducible, inspectable, source-grounded, artist-friendly tooling that lets apps compose text, vision, audio, code, and video workflows without depending on opaque cloud orchestration.
+
 ## Layered API Architecture
 
 ofxGgml uses **layered headers** - include only what you need:
@@ -21,6 +23,16 @@ ofxGgml uses **layered headers** - include only what you need:
 See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FEATURES.md) for detailed guidance.
 
 It is aimed at local-first AI tools, lightweight inference utilities, prompt-driven creative apps, and openFrameworks projects that want ggml runtime access without wiring the low-level backend API by hand.
+
+Near-term roadmap priorities focus on:
+
+- easier model onboarding with downloads, verification, compatibility checks, and presets
+- better observability with backend health, queue, memory, VRAM, and latency reporting
+- composable workflow graphs and shared manifests for replayable creative pipelines
+- specialist assistants, project memory, and approval-first workspace execution
+- modular example apps that demonstrate stable addon APIs instead of concentrating logic in one giant GUI file
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased roadmap.
 
 ## Note
 
