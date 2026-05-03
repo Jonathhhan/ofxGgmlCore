@@ -89,6 +89,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlEasy` now also covers crawler-backed citation research, subtitle-montage planning/export, AI-assisted video-edit planning, and MilkDrop preset generation/editing so apps can reuse the higher-level workflow helpers without depending on the full GUI example
 - `ofxGgmlEasy` now also covers cross-media prompt translation plus general music-prompt / ABC-sketch generation so apps can build `Music -> Image` and `Image -> Music` flows without wiring the lower-level helpers directly
 - `ofxGgmlEasy` now keeps text inference, crawling, and citation search on one persistent helper path, so `configureText()`, `configureWebCrawler()`, `getWebCrawler()`, `getCitationSearch()`, and `findCitations()` operate on the same configured pipeline
+- `ofxGgmlEasy` now also exposes lightweight onboarding helpers for text-model preset discovery, per-task recommendations, and setup diagnostics backed by `scripts/model-catalog.json`
   - `ofxGgmlEasy` now also exposes `planVideoEssay(...)` so apps can reuse the new citation-to-script workflow, including visual concept plus scene/edit handoff data, without copying the GUI example glue
   - the `Video Essay` workflow can now also hand that Phase 3 output into an optional `ofxVlc4` preview/render lane in the GUI example, including source-video subtitle preview, inline playback controls, and texture-recorded essay renders muxed with the generated narration track
 - `ofxGgmlChatAssistant` for reusable chat prompts, response-language control, and UI-thin conversation flows
@@ -260,6 +261,21 @@ if (summary.inference.success) {
     ofLogNotice() << summary.inference.text;
 }
 ```
+
+Onboarding helpers for the first roadmap step:
+
+```cpp
+auto presets = ai.listTextModelPresets("scripts/model-catalog.json");
+auto recommendation = ai.recommendTextModelForTask("script", "scripts/model-catalog.json");
+auto setup = ai.inspectTextSetup("script", "scripts/model-catalog.json");
+
+if (!setup.ready && recommendation) {
+    ofLogNotice() << "Suggested preset: #" << recommendation->preset
+                  << " " << recommendation->name;
+}
+```
+
+`inspectTextSetup()` reports missing model paths, missing server configuration, explicit executable-path issues, and task-specific preset recommendations so apps can present setup guidance before inference fails.
 
 Chat and translation:
 

@@ -22,9 +22,9 @@ std::filesystem::path makeEasyApiTestDir(const std::string & name) {
 	return dir;
 }
 
-std::string createEasyApiDummyModel() {
+std::string createEasyApiDummyModel(const std::string & fileName = "dummy.gguf") {
 	const auto dir = makeEasyApiTestDir("model");
-	const auto model = dir / "dummy.gguf";
+	const auto model = dir / fileName;
 	std::ofstream out(model);
 	out << "dummy-model";
 	return model.string();
@@ -56,6 +56,54 @@ std::string createEasyApiExecutable(const std::string & outputLine) {
 	chmod(exe.c_str(), 0755);
 #endif
 	return exe.string();
+}
+
+std::string createEasyApiCatalog() {
+	const auto dir = makeEasyApiTestDir("catalog");
+	const auto catalog = dir / "model-catalog.json";
+	std::ofstream out(catalog);
+	out
+		<< "{\n"
+		<< "  \"models\": [\n"
+		<< "    {\n"
+		<< "      \"preset\": 1,\n"
+		<< "      \"name\": \"General Chat\",\n"
+		<< "      \"filename\": \"general.gguf\",\n"
+		<< "      \"url\": \"https://example.com/general.gguf\",\n"
+		<< "      \"size\": \"~1 GB\",\n"
+		<< "      \"best_for\": \"chat, general\",\n"
+		<< "      \"sha256\": \"abc123\",\n"
+		<< "      \"provenance\": {\n"
+		<< "        \"publisher\": \"Example\",\n"
+		<< "        \"source_type\": \"official\",\n"
+		<< "        \"source_url\": \"https://example.com/general\",\n"
+		<< "        \"catalog_updated_at\": \"2026-05-03T00:00:00Z\",\n"
+		<< "        \"verification_status\": \"verified-sha256\"\n"
+		<< "      }\n"
+		<< "    },\n"
+		<< "    {\n"
+		<< "      \"preset\": 2,\n"
+		<< "      \"name\": \"Code Specialist\",\n"
+		<< "      \"filename\": \"coder.gguf\",\n"
+		<< "      \"url\": \"https://example.com/coder.gguf\",\n"
+		<< "      \"size\": \"~2 GB\",\n"
+		<< "      \"best_for\": \"script, code\",\n"
+		<< "      \"sha256\": \"def456\",\n"
+		<< "      \"provenance\": {\n"
+		<< "        \"publisher\": \"Example\",\n"
+		<< "        \"source_type\": \"official\",\n"
+		<< "        \"source_url\": \"https://example.com/coder\",\n"
+		<< "        \"catalog_updated_at\": \"2026-05-03T00:00:00Z\",\n"
+		<< "        \"verification_status\": \"verified-sha256\"\n"
+		<< "      }\n"
+		<< "    }\n"
+		<< "  ],\n"
+		<< "  \"task_defaults\": {\n"
+		<< "    \"chat\": 1,\n"
+		<< "    \"script\": 2\n"
+		<< "  }\n"
+		<< "}\n";
+	return catalog.string();
 }
 
 std::string createFakeMojoCrawlerExecutable() {
@@ -195,6 +243,56 @@ TEST_CASE("Easy API reports missing configuration cleanly", "[easy_api]") {
 	const auto speechResult = easy.transcribeAudio("clip.wav");
 	REQUIRE_FALSE(speechResult.success);
 	REQUIRE(speechResult.error.find("configureSpeech") != std::string::npos);
+}
+
+TEST_CASE("Easy API exposes model preset recommendations and setup diagnostics", "[easy_api]") {
+	const std::string catalogPath = createEasyApiCatalog();
+	const std::string modelPath = createEasyApiDummyModel("general.gguf");
+	const std::string exePath = createEasyApiExecutable("easy-api-ok");
+
+	ofxGgmlEasy easy;
+	ofxGgmlEasyTextConfig textConfig;
+	textConfig.modelPath = modelPath;
+	textConfig.completionExecutable = exePath;
+	easy.configureText(textConfig);
+
+	const auto presets = easy.listTextModelPresets(catalogPath);
+	REQUIRE(presets.size() == 2);
+	REQUIRE(presets[0].preset == 1);
+	REQUIRE(presets[0].checksumVerified());
+	REQUIRE(presets[1].name == "Code Specialist");
+
+	const auto recommendation = easy.recommendTextModelForTask("script", catalogPath);
+	REQUIRE(recommendation.has_value());
+	REQUIRE(recommendation->preset == 2);
+	REQUIRE(recommendation->filename == "coder.gguf");
+
+	const auto report = easy.inspectTextSetup("script", catalogPath);
+	REQUIRE(report.catalogAvailable);
+	REQUIRE(report.ready);
+	REQUIRE(report.modelPathExists);
+	REQUIRE(report.configuredPreset.has_value());
+	REQUIRE(report.configuredPreset->preset == 1);
+	REQUIRE(report.recommendedPreset.has_value());
+	REQUIRE(report.recommendedPreset->preset == 2);
+	REQUIRE_FALSE(report.warnings.empty());
+	REQUIRE(report.warnings.front().find("recommends a different preset") != std::string::npos);
+	REQUIRE(report.recommendations.front().find("Recommended preset for 'script'") != std::string::npos);
+}
+
+TEST_CASE("Easy API onboarding report flags missing text model and suggests a preset", "[easy_api]") {
+	const std::string catalogPath = createEasyApiCatalog();
+
+	ofxGgmlEasy easy;
+	const auto report = easy.inspectTextSetup("chat", catalogPath);
+
+	REQUIRE_FALSE(report.ready);
+	REQUIRE(report.catalogAvailable);
+	REQUIRE_FALSE(report.modelPathExists);
+	REQUIRE(report.recommendedPreset.has_value());
+	REQUIRE(report.recommendedPreset->preset == 1);
+	REQUIRE(report.errors.front().find("No text model is configured") != std::string::npos);
+	REQUIRE(report.recommendations.back().find("download-model.sh --preset 1") != std::string::npos);
 }
 
 TEST_CASE("Easy API wraps common text workflows", "[easy_api]") {

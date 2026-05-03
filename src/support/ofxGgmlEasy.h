@@ -20,6 +20,7 @@
 #include "support/ofxGgmlConversationManager.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -95,6 +96,43 @@ struct ofxGgmlEasyWorkflowResult {
 	}
 };
 
+struct ofxGgmlEasyModelPreset {
+	int preset = 0;
+	std::string name;
+	std::string filename;
+	std::string url;
+	std::string size;
+	std::string bestFor;
+	std::string sha256;
+	std::string publisher;
+	std::string sourceType;
+	std::string sourceUrl;
+	std::string verificationStatus;
+	std::string catalogUpdatedAt;
+
+	bool hasChecksum() const {
+		return !sha256.empty();
+	}
+
+	bool checksumVerified() const {
+		return verificationStatus == "verified-sha256";
+	}
+};
+
+struct ofxGgmlEasyModelSetupReport {
+	bool ready = false;
+	bool catalogAvailable = false;
+	bool modelPathExists = false;
+	bool prefersServer = false;
+	bool serverConfigured = false;
+	std::string resolvedCatalogPath;
+	std::optional<ofxGgmlEasyModelPreset> configuredPreset;
+	std::optional<ofxGgmlEasyModelPreset> recommendedPreset;
+	std::vector<std::string> errors;
+	std::vector<std::string> warnings;
+	std::vector<std::string> recommendations;
+};
+
 /// High-level convenience facade for common text, vision, and speech workflows.
 ///
 /// This wrapper keeps the underlying addon classes available, but gives apps a
@@ -157,6 +195,14 @@ public:
 	const ofxGgmlRAGPipeline & getRAGPipeline() const;
 	ofxGgmlConversationManager & getConversationManager();
 	const ofxGgmlConversationManager & getConversationManager() const;
+	std::vector<ofxGgmlEasyModelPreset> listTextModelPresets(
+		const std::string & catalogPath = "") const;
+	std::optional<ofxGgmlEasyModelPreset> recommendTextModelForTask(
+		const std::string & task,
+		const std::string & catalogPath = "") const;
+	ofxGgmlEasyModelSetupReport inspectTextSetup(
+		const std::string & task = "",
+		const std::string & catalogPath = "") const;
 
 	ofxGgmlInferenceResult complete(const std::string & prompt) const;
 	ofxGgmlChatAssistantResult chat(
