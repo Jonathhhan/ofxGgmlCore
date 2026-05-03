@@ -1146,7 +1146,7 @@ All 6 model presets in `scripts/model-catalog.json` have SHA256 checksums popula
    - Effort estimates and priority rankings
    - Implementation status tracking
 
-2. **docs/ROADMAP.md** (367 lines)
+2. **docs/ROADMAP_IMPLEMENTATION_NOTES.md** (367 lines)
    - Technical implementation guidance
    - Code patterns and best practices
    - Testing strategy
@@ -1291,7 +1291,7 @@ f9bb9d7 Document enhanced streaming progress in README and CHANGELOG
 - `src/support/ofxGgmlEasy.cpp`
 - `README.md`
 - `CHANGELOG.md`
-- `docs/ROADMAP.md` (new)
+- `docs/ROADMAP_IMPLEMENTATION_NOTES.md` (new)
 - `docs/ROADMAP.md` (new)
 
 ### Build Status
@@ -1752,9 +1752,9 @@ Before submitting PR:
 ## Resource Links
 
 - Main Roadmap: `docs/ROADMAP.md`
-- Improvements Roadmap: `docs/ROADMAP.md`
+- Improvements Roadmap: `docs/IMPROVEMENTS_ROADMAP.md`
 - Deep Review: `docs/ARCHITECTURE.md`
-- Feature Synergies: `docs/ROADMAP.md`
+- Feature Synergies: `docs/FEATURE_SYNERGIES.md`
 - Architecture: `docs/ARCHITECTURE.md`
 
 ---
