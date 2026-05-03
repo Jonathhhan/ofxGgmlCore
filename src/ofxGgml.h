@@ -7,7 +7,7 @@
 /// - Text/chat inference and assistants
 /// - Optional modalities and helper workflows that remain inside the addon tier
 ///
-/// Companion/example-tier surfaces such as video essay, music/AceStep,
+/// Companion/example-tier surfaces such as montage, video essay, music/AceStep,
 /// MilkDrop, and Holoscan are intentionally excluded. Include
 /// ofxGgmlCompanionWorkflows.h for those prototypes.
 ///

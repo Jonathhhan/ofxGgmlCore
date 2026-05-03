@@ -455,7 +455,7 @@ TEST_CASE("Easy API can reuse a custom speech backend", "[easy_api]") {
 	REQUIRE(translation.text == "translated speech");
 }
 
-TEST_CASE("Easy API wraps crawler and montage helpers", "[easy_api]") {
+TEST_CASE("Easy API wraps crawler and optional montage helpers", "[easy_api]") {
 	ofxGgmlEasy easy;
 	ofxGgmlEasyCrawlerConfig crawlerConfig;
 	crawlerConfig.outputDir = makeEasyApiTestDir("crawl").string();
@@ -467,6 +467,7 @@ TEST_CASE("Easy API wraps crawler and montage helpers", "[easy_api]") {
 	REQUIRE(crawlResult.backendName == "FakeEasyCrawler");
 	REQUIRE(crawlResult.documents.size() == 1);
 
+#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
 	const auto srtDir = makeEasyApiTestDir("srt");
 	const auto srtPath = srtDir / "sample.srt";
 	{
@@ -490,6 +491,7 @@ TEST_CASE("Easy API wraps crawler and montage helpers", "[easy_api]") {
 	REQUIRE_FALSE(montageResult.edlText.empty());
 	REQUIRE_FALSE(montageResult.srtText.empty());
 	REQUIRE(montageResult.previewBundle.montageTrack.cues.size() == montageResult.montageTrack.cues.size());
+#endif
 }
 
 TEST_CASE("Easy API exposes citation and video edit helpers", "[easy_api]") {

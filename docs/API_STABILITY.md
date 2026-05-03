@@ -34,7 +34,7 @@ Experimental APIs may change in minor releases and should not be treated as comp
 
 - companion/example-tier workflows behind `OFXGGML_ENABLE_COMPANION_WORKFLOWS`
 - `ofxGgmlCompanionWorkflows.h`
-- video essay, music/AceStep, MilkDrop, and Holoscan bridge surfaces
+- video essay, montage, music/AceStep, MilkDrop, and Holoscan bridge surfaces
 - GUI-only workflows and prototype panels
 - APIs documented as proposed, draft, experimental, or roadmap-only
 

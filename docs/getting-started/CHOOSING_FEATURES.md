@@ -54,11 +54,10 @@ What you get (includes Basic plus):
 
 What you get (includes Modalities plus):
 - Video planning and editing
-- Montage planning with EDL export
 - Citation search
 - Web crawling for RAG
 
-**Use when:** You need optional planning, montage, citation, crawler, or RAG helpers without adopting companion media-application prototypes.
+**Use when:** You need optional video planning, citation, crawler, or RAG helpers without adopting companion media-application prototypes.
 
 ### Layer 5: Assistants
 **Header:** `#include "ofxGgmlAssistants.h"`
@@ -75,7 +74,7 @@ What you get (includes Basic plus):
 
 ## Companion / Example-Tier Workflows
 
-Video essay orchestration, music generation, AceStep bridging, MilkDrop preset generation, and Holoscan bridge code are no longer default addon-tier APIs. For existing examples or experiments that intentionally use them, define `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` before including `ofxGgmlEasy.h`, or include `ofxGgmlCompanionWorkflows.h`. Treat those surfaces as candidates for standalone companion addons or example-level code.
+Video essay orchestration, subtitle montage planning/export, music generation, AceStep bridging, MilkDrop preset generation, and Holoscan bridge code are no longer default addon-tier APIs. For existing examples or experiments that intentionally use them, define `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` before including `ofxGgmlEasy.h`, or include `ofxGgmlCompanionWorkflows.h`. Treat those surfaces as candidates for standalone companion addons or example-level code.
 
 ## Need Multiple Layers?
 
@@ -192,6 +191,7 @@ Some features require companion addons:
 |---------|----------|-----------|
 | Image generation | `ofxStableDiffusion` | Yes |
 | CLIP embeddings | Built-in (bundled) | No - included |
+| Montage helpers (companion tier) | `ofxGgmlCompanionWorkflows.h` | No |
 | AceStep music (companion tier) | `acestep.cpp` server + `ofxGgmlCompanionWorkflows.h` | Yes |
 | VLC preview | `ofxVlc4` | Yes |
 | Holoscan bridge (companion tier) | Holoscan runtime + `ofxGgmlCompanionWorkflows.h` | Yes |

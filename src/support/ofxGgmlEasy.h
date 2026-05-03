@@ -6,8 +6,6 @@
 #include "core/ofxGgmlTypes.h"
 #include "inference/ofxGgmlCitationSearch.h"
 #include "inference/ofxGgmlMediaPromptGenerator.h"
-#include "inference/ofxGgmlMontagePreviewBridge.h"
-#include "inference/ofxGgmlMontagePlanner.h"
 #include "inference/ofxGgmlLongVideoPlanner.h"
 #include "inference/ofxGgmlRAGPipeline.h"
 #include "inference/ofxGgmlSpeechInference.h"
@@ -23,6 +21,8 @@
 #if OFXGGML_ENABLE_COMPANION_WORKFLOWS
 #include "inference/ofxGgmlAceStepBridge.h"
 #include "inference/ofxGgmlMilkDropGenerator.h"
+#include "inference/ofxGgmlMontagePreviewBridge.h"
+#include "inference/ofxGgmlMontagePlanner.h"
 #include "inference/ofxGgmlMusicGenerator.h"
 #include "inference/ofxGgmlVideoEssayWorkflow.h"
 #endif
@@ -72,6 +72,7 @@ struct ofxGgmlEasyCrawlerConfig {
 	std::vector<std::string> extraArgs;
 };
 
+#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
 struct ofxGgmlEasyMontageResult {
 	bool success = false;
 	std::string error;
@@ -84,6 +85,7 @@ struct ofxGgmlEasyMontageResult {
 	std::string srtText;
 	std::string vttText;
 };
+#endif
 
 struct ofxGgmlEasyVideoEditResult {
 	bool success = false;
@@ -331,6 +333,7 @@ public:
 		const ofxGgmlCodingAgentRequest & request,
 		const ofxGgmlCodeAssistantContext & context = {},
 		const ofxGgmlCodingAgentSettings & settings = {});
+#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
 	ofxGgmlEasyMontageResult planMontageFromSrt(
 		const std::string & srtPath,
 		const std::string & goal,
@@ -340,6 +343,7 @@ public:
 		const std::string & reelName = "AX",
 		const std::string & edlTitle = "MONTAGE",
 		int fps = 25) const;
+#endif
 	ofxGgmlEasyVideoEditResult planVideoEdit(
 		const std::string & sourcePrompt,
 		const std::string & editGoal,

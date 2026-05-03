@@ -1157,6 +1157,7 @@ ofxGgmlCodingAgentResult ofxGgmlEasy::runCodingAgent(
 		effectiveSettings);
 }
 
+#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
 ofxGgmlEasyMontageResult ofxGgmlEasy::planMontageFromSrt(
 	const std::string & srtPath,
 	const std::string & goal,
@@ -1196,6 +1197,7 @@ ofxGgmlEasyMontageResult ofxGgmlEasy::planMontageFromSrt(
 	result.previewBundle = ofxGgmlMontagePreviewBridge::buildBundle(result.planning.plan, edlTitle);
 	return result;
 }
+#endif
 
 ofxGgmlEasyVideoEditResult ofxGgmlEasy::planVideoEdit(
 	const std::string & sourcePrompt,

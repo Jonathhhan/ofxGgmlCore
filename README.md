@@ -13,7 +13,7 @@ ofxGgml uses **layered headers** - include only what you need:
 | **`ofxGgmlBasic.h`** | **Core + text inference** | **Text/chat AI (start here!)** |
 | `ofxGgmlModalities.h` | Basic + speech/vision/TTS/images | Multimodal AI workflows |
 | `ofxGgmlWorkflows.h` | Modalities + planning/research helpers | Optional helper layer |
-| `ofxGgmlCompanionWorkflows.h` | Video essay/music/MilkDrop/AceStep/Holoscan prototypes | Companion/example-tier opt-in |
+| `ofxGgmlCompanionWorkflows.h` | Montage/video essay/music/MilkDrop/AceStep/Holoscan prototypes | Companion/example-tier opt-in |
 | `ofxGgmlAssistants.h` | Basic + code/chat assistants | AI coding assistance |
 | `ofxGgmlCore.h` | Runtime, tensors, models | Low-level tensor ops only |
 
@@ -73,8 +73,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlVideoInference` for backend-driven video understanding, starting with sampled-frame analysis and room for future specialized video backends
 - `ofxGgmlVideoPlanner` for beat planning, multi-scene sequencing, and AI-assisted edit-plan generation that can feed video, diffusion, or writing workflows
   - the planner remains generation-agnostic so apps can pair those plans with `ofxStableDiffusion`, `ofxVlc4`, or external renderers while keeping one shared planning/export manifest
-- `ofxGgmlMontagePlanner` for subtitle-driven montage planning, ranked clip selection, editor briefs, and CMX-style EDL export
-- `ofxGgmlMontagePreviewBridge` as a playback-facing bridge surface that exposes source-timed and montage-timed subtitle tracks, cue lookup, and playlist-oriented preview data for companions such as `ofxVlc4`
+- `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
 - `ofxGgmlHoloscanBridge` is companion/example-tier bridge code; include `ofxGgmlCompanionWorkflows.h` or move it to a companion addon when building Holoscan-style media pipelines
 - `ofxGgmlImageSearch` for internet reference-image lookup through pluggable providers, with a working Wikimedia Commons backend
 - `ofxGgmlWebCrawler` as an optional website-ingestion bridge layer, with a `Mojo` CLI adapter for local website-to-Markdown crawling workflows
@@ -83,7 +82,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlMediaPromptGenerator` for local-first cross-media prompt translation, starting with `Music -> Image` prompt generation that can reuse transcripts, lyrics, and existing text backends before handing the result to diffusion workflows
 - `ofxGgmlMusicGenerator`, `ofxGgmlAceStepBridge`, and `ofxGgmlMilkDropGenerator` are companion/example-tier prototypes for music and visualization workflows
 - `ofxGgmlEasy` as a small high-level facade for common text, chat, translation, vision, and speech tasks without wiring the lower-level assistants by hand
-- `ofxGgmlEasy` covers crawler-backed citation research, subtitle-montage planning/export, and AI-assisted video-edit planning; companion workflow helpers are available only when `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` is defined before including the Easy header
+- `ofxGgmlEasy` covers crawler-backed citation research and AI-assisted video-edit planning by default; montage and other companion workflow helpers are available only when `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` is defined before including the Easy header
 - `ofxGgmlEasy` now keeps text inference, crawling, and citation search on one persistent helper path, so `configureText()`, `configureWebCrawler()`, `getWebCrawler()`, `getCitationSearch()`, and `findCitations()` operate on the same configured pipeline
 - `ofxGgmlEasy` now also exposes lightweight onboarding helpers for text-model preset discovery, per-task recommendations, and setup diagnostics backed by `scripts/model-catalog.json`
   - the companion-tier `Video Essay` example can hand Phase 3 output into an optional `ofxVlc4` preview/render lane in the GUI example
@@ -135,7 +134,7 @@ Core implementation is split by concern:
 - `src/compute/` for tensors and graph building
 - `src/model/` for GGUF model loading
 - `src/inference/` for completion execution, grounded prompt assembly, and speech / vision / video inference helpers
-- `src/inference/` also now includes bridge scaffolds for optional CLIP-style ranking, TTS, diffusion/image-generation, and music-generation backends such as `clip.cpp`, OuteTTS, `ofxStableDiffusion`, and future rendered-audio generators, plus higher-level planners and preview bridges for video, montage, media-prompt translation, and image search workflows
+- `src/inference/` also now includes bridge scaffolds for optional CLIP-style ranking, TTS, diffusion/image-generation, and music-generation backends such as `clip.cpp`, OuteTTS, `ofxStableDiffusion`, and future rendered-audio generators, plus higher-level planners and preview bridges for video, media-prompt translation, image search, and companion montage workflows
 - `src/inference/` also now includes optional web-ingestion helpers such as `ofxGgmlWebCrawler` plus topic-oriented quote extraction via `ofxGgmlCitationSearch` for local crawler-backed RAG/document pipelines
 - `src/bridges/` for optional companion runtime bridges such as the Holoscan-backed live vision lane
 - `src/assistants/` for chat, code, workspace, review, and text-task helpers
@@ -303,7 +302,7 @@ ai.configureSpeech(speech);
 auto transcript = ai.transcribeAudio("data/audio/test.wav");
 ```
 
-Research, montage, and edit workflows:
+Research and edit workflows:
 
 ```cpp
 ofxGgmlEasyCrawlerConfig crawler;
@@ -327,16 +326,12 @@ auto interceptedCitations = ai.findCitationsFromInput(
 // when embeddings are configured, with lexical fallback otherwise. Repeated
 // retrievals now also reuse an in-memory RAG cache by default.
 
-auto montage = ai.planMontageFromSrt(
-    "data/subtitles/scene.srt",
-    "Build a concise recap montage.");
-
 auto editPlan = ai.planVideoEdit(
     "Berlin city footage",
     "Turn this into a fast social recap.",
     "Opening skyline, transit, crowd reaction.");
 
-// Music, AceStep, MilkDrop, video essay, and Holoscan prototypes are
+// Montage, music, AceStep, MilkDrop, video essay, and Holoscan prototypes are
 // companion/example-tier surfaces. Define OFXGGML_ENABLE_COMPANION_WORKFLOWS=1
 // before including ofxGgmlEasy.h, or include ofxGgmlCompanionWorkflows.h in
 // examples that intentionally opt into those APIs.
@@ -794,7 +789,7 @@ cmake --build tests/build --config Release
 ./tests/build/Release/ofxGgml-tests.exe
 ```
 
-Recent coverage additions include the montage preview/export bridge, newer split inference text-cleanup paths, and the updated speech / translate assistant flows.
+Recent default-tier coverage additions include newer split inference text-cleanup paths and updated speech / translate assistant flows. Companion coverage can be enabled for montage preview/export and other example-tier workflows when those APIs are intentionally in scope.
 
 ## Persistent Server Backend
 
@@ -1764,9 +1759,9 @@ The GUI example exposes that planner directly in the Vision / Video area with:
 
 Use it when an app wants an LLM to structure video generation or editing before handing work off to a diffusion backend, a multimodal model, or a human editor.
 
-## Montage Helpers
+## Companion Montage Helpers
 
-`ofxGgmlMontagePlanner` turns subtitle or transcript cues into a ranked montage plan. It can parse SRT-style cues, score them against a montage goal, keep the result in timeline order, and export a CMX-style EDL alongside a human-readable editor brief.
+`ofxGgmlMontagePlanner` is a companion/example-tier helper. Include `ofxGgmlCompanionWorkflows.h` or define `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` before including `ofxGgmlEasy.h` when a project intentionally opts into subtitle or transcript montage planning. It can parse SRT-style cues, score them against a montage goal, keep the result in timeline order, and export a CMX-style EDL alongside a human-readable editor brief.
 
 The planner supports:
 - **Drop-frame timecode** for NTSC 29.97fps workflows

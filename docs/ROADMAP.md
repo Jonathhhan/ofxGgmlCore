@@ -36,7 +36,7 @@ That means prioritizing:
    APIs should work for creative coding apps without forcing the addon to own their application lifecycle.
 
 5. **Reference examples, not monoliths**  
-   The GUI example should demonstrate addon APIs. Video essay, music/AceStep, MilkDrop, and Holoscan workflows should move to companion addons or remain example-level integrations.
+   The GUI example should demonstrate addon APIs. Video essay, montage, music/AceStep, MilkDrop, and Holoscan workflows should move to companion addons or remain example-level integrations.
 
 ---
 

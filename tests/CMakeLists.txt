@@ -47,6 +47,7 @@ endif()
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 option(OFXGGML_ENABLE_BENCHMARK_TESTS "Build benchmark tests (slower)" OFF)
 option(OFXGGML_ENABLE_RUNTIME_SOURCES "Build inference/script-source with stubs in headless mode" ON)
+option(OFXGGML_ENABLE_COMPANION_TESTS "Build companion/example-tier workflow sources and tests" OFF)
 
 if(ENABLE_COVERAGE)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -132,18 +133,12 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
     list(APPEND ADDON_SOURCES
         ../src/assistants/ofxGgmlChatAssistant.cpp
         ../src/inference/ofxGgmlDiffusionInference.cpp
-        ../src/inference/ofxGgmlAceStepBridge.cpp
         ../src/inference/ofxGgmlCitationSearch.cpp
         ../src/inference/ofxGgmlInference.cpp
         ../src/inference/ofxGgmlMediaPromptGenerator.cpp
-        ../src/inference/ofxGgmlMusicGenerator.cpp
-        ../src/inference/ofxGgmlMilkDropGenerator.cpp
         ../src/inference/ofxGgmlLongVideoPlanner.cpp
         ../src/inference/ofxGgmlInferenceSourceInternals.cpp
         ../src/inference/ofxGgmlInferenceTextCleanup.cpp
-        ../src/inference/ofxGgmlVideoEssayWorkflow.cpp
-        ../src/inference/ofxGgmlMontagePlanner.cpp
-        ../src/inference/ofxGgmlMontagePreviewBridge.cpp
         ../src/inference/ofxGgmlRAGPipeline.cpp
         ../src/inference/ofxGgmlSpeechInference.cpp
         ../src/inference/ofxGgmlVideoPlanner.cpp
@@ -165,6 +160,16 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         ../src/assistants/ofxGgmlWorkspaceAssistant.cpp
         ../src/assistants/ofxGgmlTextAssistant.cpp
         ../src/assistants/ofxGgmlCodeReview.cpp)
+endif()
+
+if(OFXGGML_ENABLE_COMPANION_TESTS)
+    list(APPEND ADDON_SOURCES
+        ../src/inference/ofxGgmlAceStepBridge.cpp
+        ../src/inference/ofxGgmlMilkDropGenerator.cpp
+        ../src/inference/ofxGgmlMontagePlanner.cpp
+        ../src/inference/ofxGgmlMontagePreviewBridge.cpp
+        ../src/inference/ofxGgmlMusicGenerator.cpp
+        ../src/inference/ofxGgmlVideoEssayWorkflow.cpp)
 endif()
 
 if(EXISTS "${CLIP_SOURCE}")
@@ -193,8 +198,6 @@ set(TEST_SOURCES
 if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
     list(APPEND TEST_SOURCES
         test_inference.cpp
-        test_montage_planner.cpp
-        test_montage_preview_bridge.cpp
         test_video_planner_workflow.cpp
         test_speech_inference.cpp
         test_vision_inference.cpp
@@ -202,12 +205,8 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_assistant_eval.cpp
         test_easy_api.cpp
         test_media_prompt_generator.cpp
-        test_music_generator.cpp
         test_long_video_planner.cpp
-        test_video_essay_workflow.cpp
-        test_acestep_bridge.cpp
         test_citation_search.cpp
-        test_milkdrop_generator.cpp
         test_chat_assistant.cpp
         test_code_assistant.cpp
         test_coding_agent.cpp
@@ -221,6 +220,16 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_conversation_manager.cpp
         test_feature_synergies.cpp
         test_validation_loop.cpp)
+endif()
+
+if(OFXGGML_ENABLE_COMPANION_TESTS)
+    list(APPEND TEST_SOURCES
+        test_acestep_bridge.cpp
+        test_milkdrop_generator.cpp
+        test_montage_planner.cpp
+        test_montage_preview_bridge.cpp
+        test_music_generator.cpp
+        test_video_essay_workflow.cpp)
 endif()
 
 # LiveSpeechTranscriber requires full openFrameworks
@@ -242,6 +251,9 @@ add_executable(ofxGgml-tests ${TEST_SOURCES} ${ADDON_SOURCES})
 
 if(NOT OFXGGML_WITH_OPENFRAMEWORKS)
     target_compile_definitions(ofxGgml-tests PRIVATE OFXGGML_HEADLESS_STUBS=1)
+endif()
+if(OFXGGML_ENABLE_COMPANION_TESTS)
+    target_compile_definitions(ofxGgml-tests PRIVATE OFXGGML_ENABLE_COMPANION_WORKFLOWS=1)
 endif()
 
 if(WIN32)

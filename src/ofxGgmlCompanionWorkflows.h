@@ -13,8 +13,10 @@
 
 #include "ofxGgmlWorkflows.h"
 
-#include "bridges/ofxGgmlHoloscanBridge.h"
 #include "inference/ofxGgmlAceStepBridge.h"
 #include "inference/ofxGgmlMilkDropGenerator.h"
+#include "inference/ofxGgmlMontagePlanner.h"
+#include "inference/ofxGgmlMontagePreviewBridge.h"
 #include "inference/ofxGgmlMusicGenerator.h"
 #include "inference/ofxGgmlVideoEssayWorkflow.h"
+#include "bridges/ofxGgmlHoloscanBridge.h"
