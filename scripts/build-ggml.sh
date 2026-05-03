@@ -18,6 +18,7 @@
 #   --auto         Auto-detect available GPU backends (default)
 #   --cpu-only     Disable GPU autodetection, build CPU backend only
 #   --clean        Remove build and download cache before building
+#   --with-debug   Also build Debug libraries when using a multi-config generator
 #   --ref REF      Git ref to checkout from the ggml repo (default: v0.10.0)
 #   --repo URL     Upstream ggml repository (default: https://github.com/ggml-org/ggml.git)
 #   --help         Show this help message
@@ -37,6 +38,10 @@ ENABLE_VULKAN=""
 ENABLE_METAL=""
 AUTO_DETECT=1
 CLEAN=0
+WITH_DEBUG=0
+CMAKE_CMD="cmake"
+CMAKE_GENERATOR=""
+CMAKE_GENERATOR_ARGS=()
 
 OS_NAME="$(uname -s 2>/dev/null || echo unknown)"
 
@@ -65,6 +70,121 @@ write_step() {
 die() {
 	printf 'Error: %s\n' "$1" >&2
 	exit 1
+}
+
+cmake_supports_generator() {
+	local generator="$1"
+	"$CMAKE_CMD" --help 2>/dev/null | grep -Fq "$generator"
+}
+
+resolve_windows_cmake() {
+	local candidates=(
+		"/c/Program Files/CMake/bin/cmake.exe"
+		"/c/Program Files (x86)/CMake/bin/cmake.exe"
+	)
+	local candidate
+
+	for candidate in "${candidates[@]}"; do
+		if [[ -x "$candidate" ]]; then
+			printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+detect_windows_cmake_generator() {
+	local generators=(
+		"Visual Studio 18 2026"
+		"Visual Studio 17 2022"
+		"Visual Studio 16 2019"
+	)
+	local generator
+
+	for generator in "${generators[@]}"; do
+		if cmake_supports_generator "$generator"; then
+			printf '%s\n' "$generator"
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+read_cmake_cache_value() {
+	local cache_file="$1"
+	local key="$2"
+
+	if [[ ! -f "$cache_file" ]]; then
+		return 1
+	fi
+
+	awk -F= -v key="$key" '
+		$1 ~ ("^" key "(:|$)") {
+			print substr($0, index($0, "=") + 1)
+			exit
+		}
+	' "$cache_file"
+}
+
+reset_cmake_build_dir() {
+	local reason="$1"
+
+	write_step "$reason"
+	rm -rf "$BUILD_DIR"
+	mkdir -p "$BUILD_DIR"
+}
+
+prepare_cmake_build_dir() {
+	local cache_file="$BUILD_DIR/CMakeCache.txt"
+	local cached_generator
+	local cached_option
+	local option_name
+	local desired_option
+
+	if [[ ! -f "$cache_file" ]]; then
+		return 0
+	fi
+
+	cached_generator="$(read_cmake_cache_value "$cache_file" "CMAKE_GENERATOR" || true)"
+	if [[ -n "$CMAKE_GENERATOR" && -n "$cached_generator" && "$cached_generator" != "$CMAKE_GENERATOR" ]]; then
+		reset_cmake_build_dir "CMake generator changed from '$cached_generator' to '$CMAKE_GENERATOR'; resetting build tree..."
+		return 0
+	fi
+
+	for option_name in GGML_CUDA GGML_VULKAN GGML_METAL; do
+		case "$option_name" in
+			GGML_CUDA) desired_option="$ENABLE_CUDA" ;;
+			GGML_VULKAN) desired_option="$ENABLE_VULKAN" ;;
+			GGML_METAL) desired_option="$ENABLE_METAL" ;;
+		esac
+
+		if [[ -z "$desired_option" ]]; then
+			continue
+		fi
+
+		cached_option="$(read_cmake_cache_value "$cache_file" "$option_name" || true)"
+		if [[ -n "$cached_option" && "$cached_option" != "$desired_option" ]]; then
+			reset_cmake_build_dir "CMake option $option_name changed from '$cached_option' to '$desired_option'; resetting build tree..."
+			return 0
+		fi
+	done
+}
+
+prune_stale_build_libraries() {
+	if [[ ! -d "$BUILD_DIR" ]]; then
+		return 0
+	fi
+
+	find "$BUILD_DIR" -type f \( -name "libggml*.a" -o -name "ggml*.lib" \) -delete
+}
+
+files_match_ignoring_cr() {
+	local left="$1"
+	local right="$2"
+
+	cmp -s <(awk '{ sub(/\r$/, ""); print }' "$left") <(awk '{ sub(/\r$/, ""); print }' "$right")
 }
 
 usage() {
@@ -107,6 +227,10 @@ while [[ $# -gt 0 ]]; do
 			CLEAN=1
 			shift
 			;;
+		--with-debug)
+			WITH_DEBUG=1
+			shift
+			;;
 		--ref)
 			[[ $# -ge 2 ]] || die "--ref requires a value"
 			GGML_REF="$2"
@@ -142,8 +266,23 @@ fi
 # Prerequisites
 # ---------------------------------------------------------------------------
 
-command -v cmake >/dev/null 2>&1 || die "Required command not found: cmake"
 command -v git >/dev/null 2>&1 || die "Required command not found: git"
+
+if [[ "$OS_NAME" == MINGW* || "$OS_NAME" == MSYS* || "$OS_NAME" == CYGWIN* ]]; then
+	if CMAKE_CMD="$(resolve_windows_cmake)"; then
+		:
+	else
+		command -v cmake >/dev/null 2>&1 || die "Required command not found: cmake"
+	fi
+
+	if CMAKE_GENERATOR="$(detect_windows_cmake_generator)"; then
+		CMAKE_GENERATOR_ARGS=(-G "$CMAKE_GENERATOR")
+	else
+		die "No supported Visual Studio CMake generator was found. Install Visual Studio Build Tools or run from a configured native build environment."
+	fi
+else
+	command -v cmake >/dev/null 2>&1 || die "Required command not found: cmake"
+fi
 
 # ---------------------------------------------------------------------------
 # Clean
@@ -195,6 +334,18 @@ if [[ "$AUTO_DETECT" -eq 1 ]]; then
 	fi
 fi
 
+if [[ -z "$ENABLE_CUDA" ]]; then
+	ENABLE_CUDA="OFF"
+fi
+if [[ -z "$ENABLE_VULKAN" ]]; then
+	ENABLE_VULKAN="OFF"
+fi
+if [[ -z "$ENABLE_METAL" ]]; then
+	ENABLE_METAL="OFF"
+fi
+
+prepare_cmake_build_dir
+
 # ---------------------------------------------------------------------------
 # Configure
 # ---------------------------------------------------------------------------
@@ -212,26 +363,29 @@ CMAKE_ARGS=(
 	-DGGML_NATIVE=ON
 	-DGGML_STATIC=ON
 	-DGGML_BACKEND_DL=OFF
+	-DGGML_CUDA="$ENABLE_CUDA"
+	-DGGML_VULKAN="$ENABLE_VULKAN"
+	-DGGML_METAL="$ENABLE_METAL"
 )
 
-if [[ -n "$ENABLE_CUDA" ]]; then
-	CMAKE_ARGS+=(-DGGML_CUDA="$ENABLE_CUDA")
-fi
-if [[ -n "$ENABLE_VULKAN" ]]; then
-	CMAKE_ARGS+=(-DGGML_VULKAN="$ENABLE_VULKAN")
-fi
-if [[ -n "$ENABLE_METAL" ]]; then
-	CMAKE_ARGS+=(-DGGML_METAL="$ENABLE_METAL")
+if [[ -n "$CMAKE_GENERATOR" ]]; then
+	write_step "Using CMake generator: $CMAKE_GENERATOR"
 fi
 
-cmake -B "$BUILD_DIR" -S "$SRC_DIR" "${CMAKE_ARGS[@]}"
+"$CMAKE_CMD" "${CMAKE_GENERATOR_ARGS[@]}" -B "$BUILD_DIR" -S "$SRC_DIR" "${CMAKE_ARGS[@]}"
 
 # ---------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------
 
 write_step "Building ggml with $JOBS parallel jobs..."
-cmake --build "$BUILD_DIR" --config Release -j "$JOBS"
+prune_stale_build_libraries
+"$CMAKE_CMD" --build "$BUILD_DIR" --config Release -j "$JOBS"
+
+if [[ "$WITH_DEBUG" -eq 1 ]]; then
+	write_step "Building ggml Debug libraries with $JOBS parallel jobs..."
+	"$CMAKE_CMD" --build "$BUILD_DIR" --config Debug -j "$JOBS"
+fi
 
 # ---------------------------------------------------------------------------
 # Collect headers and libs
@@ -386,7 +540,7 @@ update_addon_config() {
 			$0 ~ end   { printing=1; next }
 			printing { print }
 		' "$config_file" > "$tmpfile"
-		if cmp -s "$tmpfile" "$config_file"; then
+		if files_match_ignoring_cr "$tmpfile" "$config_file"; then
 			rm -f "$tmpfile"
 			write_step "addon_config.mk [$section] already up to date (${#libs[@]} libraries)."
 		else
