@@ -65,6 +65,9 @@ endif()
 set(GGML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../libs/ggml")
 set(GGML_INCLUDE_DIR "${GGML_DIR}/include")
 set(GGML_LIB_DIR "${GGML_DIR}/lib")
+set(CLIP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../libs/clip")
+set(CLIP_INCLUDE_DIR "${CLIP_DIR}/include")
+set(CLIP_SOURCE "${CLIP_DIR}/src/clip.cpp")
 
 if(NOT EXISTS "${GGML_INCLUDE_DIR}/ggml.h")
     message(FATAL_ERROR "ggml headers not found in ${GGML_INCLUDE_DIR}. Run ./scripts/build-ggml.sh first.")
@@ -72,6 +75,9 @@ endif()
 
 # Include directories
 include_directories(${GGML_INCLUDE_DIR})
+if(EXISTS "${CLIP_INCLUDE_DIR}/clip.h")
+    include_directories(${CLIP_INCLUDE_DIR})
+endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../libs/libxml2/include/libxml/parser.h")
@@ -153,6 +159,10 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         ../src/assistants/ofxGgmlWorkspaceAssistant.cpp
         ../src/assistants/ofxGgmlTextAssistant.cpp
         ../src/assistants/ofxGgmlCodeReview.cpp)
+endif()
+
+if(EXISTS "${CLIP_SOURCE}")
+    list(APPEND ADDON_SOURCES "${CLIP_SOURCE}")
 endif()
 
 if(OFXGGML_WITH_OPENFRAMEWORKS)
