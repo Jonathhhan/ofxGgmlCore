@@ -92,12 +92,7 @@ namespace {
 	};
 
 	bool isAdvancedGuiMode(AiMode mode) {
-		for (const AiMode advancedMode : kAdvancedGuiModes) {
-			if (mode == advancedMode) {
-				return true;
-			}
-		}
-		return false;
+		return std::find(kAdvancedGuiModes.begin(), kAdvancedGuiModes.end(), mode) != kAdvancedGuiModes.end();
 	}
 
 	constexpr std::array<int, 8> kSupportedDiffusionImageSizes = {128, 256, 384, 512, 640, 768, 896, 1024};
@@ -1062,7 +1057,7 @@ void ofApp::setup() {
 	ofSetBackgroundColor(ofColor(30, 30, 34));
 
 gui.setup(nullptr, true, ImGuiConfigFlags_None, true);
-ImGui::GetIO().IniFilename = "imgui_ofxggml_gui_example.ini";
+ImGui::GetIO().IniFilename = "imgui_ggml_gui_example.ini";
 applyLogLevel(logLevel);
 
 // Initialize presets.
