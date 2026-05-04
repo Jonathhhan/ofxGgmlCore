@@ -360,6 +360,9 @@ TEST_CASE("Easy API diagnostics report combines setup, health, severities, and J
 	REQUIRE(missingJson.find("\"health\"") != std::string::npos);
 	REQUIRE(missingJson.find("\"quickFixSummary\"") != std::string::npos);
 	REQUIRE(missingJson.find("\"quickFixCommands\"") != std::string::npos);
+	REQUIRE(missingJson.find("\"quickFixCommandsWindowsBat\"") != std::string::npos);
+	REQUIRE(missingJson.find("\"quickFixCommandsWindowsPowerShell\"") != std::string::npos);
+	REQUIRE(missingJson.find("\"quickFixCommandsMacLinux\"") != std::string::npos);
 
 	const std::string modelPath = createEasyApiDummyModel("general.gguf");
 	const std::string exePath = createEasyApiExecutable("easy-api-ok");
@@ -381,6 +384,9 @@ TEST_CASE("Easy API diagnostics report combines setup, health, severities, and J
 	REQUIRE(configuredJson.find("true") != std::string::npos);
 	REQUIRE(configuredJson.find("\"quickFixSummary\"") != std::string::npos);
 	REQUIRE(configuredJson.find("\"quickFixCommands\"") != std::string::npos);
+	REQUIRE(configuredJson.find("\"quickFixCommandsWindowsBat\"") != std::string::npos);
+	REQUIRE(configuredJson.find("\"quickFixCommandsWindowsPowerShell\"") != std::string::npos);
+	REQUIRE(configuredJson.find("\"quickFixCommandsMacLinux\"") != std::string::npos);
 }
 
 TEST_CASE("Easy API wraps common text workflows", "[easy_api]") {

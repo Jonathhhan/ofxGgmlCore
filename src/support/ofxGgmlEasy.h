@@ -202,6 +202,9 @@ struct ofxGgmlEasyDiagnosticsReport {
 	std::vector<ofxGgmlEasyDiagnosticIssue> issues;
 	std::string quickFixSummary;
 	std::vector<std::string> quickFixCommands;
+	std::vector<std::string> quickFixCommandsWindowsBat;
+	std::vector<std::string> quickFixCommandsWindowsPowerShell;
+	std::vector<std::string> quickFixCommandsMacLinux;
 
 	size_t countIssues(ofxGgmlEasyDiagnosticSeverity severity) const;
 	std::string toJsonString() const;
