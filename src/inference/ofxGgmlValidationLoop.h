@@ -189,7 +189,7 @@ public:
 			}
 		}
 
-		result.success = foundGoodResult || result.bestScore > 0.0f;
+		result.success = foundGoodResult;
 		return result;
 	}
 
