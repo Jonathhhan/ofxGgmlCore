@@ -1,6 +1,8 @@
 #include "catch2.hpp"
 #include "../src/inference/ofxGgmlDiffusionInference.h"
 
+#include <algorithm>
+
 TEST_CASE("Diffusion Inference initialization", "[diffusion_inference]") {
 	ofxGgmlDiffusionInference diffusion;
 
@@ -196,6 +198,81 @@ TEST_CASE("Diffusion request structure", "[diffusion_inference]") {
 	}
 }
 
+TEST_CASE("Diffusion request validation", "[diffusion_inference]") {
+	ofxGgmlImageGenerationRequest request;
+	request.prompt = "A test image";
+
+	SECTION("Valid text-to-image request passes without explicit capabilities") {
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request);
+		REQUIRE(validation.valid);
+		REQUIRE(validation.error.empty());
+		REQUIRE(validation.errorType == ofxGgmlImageGenerationErrorType::None);
+	}
+
+	SECTION("Empty prompt fails for generation tasks") {
+		request.prompt.clear();
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request);
+		REQUIRE_FALSE(validation.valid);
+		REQUIRE(validation.errorType == ofxGgmlImageGenerationErrorType::ValidationError);
+		REQUIRE_FALSE(validation.error.empty());
+	}
+
+	SECTION("Invalid dimensions fail") {
+		request.width = 0;
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request);
+		REQUIRE_FALSE(validation.valid);
+		REQUIRE(validation.error.find("width") != std::string::npos);
+	}
+
+	SECTION("Image-to-image requires init image") {
+		request.task = ofxGgmlImageGenerationTask::ImageToImage;
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request);
+		REQUIRE_FALSE(validation.valid);
+		REQUIRE(validation.error.find("initImagePath") != std::string::npos);
+	}
+
+	SECTION("Capabilities reject unsupported tasks") {
+		ofxGgmlImageGenerationCapabilities caps;
+		caps.supportsTextToImage = true;
+		request.task = ofxGgmlImageGenerationTask::Inpaint;
+		request.initImagePath = "init.png";
+		request.maskImagePath = "mask.png";
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request, caps);
+		REQUIRE_FALSE(validation.valid);
+		REQUIRE(validation.error.find("Inpaint") != std::string::npos);
+	}
+
+	SECTION("Capabilities reject unsupported control images") {
+		ofxGgmlImageGenerationCapabilities caps;
+		caps.supportsTextToImage = true;
+		request.controlImagePath = "control.png";
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request, caps);
+		REQUIRE_FALSE(validation.valid);
+		REQUIRE(validation.error.find("ControlNet") != std::string::npos);
+	}
+
+	SECTION("Capabilities reject unsupported samplers") {
+		ofxGgmlImageGenerationCapabilities caps;
+		caps.supportsTextToImage = true;
+		caps.supportedSamplers = {"euler_a"};
+		request.sampler = "unknown";
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request, caps);
+		REQUIRE_FALSE(validation.valid);
+		REQUIRE(validation.error.find("sampler") != std::string::npos);
+	}
+
+	SECTION("Capabilities warn for progress callback mismatch") {
+		ofxGgmlImageGenerationCapabilities caps;
+		caps.supportsTextToImage = true;
+		request.progressCallback = [](const ofxGgmlImageGenerationProgress &) {
+			return true;
+		};
+		auto validation = ofxGgmlDiffusionInference::validateRequest(request, caps);
+		REQUIRE(validation.valid);
+		REQUIRE(validation.warnings.size() == 1);
+	}
+}
+
 TEST_CASE("Diffusion result structure", "[diffusion_inference]") {
 	ofxGgmlImageGenerationResult result;
 
@@ -222,6 +299,12 @@ TEST_CASE("Diffusion result structure", "[diffusion_inference]") {
 		REQUIRE(result.diagnostics.generationTimeMs == 5000.0f);
 		REQUIRE(result.diagnostics.contextReloads == 1);
 		REQUIRE(result.diagnostics.modelArchitecture == "SD 1.5");
+	}
+
+	SECTION("Replay metadata is available") {
+		result.replayMetadata.push_back({"seed", "123"});
+		REQUIRE(result.replayMetadata.size() == 1);
+		REQUIRE(result.replayMetadata[0].first == "seed");
 	}
 }
 
@@ -254,6 +337,12 @@ TEST_CASE("Diffusion image artifact structure", "[diffusion_inference]") {
 		REQUIRE(image.score == 0.95f);
 		REQUIRE(image.index == 2);
 		REQUIRE(image.selected);
+	}
+
+	SECTION("Per-image metadata can be set") {
+		image.metadata.push_back({"seed", "12345"});
+		REQUIRE(image.metadata.size() == 1);
+		REQUIRE(image.metadata[0].second == "12345");
 	}
 }
 
@@ -425,14 +514,28 @@ TEST_CASE("Diffusion model profiles", "[diffusion_inference]") {
 	auto profiles = ofxGgmlDiffusionInference::defaultProfiles();
 
 	SECTION("Returns model profiles") {
-		REQUIRE(profiles.size() >= 0);
+		REQUIRE(profiles.size() >= 3);
 	}
 
 	SECTION("Profile structure") {
-		if (!profiles.empty()) {
-			const auto & profile = profiles[0];
-			REQUIRE(profile.name.length() >= 0);
-			REQUIRE(profile.architecture.length() >= 0);
-		}
+		const auto & profile = profiles[0];
+		REQUIRE_FALSE(profile.name.empty());
+		REQUIRE_FALSE(profile.architecture.empty());
+		REQUIRE_FALSE(profile.modelRepoHint.empty());
+		REQUIRE_FALSE(profile.modelFileHint.empty());
+		REQUIRE(profile.supportsImageToImage);
+		REQUIRE(profile.supportsInstructImage);
+	}
+
+	SECTION("FLUX profile is conservative about unsupported features") {
+		const auto flux = std::find_if(
+			profiles.begin(),
+			profiles.end(),
+			[](const ofxGgmlImageGenerationModelProfile & profile) {
+				return profile.architecture.find("FLUX") != std::string::npos;
+			});
+		REQUIRE(flux != profiles.end());
+		REQUIRE_FALSE(flux->supportsInpaint);
+		REQUIRE_FALSE(flux->supportsUpscale);
 	}
 }

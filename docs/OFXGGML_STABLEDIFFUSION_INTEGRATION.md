@@ -12,6 +12,10 @@ The integration between ofxGgml and ofxStableDiffusion follows a bridge pattern 
 4. **Smart Context Caching** - Reduced model reload overhead
 5. **Diagnostics & Metrics** - Detailed performance tracking
 
+The bridge is intentionally a contract layer. `ofxGgml` does not vendor or own
+`stable-diffusion.cpp`; apps attach an `ofxStableDiffusion` engine or another
+compatible image-generation backend when they opt into diffusion workflows.
+
 ## Enhanced Error Handling
 
 ### Error Types
@@ -114,6 +118,34 @@ struct ofxGgmlImageGenerationCapabilities {
     std::string backendVersion;
 };
 ```
+
+### Validating Requests
+
+Validate requests before generation when building UI or workflow handoff code:
+
+```cpp
+ofxGgmlImageGenerationRequest request;
+request.prompt = "A cinematic robot portrait";
+request.modelPath = "models/sd15.safetensors";
+
+auto validation = ofxGgmlDiffusionInference::validateRequest(
+    request,
+    diffusion.getCapabilities());
+
+if (!validation.valid) {
+    ofLogError() << "Invalid diffusion request: " << validation.error;
+    return;
+}
+for (const auto & warning : validation.warnings) {
+    ofLogWarning() << warning;
+}
+```
+
+The validator checks intrinsic request shape, task-specific requirements, and
+the currently attached backend capabilities when those capabilities are known.
+This keeps GUI and companion workflows from offering inpaint, ControlNet,
+upscale, batch, sampler, or progress-callback paths that the backend did not
+advertise.
 
 ### Usage Example
 
@@ -263,11 +295,14 @@ diffusion.setBackend(backend);
 The context cache tracks:
 - Model path
 - VAE path
+- CLIP-L / CLIP-G / T5 paths
 - TAESD path
 - ControlNet path
 - LoRA model directory
+- Embedding and stacked-id embedding directories
 - Thread count
 - Weight type
+- RNG, scheduler, VAE tiling/decode, CPU placement, mmap, flash-attention, and offload flags
 
 Changes to these parameters trigger a context reload. Changes to other parameters (steps, CFG scale, etc.) do not require reloading.
 
@@ -360,6 +395,14 @@ if (result.success) {
 
 ## Best Practices
 
+### 0. Treat the bridge as single-flight per engine
+
+The `ofxStableDiffusion` bridge serializes calls made through the bridge backend
+because generation mutates shared engine state such as context loading,
+selection callbacks, generation status, and output frames. Use one backend per
+engine, or queue requests above the backend if an app needs more explicit
+scheduling behavior.
+
 ### 1. Check Capabilities Before Use
 
 ```cpp
@@ -420,6 +463,15 @@ if (result.success) {
 ```
 
 ## Troubleshooting
+
+| Symptom | Likely cause | Recommended action |
+| --- | --- | --- |
+| `modelPath is empty` | Request did not specify a diffusion model | Populate `request.modelPath` from a validated profile or picker |
+| Unsupported sampler validation error | UI selected a sampler not advertised by the backend | Use `diffusion.getCapabilities().supportedSamplers` to populate the UI |
+| Inpaint or ControlNet rejected | Current bridge/backend did not advertise that feature | Hide or disable the feature unless capabilities report support |
+| Timeout error while loading or generating | Model is too large, backend is busy, or timeout is too low | Increase `RuntimeOptions::timeout`, reduce resolution/steps, or check backend health |
+| Stale or mixed `ggml` DLL behavior on Windows | Runtime folder contains old libraries from another addon | Let setup/build scripts own runtime copying and avoid manual DLL copies |
+| Frequent context reloads | Model/context-affecting fields change between requests | Keep model, VAE, CLIP/T5, LoRA, ControlNet, thread, and backend flags stable |
 
 ### High Context Reload Count
 
