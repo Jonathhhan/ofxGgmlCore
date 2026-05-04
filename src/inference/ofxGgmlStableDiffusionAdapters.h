@@ -24,6 +24,7 @@
 #include <cctype>
 #include <cstdint>
 #include <filesystem>
+#include <random>
 #include <system_error>
 #include <sstream>
 #include <thread>
@@ -54,27 +55,52 @@ inline void attachClipBackend(
 struct ContextCacheKey {
 	std::string modelPath;
 	std::string vaePath;
+	std::string clipLPath;
+	std::string clipGPath;
+	std::string t5xxlPath;
 	std::string taesdPath;
 	std::string controlNetPath;
 	std::string loraModelDir;
+	std::string embedDir;
+	std::string stackedIdEmbedDir;
 	int threads = -1;
 	sd_type_t weightType = SD_TYPE_F16;
+	rng_type_t rngType = STD_DEFAULT_RNG;
+	scheduler_t schedule = SCHEDULER_COUNT;
+	bool vaeDecodeOnly = false;
+	bool vaeTiling = false;
+	bool freeParamsImmediately = false;
+	bool keepClipOnCpu = false;
+	bool keepControlNetCpu = false;
+	bool keepVaeOnCpu = false;
+	bool offloadParamsToCpu = false;
+	bool flashAttn = false;
+	bool enableMmap = false;
 
 	bool operator==(const ContextCacheKey & other) const {
 		return modelPath == other.modelPath &&
 			vaePath == other.vaePath &&
+			clipLPath == other.clipLPath &&
+			clipGPath == other.clipGPath &&
+			t5xxlPath == other.t5xxlPath &&
 			taesdPath == other.taesdPath &&
 			controlNetPath == other.controlNetPath &&
 			loraModelDir == other.loraModelDir &&
+			embedDir == other.embedDir &&
+			stackedIdEmbedDir == other.stackedIdEmbedDir &&
 			threads == other.threads &&
-			weightType == other.weightType;
-	}
-
-	std::size_t hash() const {
-		std::size_t h = std::hash<std::string>{}(modelPath);
-		h ^= std::hash<std::string>{}(vaePath) << 1;
-		h ^= std::hash<int>{}(threads) << 2;
-		return h;
+			weightType == other.weightType &&
+			rngType == other.rngType &&
+			schedule == other.schedule &&
+			vaeDecodeOnly == other.vaeDecodeOnly &&
+			vaeTiling == other.vaeTiling &&
+			freeParamsImmediately == other.freeParamsImmediately &&
+			keepClipOnCpu == other.keepClipOnCpu &&
+			keepControlNetCpu == other.keepControlNetCpu &&
+			keepVaeOnCpu == other.keepVaeOnCpu &&
+			offloadParamsToCpu == other.offloadParamsToCpu &&
+			flashAttn == other.flashAttn &&
+			enableMmap == other.enableMmap;
 	}
 };
 
@@ -178,11 +204,74 @@ inline std::string sanitizeOutputPrefix(const std::string & value) {
 	return sanitized.empty() ? "diffusion" : sanitized;
 }
 
-inline std::string makeTimestampToken() {
+inline std::string makeUniqueTimestampToken() {
 	const auto now = std::chrono::system_clock::now();
 	const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
 		now.time_since_epoch()).count();
-	return std::to_string(ms);
+	std::random_device rd;
+	return std::to_string(ms) + "_" + std::to_string(rd());
+}
+
+struct ScopedTempDirectoryCleanup {
+	std::filesystem::path path;
+	~ScopedTempDirectoryCleanup() {
+		std::error_code cleanupEc;
+		std::filesystem::remove_all(path, cleanupEc);
+	}
+};
+
+inline ContextCacheKey makeContextCacheKey(
+	const ofxStableDiffusion & engine,
+	const ofxGgmlImageGenerationRequest & request,
+	const RuntimeOptions & options) {
+	ContextCacheKey key;
+	key.modelPath = request.modelPath;
+	key.vaePath = request.vaePath;
+	key.clipLPath = request.clipLPath;
+	key.clipGPath = request.clipGPath;
+	key.t5xxlPath = request.t5xxlPath;
+	key.taesdPath = options.taesdPath;
+	key.controlNetPath = options.controlNetPath;
+	key.loraModelDir = options.loraModelDir;
+	key.embedDir = options.embedDir;
+	key.stackedIdEmbedDir = options.stackedIdEmbedDir;
+	key.threads = options.threads;
+	key.weightType = options.weightType;
+	key.rngType = options.rngType;
+	key.schedule = options.schedule;
+	key.vaeDecodeOnly = options.vaeDecodeOnly;
+	key.vaeTiling = options.vaeTiling;
+	key.freeParamsImmediately = options.freeParamsImmediately;
+	key.keepClipOnCpu = options.keepClipOnCpu;
+	key.keepControlNetCpu = options.keepControlNetCpu;
+	key.keepVaeOnCpu = options.keepVaeOnCpu;
+	key.offloadParamsToCpu = engine.offloadParamsToCpu;
+	key.flashAttn = engine.flashAttn;
+	key.enableMmap = engine.enableMmap;
+	return key;
+}
+
+inline ofxGgmlImageGenerationCapabilities makeCapabilities(
+	const RuntimeOptions & options) {
+	ofxGgmlImageGenerationCapabilities caps;
+	caps.supportsTextToImage = true;
+	caps.supportsImageToImage = true;
+	caps.supportsInstructImage = true;
+	caps.supportsVariation = true;
+	caps.supportsRestyle = true;
+	caps.supportsInpaint = false;
+	caps.supportsUpscale = !options.esrganPath.empty();
+	caps.supportsControlNet = !options.controlNetPath.empty();
+	caps.supportsLoRA = !options.loraModelDir.empty();
+	caps.supportsProgressCallbacks = false;
+	caps.supportsBatchGeneration = true;
+	caps.maxBatchSize = 16;
+	caps.supportedSamplers = {
+		"euler_a", "euler", "heun", "dpm2",
+		"dpmpp2s_a", "dpmpp2m", "dpmpp2mv2", "lcm"
+	};
+	caps.backendVersion = "ofxStableDiffusion bridge";
+	return caps;
 }
 
 inline ofxStableDiffusionImageMode mapImageMode(
@@ -316,7 +405,7 @@ inline std::vector<ofxStableDiffusionImageScore> scoreImagesWithClip(
 
 	const std::filesystem::path tempDir =
 		std::filesystem::temp_directory_path() /
-		("ofxggml_sd_clip_rank_" + makeTimestampToken());
+		("ofxggml_sd_clip_rank_" + makeUniqueTimestampToken());
 	std::error_code dirEc;
 	std::filesystem::create_directories(tempDir, dirEc);
 	if (dirEc) {
@@ -326,6 +415,7 @@ inline std::vector<ofxStableDiffusionImageScore> scoreImagesWithClip(
 		}
 		return scores;
 	}
+	ScopedTempDirectoryCleanup cleanup{tempDir};
 
 	for (std::size_t i = 0; i < frames.size(); ++i) {
 		const auto & frame = frames[i];
@@ -371,8 +461,6 @@ inline std::vector<ofxStableDiffusionImageScore> scoreImagesWithClip(
 		scores[i] = std::move(score);
 	}
 
-	std::error_code cleanupEc;
-	std::filesystem::remove(tempDir, cleanupEc);
 	return scores;
 }
 
@@ -381,7 +469,15 @@ inline bool needsContextReload(
 	const ofxGgmlImageGenerationRequest & request,
 	const RuntimeOptions & options,
 	const ContextCacheKey * cachedKey = nullptr) {
-	if (!options.enableContextCaching || engine.thread.sdCtx == nullptr) {
+	if (engine.thread.sdCtx == nullptr) {
+		return true;
+	}
+
+	if (options.enableContextCaching && cachedKey) {
+		return !(*cachedKey == makeContextCacheKey(engine, request, options));
+	}
+
+	if (!options.enableContextCaching || !cachedKey) {
 		return engine.thread.sdCtx == nullptr ||
 			engine.modelPath != request.modelPath ||
 			engine.vaePath != request.vaePath ||
@@ -402,20 +498,7 @@ inline bool needsContextReload(
 			engine.keepVaeOnCpu != options.keepVaeOnCpu;
 	}
 
-	// With caching enabled, check against cached key
-	if (cachedKey) {
-		ContextCacheKey currentKey;
-		currentKey.modelPath = request.modelPath;
-		currentKey.vaePath = request.vaePath;
-		currentKey.taesdPath = options.taesdPath;
-		currentKey.controlNetPath = options.controlNetPath;
-		currentKey.loraModelDir = options.loraModelDir;
-		currentKey.threads = options.threads;
-		currentKey.weightType = options.weightType;
-		return !(*cachedKey == currentKey);
-	}
-
-	return true;
+	return false;
 }
 
 inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
@@ -424,31 +507,35 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 
 	// Cache for context state
 	auto cachedKey = std::make_shared<ContextCacheKey>();
+	auto hasCachedKey = std::make_shared<bool>(false);
 	auto contextReloadCount = std::make_shared<size_t>(0);
 
 	auto backend = ofxGgmlDiffusionInference::createStableDiffusionBridgeBackend(
-		[engine, options, cachedKey, contextReloadCount](
+		[engine, options, cachedKey, hasCachedKey, contextReloadCount](
 			const ofxGgmlImageGenerationRequest & request) {
 			ofxGgmlImageGenerationResult result;
 			result.backendName = "ofxStableDiffusion";
 			const auto started = std::chrono::steady_clock::now();
+			const auto capabilities = makeCapabilities(options);
 
 			if (!engine) {
 				result.error = "ofxStableDiffusion engine is null";
 				result.errorType = ofxGgmlImageGenerationErrorType::ConfigurationError;
 				return result;
 			}
-			if (promptForStableDiffusion(request).empty() &&
-				request.task != ofxGgmlImageGenerationTask::Upscale) {
-				result.error = "prompt is empty";
-				result.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
+
+			const auto validation =
+				ofxGgmlDiffusionInference::validateRequest(request, capabilities);
+			if (!validation.valid) {
+				result.error = validation.error;
+				result.errorType = validation.errorType;
+				for (const auto & warning : validation.warnings) {
+					result.metadata.push_back({"validation.warning", warning});
+				}
 				return result;
 			}
-			if (request.task == ofxGgmlImageGenerationTask::Inpaint) {
-				result.error =
-					"inpaint is not exposed by the current ofxStableDiffusion wrapper yet";
-				result.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
-				return result;
+			for (const auto & warning : validation.warnings) {
+				result.metadata.push_back({"validation.warning", warning});
 			}
 
 			std::string waitError;
@@ -472,11 +559,13 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 			if (request.task == ofxGgmlImageGenerationTask::Upscale) {
 				if (request.initImagePath.empty()) {
 					result.error = "upscale requires an init image";
+					result.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
 					return result;
 				}
 				if (options.esrganPath.empty()) {
 					result.error =
 						"upscale requires RuntimeOptions.esrganPath for the current wrapper";
+					result.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
 					return result;
 				}
 
@@ -489,6 +578,7 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 					inputImage,
 					imageError)) {
 					result.error = imageError;
+					result.errorType = ofxGgmlImageGenerationErrorType::ResourceError;
 					return result;
 				}
 
@@ -501,10 +591,11 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 				const std::string outputPath =
 					(std::filesystem::path(outputDir) /
 						(sanitizeOutputPrefix(request.outputPrefix) + "_" +
-							makeTimestampToken() + "_upscale.png")).string();
+							makeUniqueTimestampToken() + "_upscale.png")).string();
 				std::string saveError;
 				if (!saveSdImageToPath(upscaled, outputPath, &saveError)) {
 					result.error = saveError;
+					result.errorType = ofxGgmlImageGenerationErrorType::ResourceError;
 					return result;
 				}
 				result.success = true;
@@ -524,10 +615,16 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 
 			if (request.modelPath.empty()) {
 				result.error = "modelPath is empty";
+				result.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
 				return result;
 			}
 
-			if (needsContextReload(*engine, request, options)) {
+			if (needsContextReload(
+				*engine,
+				request,
+				options,
+				*hasCachedKey ? cachedKey.get() : nullptr)) {
+				const auto modelLoadStarted = std::chrono::steady_clock::now();
 				ofxStableDiffusionContextSettings contextSettings;
 				contextSettings.modelPath = request.modelPath;
 				contextSettings.diffusionModelPath = request.modelPath;
@@ -556,13 +653,24 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 				engine->newSdCtx(contextSettings);
 				if (!waitForIdle(*engine, options, &waitError)) {
 					result.error = "model setup failed: " + waitError;
+					result.errorType = ofxGgmlImageGenerationErrorType::TimeoutError;
 					return result;
 				}
 				if (engine->thread.sdCtx == nullptr) {
 					result.error = "ofxStableDiffusion failed to create an sd context";
+					result.errorType = ofxGgmlImageGenerationErrorType::ModelLoadError;
 					return result;
 				}
+				*cachedKey = makeContextCacheKey(*engine, request, options);
+				// Keep the cache key and validity bit in sync only after
+				// the backend has confirmed a live sd context.
+				*hasCachedKey = true;
+				++(*contextReloadCount);
+				result.diagnostics.modelLoadTimeMs =
+					std::chrono::duration<float, std::milli>(
+						std::chrono::steady_clock::now() - modelLoadStarted).count();
 			}
+			result.diagnostics.contextReloads = *contextReloadCount;
 
 			ofPixels initPixels;
 			ofPixels controlPixels;
@@ -577,6 +685,7 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 					controlImage,
 					imageError)) {
 					result.error = imageError;
+					result.errorType = ofxGgmlImageGenerationErrorType::ResourceError;
 					return result;
 				}
 				controlImagePtr = &controlImage;
@@ -628,6 +737,7 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 			if (sdRequest.mode != ofxStableDiffusionImageMode::TextToImage) {
 				if (request.initImagePath.empty()) {
 					result.error = "selected task requires initImagePath";
+					result.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
 					return result;
 				}
 				if (!loadSdImageFromPath(
@@ -636,31 +746,40 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 					initImage,
 					imageError)) {
 					result.error = imageError;
+					result.errorType = ofxGgmlImageGenerationErrorType::ResourceError;
 					return result;
 				}
 				sdRequest.initImage = initImage;
 			}
+			const auto generationStarted = std::chrono::steady_clock::now();
 			engine->generate(sdRequest);
 
 			if (!waitForIdle(*engine, options, &waitError)) {
 				result.error = "generation failed: " + waitError;
+				result.errorType = ofxGgmlImageGenerationErrorType::TimeoutError;
 				return result;
 			}
+			result.diagnostics.generationTimeMs =
+				std::chrono::duration<float, std::milli>(
+					std::chrono::steady_clock::now() - generationStarted).count();
 			if (!engine->isDiffused()) {
 				result.error =
 					"ofxStableDiffusion returned without marking generation complete";
+				result.errorType = ofxGgmlImageGenerationErrorType::GenerationError;
 				return result;
 			}
 
 			const auto & rankedResult = engine->getLastResult();
 			if (rankedResult.images.empty()) {
 				result.error = "ofxStableDiffusion returned no images";
+				result.errorType = ofxGgmlImageGenerationErrorType::GenerationError;
 				engine->setDiffused(false);
 				return result;
 			}
 
+			const auto postProcessStarted = std::chrono::steady_clock::now();
 			const std::string prefix = sanitizeOutputPrefix(request.outputPrefix);
-			const std::string timestamp = makeTimestampToken();
+			const std::string timestamp = makeUniqueTimestampToken();
 			std::size_t savedImageCount = 0;
 			for (std::size_t i = 0; i < rankedResult.images.size(); ++i) {
 				const auto & frame = rankedResult.images[i];
@@ -673,6 +792,7 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 					(std::filesystem::path(outputDir) / fileName).string();
 				if (!ofSaveImage(frame.pixels, outputPath)) {
 					result.error = "failed to save image: " + outputPath;
+					result.errorType = ofxGgmlImageGenerationErrorType::ResourceError;
 					engine->setDiffused(false);
 					return result;
 				}
@@ -687,6 +807,15 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 				generated.score = frame.score.score;
 				generated.scorer = frame.score.scorer;
 				generated.scoreSummary = frame.score.summary;
+				generated.metadata.push_back({"outputPath", outputPath});
+				generated.metadata.push_back({"seed", std::to_string(generated.seed)});
+				generated.metadata.push_back({
+					"sourceIndex",
+					std::to_string(generated.sourceIndex)
+				});
+				if (!frame.score.scorer.empty()) {
+					generated.metadata.push_back({"scorer", frame.score.scorer});
+				}
 				result.images.push_back(std::move(generated));
 				if (frame.score.valid) {
 					result.metadata.push_back({
@@ -711,14 +840,21 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 			if (savedImageCount == 0) {
 				result.error =
 					"ofxStableDiffusion produced frames, but none could be saved";
+				result.errorType = ofxGgmlImageGenerationErrorType::ResourceError;
 				engine->setDiffused(false);
 				return result;
 			}
 
 			engine->setDiffused(false);
 			result.success = true;
+			result.errorType = ofxGgmlImageGenerationErrorType::None;
 			result.elapsedMs = std::chrono::duration<float, std::milli>(
 				std::chrono::steady_clock::now() - started).count();
+			result.diagnostics.postProcessTimeMs =
+				std::chrono::duration<float, std::milli>(
+					std::chrono::steady_clock::now() - postProcessStarted).count();
+			result.diagnostics.modelArchitecture = capabilities.modelArchitecture;
+			result.diagnostics.backendVersion = capabilities.backendVersion;
 			result.metadata.push_back({
 				"task",
 				ofxGgmlDiffusionInference::taskLabel(request.task)
@@ -734,9 +870,26 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 			if (!request.vaePath.empty()) {
 				result.metadata.push_back({"vaePath", request.vaePath});
 			}
+			result.replayMetadata.push_back({"prompt", promptForStableDiffusion(request)});
+			result.replayMetadata.push_back({"negativePrompt", request.negativePrompt});
+			result.replayMetadata.push_back({"modelPath", request.modelPath});
+			result.replayMetadata.push_back({"vaePath", request.vaePath});
+			result.replayMetadata.push_back({"sampler", request.sampler});
+			result.replayMetadata.push_back({"steps", std::to_string(request.steps)});
+			result.replayMetadata.push_back({"cfgScale", ofToString(request.cfgScale, 6)});
+			result.replayMetadata.push_back({"seed", std::to_string(request.seed)});
+			result.replayMetadata.push_back({"width", std::to_string(request.width)});
+			result.replayMetadata.push_back({"height", std::to_string(request.height)});
 			return result;
 		},
 		"ofxStableDiffusion");
+	if (auto bridge =
+			std::dynamic_pointer_cast<ofxGgmlStableDiffusionBridgeBackend>(backend)) {
+		bridge->setGetCapabilitiesFunction([options]() {
+			return makeCapabilities(options);
+		});
+	}
+	return backend;
 }
 
 inline void attachImageBackend(

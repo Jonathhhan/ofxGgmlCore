@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -61,6 +62,7 @@ struct ofxGgmlGeneratedImage {
 	float score = 0.0f;
 	std::string scorer;
 	std::string scoreSummary;
+	std::vector<std::pair<std::string, std::string>> metadata;
 };
 
 struct ofxGgmlImageGenerationProgress {
@@ -93,6 +95,14 @@ struct ofxGgmlImageGenerationCapabilities {
 	std::vector<std::string> supportedSamplers;
 	std::string modelArchitecture;
 	std::string backendVersion;
+};
+
+struct ofxGgmlImageGenerationValidation {
+	bool valid = true;
+	ofxGgmlImageGenerationErrorType errorType =
+		ofxGgmlImageGenerationErrorType::None;
+	std::string error;
+	std::vector<std::string> warnings;
 };
 
 struct ofxGgmlImageGenerationRequest {
@@ -146,6 +156,7 @@ struct ofxGgmlImageGenerationResult {
 	std::string rawOutput;
 	std::vector<ofxGgmlGeneratedImage> images;
 	std::vector<std::pair<std::string, std::string>> metadata;
+	std::vector<std::pair<std::string, std::string>> replayMetadata;
 	ofxGgmlImageGenerationDiagnostics diagnostics;
 };
 
@@ -183,6 +194,7 @@ private:
 	GenerateFunction m_generateFunction;
 	GetCapabilitiesFunction m_getCapabilitiesFunction;
 	std::string m_displayName;
+	mutable std::mutex m_generateMutex;
 };
 
 class ofxGgmlDiffusionInference {
@@ -192,6 +204,9 @@ public:
 	static std::vector<ofxGgmlImageGenerationModelProfile> defaultProfiles();
 	static const char * taskLabel(ofxGgmlImageGenerationTask task);
 	static const char * selectionModeLabel(ofxGgmlImageSelectionMode mode);
+	static ofxGgmlImageGenerationValidation validateRequest(
+		const ofxGgmlImageGenerationRequest & request,
+		const ofxGgmlImageGenerationCapabilities & capabilities = {});
 	static std::shared_ptr<ofxGgmlImageGenerationBackend>
 		createStableDiffusionBridgeBackend(
 			ofxGgmlStableDiffusionBridgeBackend::GenerateFunction generateFunction = {},

@@ -63,6 +63,25 @@ Fill this table in when updating either upstream:
 | 1.0.4 | `ggml v0.10.0` (`1c40d85`) | Not bundled | Not bundled | Tested for ofxGgml CPU headless tier | `scripts/build-ggml.sh --cpu-only` and `./tests/run-tests.sh` validate the addon-local ggml build. |
 | 1.0.4 | `ggml v0.10.0` (`1c40d85`) | `record exact addon tag/commit` | `record exact commit/tag` | Pending | Fill this row when validating a combined ofxGgml + ofxStableDiffusion workspace. |
 
+## Diffusion bridge compatibility checklist
+
+When validating `ofxGgml` with `ofxStableDiffusion`, record:
+
+- exact `ofxGgml` release or commit
+- exact bundled `ggml` ref used by `ofxGgml`
+- exact `ofxStableDiffusion` release or commit
+- exact `stable-diffusion.cpp` ref used by `ofxStableDiffusion`
+- model family tested: SD 1.x, SDXL, FLUX, LCM/Turbo, or ESRGAN upscale
+- required companion model assets: VAE, TAESD, CLIP-L, CLIP-G, T5XXL,
+  ControlNet, LoRA directory, embedding directories, and quantization format
+- backend path tested: CPU, CUDA, Vulkan, Metal, or another runtime lane
+- whether text-to-image, image-to-image, rerank, best-only, ControlNet, LoRA,
+  inpaint, and upscale were tested or intentionally left unsupported
+
+The current `ofxGgml` diffusion surface is a bridge contract. A feature should
+only be exposed in UI or companion workflows when
+`ofxGgmlImageGenerationCapabilities` advertises it for the attached backend.
+
 Recommended status values:
 
 - `Tested`

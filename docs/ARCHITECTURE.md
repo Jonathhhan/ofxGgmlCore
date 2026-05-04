@@ -12,7 +12,7 @@ The sections below preserve information from superseded standalone documents tha
 
 This document outlines architectural improvements identified during code review and their implementation status.
 
-> **Note**: For a comprehensive implementation plan with priorities, effort estimates, and phasing strategy, see [IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md).
+> **Note**: Current product and architecture priorities are tracked in [ROADMAP.md](ROADMAP.md).
 
 ## Completed Improvements ✅
 
