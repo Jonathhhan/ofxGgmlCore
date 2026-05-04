@@ -2294,9 +2294,7 @@ public:
 		std::string firstError;
 		pending.push({result.startUrl, 0});
 		const int maxDepth = std::max(0, request.maxDepth);
-		const size_t maxPages = request.maxPages > 0
-			? static_cast<size_t>(request.maxPages)
-			: 24;
+		const size_t maxPages = static_cast<size_t>(std::max(1, request.maxPages));
 
 		while (!pending.empty() && visited.size() < maxPages) {
 			const auto [currentUrlRaw, currentDepth] = pending.front();
