@@ -2,7 +2,9 @@
 #include "ofxGgmlVisionInference.h"
 #include "ofxGgmlInference.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <utility>
 
 ofxGgmlStableDiffusionBridgeBackend::ofxGgmlStableDiffusionBridgeBackend(
@@ -43,6 +45,7 @@ ofxGgmlImageGenerationResult ofxGgmlStableDiffusionBridgeBackend::generate(
 	}
 
 	const auto started = std::chrono::steady_clock::now();
+	std::lock_guard<std::mutex> lock(m_generateMutex);
 	result = m_generateFunction(request);
 	if (result.backendName.empty()) {
 		result.backendName = backendName();
@@ -143,6 +146,148 @@ const char * ofxGgmlDiffusionInference::selectionModeLabel(
 	default:
 		return "Keep Order";
 	}
+}
+
+ofxGgmlImageGenerationValidation
+ofxGgmlDiffusionInference::validateRequest(
+	const ofxGgmlImageGenerationRequest & request,
+	const ofxGgmlImageGenerationCapabilities & capabilities) {
+	ofxGgmlImageGenerationValidation validation;
+	const auto fail = [&validation](
+		ofxGgmlImageGenerationErrorType errorType,
+		const std::string & error) {
+		validation.valid = false;
+		validation.errorType = errorType;
+		validation.error = error;
+	};
+
+	const bool requiresPrompt =
+		request.task != ofxGgmlImageGenerationTask::Upscale;
+	if (requiresPrompt && request.prompt.empty() && request.instruction.empty()) {
+		fail(ofxGgmlImageGenerationErrorType::ValidationError, "prompt is empty");
+		return validation;
+	}
+	if (request.width <= 0 || request.height <= 0) {
+		fail(
+			ofxGgmlImageGenerationErrorType::ValidationError,
+			"width and height must be positive");
+		return validation;
+	}
+	if (request.steps <= 0 && request.task != ofxGgmlImageGenerationTask::Upscale) {
+		fail(
+			ofxGgmlImageGenerationErrorType::ValidationError,
+			"steps must be positive");
+		return validation;
+	}
+	if (request.batchCount <= 0) {
+		fail(
+			ofxGgmlImageGenerationErrorType::ValidationError,
+			"batchCount must be positive");
+		return validation;
+	}
+	if (request.task == ofxGgmlImageGenerationTask::ImageToImage ||
+		request.task == ofxGgmlImageGenerationTask::InstructImage ||
+		request.task == ofxGgmlImageGenerationTask::Variation ||
+		request.task == ofxGgmlImageGenerationTask::Restyle ||
+		request.task == ofxGgmlImageGenerationTask::Upscale) {
+		if (request.initImagePath.empty()) {
+			fail(
+				ofxGgmlImageGenerationErrorType::ValidationError,
+				"selected task requires initImagePath");
+			return validation;
+		}
+	}
+	if (request.task == ofxGgmlImageGenerationTask::Inpaint &&
+		request.maskImagePath.empty()) {
+		fail(
+			ofxGgmlImageGenerationErrorType::ValidationError,
+			"inpaint requires maskImagePath");
+		return validation;
+	}
+
+	const bool hasExplicitCapabilities =
+		capabilities.supportsTextToImage ||
+		capabilities.supportsImageToImage ||
+		capabilities.supportsInstructImage ||
+		capabilities.supportsVariation ||
+		capabilities.supportsRestyle ||
+		capabilities.supportsInpaint ||
+		capabilities.supportsUpscale ||
+		capabilities.supportsControlNet ||
+		capabilities.supportsLoRA ||
+		capabilities.supportsProgressCallbacks ||
+		capabilities.supportsBatchGeneration ||
+		!capabilities.supportedSamplers.empty() ||
+		!capabilities.modelArchitecture.empty() ||
+		!capabilities.backendVersion.empty();
+	if (!hasExplicitCapabilities) {
+		return validation;
+	}
+
+	const auto unsupportedTask = [&validation](const char * label) {
+		validation.valid = false;
+		validation.errorType = ofxGgmlImageGenerationErrorType::ValidationError;
+		validation.error = std::string(label) +
+			" is not supported by the current image-generation backend";
+	};
+	switch (request.task) {
+	case ofxGgmlImageGenerationTask::TextToImage:
+		if (!capabilities.supportsTextToImage) unsupportedTask("Text to Image");
+		break;
+	case ofxGgmlImageGenerationTask::ImageToImage:
+		if (!capabilities.supportsImageToImage) unsupportedTask("Image to Image");
+		break;
+	case ofxGgmlImageGenerationTask::InstructImage:
+		if (!capabilities.supportsInstructImage) unsupportedTask("Instruct Image");
+		break;
+	case ofxGgmlImageGenerationTask::Variation:
+		if (!capabilities.supportsVariation) unsupportedTask("Variation");
+		break;
+	case ofxGgmlImageGenerationTask::Restyle:
+		if (!capabilities.supportsRestyle) unsupportedTask("Restyle");
+		break;
+	case ofxGgmlImageGenerationTask::Inpaint:
+		if (!capabilities.supportsInpaint) unsupportedTask("Inpaint");
+		break;
+	case ofxGgmlImageGenerationTask::Upscale:
+		if (!capabilities.supportsUpscale) unsupportedTask("Upscale");
+		break;
+	}
+	if (!validation.valid) {
+		return validation;
+	}
+
+	if (!request.controlImagePath.empty() && !capabilities.supportsControlNet) {
+		fail(
+			ofxGgmlImageGenerationErrorType::ValidationError,
+			"controlImagePath requires a backend with ControlNet support");
+		return validation;
+	}
+	if (request.batchCount > 1 &&
+		(!capabilities.supportsBatchGeneration ||
+		 request.batchCount > std::max(1, capabilities.maxBatchSize))) {
+		fail(
+			ofxGgmlImageGenerationErrorType::ValidationError,
+			"batchCount exceeds current backend capabilities");
+		return validation;
+	}
+	if (!request.sampler.empty() && !capabilities.supportedSamplers.empty()) {
+		const auto found = std::find(
+			capabilities.supportedSamplers.begin(),
+			capabilities.supportedSamplers.end(),
+			request.sampler);
+		if (found == capabilities.supportedSamplers.end()) {
+			fail(
+				ofxGgmlImageGenerationErrorType::ValidationError,
+				"sampler is not supported by the current backend");
+			return validation;
+		}
+	}
+	if (request.progressCallback && !capabilities.supportsProgressCallbacks) {
+		validation.warnings.push_back(
+			"progressCallback was provided, but the backend did not advertise progress callbacks");
+	}
+	return validation;
 }
 
 std::shared_ptr<ofxGgmlImageGenerationBackend>
