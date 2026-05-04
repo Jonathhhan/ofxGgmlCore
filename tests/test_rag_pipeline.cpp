@@ -370,3 +370,56 @@ TEST_CASE("RAG pipeline can disable retrieval cache per query", "[rag]") {
 	REQUIRE_FALSE(first.cacheHit);
 	REQUIRE_FALSE(second.cacheHit);
 }
+
+TEST_CASE("RAGQuery server rerank fields are zero-value by default", "[rag_pipeline]") {
+	ofxGgmlRAGQuery query;
+	REQUIRE_FALSE(query.enableServerRerank);
+	REQUIRE(query.rerankServerUrl.empty());
+	REQUIRE(query.rerankModel.empty());
+}
+
+TEST_CASE("RAGQuery server rerank fields are configurable", "[rag_pipeline]") {
+	ofxGgmlRAGQuery query;
+	query.enableServerRerank = true;
+	query.rerankServerUrl = "http://127.0.0.1:8080";
+	query.rerankModel = "bge-reranker-v2-m3";
+
+	REQUIRE(query.enableServerRerank);
+	REQUIRE(query.rerankServerUrl == "http://127.0.0.1:8080");
+	REQUIRE(query.rerankModel == "bge-reranker-v2-m3");
+}
+
+TEST_CASE("RAGPipeline retrieves without error when server rerank is disabled", "[rag_pipeline]") {
+	ofxGgmlRAGPipeline pipeline;
+	ofxGgmlRAGDocument doc;
+	doc.id = "d1";
+	doc.content = "The quick brown fox jumps over the lazy dog.";
+	pipeline.addDocument(doc);
+
+	ofxGgmlRAGQuery query;
+	query.query = "fox";
+	query.topK = 1;
+	query.enableServerRerank = false;
+
+	const auto result = pipeline.retrieve(query);
+	REQUIRE(result.success);
+	REQUIRE_FALSE(result.chunks.empty());
+}
+
+TEST_CASE("RAGPipeline falls back gracefully when server rerank url is empty", "[rag_pipeline]") {
+	ofxGgmlRAGPipeline pipeline;
+	ofxGgmlRAGDocument doc;
+	doc.id = "d1";
+	doc.content = "Neural network training with gradient descent.";
+	pipeline.addDocument(doc);
+
+	ofxGgmlRAGQuery query;
+	query.query = "neural network";
+	query.topK = 1;
+	query.enableServerRerank = true;
+	query.rerankServerUrl = "";  // empty URL → skips server rerank
+
+	const auto result = pipeline.retrieve(query);
+	REQUIRE(result.success);
+}
+

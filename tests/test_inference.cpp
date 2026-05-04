@@ -1641,3 +1641,43 @@ TEST_CASE("Batch metrics integration", "[inference][batch][metrics]") {
 		}
 	}
 }
+
+TEST_CASE("infill returns error without server backend", "[inference]") {
+	ofxGgmlInference inf;
+	ofxGgmlInferenceSettings settings;
+	settings.useServerBackend = false;
+	settings.serverUrl = "";
+
+	const auto result = inf.infill("int x = ", ";", settings);
+	REQUIRE_FALSE(result.success);
+	REQUIRE_FALSE(result.error.empty());
+}
+
+TEST_CASE("infill requires server backend setting", "[inference]") {
+	ofxGgmlInference inf;
+	ofxGgmlInferenceSettings settings;
+	// Provide serverUrl but in headless mode the HTTP call won't work
+	settings.serverUrl = "http://127.0.0.1:8080";
+
+	const auto result = inf.infill("void foo() {", "}", settings);
+	// In headless mode the call fails with a clear error; should not succeed
+#ifdef OFXGGML_HEADLESS_STUBS
+	REQUIRE_FALSE(result.success);
+	REQUIRE_FALSE(result.error.empty());
+#else
+	// In non-headless mode with no live server, also expected to fail
+	REQUIRE_FALSE(result.success);
+#endif
+}
+
+TEST_CASE("Speculative decoding draft model path is empty by default", "[inference]") {
+	ofxGgmlInferenceSettings settings;
+	REQUIRE(settings.draftModelPath.empty());
+}
+
+TEST_CASE("Speculative decoding draft model path is forwarded in settings", "[inference]") {
+	ofxGgmlInferenceSettings settings;
+	settings.draftModelPath = "/models/draft.gguf";
+	REQUIRE(settings.draftModelPath == "/models/draft.gguf");
+}
+

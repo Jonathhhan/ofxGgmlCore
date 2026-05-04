@@ -1,7 +1,32 @@
 #include "ofxGgmlTtsInference.h"
 
+#include "support/ofxGgmlProcessSecurity.h"
+
+#include <algorithm>
 #include <chrono>
+#include <filesystem>
+#include <random>
+#include <sstream>
 #include <utility>
+
+namespace {
+
+static std::string makeTtsTempOutputPath(const std::string & prefix, const std::string & ext) {
+	std::error_code ec;
+	const std::filesystem::path base = std::filesystem::temp_directory_path(ec);
+	const auto now =
+		std::chrono::system_clock::now().time_since_epoch().count();
+	std::mt19937_64 rng(static_cast<uint64_t>(now));
+	std::uniform_int_distribution<uint64_t> dist;
+	std::ostringstream name;
+	name << prefix << "_" << std::hex << dist(rng) << ext;
+	std::filesystem::path result =
+		ec ? std::filesystem::path("/tmp") : base;
+	result /= name.str();
+	return result.string();
+}
+
+} // namespace
 
 ofxGgmlTtsBridgeBackend::ofxGgmlTtsBridgeBackend(
 	SynthesizeFunction synthesizeFunction,
@@ -46,10 +71,117 @@ ofxGgmlTtsResult ofxGgmlTtsBridgeBackend::synthesize(
 	return result;
 }
 
+// ---------------------------------------------------------------------------
+// ofxGgmlLlamaTtsCliBackend
+// ---------------------------------------------------------------------------
+
+ofxGgmlLlamaTtsCliBackend::ofxGgmlLlamaTtsCliBackend(std::string executable)
+	: m_executable(std::move(executable)) {
+}
+
+void ofxGgmlLlamaTtsCliBackend::setExecutable(const std::string & executable) {
+	m_executable = executable;
+}
+
+const std::string & ofxGgmlLlamaTtsCliBackend::getExecutable() const {
+	return m_executable;
+}
+
+std::string ofxGgmlLlamaTtsCliBackend::backendName() const {
+	return "LlamaTTS";
+}
+
+std::vector<std::string> ofxGgmlLlamaTtsCliBackend::buildCommandArguments(
+	const ofxGgmlTtsRequest & request) const {
+	const std::string exe = m_executable.empty() ? "llama-tts" : m_executable;
+	std::vector<std::string> args;
+	args.reserve(14);
+	args.push_back(exe);
+	if (!request.modelPath.empty()) {
+		args.push_back("-m");
+		args.push_back(request.modelPath);
+	}
+	if (!request.text.empty()) {
+		args.push_back("-p");
+		args.push_back(request.text);
+	}
+	if (!request.outputPath.empty()) {
+		args.push_back("-o");
+		args.push_back(request.outputPath);
+	}
+	if (request.seed >= 0) {
+		args.push_back("--seed");
+		args.push_back(std::to_string(request.seed));
+	}
+	return args;
+}
+
+ofxGgmlTtsResult ofxGgmlLlamaTtsCliBackend::synthesize(
+	const ofxGgmlTtsRequest & request) const {
+	ofxGgmlTtsResult result;
+	result.backendName = backendName();
+
+	if (request.text.empty()) {
+		result.error = "no text was provided for synthesis";
+		return result;
+	}
+	if (request.modelPath.empty()) {
+		result.error = "no model path was provided";
+		return result;
+	}
+
+	const std::string exe = m_executable.empty() ? "llama-tts" : m_executable;
+	if (!ofxGgmlProcessSecurity::isValidExecutablePath(exe)) {
+		result.error = "invalid llama-tts executable: " + exe;
+		return result;
+	}
+
+	std::string outputPath = request.outputPath;
+	if (outputPath.empty()) {
+		outputPath = makeTtsTempOutputPath("ofxggml_tts", ".wav");
+	}
+
+	ofxGgmlTtsRequest effectiveRequest = request;
+	effectiveRequest.outputPath = outputPath;
+
+	const auto args = buildCommandArguments(effectiveRequest);
+	const auto t0 = std::chrono::steady_clock::now();
+
+	std::string rawOutput;
+	int exitCode = -1;
+	if (!ofxGgmlProcessSecurity::runCommandCapture(args, rawOutput, exitCode, true)) {
+		result.error = "failed to start llama-tts process";
+		result.rawOutput = rawOutput;
+		return result;
+	}
+
+	result.elapsedMs = std::chrono::duration<float, std::milli>(
+		std::chrono::steady_clock::now() - t0).count();
+	result.rawOutput = rawOutput;
+
+	if (exitCode != 0 && exitCode != -1) {
+		result.error = "llama-tts exited with code " + std::to_string(exitCode);
+		return result;
+	}
+
+	std::error_code ec;
+	if (std::filesystem::exists(std::filesystem::path(outputPath), ec) && !ec) {
+		ofxGgmlTtsAudioArtifact artifact;
+		artifact.path = outputPath;
+		artifact.sampleRate = request.sampleRate > 0 ? request.sampleRate : 24000;
+		artifact.channels = 1;
+		result.audioFiles.push_back(std::move(artifact));
+		result.success = true;
+	} else {
+		result.error = "llama-tts did not produce output file: " + outputPath;
+	}
+
+	return result;
+}
+
 ofxGgmlTtsInference::ofxGgmlTtsInference()
 	: m_backend(createPiperTtsBridgeBackend()) {
 }
-
 std::vector<ofxGgmlTtsModelProfile> ofxGgmlTtsInference::defaultProfiles() {
 	return {
 		{
@@ -93,6 +225,20 @@ std::vector<ofxGgmlTtsModelProfile> ofxGgmlTtsInference::defaultProfiles() {
 			true,
 			false,
 			true
+		},
+		{
+			"llama-tts",
+			"llama-tts (OuteTTS / Kokoro GGUF)",
+			"llama.cpp / llama-tts binary (GGUF model)",
+			"ggml-org/outetts-0.3-0.5b-GGUF or ggml-org/kokoro-82m-GGUF",
+			"outetts-0.3-0.5b-q8_0.gguf",
+			"",
+			"",
+			"",
+			"",
+			false,
+			false,
+			false
 		}
 	};
 }
@@ -136,6 +282,12 @@ ofxGgmlTtsInference::createPiperTtsBridgeBackend(
 	ofxGgmlTtsBridgeBackend::SynthesizeFunction synthesizeFunction,
 	const std::string & displayName) {
 	return createTtsBridgeBackend(std::move(synthesizeFunction), displayName);
+}
+
+std::shared_ptr<ofxGgmlTtsBackend>
+ofxGgmlTtsInference::createLlamaTtsCliBackend(
+	const std::string & executable) {
+	return std::make_shared<ofxGgmlLlamaTtsCliBackend>(executable);
 }
 
 void ofxGgmlTtsInference::setBackend(std::shared_ptr<ofxGgmlTtsBackend> backend) {

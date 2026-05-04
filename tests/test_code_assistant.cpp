@@ -764,3 +764,60 @@ TEST_CASE("Code assistant sessions stream events and gate risky tool proposals",
 	REQUIRE(session.lastFailureReason.empty());
 	REQUIRE(result.sessionRevision == session.revision);
 }
+
+TEST_CASE("Inline completion routes to /infill when FIM + server backend", "[code_assistant]") {
+	ofxGgmlCodeAssistant assistant;
+
+	ofxGgmlCodeAssistantInlineCompletionRequest request;
+	request.prefix = "int x = ";
+	request.suffix = ";";
+	request.useFillInTheMiddle = true;
+	request.filePath = "main.cpp";
+
+	ofxGgmlInferenceSettings settings;
+	settings.useServerBackend = true;
+	settings.serverUrl = "http://127.0.0.1:8080";
+
+	const auto result = assistant.runInlineCompletion("", request, settings);
+	// In headless mode the infill() call returns an error (no HTTP runtime).
+	// The result is always non-crashing.
+	REQUIRE_FALSE(result.prepared.label.empty());
+}
+
+TEST_CASE("Inline completion uses generate when FIM is disabled", "[code_assistant]") {
+	ofxGgmlCodeAssistant assistant;
+
+	ofxGgmlCodeAssistantInlineCompletionRequest request;
+	request.prefix = "int x = ";
+	request.suffix = ";";
+	request.useFillInTheMiddle = false;
+	request.filePath = "main.cpp";
+
+	ofxGgmlInferenceSettings settings;
+	settings.useServerBackend = true;
+	settings.serverUrl = "http://127.0.0.1:8080";
+
+	// Without FIM, the prompt-wrapped path is used.
+	const auto result = assistant.runInlineCompletion("", request, settings);
+	// In headless mode, server inference returns an error. Check prepared prompt was built.
+	REQUIRE_FALSE(result.prepared.prompt.empty());
+}
+
+TEST_CASE("Inline completion uses generate when no server backend is configured", "[code_assistant]") {
+	ofxGgmlCodeAssistant assistant;
+
+	ofxGgmlCodeAssistantInlineCompletionRequest request;
+	request.prefix = "int x = ";
+	request.suffix = ";";
+	request.useFillInTheMiddle = true;
+	request.filePath = "main.cpp";
+
+	// No server backend → falls back to generate (which will fail without model)
+	ofxGgmlInferenceSettings settings;
+
+	const auto result = assistant.runInlineCompletion("", request, settings);
+	// The prepared prompt should use PRE/SUF FIM format
+	REQUIRE(result.prepared.prompt.find("<PRE>") != std::string::npos);
+	REQUIRE(result.prepared.prompt.find("<SUF>") != std::string::npos);
+}
+

@@ -88,6 +88,51 @@ TEST_CASE("Whisper backend requests subtitle artifacts when timestamps are enabl
 	REQUIRE(backend.expectedVttPath("tmp/out") == "tmp/out.vtt");
 }
 
+TEST_CASE("Whisper backend adds VAD flags when enabled", "[speech_inference]") {
+	ofxGgmlWhisperCliSpeechBackend backend("whisper-cli");
+	ofxGgmlSpeechRequest request;
+	request.audioPath = "clip.wav";
+	request.modelPath = "models/ggml-base.en.bin";
+	request.vad.enabled = true;
+	request.vad.threshold = 0.6f;
+	request.vad.minSilenceMs = 1500;
+
+	const auto args = backend.buildCommandArguments(request, "tmp/out");
+	REQUIRE(std::find(args.begin(), args.end(), "--vad") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "--vad-thold") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "--vad-min-silence-ms") != args.end());
+
+	const auto tholdIt = std::find(args.begin(), args.end(), "--vad-thold");
+	REQUIRE(tholdIt != args.end());
+	REQUIRE(std::next(tholdIt) != args.end());
+
+	const auto silIt = std::find(args.begin(), args.end(), "--vad-min-silence-ms");
+	REQUIRE(silIt != args.end());
+	REQUIRE(*std::next(silIt) == "1500");
+}
+
+TEST_CASE("Whisper backend omits VAD flags when VAD is disabled", "[speech_inference]") {
+	ofxGgmlWhisperCliSpeechBackend backend("whisper-cli");
+	ofxGgmlSpeechRequest request;
+	request.audioPath = "clip.wav";
+
+	const auto args = backend.buildCommandArguments(request, "tmp/out");
+	REQUIRE(std::find(args.begin(), args.end(), "--vad") == args.end());
+}
+
+TEST_CASE("Whisper backend includes vad-model path when specified", "[speech_inference]") {
+	ofxGgmlWhisperCliSpeechBackend backend("whisper-cli");
+	ofxGgmlSpeechRequest request;
+	request.audioPath = "clip.wav";
+	request.vad.enabled = true;
+	request.vad.modelPath = "models/silero_vad.bin";
+
+	const auto args = backend.buildCommandArguments(request, "tmp/out");
+	REQUIRE(std::find(args.begin(), args.end(), "--vad-model") != args.end());
+	const auto modelIt = std::find(args.begin(), args.end(), "--vad-model");
+	REQUIRE(*std::next(modelIt) == "models/silero_vad.bin");
+}
+
 TEST_CASE("Whisper backend parses SRT segments into addon speech segments", "[speech_inference]") {
 	const std::string srt =
 		"1\n"

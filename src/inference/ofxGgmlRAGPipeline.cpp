@@ -2,6 +2,10 @@
 
 #include "core/ofxGgmlMetrics.h"
 
+#ifndef OFXGGML_HEADLESS_STUBS
+#include "ofMain.h"
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <cctype>
@@ -250,6 +254,86 @@ std::vector<float> computeSemanticScores(
 	return semanticScores;
 }
 
+/// Call the llama-server /rerank endpoint and return per-document relevance
+/// scores. Returns an empty vector if the call fails or the feature is
+/// compiled out (headless mode).
+std::vector<float> rerankViaServer(
+	const std::string & serverUrl,
+	const std::string & model,
+	const std::string & query,
+	const std::vector<ofxGgmlRAGChunk> & chunks) {
+	std::vector<float> scores(chunks.size(), 0.0f);
+	if (serverUrl.empty() || query.empty() || chunks.empty()) {
+		return scores;
+	}
+#ifdef OFXGGML_HEADLESS_STUBS
+	(void)model;
+	return scores;
+#else
+	// Build base URL: strip any path suffix, append /rerank
+	std::string baseUrl = serverUrl;
+	auto stripSuffix = [&](const std::string & suffix) {
+		if (baseUrl.size() >= suffix.size() &&
+			baseUrl.compare(baseUrl.size() - suffix.size(), suffix.size(), suffix) == 0) {
+			baseUrl.erase(baseUrl.size() - suffix.size());
+		}
+	};
+	stripSuffix("/v1/chat/completions");
+	stripSuffix("/chat/completions");
+	stripSuffix("/v1/embeddings");
+	stripSuffix("/embeddings");
+	if (!baseUrl.empty() && baseUrl.back() == '/') {
+		baseUrl.pop_back();
+	}
+	const std::string rerankUrl = baseUrl + "/rerank";
+
+	try {
+		ofJson payload;
+		payload["query"] = query;
+		if (!model.empty()) {
+			payload["model"] = model;
+		}
+		ofJson docs = ofJson::array();
+		for (const auto & chunk : chunks) {
+			docs.push_back(chunk.text);
+		}
+		payload["documents"] = docs;
+
+		ofHttpRequest httpRequest(rerankUrl, "rag-rerank");
+		httpRequest.method = ofHttpRequest::POST;
+		httpRequest.body = payload.dump();
+		httpRequest.contentType = "application/json";
+		httpRequest.headers["Accept"] = "application/json";
+		httpRequest.timeoutSeconds = 60;
+
+		ofURLFileLoader loader;
+		const ofHttpResponse response = loader.handleRequest(httpRequest);
+		if (response.status < 200 || response.status >= 300) {
+			return scores;
+		}
+
+		const ofJson parsed = ofJson::parse(response.data.getText());
+		const auto & results = parsed.contains("results") ? parsed["results"] : parsed;
+		if (!results.is_array()) {
+			return scores;
+		}
+		for (const auto & item : results) {
+			if (!item.is_object()) {
+				continue;
+			}
+			const int index = item.value("index", -1);
+			const float relevance = item.value("relevance_score",
+				item.value("score", 0.0f));
+			if (index >= 0 && static_cast<size_t>(index) < scores.size()) {
+				scores[static_cast<size_t>(index)] = relevance;
+			}
+		}
+	} catch (...) {
+	}
+	return scores;
+#endif
+}
+
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -398,6 +482,36 @@ ofxGgmlRAGRetrievalResult ofxGgmlRAGPipeline::retrieve(
 	if (rerankTopN < allChunks.size()) {
 		allChunks.resize(rerankTopN);
 	}
+
+	// Optional: apply server-side cross-encoder reranking on the top-N candidates.
+	if (query.enableServerRerank && !query.rerankServerUrl.empty()) {
+		const std::vector<float> serverScores = rerankViaServer(
+			query.rerankServerUrl,
+			query.rerankModel,
+			query.query,
+			allChunks);
+		if (serverScores.size() == allChunks.size()) {
+			float maxServerScore = 0.0f;
+			for (float s : serverScores) {
+				maxServerScore = std::max(maxServerScore, s);
+			}
+			if (maxServerScore > 0.0f) {
+				for (size_t i = 0; i < allChunks.size(); ++i) {
+					allChunks[i].rerankScore = clampUnit(serverScores[i] / maxServerScore);
+					// Preserve original lexical/semantic/quality scores for debugging.
+					// Use rerankScore as the primary sort key.
+					allChunks[i].score = allChunks[i].rerankScore;
+				}
+				std::stable_sort(
+					allChunks.begin(),
+					allChunks.end(),
+					[](const ofxGgmlRAGChunk & a, const ofxGgmlRAGChunk & b) {
+						return a.score > b.score;
+					});
+			}
+		}
+	}
+
 	const size_t k = std::min(query.topK, allChunks.size());
 	result.chunks.assign(allChunks.begin(), allChunks.begin() + static_cast<std::ptrdiff_t>(k));
 	result.augmentedContext = buildAugmentedContext(result.chunks, query.includeSourceHeaders);

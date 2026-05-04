@@ -47,6 +47,7 @@ struct ofxGgmlTtsRequest {
 	std::string promptAudioPath;
 	int seed = -1;
 	int maxTokens = 0;
+	int sampleRate = 0;
 	float temperature = 0.4f;
 	float repetitionPenalty = 1.1f;
 	int repetitionRange = 64;
@@ -97,6 +98,25 @@ private:
 	std::string m_displayName;
 };
 
+/// CLI backend that invokes the llama-tts binary (OuteTTS / Kokoro GGUF models).
+class ofxGgmlLlamaTtsCliBackend : public ofxGgmlTtsBackend {
+public:
+	explicit ofxGgmlLlamaTtsCliBackend(
+		std::string executable = "llama-tts");
+
+	void setExecutable(const std::string & executable);
+	const std::string & getExecutable() const;
+
+	std::string backendName() const override;
+	std::vector<std::string> buildCommandArguments(
+		const ofxGgmlTtsRequest & request) const;
+	ofxGgmlTtsResult synthesize(
+		const ofxGgmlTtsRequest & request) const override;
+
+private:
+	std::string m_executable;
+};
+
 class ofxGgmlTtsInference {
 public:
 	ofxGgmlTtsInference();
@@ -119,6 +139,9 @@ public:
 		createPiperTtsBridgeBackend(
 			ofxGgmlTtsBridgeBackend::SynthesizeFunction synthesizeFunction = {},
 			const std::string & displayName = "Piper TTS");
+	static std::shared_ptr<ofxGgmlTtsBackend>
+		createLlamaTtsCliBackend(
+			const std::string & executable = "llama-tts");
 
 	void setBackend(std::shared_ptr<ofxGgmlTtsBackend> backend);
 	std::shared_ptr<ofxGgmlTtsBackend> getBackend() const;

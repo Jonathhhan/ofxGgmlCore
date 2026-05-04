@@ -458,3 +458,54 @@ TEST_CASE("TTS metadata handling", "[tts_inference]") {
 		REQUIRE(result.metadata[1].second == "value2");
 	}
 }
+
+TEST_CASE("llama-tts default profiles include llama-tts profile", "[tts_inference]") {
+	const auto profiles = ofxGgmlTtsInference::defaultProfiles();
+	bool foundLlamaTts = false;
+	for (const auto & profile : profiles) {
+		if (profile.backendId == "llama-tts") {
+			foundLlamaTts = true;
+			REQUIRE_FALSE(profile.name.empty());
+			REQUIRE_FALSE(profile.modelFileHint.empty());
+		}
+	}
+	REQUIRE(foundLlamaTts);
+}
+
+TEST_CASE("llama-tts CLI backend creation and naming", "[tts_inference]") {
+	auto backend = ofxGgmlTtsInference::createLlamaTtsCliBackend("llama-tts");
+	REQUIRE(backend != nullptr);
+	REQUIRE(backend->backendName() == "LlamaTTS");
+}
+
+TEST_CASE("llama-tts CLI backend builds command arguments", "[tts_inference]") {
+	auto rawBackend = ofxGgmlTtsInference::createLlamaTtsCliBackend("llama-tts");
+	auto * backend = dynamic_cast<ofxGgmlLlamaTtsCliBackend *>(rawBackend.get());
+	REQUIRE(backend != nullptr);
+
+	ofxGgmlTtsRequest request;
+	request.modelPath = "models/outetts.gguf";
+	request.text = "Hello world";
+	request.outputPath = "/tmp/out.wav";
+	request.seed = 42;
+
+	const auto args = backend->buildCommandArguments(request);
+	REQUIRE_FALSE(args.empty());
+	REQUIRE(args[0].find("llama-tts") != std::string::npos);
+	REQUIRE(std::find(args.begin(), args.end(), "-m") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "models/outetts.gguf") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "-p") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "Hello world") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "-o") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "/tmp/out.wav") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "--seed") != args.end());
+	REQUIRE(std::find(args.begin(), args.end(), "42") != args.end());
+}
+
+TEST_CASE("llama-tts CLI backend executable is configurable", "[tts_inference]") {
+	ofxGgmlLlamaTtsCliBackend backend("/custom/path/llama-tts");
+	REQUIRE(backend.getExecutable() == "/custom/path/llama-tts");
+	backend.setExecutable("llama-tts");
+	REQUIRE(backend.getExecutable() == "llama-tts");
+}
+

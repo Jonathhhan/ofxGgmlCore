@@ -1687,6 +1687,12 @@ std::function<bool(const std::string&)> onChunk) const {
 			return result;
 		}
 	}
+	if (!settings.draftModelPath.empty()) {
+		if (!isValidFilePath(settings.draftModelPath)) {
+			result.error = "invalid draft model path: " + settings.draftModelPath;
+			return result;
+		}
+	}
 
 	int effectiveBatch = std::clamp(settings.batchSize, 1, 8192);
 	if ((!settings.device.empty() || settings.gpuLayers > 0) && effectiveBatch > 256) {
@@ -1808,6 +1814,10 @@ std::function<bool(const std::string&)> onChunk) const {
 		if (!settings.grammarPath.empty()) {
 			args.emplace_back("--grammar-file");
 			args.emplace_back(settings.grammarPath);
+		}
+		if (!settings.draftModelPath.empty()) {
+			args.emplace_back("--model-draft");
+			args.emplace_back(settings.draftModelPath);
 		}
 		return args;
 	};
@@ -2348,6 +2358,99 @@ int ofxGgmlInference::countPromptTokens(
 		m_tokenCountCacheLRU.push_front(cacheKey);
 	}
 	return tokenCount;
+}
+
+ofxGgmlInferenceResult ofxGgmlInference::infill(
+	const std::string & prefix,
+	const std::string & suffix,
+	const ofxGgmlInferenceSettings & settings,
+	std::function<bool(const std::string &)> onChunk) const {
+	ofxGgmlInferenceResult result;
+
+	const bool useServer = settings.useServerBackend || !trim(settings.serverUrl).empty();
+	if (!useServer) {
+		result.error =
+			"infill() requires a server backend; "
+			"set useServerBackend=true or provide a serverUrl in settings.";
+		return result;
+	}
+
+	const std::string baseUrl =
+		ofxGgmlInferenceServerInternals::serverBaseUrlFromConfiguredUrl(settings.serverUrl);
+	const std::string infillUrl = baseUrl + "/infill";
+
+#ifdef OFXGGML_HEADLESS_STUBS
+	result.error = "infill requires openFrameworks HTTP runtime";
+	return result;
+#else
+	try {
+		ofJson payload;
+		payload["input_prefix"] = prefix;
+		payload["input_suffix"] = suffix;
+		payload["n_predict"] = std::max(1, settings.maxTokens);
+		payload["temperature"] = std::clamp(settings.temperature, 0.0f, 2.0f);
+		payload["top_p"] = std::clamp(settings.topP, 0.0f, 1.0f);
+		if (settings.seed >= 0) {
+			payload["seed"] = settings.seed;
+		}
+		if (settings.topK > 0) {
+			payload["top_k"] = std::clamp(settings.topK, 1, 100);
+		}
+		if (settings.minP > 0.0f) {
+			payload["min_p"] = std::clamp(settings.minP, 0.0f, 1.0f);
+		}
+		payload["stream"] = (onChunk != nullptr);
+
+		const auto t0 = std::chrono::steady_clock::now();
+
+		ofHttpRequest request(infillUrl, "infill");
+		request.method = ofHttpRequest::POST;
+		request.body = payload.dump();
+		request.contentType = "application/json";
+		request.headers["Accept"] = "application/json";
+		request.timeoutSeconds = 180;
+
+		ofURLFileLoader loader;
+		const ofHttpResponse response = loader.handleRequest(request);
+		const std::string responseText = response.data.getText();
+
+		if (response.status < 200 || response.status >= 300) {
+			result.error = "infill request failed with HTTP " +
+				ofToString(response.status) + ": " + trim(responseText);
+			return result;
+		}
+
+		// llama-server /infill returns {"content": "..."} (non-streaming)
+		try {
+			const ofJson parsed = ofJson::parse(responseText);
+			if (parsed.contains("content") && parsed["content"].is_string()) {
+				result.text = parsed["content"].get<std::string>();
+			} else {
+				result.text =
+					ofxGgmlInferenceServerInternals::extractTextFromOpenAiResponse(
+						responseText);
+			}
+		} catch (...) {
+			result.text =
+				ofxGgmlInferenceServerInternals::extractTextFromOpenAiResponse(
+					responseText);
+		}
+
+		result.elapsedMs = std::chrono::duration<float, std::milli>(
+			std::chrono::steady_clock::now() - t0).count();
+		result.success = !result.text.empty();
+		if (!result.success) {
+			result.error = "infill returned empty output";
+		} else if (onChunk) {
+			onChunk(result.text);
+		}
+	} catch (const std::exception & ex) {
+		result.error = std::string("infill exception: ") + ex.what();
+	} catch (...) {
+		result.error = "infill unknown exception";
+	}
+	return result;
+#endif
 }
 
 std::vector<std::string> ofxGgmlInference::tokenize(const std::string & text) {
