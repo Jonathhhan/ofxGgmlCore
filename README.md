@@ -4,6 +4,8 @@
 
 Creative application workflows remain useful, but they are no longer part of the default addon boundary. Video essay, rendered-music/AceStep, MilkDrop/projectM, and Holoscan bridge code should be treated as companion-addon candidates or example-level integrations behind explicit opt-in headers.
 
+In practice: keep `ofxGgml` boring and dependable, and build the more ambitious creative AI framework in companion projects that opt into this foundation.
+
 ## Layered API Architecture
 
 ofxGgml uses **layered headers** - include only what you need:
