@@ -850,6 +850,14 @@ ofxGgmlComputeResult ofxGgml::computeGraph(ofxGgmlGraph & graph) {
 	return synchronize();
 }
 
+Result<void> ofxGgml::computeGraphEx(ofxGgmlGraph & graph) {
+	Result<void> submit = computeGraphAsyncEx(graph);
+	if (!submit.isOk()) {
+		return submit;
+	}
+	return synchronizeEx();
+}
+
 ofxGgmlComputeResult ofxGgml::computeGraphAsync(ofxGgmlGraph & graph) {
 	ofxGgmlComputeResult result;
 	struct ggml_cgraph * rawGraph = graph.raw();
@@ -905,6 +913,57 @@ ofxGgmlComputeResult ofxGgml::computeGraphAsync(ofxGgmlGraph & graph) {
 	return result;
 }
 
+Result<void> ofxGgml::computeGraphAsyncEx(ofxGgmlGraph & graph) {
+	struct ggml_cgraph * rawGraph = graph.raw();
+
+	if (m_impl->state != ofxGgmlState::Ready) {
+		if (m_impl->state == ofxGgmlState::Computing && m_impl->hasPendingAsync) {
+			return ofxGgmlError(ofxGgmlErrorCode::AsyncOperationPending,
+				"async compute already in flight (call synchronize() first)");
+		}
+		return ofxGgmlError(ofxGgmlErrorCode::ComputeFailed, "not ready");
+	}
+
+	// Reused graphs are already validated and allocated, so skip the
+	// O(node-count) validation pass on the steady-state compute path.
+	if (m_impl->allocatedGraphToken != graph.cacheToken() || m_impl->allocatedGraph != rawGraph) {
+		std::string validationError;
+		if (!validateGraphForCompute(rawGraph, validationError)) {
+			return ofxGgmlError(ofxGgmlErrorCode::InvalidTensor,
+				"invalid graph: " + validationError);
+		}
+
+		// Graph was already validated above; skip redundant second validation.
+		if (!allocGraphInternal(m_impl.get(), graph.cacheToken(), rawGraph, false)) {
+			return ofxGgmlError(ofxGgmlErrorCode::GraphAllocFailed,
+				"graph allocation failed");
+		}
+	}
+
+	m_impl->state = ofxGgmlState::Computing;
+
+	auto t0 = std::chrono::steady_clock::now();
+
+	enum ggml_status status = ggml_backend_sched_graph_compute_async(m_impl->sched.get(), rawGraph);
+
+	auto t1 = std::chrono::steady_clock::now();
+	float elapsedMs = std::chrono::duration<float, std::milli>(t1 - t0).count();
+	m_impl->timings.computeSubmitMs = elapsedMs;
+
+	if (status == GGML_STATUS_SUCCESS) {
+		{
+			std::lock_guard<std::mutex> lock(m_impl->asyncMutex);
+			m_impl->hasPendingAsync.store(true, std::memory_order_release);
+			m_impl->asyncStart = t0;
+		}
+		return Result<void>();
+	} else {
+		m_impl->state = ofxGgmlState::Ready;
+		return ofxGgmlError(ofxGgmlErrorCode::ComputeFailed,
+			std::string("compute failed (status ") + ggml_status_to_string(status) + ")");
+	}
+}
+
 ofxGgmlComputeResult ofxGgml::synchronize() {
 	ofxGgmlComputeResult result;
 	if (m_impl->state != ofxGgmlState::Computing || !m_impl->hasPendingAsync.load(std::memory_order_acquire)) {
@@ -929,6 +988,26 @@ ofxGgmlComputeResult ofxGgml::synchronize() {
 	return result;
 }
 
+Result<void> ofxGgml::synchronizeEx() {
+	if (m_impl->state != ofxGgmlState::Computing || !m_impl->hasPendingAsync.load(std::memory_order_acquire)) {
+		return Result<void>();
+	}
+
+	ggml_backend_sched_synchronize(m_impl->sched.get());
+
+	// Update timings and state under lock for consistency
+	{
+		std::lock_guard<std::mutex> lock(m_impl->asyncMutex);
+		auto t1 = std::chrono::steady_clock::now();
+		m_impl->timings.computeTotalMs =
+			std::chrono::duration<float, std::milli>(t1 - m_impl->asyncStart).count();
+		m_impl->hasPendingAsync.store(false, std::memory_order_release);
+		m_impl->state = ofxGgmlState::Ready;
+	}
+
+	return Result<void>();
+}
+
 ofxGgmlComputeResult ofxGgml::compute(ofxGgmlGraph & graph) {
 	ofxGgmlComputeResult result;
 
@@ -939,6 +1018,15 @@ ofxGgmlComputeResult ofxGgml::compute(ofxGgmlGraph & graph) {
 	}
 
 	return computeGraph(graph);
+}
+
+Result<void> ofxGgml::computeEx(ofxGgmlGraph & graph) {
+	Result<void> alloc = allocGraph(graph);
+	if (!alloc.isOk()) {
+		return alloc;
+	}
+
+	return computeGraphEx(graph);
 }
 
 // --------------------------------------------------------------------------

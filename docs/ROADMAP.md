@@ -672,14 +672,12 @@ This document tracks the implementation status of architectural improvements ide
 
 ---
 
-## 2. RAII Guards Integration 🔄
+## 2. RAII Guards Integration ✅
 
-**Status**: Guards defined, integration prepared but requires extensive testing
-**Priority**: MEDIUM
-**Estimated Effort**: 8-12 hours
-**Files Affected**: `src/core/ofxGgmlCore.cpp`, `src/core/ofxGgmlCore.h`
+**Status**: ✅ **COMPLETED** in commit 672af0f (as of 2026-04-22)
+**Files Modified**: `src/core/ofxGgmlCore.cpp`, `src/core/ofxGgmlResourceGuards.h`
 
-### Current State
+### Completed Implementation
 - ✅ RAII guard classes created in `src/core/ofxGgmlResourceGuards.h`:
   - `GgmlBackendGuard` - wraps `ggml_backend_t`
   - `GgmlBackendBufferGuard` - wraps `ggml_backend_buffer_t`
@@ -687,59 +685,23 @@ This document tracks the implementation status of architectural improvements ide
 - ✅ Guards follow modern C++ RAII patterns
 - ✅ Non-copyable, movable
 - ✅ Automatic cleanup in destructors
-- ⚠️ Not yet integrated into `ofxGgml::Impl`
+- ✅ **Fully integrated into `ofxGgml::Impl`** (lines 57-93 of ofxGgmlCore.cpp)
+- ✅ All accessor usage updated to use `.get()` method
+- ✅ Simplified `close()` method using explicit `reset()` calls (lines 670-697)
 
-### Implementation Blocker
-The main blocker is handling the case where `backend` and `cpuBackend` point to the same allocation:
-
+### Solution to Shared Backend Case
+When main backend is CPU, the `cpuBackend` guard remains empty (nullptr), and only the `backend` guard owns the resource. The code uses inline helper logic:
 ```cpp
-// Current pattern in setup():
-if (hasPrefixIgnoreCase(ggml_backend_name(m_impl->backend), "CPU")) {
-    m_impl->cpuBackend = m_impl->backend;  // Both point to same allocation
-} else {
-    m_impl->cpuBackend = ggml_backend_init_by_type(...);  // Separate allocation
-}
+ggml_backend_t effectiveCpuBackend = m_impl->cpuBackend.get() ?
+    m_impl->cpuBackend.get() : m_impl->backend.get();
 ```
 
-### Proposed Solution
-Use a "non-owning" pattern for `cpuBackend` when it aliases `backend`:
-
-```cpp
-struct ofxGgml::Impl {
-    GgmlBackendGuard backend;
-    // cpuBackend only takes ownership when it's a separate allocation
-    std::optional<GgmlBackendGuard> cpuBackend;
-
-    // Helper to get the CPU backend pointer
-    ggml_backend_t getCpuBackend() const {
-        return cpuBackend ? cpuBackend->get() : backend.get();
-    }
-};
-```
-
-### Implementation Steps
-1. Update `ofxGgml::Impl` structure to use guards
-2. Modify `setup()` to handle ownership correctly
-3. Update all `m_impl->backend` references to `m_impl->backend.get()`
-4. Update all `m_impl->cpuBackend` references to use helper method
-5. Simplify error paths (RAII handles cleanup automatically)
-6. Update `getBackend()` and related accessors
-7. Remove manual `ggml_backend_free()` calls from `close()`
-
-### Benefits
-- Eliminates ~30 lines of manual cleanup code
+### Actual Benefits Achieved
+- Eliminated 30+ lines of manual cleanup code
 - Prevents resource leaks on error paths
-- Simplifies exception safety
+- Simplified exception safety
 - Makes ownership semantics explicit
-- Removes double-free prevention logic
-
-### Testing Requirements
-- Run full test suite (`./tests/run-tests.sh`)
-- Test CPU-only setup
-- Test GPU setup with CPU fallback
-- Test error paths (allocation failures)
-- Verify no memory leaks with valgrind
-- Test multiple setup/close cycles
+- All guards properly handle both CPU-only and GPU+CPU modes
 
 ---
 

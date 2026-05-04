@@ -78,14 +78,30 @@ public:
 	/// Execute an already allocated graph synchronously.
 	ofxGgmlComputeResult computeGraph(ofxGgmlGraph & graph);
 
+	/// Execute an already allocated graph synchronously.
+	/// Returns Result<void> for detailed error reporting.
+	Result<void> computeGraphEx(ofxGgmlGraph & graph);
+
 	/// Execute a graph asynchronously. Allocates first when needed.
 	ofxGgmlComputeResult computeGraphAsync(ofxGgmlGraph & graph);
+
+	/// Execute a graph asynchronously. Allocates first when needed.
+	/// Returns Result<void> for detailed error reporting.
+	Result<void> computeGraphAsyncEx(ofxGgmlGraph & graph);
 
 	/// Wait for an in-flight async execution to finish.
 	ofxGgmlComputeResult synchronize();
 
+	/// Wait for an in-flight async execution to finish.
+	/// Returns Result<void> for detailed error reporting.
+	Result<void> synchronizeEx();
+
 	/// Convenience helper that allocates and computes in one call.
 	ofxGgmlComputeResult compute(ofxGgmlGraph & graph);
+
+	/// Convenience helper that allocates and computes in one call.
+	/// Returns Result<void> for detailed error reporting.
+	Result<void> computeEx(ofxGgmlGraph & graph);
 
 	/// Last recorded setup, allocation, upload, and compute timings.
 	ofxGgmlTimings getLastTimings() const;
