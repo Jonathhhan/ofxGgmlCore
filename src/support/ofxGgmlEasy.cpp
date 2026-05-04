@@ -12,6 +12,15 @@
 
 namespace {
 
+std::string trim(const std::string & value) {
+	const size_t start = value.find_first_not_of(" \t\n\r");
+	if (start == std::string::npos) {
+		return "";
+	}
+	const size_t end = value.find_last_not_of(" \t\n\r");
+	return value.substr(start, end - start + 1);
+}
+
 template <typename T, typename Configure>
 T & ensureOwned(
 	std::unique_ptr<T> & ptr,
@@ -218,6 +227,80 @@ std::string configuredModelMetricKey(const ofxGgmlEasyTextConfig & config) {
 	return "default";
 }
 
+std::string joinLines(const std::vector<std::string> & lines) {
+	std::ostringstream out;
+	for (size_t i = 0; i < lines.size(); ++i) {
+		if (i > 0) {
+			out << "\n";
+		}
+		out << lines[i];
+	}
+	return out.str();
+}
+
+void pushIfNotEmpty(std::vector<std::string> & out, const std::string & value) {
+	if (!trim(value).empty()) {
+		out.push_back(trim(value));
+	}
+}
+
+struct ofxGgmlEasyQuickFixVariants {
+	std::vector<std::string> generic;
+	std::vector<std::string> windowsBat;
+	std::vector<std::string> windowsPowerShell;
+	std::vector<std::string> macLinux;
+};
+
+ofxGgmlEasyQuickFixVariants buildSetupQuickFixCommandVariants(
+	const ofxGgmlEasyModelSetupReport & setup,
+	const std::string & task,
+	const std::string & catalogPath) {
+	ofxGgmlEasyQuickFixVariants variants;
+
+	if (!setup.catalogAvailable) {
+		pushIfNotEmpty(variants.generic, "Use the bundled catalog path: scripts/model-catalog.json");
+	}
+
+	const bool needsModel = !setup.modelPathExists;
+	if (needsModel && setup.recommendedPreset) {
+		{
+			std::ostringstream cmd;
+			cmd << "./scripts/download-model.sh --preset " << setup.recommendedPreset->preset;
+			cmd << " --require-checksum";
+			cmd << " --output models";
+			variants.macLinux.push_back(cmd.str());
+			variants.generic.push_back(cmd.str());
+		}
+		{
+			std::ostringstream cmd;
+			cmd << "scripts\\download-model.bat " << setup.recommendedPreset->preset;
+			cmd << " --require-checksum";
+			cmd << " --output models";
+			variants.windowsBat.push_back(cmd.str());
+		}
+		{
+			std::ostringstream cmd;
+			cmd << "powershell -ExecutionPolicy Bypass -File scripts\\download-model.ps1";
+			cmd << " -Preset " << setup.recommendedPreset->preset;
+			cmd << " -RequireChecksum";
+			cmd << " -OutputDir models";
+			variants.windowsPowerShell.push_back(cmd.str());
+		}
+	}
+
+	if (!setup.prefersServer && !setup.serverConfigured && !needsModel) {
+		// No model issue, likely missing local llama.cpp tooling.
+		variants.macLinux.push_back("./scripts/setup_linux_macos.sh");
+		variants.windowsBat.push_back("scripts\\setup_windows.bat");
+		variants.windowsPowerShell.push_back("powershell -ExecutionPolicy Bypass -File scripts\\setup_windows.ps1");
+		variants.generic.push_back("Run the platform setup script to install local runtimes");
+	}
+
+	(void)task;
+	(void)catalogPath;
+	return variants;
+}
+
 std::string diagnosticSeverityLabel(ofxGgmlEasyDiagnosticSeverity severity) {
 	switch (severity) {
 		case ofxGgmlEasyDiagnosticSeverity::Info: return "info";
@@ -261,6 +344,11 @@ std::string ofxGgmlEasyDiagnosticsReport::toJsonString() const {
 	ofJson root;
 	root["ready"] = ready;
 	root["degraded"] = degraded;
+	root["quickFixSummary"] = quickFixSummary;
+	root["quickFixCommands"] = stringVectorToJson(quickFixCommands);
+	root["quickFixCommandsWindowsBat"] = stringVectorToJson(quickFixCommandsWindowsBat);
+	root["quickFixCommandsWindowsPowerShell"] = stringVectorToJson(quickFixCommandsWindowsPowerShell);
+	root["quickFixCommandsMacLinux"] = stringVectorToJson(quickFixCommandsMacLinux);
 
 	root["setup"]["ready"] = setup.ready;
 	root["setup"]["catalogAvailable"] = setup.catalogAvailable;
@@ -812,6 +900,20 @@ ofxGgmlEasyDiagnosticsReport ofxGgmlEasy::inspectTextDiagnostics(
 	ofxGgmlEasyDiagnosticsReport report;
 	report.setup = inspectTextSetup(task, catalogPath);
 	report.health = inspectTextHealth(runtime);
+	const auto variants = buildSetupQuickFixCommandVariants(report.setup, task, catalogPath);
+	report.quickFixCommands = variants.generic;
+	report.quickFixCommandsWindowsBat = variants.windowsBat;
+	report.quickFixCommandsWindowsPowerShell = variants.windowsPowerShell;
+	report.quickFixCommandsMacLinux = variants.macLinux;
+	if (!report.quickFixCommands.empty()) {
+		report.quickFixSummary = joinLines(report.quickFixCommands);
+	} else if (!report.quickFixCommandsMacLinux.empty()) {
+		report.quickFixSummary = joinLines(report.quickFixCommandsMacLinux);
+	} else if (!report.quickFixCommandsWindowsBat.empty()) {
+		report.quickFixSummary = joinLines(report.quickFixCommandsWindowsBat);
+	} else if (!report.quickFixCommandsWindowsPowerShell.empty()) {
+		report.quickFixSummary = joinLines(report.quickFixCommandsWindowsPowerShell);
+	}
 
 	for (const auto & error : report.setup.errors) {
 		addDiagnosticIssue(
