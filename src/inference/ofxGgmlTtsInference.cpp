@@ -168,7 +168,7 @@ ofxGgmlTtsResult ofxGgmlLlamaTtsCliBackend::synthesize(
 	if (std::filesystem::exists(std::filesystem::path(outputPath), ec) && !ec) {
 		ofxGgmlTtsAudioArtifact artifact;
 		artifact.path = outputPath;
-		artifact.sampleRate = 24000;
+		artifact.sampleRate = request.sampleRate > 0 ? request.sampleRate : 24000;
 		artifact.channels = 1;
 		result.audioFiles.push_back(std::move(artifact));
 		result.success = true;

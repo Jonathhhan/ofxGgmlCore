@@ -31,6 +31,7 @@ struct ofxGgmlRAGChunk {
 	float keywordScore = 0.0f;
 	float semanticScore = 0.0f;
 	float qualityScore = 0.0f;
+	float rerankScore = 0.0f;
 	int crawlDepth = -1;
 	size_t sourceByteSize = 0;
 	float sourceQualityHint = 0.0f;

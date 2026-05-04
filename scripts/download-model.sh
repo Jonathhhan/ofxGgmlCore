@@ -25,6 +25,8 @@
 #   --hf  ORG/REPO/FILENAME
 #                  Download a GGUF file directly from HuggingFace.
 #                  Example: --hf Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q4_k_m.gguf
+#                  The colon separator is also accepted for the filename part:
+#                  --hf Qwen/Qwen2.5-1.5B-Instruct-GGUF:qwen2.5-1.5b-instruct-q4_k_m.gguf
 #   --list         List recommended models with preset numbers and exit
 #   --help         Show this help message
 #

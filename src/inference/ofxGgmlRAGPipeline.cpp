@@ -497,8 +497,10 @@ ofxGgmlRAGRetrievalResult ofxGgmlRAGPipeline::retrieve(
 			}
 			if (maxServerScore > 0.0f) {
 				for (size_t i = 0; i < allChunks.size(); ++i) {
-					allChunks[i].semanticScore = clampUnit(serverScores[i] / maxServerScore);
-					allChunks[i].score = allChunks[i].semanticScore;
+					allChunks[i].rerankScore = clampUnit(serverScores[i] / maxServerScore);
+					// Preserve original lexical/semantic/quality scores for debugging.
+					// Use rerankScore as the primary sort key.
+					allChunks[i].score = allChunks[i].rerankScore;
 				}
 				std::stable_sort(
 					allChunks.begin(),

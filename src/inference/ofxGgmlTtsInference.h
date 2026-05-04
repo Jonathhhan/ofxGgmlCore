@@ -47,6 +47,7 @@ struct ofxGgmlTtsRequest {
 	std::string promptAudioPath;
 	int seed = -1;
 	int maxTokens = 0;
+	int sampleRate = 0;
 	float temperature = 0.4f;
 	float repetitionPenalty = 1.1f;
 	int repetitionRange = 64;
