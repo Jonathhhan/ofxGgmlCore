@@ -358,6 +358,8 @@ TEST_CASE("Easy API diagnostics report combines setup, health, severities, and J
 	REQUIRE(missingJson.find("\"blocking\"") != std::string::npos);
 	REQUIRE(missingJson.find("\"setup\"") != std::string::npos);
 	REQUIRE(missingJson.find("\"health\"") != std::string::npos);
+	REQUIRE(missingJson.find("\"quickFixSummary\"") != std::string::npos);
+	REQUIRE(missingJson.find("\"quickFixCommands\"") != std::string::npos);
 
 	const std::string modelPath = createEasyApiDummyModel("general.gguf");
 	const std::string exePath = createEasyApiExecutable("easy-api-ok");
@@ -377,6 +379,8 @@ TEST_CASE("Easy API diagnostics report combines setup, health, severities, and J
 	const std::string configuredJson = configured.toJsonString();
 	REQUIRE(configuredJson.find("\"localRuntimeAttached\"") != std::string::npos);
 	REQUIRE(configuredJson.find("true") != std::string::npos);
+	REQUIRE(configuredJson.find("\"quickFixSummary\"") != std::string::npos);
+	REQUIRE(configuredJson.find("\"quickFixCommands\"") != std::string::npos);
 }
 
 TEST_CASE("Easy API wraps common text workflows", "[easy_api]") {

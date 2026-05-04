@@ -12,6 +12,15 @@
 
 namespace {
 
+std::string trim(const std::string & value) {
+	const size_t start = value.find_first_not_of(" \t\n\r");
+	if (start == std::string::npos) {
+		return "";
+	}
+	const size_t end = value.find_last_not_of(" \t\n\r");
+	return value.substr(start, end - start + 1);
+}
+
 template <typename T, typename Configure>
 T & ensureOwned(
 	std::unique_ptr<T> & ptr,
@@ -218,6 +227,54 @@ std::string configuredModelMetricKey(const ofxGgmlEasyTextConfig & config) {
 	return "default";
 }
 
+std::string joinLines(const std::vector<std::string> & lines) {
+	std::ostringstream out;
+	for (size_t i = 0; i < lines.size(); ++i) {
+		if (i > 0) {
+			out << "\n";
+		}
+		out << lines[i];
+	}
+	return out.str();
+}
+
+void pushIfNotEmpty(std::vector<std::string> & out, const std::string & value) {
+	if (!trim(value).empty()) {
+		out.push_back(trim(value));
+	}
+}
+
+std::vector<std::string> buildSetupQuickFixCommands(
+	const ofxGgmlEasyModelSetupReport & setup,
+	const std::string & task,
+	const std::string & catalogPath) {
+	std::vector<std::string> commands;
+
+	// Keep these platform-agnostic. GUIs can render or copy them, and docs can
+	// show both bash/bat variants separately.
+	if (!setup.catalogAvailable) {
+		pushIfNotEmpty(commands, "Use the bundled catalog path: scripts/model-catalog.json");
+	}
+
+	const bool needsModel = !setup.modelPathExists;
+	if (needsModel && setup.recommendedPreset) {
+		std::ostringstream cmd;
+		cmd << "./scripts/download-model.sh --preset " << setup.recommendedPreset->preset;
+		cmd << " --require-checksum";
+		cmd << " --output models";
+		commands.push_back(cmd.str());
+	}
+
+	if (!setup.prefersServer && !setup.serverConfigured && !needsModel) {
+		// No model issue, likely missing local llama.cpp tooling.
+		commands.push_back("Run scripts/setup_linux_macos.sh (or scripts\\setup_windows.bat) to install local runtimes");
+	}
+
+	(void)task;
+	(void)catalogPath;
+	return commands;
+}
+
 std::string diagnosticSeverityLabel(ofxGgmlEasyDiagnosticSeverity severity) {
 	switch (severity) {
 		case ofxGgmlEasyDiagnosticSeverity::Info: return "info";
@@ -261,6 +318,8 @@ std::string ofxGgmlEasyDiagnosticsReport::toJsonString() const {
 	ofJson root;
 	root["ready"] = ready;
 	root["degraded"] = degraded;
+	root["quickFixSummary"] = quickFixSummary;
+	root["quickFixCommands"] = stringVectorToJson(quickFixCommands);
 
 	root["setup"]["ready"] = setup.ready;
 	root["setup"]["catalogAvailable"] = setup.catalogAvailable;
@@ -812,6 +871,10 @@ ofxGgmlEasyDiagnosticsReport ofxGgmlEasy::inspectTextDiagnostics(
 	ofxGgmlEasyDiagnosticsReport report;
 	report.setup = inspectTextSetup(task, catalogPath);
 	report.health = inspectTextHealth(runtime);
+	report.quickFixCommands = buildSetupQuickFixCommands(report.setup, task, catalogPath);
+	if (!report.quickFixCommands.empty()) {
+		report.quickFixSummary = joinLines(report.quickFixCommands);
+	}
 
 	for (const auto & error : report.setup.errors) {
 		addDiagnosticIssue(

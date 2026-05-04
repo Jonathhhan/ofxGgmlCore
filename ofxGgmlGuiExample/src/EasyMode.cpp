@@ -308,6 +308,23 @@ void ofApp::drawEasyPanel() {
 		"Use this mode as the shortest path through the addon. It reuses the current model and "
 		"backend selection, then exercises the high-level facade instead of the lower-level studio flows.");
 
+	configureEasyApiFromCurrentUi();
+	const auto diagnostics = easyApi.inspectTextDiagnostics(
+		"chat",
+		"scripts/model-catalog.json",
+		&ggml);
+	if (!diagnostics.ready) {
+		ImGui::Spacing();
+		ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.25f, 1.0f), "Text setup needs attention");
+		if (!diagnostics.quickFixSummary.empty()) {
+			ImGui::TextWrapped("%s", diagnostics.quickFixSummary.c_str());
+		}
+		if (!diagnostics.quickFixCommands.empty() && ImGui::SmallButton("Copy quick fixes")) {
+			copyToClipboard(diagnostics.quickFixSummary);
+		}
+		ImGui::Separator();
+	}
+
 	easyActionIndex = std::clamp(
 		easyActionIndex,
 		0,
