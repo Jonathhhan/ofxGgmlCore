@@ -3586,11 +3586,24 @@ ofxGgmlCodeAssistant::runInlineCompletion(
 	if (effectiveSettings.maxTokens <= 0 || effectiveSettings.maxTokens > request.maxTokens) {
 		effectiveSettings.maxTokens = request.maxTokens;
 	}
-	result.inference = m_inference.generate(
-		modelPath,
-		result.prepared.prompt,
-		effectiveSettings,
-		onChunk);
+
+	// When fill-in-the-middle is requested and a server backend is available,
+	// use the dedicated /infill endpoint instead of wrapping the prompt.
+	const bool useServer = effectiveSettings.useServerBackend ||
+		!trim(effectiveSettings.serverUrl).empty();
+	if (request.useFillInTheMiddle && useServer) {
+		result.inference = m_inference.infill(
+			request.prefix,
+			request.suffix,
+			effectiveSettings,
+			onChunk);
+	} else {
+		result.inference = m_inference.generate(
+			modelPath,
+			result.prepared.prompt,
+			effectiveSettings,
+			onChunk);
+	}
 	result.completion = sanitizeInlineCompletionText(request, result.inference.text);
 	return result;
 }

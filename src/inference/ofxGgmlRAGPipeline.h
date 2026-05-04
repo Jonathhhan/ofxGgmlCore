@@ -54,6 +54,9 @@ struct ofxGgmlRAGQuery {
 	std::string embeddingModelPath;
 	ofxGgmlEmbeddingSettings embeddingSettings;
 	std::vector<std::string> queryVariants;
+	bool enableServerRerank = false;
+	std::string rerankServerUrl;
+	std::string rerankModel;
 };
 
 /// Result from the retrieval step only (no generation).

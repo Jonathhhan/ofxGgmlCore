@@ -475,6 +475,19 @@ std::vector<std::string> ofxGgmlWhisperCliSpeechBackend::buildCommandArguments(
 		args.push_back("--prompt");
 		args.push_back(normalized.prompt);
 	}
+	if (request.vad.enabled) {
+		args.push_back("--vad");
+		args.push_back("--vad-thold");
+		args.push_back(std::to_string(std::max(0.0f, std::min(1.0f, request.vad.threshold))));
+		if (request.vad.minSilenceMs > 0) {
+			args.push_back("--vad-min-silence-ms");
+			args.push_back(std::to_string(request.vad.minSilenceMs));
+		}
+		if (!trimCopy(request.vad.modelPath).empty()) {
+			args.push_back("--vad-model");
+			args.push_back(trimCopy(request.vad.modelPath));
+		}
+	}
 	return args;
 }
 

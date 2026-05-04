@@ -6,6 +6,7 @@
 #   ./scripts/download-model.sh [--model URL] [--preset N] [--task NAME] [--both]
 #                               [--output DIR] [--name FILE] [--checksum SHA256]
 #                               [--require-checksum]
+#                               [--hf ORG/REPO/FILENAME]
 #
 # Options:
 #   --model  URL   Direct URL to a GGUF model file.
@@ -15,12 +16,15 @@
 #                  summarize, write, translate, custom  (matches the GUI
 #                  example modes)
 #   --output DIR   Directory to save the model (default: addon-root models/)
-#   --name   FILE  Output file name (default: derived from URL)
+#   --name   FILE  Output file name (default: derived from URL or HF path)
 #   --both         Download both recommended presets (1 and 2)
 #   --checksum HEX SHA256 checksum for --model URL downloads
 #   --require-checksum
 #                  Fail instead of downloading when no SHA256 is configured.
 #                  Can also be enabled with OFXGGML_REQUIRE_MODEL_CHECKSUM=1.
+#   --hf  ORG/REPO/FILENAME
+#                  Download a GGUF file directly from HuggingFace.
+#                  Example: --hf Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q4_k_m.gguf
 #   --list         List recommended models with preset numbers and exit
 #   --help         Show this help message
 #
@@ -172,6 +176,7 @@ OUTPUT_NAME=""
 MODEL_CHECKSUM=""
 PRESET_INDEX=""
 TASK_NAME=""
+HF_ID=""
 DOWNLOAD_BOTH=false
 REQUIRE_CHECKSUM="${OFXGGML_REQUIRE_MODEL_CHECKSUM:-0}"
 
@@ -258,6 +263,10 @@ while [[ $# -gt 0 ]]; do
 			MODEL_CHECKSUM="$2"
 			shift 2
 			;;
+		--hf)
+			HF_ID="$2"
+			shift 2
+			;;
 		--require-checksum)
 			REQUIRE_CHECKSUM=1
 			shift
@@ -278,9 +287,33 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-if [[ "$DOWNLOAD_BOTH" != true ]] && [[ -z "$MODEL_URL" ]] && [[ -z "$PRESET_INDEX" ]] && [[ -z "$TASK_NAME" ]]; then
+if [[ "$DOWNLOAD_BOTH" != true ]] && [[ -z "$MODEL_URL" ]] && [[ -z "$PRESET_INDEX" ]] && [[ -z "$TASK_NAME" ]] && [[ -z "$HF_ID" ]]; then
 	DOWNLOAD_BOTH=true
-	write_step "No --model/--preset/--task specified, defaulting to both recommended presets"
+	write_step "No --model/--preset/--task/--hf specified, defaulting to both recommended presets"
+fi
+
+# Expand --hf ORG/REPO/FILENAME into a direct HuggingFace URL so the rest of
+# the script can treat it like any other --model URL.
+if [[ -n "$HF_ID" ]]; then
+	if [[ -n "$MODEL_URL" ]] || [[ -n "$PRESET_INDEX" ]] || [[ -n "$TASK_NAME" ]] || [[ "$DOWNLOAD_BOTH" == true ]]; then
+		die "Cannot combine --hf with --model, --preset, --task, or --both"
+	fi
+	# Expect format: ORG/REPO/FILENAME  (three slash-separated components)
+	# We also accept ORG/REPO:FILENAME using a colon separator for the filename.
+	HF_ID="${HF_ID//:/\/}"
+	hf_parts_count=$(echo "$HF_ID" | awk -F'/' '{print NF}')
+	if [[ "$hf_parts_count" -lt 3 ]]; then
+		die "--hf value must be in ORG/REPO/FILENAME format (e.g. Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q4_k_m.gguf)"
+	fi
+	# First two components are ORG/REPO, the rest form the file path inside the repo.
+	hf_org="$(echo "$HF_ID" | cut -d'/' -f1)"
+	hf_repo="$(echo "$HF_ID" | cut -d'/' -f2)"
+	hf_file="$(echo "$HF_ID" | cut -d'/' -f3-)"
+	MODEL_URL="https://huggingface.co/${hf_org}/${hf_repo}/resolve/main/${hf_file}"
+	if [[ -z "$OUTPUT_NAME" ]]; then
+		OUTPUT_NAME="$(basename "$hf_file")"
+	fi
+	write_step "HuggingFace model: ${hf_org}/${hf_repo}/${hf_file}"
 fi
 
 if [[ "$DOWNLOAD_BOTH" == true ]]; then

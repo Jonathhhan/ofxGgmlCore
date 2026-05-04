@@ -25,6 +25,13 @@ struct ofxGgmlSpeechSegment {
 	std::string text;
 };
 
+struct ofxGgmlSpeechVadSettings {
+	bool enabled = false;
+	float threshold = 0.5f;
+	int minSilenceMs = 2000;
+	std::string modelPath;
+};
+
 struct ofxGgmlSpeechRequest {
 	ofxGgmlSpeechTask task = ofxGgmlSpeechTask::Transcribe;
 	std::string audioPath;
@@ -34,6 +41,7 @@ struct ofxGgmlSpeechRequest {
 	std::string languageHint;
 	std::string prompt;
 	bool returnTimestamps = false;
+	ofxGgmlSpeechVadSettings vad;
 };
 
 struct ofxGgmlSpeechResult {

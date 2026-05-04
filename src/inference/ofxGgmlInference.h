@@ -54,6 +54,7 @@ struct ofxGgmlInferenceSettings {
 	bool useServerBackend = false;
 	std::string serverUrl;
 	std::string serverModel;
+	std::string draftModelPath;
 };
 
 struct ofxGgmlInferenceCapabilities {
@@ -287,6 +288,15 @@ public:
 	int countPromptTokens(
 		const std::string & modelPath,
 		const std::string & text) const;
+
+	/// Fill-in-the-middle (FIM) inference via the llama-server /infill endpoint.
+	/// Requires a server backend (set useServerBackend=true or provide serverUrl in settings).
+	/// Returns an empty result with error set if the server is not available or FIM is unsupported.
+	ofxGgmlInferenceResult infill(
+		const std::string & prefix,
+		const std::string & suffix,
+		const ofxGgmlInferenceSettings & settings = {},
+		std::function<bool(const std::string &)> onChunk = nullptr) const;
 
 	static std::vector<ofxGgmlPromptSource> fetchUrlSources(
 		const std::vector<std::string> & urls,
