@@ -1,8 +1,8 @@
 # ofxGgml Strategic Roadmap
 
-This document tracks the Option A direction for ofxGgml: an openFrameworks addon for ggml tensors plus basic local LLM inference, with larger creative-application workflows split into companion addons or example-level integrations.
+This document tracks the Option A direction for ofxGgml: a boring, dependable openFrameworks addon for ggml tensors plus basic local LLM inference. Larger creative-application workflows belong in companion addons or example-level integrations so every user does not pay for every experiment.
 
-**Last Updated**: 2026-05-03  
+**Last Updated**: 2026-05-04
 **Current Version**: 1.0.4
 
 ---
@@ -10,6 +10,8 @@ This document tracks the Option A direction for ofxGgml: an openFrameworks addon
 ## North Star
 
 ofxGgml should be the easiest way to add **ggml tensors and basic local LLM inference** to openFrameworks projects.
+
+The core addon should be predictable infrastructure. The broader creative AI framework can stay ambitious, but it should live in companion projects that opt into ofxGgml rather than inside the default addon boundary.
 
 That means prioritizing:
 
@@ -23,19 +25,22 @@ That means prioritizing:
 
 ## Guiding Product Principles
 
-1. **Local by default**  
+1. **Boring core, exciting elsewhere**
+   The default addon should favor stable setup, clear diagnostics, and small APIs. Experimental creative systems should be built as companion addons or focused examples.
+
+2. **Local by default**
    Core inference should run with local models, local tools, and local files whenever possible.
 
-2. **Verifiable by design**  
+3. **Verifiable by design**
    Inference, retrieval, and helper features should expose provenance, warnings, confidence, and reproducibility metadata where relevant.
 
-3. **Composable across modalities**  
+4. **Composable across modalities**
    Tensor, model, text, and optional modality helpers should connect through stable contracts without making the addon an application framework.
 
-4. **Useful for artists and developers**  
+5. **Useful for artists and developers**
    APIs should work for creative coding apps without forcing the addon to own their application lifecycle.
 
-5. **Reference examples, not monoliths**  
+6. **Reference examples, not monoliths**
    The GUI example should demonstrate addon APIs. Video essay, montage, music/AceStep, MilkDrop, and Holoscan workflows should move to companion addons or remain example-level integrations.
 
 ---
@@ -99,23 +104,23 @@ Reduce the giant GUI example to a showcase for API layers and UI patterns. Compl
 
 ---
 
-## Phase 2: Platform Composition (3-6 Months)
+## Phase 2: Companion Handoff Contracts (3-6 Months)
 
-Focus: turn existing helpers into a reusable workflow system.
+Focus: define small, stable contracts that let companion projects compose workflows without turning ofxGgml into the workflow application.
 
-### 1. Workflow Graph Runtime
+### 1. Workflow Handoff Contracts
 **Priority**: HIGH  
 **Status**: 💡 Proposed
 
-Introduce reusable workflow graphs so apps can connect stages like:
+Standardize lightweight handoff contracts so companion apps can connect stages like:
 
 `crawl -> cite -> outline -> script -> TTS -> subtitles -> video plan`
 
 Target capabilities:
 
-- typed workflow nodes
+- typed inputs and outputs
 - shared input/output contracts
-- resumable execution
+- resumable execution metadata
 - inspectable intermediate outputs
 - replay support for deterministic debugging
 
@@ -134,11 +139,11 @@ Standardize a manifest format that can carry:
 
 **Outcome**: outputs from one workflow become reliable inputs for the next.
 
-### 3. Project Memory Across Creative Runs
+### 3. Companion Project Memory
 **Priority**: MEDIUM-HIGH  
 **Status**: 💡 Proposed
 
-Extend memory beyond code assistance into long-lived project context for:
+Keep long-lived creative project memory in companion projects, while ofxGgml provides reusable serialization and provenance primitives for:
 
 - prompts and creative intent
 - accepted references and citations
@@ -163,9 +168,9 @@ Ship more narrowly scoped examples or tutorial projects for:
 
 ---
 
-## Phase 3: Assistant Systems and Creative Copilots (6-9 Months)
+## Phase 3: Assistant Reliability and Companion Copilots (6-9 Months)
 
-Focus: move from single assistants to coordinated specialist systems.
+Focus: keep the core assistant surfaces safe and inspectable while letting companion projects explore coordinated creative systems.
 
 ### 1. Specialist Assistant Teams
 **Priority**: HIGH  
@@ -181,11 +186,11 @@ Evolve assistants toward explicit roles such as:
 
 The key constraint is to preserve approval-first execution and workspace safety while improving delegation and handoff quality.
 
-### 2. Timeline-Aware Creative Copilots
+### 2. Timeline-Aware Companion Copilots
 **Priority**: HIGH  
 **Status**: 💡 Proposed
 
-Invest in assistant patterns tailored to media creation:
+Explore assistant patterns tailored to media creation outside the default addon boundary:
 
 - video essay planning
 - montage building
@@ -193,13 +198,13 @@ Invest in assistant patterns tailored to media creation:
 - subtitle editing and revision
 - generative visual pipelines
 
-**Outcome**: ofxGgml becomes purpose-built for AI-native creative tools rather than generic chat wrappers.
+**Outcome**: companion projects can become purpose-built AI-native creative tools while ofxGgml remains the dependable local inference foundation.
 
 ### 3. Continuity, Consistency, and Asset Reuse
 **Priority**: MEDIUM-HIGH  
 **Status**: 💡 Proposed
 
-Add system support for:
+Let companion systems build on core provenance and manifest support for:
 
 - scene continuity across long-form video planning
 - style consistency across generated prompts and outputs
@@ -225,7 +230,7 @@ Build repeatable evaluation coverage for:
 
 ## Phase 4: Ecosystem and Extensibility (9-12 Months)
 
-Focus: let other developers build on the platform.
+Focus: let other developers build companion layers on top of the stable addon foundation.
 
 ### 1. Plugin System
 **Priority**: HIGH  
@@ -234,7 +239,7 @@ Focus: let other developers build on the platform.
 Create a plugin architecture for:
 
 - custom inference backends
-- workflow nodes
+- companion workflow nodes
 - modalities and renderers
 - search/retrieval providers
 - tool adapters and assistant capabilities
@@ -278,8 +283,9 @@ These themes should shape every phase rather than live in only one release.
 - prefer inspectable structured outputs for handoff-heavy systems
 
 ### Stable Addon APIs
-- move logic out of example code and into reusable addon surfaces
+- move only stable, broadly useful logic out of example code and into reusable addon surfaces
 - avoid locking roadmap features inside one GUI-specific implementation
+- keep experimental creative orchestration in companion/example tiers
 
 ### Performance and Responsiveness
 - prioritize caching, batching, backpressure, and resumable execution
@@ -287,7 +293,7 @@ These themes should shape every phase rather than live in only one release.
 
 ### Documentation and Learnability
 - align README, roadmap, and focused examples around the same product story
-- explain not just isolated features, but how they combine into creative systems
+- explain how stable addon features support host apps and companion systems without expanding the default core
 
 ---
 
@@ -300,10 +306,10 @@ These themes should shape every phase rather than live in only one release.
 - hybrid retrieval
 
 ### Next
-- workflow graph/runtime
+- workflow handoff contracts
 - shared workflow manifests
 - GUI modularization
-- focused example apps
+- focused companion/example apps
 
 ### Then
 - specialist multi-agent orchestration
@@ -312,7 +318,7 @@ These themes should shape every phase rather than live in only one release.
 - evaluation suites
 
 ### Finally
-- advanced creative copilots
+- advanced creative copilots in companion projects
 - personalization and LoRA-style adaptation
 - collaborative and real-time creative pipelines
 
@@ -323,12 +329,13 @@ These themes should shape every phase rather than live in only one release.
 ofxGgml will have reached this roadmap’s goal when an openFrameworks developer can:
 
 - install and validate the right local model stack quickly
-- compose text, vision, speech, code, and video workflows through stable APIs
+- use stable tensor, model, text, and optional modality APIs without inheriting unrelated experiments
+- opt into companion workflows only when a project needs them
 - inspect where outputs came from and why decisions were made
 - build safe assistant-driven tools with approval gates and replayable execution
-- reuse manifests, memory, and plugins across multiple creative applications
+- hand off manifests, memory, and plugins to multiple creative applications without making the core addon own those apps
 
-At that point, ofxGgml is no longer just a wrapper around model runtimes. It is the **local creative AI systems layer** for openFrameworks.
+At that point, ofxGgml is not a monolithic creative AI framework. It is the stable local inference foundation that makes those frameworks possible somewhere else.
 
 ## Consolidated roadmap archive
 

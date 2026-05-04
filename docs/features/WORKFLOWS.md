@@ -73,58 +73,13 @@ for (auto& action : editPlan.actions) {
 }
 ```
 
-## Montage Planning
+## Companion / Example-Tier Workflows
 
-### From Subtitle File
-
-Create a montage from transcript cues:
-
-```cpp
-ofxGgmlMontagePlanner montage;
-montage.setInference(&inference);
-
-ofxGgmlMontagePlannerRequest request;
-request.subtitlePath = "interview.srt";
-request.goal = "Extract key emotional moments";
-request.maxClips = 8;
-request.targetDuration = 60;  // seconds
-
-auto plan = montage.plan(request);
-
-// Ranked clips
-for (auto& clip : plan.clips) {
-    cout << clip.startTime << " → " << clip.endTime << endl;
-    cout << "  Text: " << clip.text << endl;
-    cout << "  Score: " << clip.score << endl;
-}
-```
-
-### Export EDL for NLE
-
-```cpp
-// Export CMX EDL for Premiere/Resolve/Avid
-string edl = montage.buildEdl(
-    plan.clips,
-    "My Montage",
-    30.0,  // frame rate
-    false  // not drop-frame
-);
-
-ofSaveBuffer("montage.edl", edl);
-```
-
-### With Audio Track
-
-```cpp
-string edlWithAudio = montage.buildEdlWithAudio(
-    plan.clips,
-    "Montage with Audio",
-    30.0,
-    "source-video.mp4",  // source file
-    "A",  // audio track (A, A2, A3...)
-    false
-);
-```
+Montage planning, video essay generation, music/AceStep, MilkDrop, and
+Holoscan bridge workflows are intentionally outside this default workflow guide.
+They remain available for existing experiments through
+`ofxGgmlCompanionWorkflows.h`, but should be treated as companion-addon or
+focused-example surfaces rather than stable addon-tier APIs.
 
 ## Citation Search
 
