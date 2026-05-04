@@ -296,7 +296,8 @@ def main() -> int:
         if canonical:
             try:
                 canonical = normalize_url(urllib.parse.urljoin(url, canonical))
-            except Exception:
+            except (ValueError, urllib.error.URLError) as exc:
+                print(f"[Warning] Could not normalize canonical URL {canonical!r}: {exc}", file=sys.stderr)
                 canonical = ""
 
         file_name = f"{written:03d}-{slugify(title)}.md"
