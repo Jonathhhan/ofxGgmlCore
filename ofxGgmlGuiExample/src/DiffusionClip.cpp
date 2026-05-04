@@ -51,7 +51,7 @@ void ofApp::drawDiffusionPanel() {
 
 	ImGui::TextWrapped(
 		"This panel is wired for local image generation through ofxStableDiffusion. "
-		"It keeps prompt state, image handoff, CLIP reranking, and result reuse inside the AI Studio example.");
+		"It keeps prompt state, image handoff, CLIP reranking, and result reuse inside the GUI example.");
 
 	ImGui::Separator();
 	ImGui::Text("Music -> Image");
