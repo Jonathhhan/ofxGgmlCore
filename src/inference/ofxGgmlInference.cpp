@@ -2611,6 +2611,7 @@ ofxGgmlBatchResult ofxGgmlInference::generateBatch(
 		normalizedConcurrencyLimit(batchSettings.maxConcurrentRequests) > 1;
 
 	// Check if all requests share compatible settings for server batch mode
+	// requests is non-empty here — guaranteed by the early return above
 	bool allUseServer = true;
 	bool settingsCompatible = true;
 	ofxGgmlInferenceSettings sharedSettings = requests[0].settings;
