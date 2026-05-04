@@ -204,13 +204,21 @@ inline std::string sanitizeOutputPrefix(const std::string & value) {
 	return sanitized.empty() ? "diffusion" : sanitized;
 }
 
-inline std::string makeTimestampToken() {
+inline std::string makeUniqueTimestampToken() {
 	const auto now = std::chrono::system_clock::now();
 	const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
 		now.time_since_epoch()).count();
 	std::random_device rd;
 	return std::to_string(ms) + "_" + std::to_string(rd());
 }
+
+struct ScopedTempDirectoryCleanup {
+	std::filesystem::path path;
+	~ScopedTempDirectoryCleanup() {
+		std::error_code cleanupEc;
+		std::filesystem::remove_all(path, cleanupEc);
+	}
+};
 
 inline ContextCacheKey makeContextCacheKey(
 	const ofxStableDiffusion & engine,
@@ -397,7 +405,7 @@ inline std::vector<ofxStableDiffusionImageScore> scoreImagesWithClip(
 
 	const std::filesystem::path tempDir =
 		std::filesystem::temp_directory_path() /
-		("ofxggml_sd_clip_rank_" + makeTimestampToken());
+		("ofxggml_sd_clip_rank_" + makeUniqueTimestampToken());
 	std::error_code dirEc;
 	std::filesystem::create_directories(tempDir, dirEc);
 	if (dirEc) {
@@ -407,13 +415,7 @@ inline std::vector<ofxStableDiffusionImageScore> scoreImagesWithClip(
 		}
 		return scores;
 	}
-	struct TempDirCleanup {
-		std::filesystem::path path;
-		~TempDirCleanup() {
-			std::error_code cleanupEc;
-			std::filesystem::remove_all(path, cleanupEc);
-		}
-	} cleanup{tempDir};
+	ScopedTempDirectoryCleanup cleanup{tempDir};
 
 	for (std::size_t i = 0; i < frames.size(); ++i) {
 		const auto & frame = frames[i];
@@ -589,7 +591,7 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 				const std::string outputPath =
 					(std::filesystem::path(outputDir) /
 						(sanitizeOutputPrefix(request.outputPrefix) + "_" +
-							makeTimestampToken() + "_upscale.png")).string();
+							makeUniqueTimestampToken() + "_upscale.png")).string();
 				std::string saveError;
 				if (!saveSdImageToPath(upscaled, outputPath, &saveError)) {
 					result.error = saveError;
@@ -660,6 +662,8 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 					return result;
 				}
 				*cachedKey = makeContextCacheKey(*engine, request, options);
+				// Keep the cache key and validity bit in sync only after
+				// the backend has confirmed a live sd context.
 				*hasCachedKey = true;
 				++(*contextReloadCount);
 				result.diagnostics.modelLoadTimeMs =
@@ -775,7 +779,7 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 
 			const auto postProcessStarted = std::chrono::steady_clock::now();
 			const std::string prefix = sanitizeOutputPrefix(request.outputPrefix);
-			const std::string timestamp = makeTimestampToken();
+			const std::string timestamp = makeUniqueTimestampToken();
 			std::size_t savedImageCount = 0;
 			for (std::size_t i = 0; i < rankedResult.images.size(); ++i) {
 				const auto & frame = rankedResult.images[i];

@@ -263,13 +263,20 @@ ofxGgmlDiffusionInference::validateRequest(
 			"controlImagePath requires a backend with ControlNet support");
 		return validation;
 	}
-	if (request.batchCount > 1 &&
-		(!capabilities.supportsBatchGeneration ||
-		 request.batchCount > std::max(1, capabilities.maxBatchSize))) {
-		fail(
-			ofxGgmlImageGenerationErrorType::ValidationError,
-			"batchCount exceeds current backend capabilities");
-		return validation;
+	if (request.batchCount > 1) {
+		if (!capabilities.supportsBatchGeneration) {
+			fail(
+				ofxGgmlImageGenerationErrorType::ValidationError,
+				"batchCount exceeds current backend capabilities");
+			return validation;
+		}
+		if (capabilities.maxBatchSize > 0 &&
+			request.batchCount > capabilities.maxBatchSize) {
+			fail(
+				ofxGgmlImageGenerationErrorType::ValidationError,
+				"batchCount exceeds current backend capabilities");
+			return validation;
+		}
 	}
 	if (!request.sampler.empty() && !capabilities.supportedSamplers.empty()) {
 		const auto found = std::find(
