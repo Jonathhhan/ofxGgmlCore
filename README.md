@@ -74,6 +74,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlDiffusionInference` as a lightweight image-generation bridge layer that can host an `ofxStableDiffusion` adapter without coupling diffusion internals into the core addon, now with structured image modes, CLIP-friendly rerank selection, and richer per-image metadata
 - `ofxGgmlVisionInference` for multimodal image-to-text requests against `llama-server`-style OpenAI-compatible endpoints
 - `ofxGgmlVideoInference` for backend-driven video understanding, starting with sampled-frame analysis and room for future specialized video backends
+- `ofxGgmlSegmentationInference` as a lightweight image-segmentation bridge layer, with optional adapter helpers for [sam.cpp](https://github.com/YavorGIvanov/sam.cpp); run `scripts/install-sam-cpp.sh` or `scripts\install-sam-cpp.bat` to place the local sam.cpp checkout under `libs/sam.cpp`
 - `ofxGgmlVideoPlanner` for beat planning, multi-scene sequencing, and AI-assisted edit-plan generation that can feed video, diffusion, or writing workflows
   - the planner remains generation-agnostic so apps can pair those plans with `ofxStableDiffusion`, `ofxVlc4`, or external renderers while keeping one shared planning/export manifest
 - `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
@@ -119,6 +120,7 @@ This addon is released under the [MIT License](LICENSE).
   - `ofxVlc4` is no longer included in the default `ofxGgmlGuiExample/addons.make`; add it back manually only if you want those optional VLC preview and texture-record export lanes
 - GUI example Summarize mode now includes a dedicated citation-research section that can extract quoted evidence from loaded URLs or crawl a seed website before building a cited summary
 - GUI example Diffusion mode now includes a `Music -> Image` helper that can turn a music caption plus optional lyrics/transcript into a reusable visual prompt for the existing diffusion flow
+- GUI example SAM mode demonstrates the segmentation bridge with point-prompt controls, ggml `examples/sam` defaults, and local `sam.cpp` runtime attachment after installing the included `libs/sam.cpp` checkout helper
 - GUI example Vision mode now also includes a dedicated `Music Video` workflow section that can turn song text into a visual concept, apply music-video planning defaults, and hand the result directly into video planning, diffusion, and edit-plan generation
 - the shared video planner now also supports music-video-aware section planning, including intro / verse / chorus / bridge style sections, section-level energy and cut-density hints, and section summaries that feed prompt generation and Music Video planning review
 - GUI example Vision mode now also includes an `Image / Prompt -> Music` helper that can turn a scene description into a reusable music-generation prompt and a local ABC notation sketch, with direct handoff into Custom mode or `.abc` saving
@@ -137,7 +139,7 @@ Core implementation is split by concern:
 - `src/compute/` for tensors and graph building
 - `src/model/` for GGUF model loading
 - `src/inference/` for completion execution, grounded prompt assembly, and speech / vision / video inference helpers
-- `src/inference/` also now includes bridge scaffolds for optional CLIP-style ranking, TTS, diffusion/image-generation, and music-generation backends such as `clip.cpp`, OuteTTS, `ofxStableDiffusion`, and future rendered-audio generators, plus higher-level planners and preview bridges for video, media-prompt translation, image search, and companion montage workflows
+- `src/inference/` also now includes bridge scaffolds for optional CLIP-style ranking, TTS, diffusion/image-generation, segmentation, and music-generation backends such as `clip.cpp`, OuteTTS, `ofxStableDiffusion`, `sam.cpp`, and future rendered-audio generators, plus higher-level planners and preview bridges for video, media-prompt translation, image search, and companion montage workflows
 - `src/inference/` also now includes optional web-ingestion helpers such as `ofxGgmlWebCrawler` plus topic-oriented quote extraction via `ofxGgmlCitationSearch` for local crawler-backed RAG/document pipelines
 - `src/bridges/` for optional companion runtime bridges such as the Holoscan-backed live vision lane
 - `src/assistants/` for chat, code, workspace, review, and text-task helpers
@@ -147,6 +149,7 @@ Supporting areas:
 
 - `libs/ggml/`
 - `scripts/` for user-facing setup, build, download, and benchmark entry points
+  - includes `scripts/install-sam-cpp.sh` / `scripts/install-sam-cpp.bat` for fetching the optional `sam.cpp` source checkout into `libs/sam.cpp` so the GUI SAM panel can compile against `sam.h`
   - includes `scripts/install-acestep.ps1` / `scripts/install-acestep.bat` for building a local AceStep runtime while keeping only the final launcher/runtime binaries under `libs/acestep/bin`
 - `scripts/dev/` for maintainer update and patching helpers
 - `docs/`

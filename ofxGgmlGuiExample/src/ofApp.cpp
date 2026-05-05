@@ -59,7 +59,7 @@
 // ---------------------------------------------------------------------------
 
 const char * ofApp::modeLabels[kModeCount] = {
-	"Chat", "Script", "Summarize", "Write", "Translate", "Custom", "Video Essay", "Video", "Vision", "Speech", "TTS", "Image", "CLIP", "MilkDrop", "Easy"
+	"Chat", "Script", "Summarize", "Write", "Translate", "Custom", "Video Essay", "Video", "Vision", "Speech", "TTS", "Image", "CLIP", "MilkDrop", "Easy", "SAM"
 };
 
 const char * const kTextBackendLabels[] = {
@@ -1366,6 +1366,7 @@ void ofApp::clearAllOutputs() {
 	musicToImagePromptOutput.clear();
 	musicToImageStatus.clear();
 	clipOutput.clear();
+	samOutput.clear();
 	citationResults.clear();
 	speechDetectedLanguage.clear();
 	speechTranscriptPath.clear();
@@ -1387,6 +1388,11 @@ void ofApp::clearAllOutputs() {
 	clipElapsedMs = 0.0f;
 	clipEmbeddingDimension = 0;
 	clipHits.clear();
+	samBackendName.clear();
+	samElapsedMs = 0.0f;
+	samMasks.clear();
+	samMaskPreviewImage.clear();
+	samMaskPreviewError.clear();
 }
 
 void ofApp::drawMenuBar() {
@@ -2274,6 +2280,7 @@ case AiMode::Summarize: drawSummarizePanel(); break;
 	case AiMode::Tts:       drawTtsPanel();       break;
 	case AiMode::Diffusion: drawDiffusionPanel(); break;
 	case AiMode::Clip:      drawClipPanel();      break;
+	case AiMode::Sam:       drawSamPanel();       break;
 	case AiMode::MilkDrop:  drawMilkDropPanel();  break;
 	}
 }

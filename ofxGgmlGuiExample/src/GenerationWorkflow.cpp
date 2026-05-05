@@ -1498,6 +1498,35 @@ void ofApp::applyPendingOutput() {
 				"%s\n",
 				formatConsoleLogLine("CLIP", "AI", pendingOutput, true).c_str());
 			break;
+		case AiMode::Sam:
+			samOutput = pendingOutput;
+			samBackendName = pendingSamBackendName;
+			samElapsedMs = pendingSamElapsedMs;
+			samMasks = pendingSamMasks;
+			samMaskPreviewImage.clear();
+			samMaskPreviewError.clear();
+			if (!samMasks.empty()) {
+				const auto & mask = samMasks.front();
+				if (mask.width > 0 && mask.height > 0 &&
+					mask.pixels.size() ==
+						static_cast<size_t>(mask.width) *
+						static_cast<size_t>(mask.height)) {
+					ofPixels pixels;
+					pixels.setFromPixels(
+						mask.pixels.data(),
+						mask.width,
+						mask.height,
+						OF_IMAGE_GRAYSCALE);
+					samMaskPreviewImage.setFromPixels(pixels);
+				} else {
+					samMaskPreviewError = "First SAM mask is not a valid 8-bit grayscale image.";
+				}
+			}
+			fprintf(
+				stderr,
+				"%s\n",
+				formatConsoleLogLine("SAM", "AI", pendingOutput, true).c_str());
+			break;
 		case AiMode::MilkDrop:
 			milkdropOutput = pendingOutput;
 			milkdropValidation = pendingMilkDropValidation;

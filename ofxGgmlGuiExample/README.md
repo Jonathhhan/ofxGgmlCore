@@ -10,7 +10,7 @@ The default mode picker stays focused on stable addon APIs. Enable **Show advanc
 - `src/panels/` contains reusable floating/status panel widgets.
 - `src/managers/` wraps long-lived helper servers.
 - `src/utils/` contains shared GUI-example helpers.
-- Mode files such as `TextModes.cpp`, `VisionVideo.cpp`, and `DiffusionClip.cpp` keep panel-specific behavior out of `ofApp.cpp` where practical.
+- Mode files such as `TextModes.cpp`, `VisionVideo.cpp`, `DiffusionClip.cpp`, and `SamSegmentation.cpp` keep panel-specific behavior out of `ofApp.cpp` where practical.
 
 ## Maintenance policy
 
@@ -18,5 +18,21 @@ The default mode picker stays focused on stable addon APIs. Enable **Show advanc
 - Put reusable behavior in `src/` and cover it with `tests/`.
 - Put complex workflows such as video essay, montage, music/AceStep, MilkDrop, or Holoscan into focused examples, tutorial projects, or companion addons.
 - Avoid expanding `ofApp.cpp`; prefer smaller panels/helpers when showcase glue is still needed.
+
+## SAM mode
+
+The SAM panel follows the upstream `ggml/examples/sam` example defaults where practical: converted ViT-B `ggml-model-f16.bin`, point-prompt inference, CPU thread control, and multi-mask output. Box prompts and direct mask/iou/stability threshold controls are intentionally left out of the GUI until the attached sam.cpp adapter exposes those controls through the addon bridge.
+
+Install the optional sam.cpp checkout before regenerating the example project:
+
+```bash
+../scripts/install-sam-cpp.sh
+```
+
+```bat
+..\scripts\install-sam-cpp.bat
+```
+
+That populates `../libs/sam.cpp`; `addon_config.mk` adds that folder to the include path and lets the Project Generator compile `sam.cpp` while excluding its nested ggml checkout and examples.
 
 Use `../tests/run-tests.sh` for validation coverage instead of relying on manual GUI flows.

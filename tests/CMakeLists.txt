@@ -148,6 +148,7 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         ../src/inference/ofxGgmlWebSearch.cpp
         ../src/inference/ofxGgmlTtsInference.cpp
         ../src/inference/ofxGgmlClipInference.cpp
+        ../src/inference/ofxGgmlSegmentationInference.cpp
         ../src/inference/ofxGgmlValidationLoop.cpp
         ../src/support/ofxGgmlConversationManager.cpp
         ../src/support/ofxGgmlScriptSource.cpp
@@ -216,6 +217,7 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_code_review.cpp
         test_tts_inference.cpp
         test_clip_inference.cpp
+        test_segmentation_inference.cpp
         test_diffusion_inference.cpp
         test_rag_pipeline.cpp
         test_conversation_manager.cpp

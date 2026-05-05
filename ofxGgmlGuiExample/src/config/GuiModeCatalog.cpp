@@ -10,7 +10,7 @@ namespace {
 		GuiModeTier::Stable
 	};
 
-	constexpr std::array<GuiModeDescriptor, 12> kDefaultGuiModes = {{
+	constexpr std::array<GuiModeDescriptor, 13> kDefaultGuiModes = {{
 		{AiMode::Easy, "Easy", "Guided setup and simple addon onboarding.", GuiModeTier::Stable},
 		{AiMode::Chat, "Chat", "General local text assistant.", GuiModeTier::Stable},
 		{AiMode::Script, "Script", "Coding assistant with simple and advanced layouts.", GuiModeTier::Stable},
@@ -22,7 +22,8 @@ namespace {
 		{AiMode::Speech, "Speech", "Transcribe microphone or file audio.", GuiModeTier::Stable},
 		{AiMode::Tts, "TTS", "Preview local text-to-speech voices.", GuiModeTier::Stable},
 		{AiMode::Diffusion, "Image", "Generate and transform images with diffusion profiles.", GuiModeTier::Stable},
-		{AiMode::Clip, "CLIP", "Search and compare image/text embeddings.", GuiModeTier::Stable}
+		{AiMode::Clip, "CLIP", "Search and compare image/text embeddings.", GuiModeTier::Stable},
+		{AiMode::Sam, "SAM", "Segment images with optional sam.cpp integration.", GuiModeTier::Stable}
 	}};
 
 	constexpr std::array<GuiModeDescriptor, 3> kAdvancedGuiModes = {{
@@ -45,7 +46,7 @@ namespace {
 	}
 }
 
-const std::array<GuiModeDescriptor, 12> & defaultGuiModeDescriptors() {
+const std::array<GuiModeDescriptor, 13> & defaultGuiModeDescriptors() {
 	return kDefaultGuiModes;
 }
 
