@@ -6,6 +6,16 @@
 #include <string>
 #include <vector>
 
+namespace ofxGgmlWorkflowManifestDetail {
+inline ofJson toStringArray(const std::vector<std::string> & values) {
+	ofJson array = ofJson::array();
+	for (const auto & value : values) {
+		array.push_back(value);
+	}
+	return array;
+}
+}
+
 struct ofxGgmlWorkflowManifestInput {
 	std::string name;
 	std::string type;
@@ -75,6 +85,62 @@ struct ofxGgmlWorkflowHandoff {
 	}
 };
 
+struct ofxGgmlWorkflowExecutionStep {
+	std::string id;
+	std::string name;
+	std::string status;
+	std::string startedAt;
+	std::string completedAt;
+	std::string resumeToken;
+	std::vector<std::string> inputArtifactIds;
+	std::vector<std::string> outputArtifactIds;
+	std::map<std::string, std::string> metadata;
+
+	ofJson toJson() const {
+		ofJson json;
+		json["id"] = id;
+		json["name"] = name;
+		json["status"] = status;
+		json["started_at"] = startedAt;
+		json["completed_at"] = completedAt;
+		json["resume_token"] = resumeToken;
+		json["input_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(inputArtifactIds);
+		json["output_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(outputArtifactIds);
+		json["metadata"] = ofJson::object();
+		for (const auto & item : metadata) {
+			json["metadata"][item.first] = item.second;
+		}
+		return json;
+	}
+};
+
+struct ofxGgmlWorkflowReplayPlan {
+	bool deterministic = false;
+	std::string replayCommand;
+	std::string randomSeed;
+	std::string checkpointPath;
+	std::vector<std::string> requiredArtifactIds;
+	std::map<std::string, std::string> metadata;
+
+	bool empty() const {
+		return !deterministic && replayCommand.empty() && randomSeed.empty() && checkpointPath.empty() && requiredArtifactIds.empty() && metadata.empty();
+	}
+
+	ofJson toJson() const {
+		ofJson json;
+		json["deterministic"] = deterministic;
+		json["replay_command"] = replayCommand;
+		json["random_seed"] = randomSeed;
+		json["checkpoint_path"] = checkpointPath;
+		json["required_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(requiredArtifactIds);
+		json["metadata"] = ofJson::object();
+		for (const auto & item : metadata) {
+			json["metadata"][item.first] = item.second;
+		}
+		return json;
+	}
+};
+
 struct ofxGgmlWorkflowManifest {
 	std::string schemaVersion = "ofxGgml.workflow_manifest.v1";
 	std::string workflowType;
@@ -88,6 +154,8 @@ struct ofxGgmlWorkflowManifest {
 	std::vector<std::string> warnings;
 	std::vector<std::string> reviewNotes;
 	ofxGgmlWorkflowHandoff handoff;
+	std::vector<ofxGgmlWorkflowExecutionStep> executionSteps;
+	ofxGgmlWorkflowReplayPlan replay;
 	std::map<std::string, std::string> metadata;
 
 	void addInput(
@@ -127,6 +195,17 @@ struct ofxGgmlWorkflowManifest {
 		artifact.path = path;
 		artifact.description = description;
 		intermediateOutputs.push_back(artifact);
+	}
+
+	void addExecutionStep(
+		const std::string & id,
+		const std::string & name,
+		const std::string & status = "") {
+		ofxGgmlWorkflowExecutionStep step;
+		step.id = id;
+		step.name = name;
+		step.status = status;
+		executionSteps.push_back(step);
 	}
 
 	ofJson toJson() const {
@@ -169,6 +248,14 @@ struct ofxGgmlWorkflowManifest {
 		json["review_notes"] = std::move(reviewArray);
 
 		json["handoff"] = handoff.empty() ? ofJson::object() : handoff.toJson();
+
+		ofJson executionArray = ofJson::array();
+		for (const auto & step : executionSteps) {
+			executionArray.push_back(step.toJson());
+		}
+		json["execution_steps"] = std::move(executionArray);
+		json["replay"] = replay.empty() ? ofJson::object() : replay.toJson();
+
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;

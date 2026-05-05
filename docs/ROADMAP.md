@@ -158,7 +158,7 @@ Implemented features:
 
 ### 5. Roadmap-Aligned Example Cleanup
 **Priority**: MEDIUM
-**Status**: ✅ Phase 1A Complete
+**Status**: ✅ Phase 1A/1B/1C Complete
 
 Reduce the giant GUI example to a showcase for API layers and UI patterns. Complex workflows should move into focused examples, tutorial projects, or companion addons instead of using the GUI example as a test harness.
 
@@ -179,12 +179,17 @@ Reduce the giant GUI example to a showcase for API layers and UI patterns. Compl
 - VideoEssay, LongVideo (multi-stage workflows)
 - Diffusion, Clip, MilkDrop, Sam (advanced vision/generation)
 
-**Next steps** (Phase 1B/1C):
-- Extract 4 focused companion examples from removed code
-- Create migration documentation
-- Update main README
+**Phase 1B/1C Completed** (2026-05-05):
+- ✅ Extracted 4 focused companion examples from removed GUI workflow code:
+  - `ofxGgmlVideoEssayExample`
+  - `ofxGgmlVisualizationExample`
+  - `ofxGgmlAdvancedVisionExample`
+  - `ofxGgmlMontagePlannerExample`
+- ✅ Added `docs/examples/README.md` example chooser
+- ✅ Added `docs/examples/MIGRATION.md` migration guide
+- ✅ Updated main README example guidance
 
-**Outcome**: GUI example now demonstrates stable addon tier APIs exclusively. Code reduced by 25% with clear separation between core and companion features.
+**Outcome**: GUI example now demonstrates stable addon tier APIs exclusively. Code reduced by 25% with clear separation between core and companion features, and removed companion workflows now have focused migration targets.
 
 ---
 
@@ -211,6 +216,7 @@ Target capabilities:
 Implemented foundation:
 
 - `ofxGgmlWorkflowManifest` shared schema primitive for inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream handoff notes
+- resumable execution-step checkpoints and deterministic replay hints for debugging companion pipelines
 - JSON serialization for companion/example handoff files without coupling the core addon to a specific creative workflow runtime
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
 
@@ -231,6 +237,7 @@ Implemented foundation:
 
 - schema version `ofxGgml.workflow_manifest.v1`
 - optional `handoff` block with target, mode, contract, notes, and metadata
+- optional `execution_steps` and `replay` blocks for resumable execution and deterministic debugging
 - unit coverage for stable JSON keys used by downstream companion tools
 
 **Outcome**: outputs from one workflow become reliable inputs for the next.
@@ -248,10 +255,10 @@ Keep long-lived creative project memory in companion projects, while ofxGgml pro
 
 Implemented foundation:
 
-- `ofxGgmlCompanionProjectMemory` shared schema primitive for companion-owned creative intent, accepted prompts, curated references, style notes, continuity rules, preferred tool settings, review notes, and metadata
+- `ofxGgmlCompanionProjectMemory` shared schema primitive for companion-owned creative intent, accepted prompts, curated references, style notes, continuity rules, preferred tool settings, workflow manifest links, review notes, and metadata
 - schema version `ofxGgml.companion_project_memory.v1`
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
-- unit coverage for stable JSON keys used by companion project-memory files
+- unit coverage for stable JSON keys used by companion project-memory files, including linked workflow manifests
 
 **Outcome**: long-form creative projects keep context across sessions.
 
@@ -271,6 +278,7 @@ Implemented foundation:
 
 - `ofxGgmlFocusedExampleCatalog` shared catalog primitive for roadmap-aligned focused example descriptors
 - default catalog entries for research/citation workflows, companion video essay generation, speech/subtitle tooling, coding assistant integration, and CLIP/image visual planning
+- per-example setup notes, handoff contracts, and expected output artifacts for docs, launchers, or companion tooling
 - schema version `ofxGgml.focused_examples.v1`
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
 - unit coverage for stable JSON keys that docs, launchers, or companion tooling can consume

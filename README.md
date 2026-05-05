@@ -82,9 +82,9 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
 - `ofxGgmlHoloscanBridge` is companion/example-tier bridge code; include `ofxGgmlCompanionWorkflows.h` or move it to a companion addon when building Holoscan-style media pipelines
 - `ofxGgmlImageSearch` for internet reference-image lookup through pluggable providers, with a working Wikimedia Commons backend
-- `ofxGgmlWorkflowManifest` provides a small Phase 2 handoff contract for workflow inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream companion-tool routing
-- `ofxGgmlCompanionProjectMemory` provides a small Phase 2 companion-owned memory schema for creative intent, accepted prompts/references, style notes, continuity rules, preferred tool settings, and review notes
-- `ofxGgmlFocusedExampleCatalog` provides a small Phase 2 catalog of focused example tracks for research/citations, companion video essays, speech/subtitles, coding assistants, and CLIP/image planning
+- `ofxGgmlWorkflowManifest` provides a small Phase 2 handoff contract for workflow inputs, artifacts, intermediate outputs, warnings, review notes, execution-step checkpoints, replay metadata, and downstream companion-tool routing
+- `ofxGgmlCompanionProjectMemory` provides a small Phase 2 companion-owned memory schema for creative intent, accepted prompts/references, style notes, continuity rules, preferred tool settings, workflow manifest links, and review notes
+- `ofxGgmlFocusedExampleCatalog` provides a small Phase 2 catalog of focused example tracks, setup notes, handoff contracts, and expected outputs for research/citations, companion video essays, speech/subtitles, coding assistants, and CLIP/image planning
 - `ofxGgmlTimelineCopilotPlan` provides a small Phase 3 companion-copilot schema for timeline lanes, anchors, approval checkpoints, workspace rules, and manifest/project-memory handoffs
 - `ofxGgmlContinuityAssetLedger` provides a small Phase 3 companion schema for scene continuity rules, style constraints, reusable asset references, and provenance-aware review notes
 - `ofxGgmlWebCrawler` as an optional website-ingestion bridge layer, with a `Mojo` CLI adapter for local website-to-Markdown crawling workflows
@@ -166,6 +166,10 @@ Supporting areas:
 - `ofxGgmlGuiExample/`
 - `ofxGgmlNeuralExample/`
 - `ofxGgmlWebScrapingExample/`
+- `ofxGgmlVideoEssayExample/`
+- `ofxGgmlVisualizationExample/`
+- `ofxGgmlAdvancedVisionExample/`
+- `ofxGgmlMontagePlannerExample/`
 
 Developer tooling:
 
@@ -839,7 +843,7 @@ See [docs/getting-started/QUICKSTART.md](docs/getting-started/QUICKSTART.md)
 
 ### Which Features Do I Need?
 
-See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FEATURES.md) to pick the right subset.
+See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FEATURES.md) to pick the right subset, and [docs/examples/README.md](docs/examples/README.md) to pick the right example project.
 
 ## Examples
 
@@ -853,6 +857,17 @@ See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FE
 ### Showcase Example
 
 - `ofxGgmlGuiExample`: Showcase for API layers and UI patterns, not a test harness. Keep complex workflows in focused examples, tutorial projects, or companion addons instead of growing this example further; see `ofxGgmlGuiExample/README.md`.
+
+### Companion Workflow Examples
+
+These examples preserve the workflows removed from the GUI example during Phase 1A while keeping optional media runtimes explicit:
+
+- `ofxGgmlVideoEssayExample`: citation-grounded video essay planning, script, voice cue, SRT, and manifest handoffs
+- `ofxGgmlVisualizationExample`: MilkDrop prompt generation, preset validation, repair/generation hooks, and `.milk` saving
+- `ofxGgmlAdvancedVisionExample`: CLIP-style ranking, Wikimedia image search, SAM segmentation bridge, and diffusion bridge validation
+- `ofxGgmlMontagePlannerExample`: transcript-driven clip selection, subtitle tracks, editor brief, and EDL/SRT export
+
+See [docs/examples/README.md](docs/examples/README.md) for the full example map and [docs/examples/MIGRATION.md](docs/examples/MIGRATION.md) for migration notes from the old GUI companion panels.
 
 The lightweight examples are keyboard-driven so you can rerun compute and benchmark paths without restarting the app.
 

@@ -12,6 +12,11 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	manifest.inputs.front().metadata["language"] = "en";
 	manifest.addIntermediateOutput("outline", "markdown", "outputs/outline.md", "Cited outline");
 	manifest.addArtifact("srt", "subtitle", "outputs/narration.srt", "Narration timing");
+	manifest.addExecutionStep("crawl", "Crawl source material", "complete");
+	manifest.executionSteps.front().startedAt = "2026-05-05T16:32:12Z";
+	manifest.executionSteps.front().completedAt = "2026-05-05T16:32:40Z";
+	manifest.executionSteps.front().resumeToken = "checkpoint:crawl";
+	manifest.executionSteps.front().outputArtifactIds.push_back("outline");
 	manifest.artifacts.front().mimeType = "application/x-subrip";
 	manifest.warnings.push_back("One citation has low confidence.");
 	manifest.reviewNotes.push_back("Check source freshness before publishing.");
@@ -19,6 +24,11 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	manifest.handoff.mode = "scene_outline";
 	manifest.handoff.contract = "crawl->cite->outline->script->tts->subtitles->video_plan";
 	manifest.handoff.metadata["requires_review"] = "true";
+	manifest.replay.deterministic = true;
+	manifest.replay.replayCommand = "ofxGgmlVideoEssayExample --replay manifest.json";
+	manifest.replay.randomSeed = "1234";
+	manifest.replay.checkpointPath = "checkpoints/crawl.json";
+	manifest.replay.requiredArtifactIds.push_back("outline");
 	manifest.metadata["model"] = "mock-model.gguf";
 
 	const auto json = manifest.toJsonString();
@@ -31,6 +41,11 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	REQUIRE(json.find("\"handoff\"") != std::string::npos);
 	REQUIRE(json.find("video_planner") != std::string::npos);
 	REQUIRE(json.find("requires_review") != std::string::npos);
+	REQUIRE(json.find("\"execution_steps\"") != std::string::npos);
+	REQUIRE(json.find("checkpoint:crawl") != std::string::npos);
+	REQUIRE(json.find("\"replay\"") != std::string::npos);
+	REQUIRE(json.find("\"deterministic\":true") != std::string::npos);
+	REQUIRE(json.find("ofxGgmlVideoEssayExample --replay manifest.json") != std::string::npos);
 }
 
 TEST_CASE("Workflow manifest emits empty arrays and handoff object by default", "[workflow_manifest]") {
@@ -44,4 +59,6 @@ TEST_CASE("Workflow manifest emits empty arrays and handoff object by default", 
 	REQUIRE(json.find("\"artifacts\":[]") != std::string::npos);
 	REQUIRE(json.find("\"intermediate_outputs\":[]") != std::string::npos);
 	REQUIRE(json.find("\"handoff\":{}") != std::string::npos);
+	REQUIRE(json.find("\"execution_steps\":[]") != std::string::npos);
+	REQUIRE(json.find("\"replay\":{}") != std::string::npos);
 }
