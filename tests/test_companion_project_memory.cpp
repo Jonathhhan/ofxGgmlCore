@@ -38,6 +38,8 @@ TEST_CASE("Companion project memory serializes creative continuity state", "[com
 	REQUIRE(json.find("manifests/run-001.json") != std::string::npos);
 	REQUIRE(json.find("source_run") != std::string::npos);
 	REQUIRE(json.find("Accepted outline and subtitle handoff.") != std::string::npos);
+	REQUIRE(json.find("\"run_id\"") != std::string::npos);
+	REQUIRE(json.find("run-001") != std::string::npos);
 }
 
 TEST_CASE("Companion project memory ignores empty convenience entries", "[companion_project_memory]") {
