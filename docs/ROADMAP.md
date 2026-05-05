@@ -307,7 +307,7 @@ Implemented foundation:
 
 ### 2. Timeline-Aware Companion Copilots
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Explore assistant patterns tailored to media creation outside the default addon boundary:
 
@@ -318,6 +318,14 @@ Explore assistant patterns tailored to media creation outside the default addon 
 - generative visual pipelines
 
 **Outcome**: companion projects can become purpose-built AI-native creative tools while ofxGgml remains the dependable local inference foundation.
+
+Implemented foundation:
+
+- `ofxGgmlTimelineCopilotPlan` shared schema primitive for companion-owned timeline lanes, anchors, approval checkpoints, workspace rules, and manifest/memory handoffs
+- default media lanes for video essay planning, montage building, music-video planning, subtitle revision, and generative visual pipelines
+- schema version `ofxGgml.timeline_copilot.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for default lanes, review checkpoints, stable JSON keys, and empty-entry handling
 
 ### 3. Continuity, Consistency, and Asset Reuse
 **Priority**: MEDIUM-HIGH  

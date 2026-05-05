@@ -85,6 +85,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlWorkflowManifest` provides a small Phase 2 handoff contract for workflow inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream companion-tool routing
 - `ofxGgmlCompanionProjectMemory` provides a small Phase 2 companion-owned memory schema for creative intent, accepted prompts/references, style notes, continuity rules, preferred tool settings, and review notes
 - `ofxGgmlFocusedExampleCatalog` provides a small Phase 2 catalog of focused example tracks for research/citations, companion video essays, speech/subtitles, coding assistants, and CLIP/image planning
+- `ofxGgmlTimelineCopilotPlan` provides a small Phase 3 companion-copilot schema for timeline lanes, anchors, approval checkpoints, workspace rules, and manifest/project-memory handoffs
 - `ofxGgmlWebCrawler` as an optional website-ingestion bridge layer, with a `Mojo` CLI adapter for local website-to-Markdown crawling workflows
 - `ofxGgmlCitationSearch` for topic-oriented source-grounded quote extraction, with structured citation items built from loaded URLs or crawler-ingested website content
 - `ofxGgmlVideoEssayWorkflow` is kept as companion/example-tier orchestration for `topic -> cited outline -> narrated script -> voice cues -> SRT -> visual concept -> scene/edit planning`, not as a default addon surface

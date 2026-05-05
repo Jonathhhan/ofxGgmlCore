@@ -213,6 +213,7 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_easy_api.cpp
         test_companion_project_memory.cpp
         test_focused_example_catalog.cpp
+        test_timeline_copilot_plan.cpp
         test_media_prompt_generator.cpp
         test_long_video_planner.cpp
         test_citation_search.cpp
