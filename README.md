@@ -14,7 +14,7 @@ ofxGgml uses **layered headers** - include only what you need:
 |--------|--------------|----------|
 | **`ofxGgmlBasic.h`** | **Core + text inference** | **Text/chat AI (start here!)** |
 | `ofxGgml.h` | Basic + chat/text/code assistants | Default supported addon tier |
-| `ofxGgmlModalities.h` | Basic + speech/vision/TTS/images/CLIP adapters | Optional multimodal adapter layer |
+| `ofxGgmlModalities.h` | Basic + speech/vision/TTS/YOLO/images/CLIP adapters | Optional multimodal adapter layer |
 | `ofxGgmlWorkflows.h` | Basic + source-grounded planning/research helpers | Optional helper layer |
 | `ofxGgmlCompanionWorkflows.h` | Montage/video essay/music/MilkDrop/AceStep/Holoscan prototypes | Companion/example-tier opt-in |
 | `ofxGgmlAssistants.h` | Basic + code/chat assistants | AI coding assistance |
@@ -68,11 +68,13 @@ This addon is released under the [MIT License](LICENSE).
   - `ofxGgmlPromptTemplates` - 30+ reusable templates for common AI tasks
 - server-streamed text output now uses delta-based chunk handling so Chat and Script mode no longer duplicate partial text while `llama-server` replies are still arriving
 - addon-level `Live context` support for loaded sources, domain-provider grounding, generic search fallback, and stricter citation-oriented response modes
-- `ofxGgmlSpeechInference` for local speech-to-text workflows via pluggable speech backends, with ready-to-use Whisper CLI profiles
-- `ofxGgmlTtsInference` as a lightweight text-to-speech bridge layer for Piper and optional `chatllm.cpp`-backed OuteTTS workflows
+- `ofxGgmlSpeechInference` for local speech-to-text workflows via pluggable speech backends, with ready-to-use Whisper CLI profiles and opt-in NVIDIA NVIGI ASR SDK callbacks behind `OFXGGML_ENABLE_NVIGI`
+- `ofxGgmlTtsInference` as a lightweight text-to-speech bridge layer for Piper, optional `chatllm.cpp`-backed OuteTTS workflows, and opt-in NVIDIA NVIGI SDK callbacks behind `OFXGGML_ENABLE_NVIGI`
+- optional NVIDIA NVIGI bridge helpers cover GPT text generation, ASR, TTS, RAG, and app-owned SDK reload controls without bundling NVIGI headers, libraries, models, or plugin binaries
 - `ofxGgmlClipInference` as a lightweight CLIP-style embedding and ranking bridge layer for text/image similarity workflows, with bundled `clip.cpp` support (no external dependencies required)
 - `ofxGgmlDiffusionInference` as a lightweight image-generation bridge layer that can host an `ofxStableDiffusion` adapter without coupling diffusion internals into the core addon, now with structured image modes, CLIP-friendly rerank selection, and richer per-image metadata
 - `ofxGgmlVisionInference` for multimodal image-to-text requests against `llama-server`-style OpenAI-compatible endpoints
+- `ofxGgmlYoloInference` for object-detection requests through the ggml `examples/yolo` `yolov3-tiny` CLI adapter, using GGUF models such as `yolov3-tiny.gguf`
 - `ofxGgmlVideoInference` for backend-driven video understanding, starting with sampled-frame analysis and room for future specialized video backends
 - `ofxGgmlSegmentationInference` as a lightweight image-segmentation bridge layer, with optional adapter helpers for [sam.cpp](https://github.com/YavorGIvanov/sam.cpp); run `scripts/install-sam-cpp.sh` or `scripts\install-sam-cpp.bat` to place the local sam.cpp checkout under `libs/sam.cpp`
 - `ofxGgmlVideoPlanner` for beat planning, multi-scene sequencing, and AI-assisted edit-plan generation that can feed video, diffusion, or writing workflows
@@ -179,6 +181,7 @@ Developer tooling:
 The full versioning and runtime-packaging guidance lives in:
 
 - `docs/COMPATIBILITY.md`
+- `docs/NVIGI.md` for the optional NVIDIA NVIGI callback bridge surfaces
 
 Short version: prefer a compatibility matrix over "latest everywhere", and only consider one shared `ggml` build when both upstreams are verified against the same revision and you are ready to maintain that coupling.
 
@@ -744,6 +747,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-llama-server.ps1 -Detac
 ```
 
 The helpers default to `http://127.0.0.1:8080`, reuse the recommended local GGUF model when possible, and expose GPU layers / context size flags so the server path matches the GUI example's defaults more closely.
+
+CUDA builds of upstream `llama.cpp` use CUDA Graphs by default when that runtime path supports them, matching NVIDIA's guidance for reducing launch overhead during token generation. Keep this default enabled for stable local server workloads. If you need to compare profiling runs or debug a CUDA Graphs-specific issue, pass `--no-cuda-graphs` on Linux/macOS or `-NoCudaGraphs` on Windows:
+
+```bash
+./scripts/start-llama-server.sh --no-cuda-graphs
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-llama-server.ps1 -NoCudaGraphs
+```
 
 ### Build ggml locally
 
