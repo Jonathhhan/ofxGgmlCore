@@ -44,6 +44,7 @@
 #include "inference/ofxGgmlImageSearch.h"
 #include "inference/ofxGgmlRAGPipeline.h"
 #include "support/ofxGgmlCompanionProjectMemory.h"
+#include "support/ofxGgmlFocusedExampleCatalog.h"
 #include "support/ofxGgmlWorkflowManifest.h"
 #if OFXGGML_ENABLE_NVIGI
 #include "inference/ofxGgmlNvigiRagBackend.h"

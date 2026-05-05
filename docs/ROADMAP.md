@@ -257,7 +257,7 @@ Implemented foundation:
 
 ### 4. Focused Example Applications
 **Priority**: MEDIUM  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Ship more narrowly scoped examples or tutorial projects for:
 
@@ -266,6 +266,14 @@ Ship more narrowly scoped examples or tutorial projects for:
 - speech + subtitle tooling
 - coding assistant integration
 - CLIP/image search and visual planning
+
+Implemented foundation:
+
+- `ofxGgmlFocusedExampleCatalog` shared catalog primitive for roadmap-aligned focused example descriptors
+- default catalog entries for research/citation workflows, companion video essay generation, speech/subtitle tooling, coding assistant integration, and CLIP/image visual planning
+- schema version `ofxGgml.focused_examples.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for stable JSON keys that docs, launchers, or companion tooling can consume
 
 **Outcome**: easier onboarding and less pressure on a single all-in-one showcase.
 
