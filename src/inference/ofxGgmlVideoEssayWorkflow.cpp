@@ -1,4 +1,5 @@
 #include "inference/ofxGgmlVideoEssayWorkflow.h"
+#include "support/ofxGgmlWorkflowManifest.h"
 
 #include <algorithm>
 #include <cctype>
@@ -489,46 +490,46 @@ ofxGgmlVideoEssayValidation ofxGgmlVideoEssayWorkflow::validateRequest(
 std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 	const ofxGgmlVideoEssayRequest & request,
 	const ofxGgmlVideoEssayResult & result) {
-	ofJson manifest;
-	manifest["topic"] = request.topic;
-	manifest["target_duration_seconds"] = request.targetDurationSeconds;
-	manifest["tone"] = request.tone;
-	manifest["audience"] = request.audience;
-	manifest["include_counterpoints"] = request.includeCounterpoints;
-	manifest["use_crawler"] = request.useCrawler;
+	ofJson workflowDetails;
+	workflowDetails["topic"] = request.topic;
+	workflowDetails["target_duration_seconds"] = request.targetDurationSeconds;
+	workflowDetails["tone"] = request.tone;
+	workflowDetails["audience"] = request.audience;
+	workflowDetails["include_counterpoints"] = request.includeCounterpoints;
+	workflowDetails["use_crawler"] = request.useCrawler;
 	ofJson sourceUrls = ofJson::array();
 	for (const auto & sourceUrl : request.sourceUrls) {
 		ofJson sourceUrlJson;
 		sourceUrlJson = sourceUrl;
 		sourceUrls.push_back(sourceUrlJson);
 	}
-	manifest["source_urls"] = std::move(sourceUrls);
-	manifest["crawler_start_url"] = request.crawlerRequest.startUrl;
-	manifest["max_citations"] = static_cast<int>(request.maxCitations);
-	manifest["success"] = result.success;
-	manifest["backend"] = result.backendName;
-	manifest["error"] = result.error;
-	manifest["visual_concept"] = result.visualConcept;
-	manifest["scene_plan_summary"] = result.scenePlanSummary;
-	manifest["edit_plan_summary"] = result.editPlanSummary;
-	manifest["editor_brief"] = result.editorBrief;
-	manifest["scene_planning_error"] = result.scenePlanningError;
-	manifest["edit_planning_error"] = result.editPlanningError;
-	manifest["validation"]["ok"] = result.validation.ok;
+	workflowDetails["source_urls"] = std::move(sourceUrls);
+	workflowDetails["crawler_start_url"] = request.crawlerRequest.startUrl;
+	workflowDetails["max_citations"] = static_cast<int>(request.maxCitations);
+	workflowDetails["success"] = result.success;
+	workflowDetails["backend"] = result.backendName;
+	workflowDetails["error"] = result.error;
+	workflowDetails["visual_concept"] = result.visualConcept;
+	workflowDetails["scene_plan_summary"] = result.scenePlanSummary;
+	workflowDetails["edit_plan_summary"] = result.editPlanSummary;
+	workflowDetails["editor_brief"] = result.editorBrief;
+	workflowDetails["scene_planning_error"] = result.scenePlanningError;
+	workflowDetails["edit_planning_error"] = result.editPlanningError;
+	workflowDetails["validation"]["ok"] = result.validation.ok;
 	ofJson validationErrors = ofJson::array();
 	for (const auto & error : result.validation.errors) {
 		ofJson errorJson;
 		errorJson = error;
 		validationErrors.push_back(errorJson);
 	}
-	manifest["validation"]["errors"] = std::move(validationErrors);
+	workflowDetails["validation"]["errors"] = std::move(validationErrors);
 	ofJson validationWarnings = ofJson::array();
 	for (const auto & warning : result.validation.warnings) {
 		ofJson warningJson;
 		warningJson = warning;
 		validationWarnings.push_back(warningJson);
 	}
-	manifest["validation"]["warnings"] = std::move(validationWarnings);
+	workflowDetails["validation"]["warnings"] = std::move(validationWarnings);
 
 	ofJson sections = ofJson::array();
 	for (const auto & section : result.sections) {
@@ -546,7 +547,7 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 		sectionJson["source_indices"] = std::move(sourceIndices);
 		sections.push_back(sectionJson);
 	}
-	manifest["sections"] = std::move(sections);
+	workflowDetails["sections"] = std::move(sections);
 
 	ofJson cues = ofJson::array();
 	for (const auto & cue : result.voiceCues) {
@@ -558,8 +559,123 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 		cueJson["end_seconds"] = cue.endSeconds;
 		cues.push_back(cueJson);
 	}
-	manifest["voice_cues"] = std::move(cues);
-	return manifest.dump(2);
+	workflowDetails["voice_cues"] = std::move(cues);
+
+	ofxGgmlWorkflowManifest manifest;
+	manifest.workflowType = "video_essay_handoff";
+	manifest.runId = "video_essay:" + trimCopy(request.topic);
+	manifest.status = result.success ? "ready" : "failed";
+	manifest.summary = result.success
+		? "Video essay handoff ready for subtitles, TTS, and video planning."
+		: (!trimCopy(result.error).empty() ? result.error : "Video essay handoff is incomplete.");
+	manifest.addInput("topic", "text", request.topic, "user");
+	manifest.addInput("target_duration_seconds", "number", std::to_string(request.targetDurationSeconds), "request");
+	manifest.addInput("tone", "text", request.tone, "request");
+	manifest.addInput("audience", "text", request.audience, "request");
+	manifest.addInput("include_counterpoints", "boolean", request.includeCounterpoints ? "true" : "false", "request");
+	manifest.addInput("max_citations", "integer", std::to_string(request.maxCitations), "request");
+	if (request.useCrawler) {
+		manifest.addInput("crawler_start_url", "url", request.crawlerRequest.startUrl, "crawler");
+	}
+	for (size_t i = 0; i < request.sourceUrls.size(); ++i) {
+		manifest.addInput("source_url", "url", request.sourceUrls[i], "loaded_source");
+		manifest.inputs.back().metadata["index"] = std::to_string(i);
+	}
+
+	if (!trimCopy(result.citationResult.summary).empty()) {
+		manifest.addIntermediateOutput("citations", "text", "inline://citations", "Citation summary and provenance");
+		manifest.intermediateOutputs.back().metadata["content"] = result.citationResult.summary;
+		manifest.intermediateOutputs.back().metadata["citation_count"] = std::to_string(result.citationResult.citations.size());
+	}
+	if (!trimCopy(result.outline).empty()) {
+		manifest.addIntermediateOutput("outline", "markdown", "inline://outline.md", "Cited outline");
+		manifest.intermediateOutputs.back().metadata["content"] = result.outline;
+	}
+	if (!trimCopy(result.script).empty()) {
+		manifest.addIntermediateOutput("script", "markdown", "inline://script.md", "Narration script");
+		manifest.intermediateOutputs.back().metadata["content"] = result.script;
+	}
+	if (!result.voiceCues.empty()) {
+		manifest.addIntermediateOutput("voice_cues", "json", "inline://voice_cues.json", "TTS/subtitle cue sheet");
+		manifest.intermediateOutputs.back().metadata["cue_count"] = std::to_string(result.voiceCues.size());
+	}
+	if (!trimCopy(result.visualConcept).empty()) {
+		manifest.addIntermediateOutput("visual_concept", "text", "inline://visual_concept.txt", "Visual concept for downstream video planning");
+		manifest.intermediateOutputs.back().metadata["content"] = result.visualConcept;
+	}
+	if (!trimCopy(result.srtText).empty()) {
+		manifest.addArtifact("subtitles", "subtitle", "inline://subtitles.srt", "SRT-ready narration subtitles");
+		manifest.artifacts.back().mimeType = "application/x-subrip";
+		manifest.artifacts.back().metadata["content"] = result.srtText;
+	}
+	if (!trimCopy(result.scenePlanJson).empty()) {
+		manifest.addArtifact("scene_plan", "video_plan", "inline://scene_plan.json", "Scene-level video plan");
+		manifest.artifacts.back().mimeType = "application/json";
+		manifest.artifacts.back().metadata["summary"] = result.scenePlanSummary;
+	}
+	if (!trimCopy(result.editPlanJson).empty()) {
+		manifest.addArtifact("edit_plan", "video_edit_plan", "inline://edit_plan.json", "Editor handoff plan");
+		manifest.artifacts.back().mimeType = "application/json";
+		manifest.artifacts.back().metadata["summary"] = result.editPlanSummary;
+	}
+
+	manifest.warnings = result.validation.warnings;
+	if (!trimCopy(result.scenePlanningError).empty()) {
+		manifest.warnings.push_back("Scene planning error: " + result.scenePlanningError);
+	}
+	if (!trimCopy(result.editPlanningError).empty()) {
+		manifest.warnings.push_back("Edit planning error: " + result.editPlanningError);
+	}
+	manifest.reviewNotes.push_back("Review citations and source freshness before publishing.");
+	manifest.handoff.target = "video_planner";
+	manifest.handoff.mode = "essay_pipeline";
+	manifest.handoff.contract = "crawl->cite->outline->script->tts->subtitles->video_plan";
+	manifest.handoff.notes = "Artifacts and intermediate outputs are inline for companion workflow inspection.";
+	manifest.handoff.metadata["source"] = "ofxGgmlVideoEssayWorkflow";
+	manifest.handoff.metadata["status"] = manifest.status;
+
+	manifest.addExecutionStep("crawl", request.useCrawler ? "Crawl source material" : "Collect source URLs", result.validation.ok ? "complete" : "failed");
+	manifest.executionSteps.back().outputArtifactIds.push_back("citations");
+	manifest.executionSteps.back().resumeToken = "checkpoint:crawl";
+	manifest.addExecutionStep("cite", "Build grounded citations", result.citationResult.success ? "complete" : (result.validation.ok ? "failed" : "blocked"));
+	manifest.executionSteps.back().inputArtifactIds.push_back("citations");
+	manifest.executionSteps.back().outputArtifactIds.push_back("outline");
+	manifest.executionSteps.back().resumeToken = "checkpoint:citations";
+	manifest.addExecutionStep("outline", "Draft cited outline", !trimCopy(result.outline).empty() ? "complete" : "blocked");
+	manifest.executionSteps.back().inputArtifactIds.push_back("citations");
+	manifest.executionSteps.back().outputArtifactIds.push_back("script");
+	manifest.executionSteps.back().resumeToken = "checkpoint:outline";
+	manifest.addExecutionStep("script", "Write narration script", !trimCopy(result.script).empty() ? "complete" : "blocked");
+	manifest.executionSteps.back().inputArtifactIds.push_back("outline");
+	manifest.executionSteps.back().outputArtifactIds.push_back("voice_cues");
+	manifest.executionSteps.back().resumeToken = "checkpoint:script";
+	manifest.addExecutionStep("subtitles", "Build cue sheet and SRT subtitles", !trimCopy(result.srtText).empty() ? "complete" : "blocked");
+	manifest.executionSteps.back().inputArtifactIds.push_back("script");
+	manifest.executionSteps.back().outputArtifactIds.push_back("subtitles");
+	manifest.executionSteps.back().resumeToken = "checkpoint:subtitles";
+	manifest.addExecutionStep("video_plan", "Prepare scene and edit plan handoff", (!trimCopy(result.scenePlanSummary).empty() || !trimCopy(result.editPlanSummary).empty()) ? "complete" : (result.success ? "pending" : "blocked"));
+	manifest.executionSteps.back().inputArtifactIds.push_back("subtitles");
+	manifest.executionSteps.back().outputArtifactIds.push_back("scene_plan");
+	manifest.executionSteps.back().outputArtifactIds.push_back("edit_plan");
+	manifest.executionSteps.back().resumeToken = "checkpoint:video_plan";
+
+	manifest.replay.deterministic = request.inferenceSettings.seed >= 0;
+	if (request.inferenceSettings.seed >= 0) {
+		manifest.replay.randomSeed = std::to_string(request.inferenceSettings.seed);
+	}
+	manifest.replay.replayCommand = "ofxGgmlVideoEssayExample --replay workflow_manifest.json";
+	manifest.replay.checkpointPath = "checkpoints/video_essay_workflow_manifest.json";
+	manifest.replay.requiredArtifactIds = {"citations", "outline", "script"};
+	manifest.replay.metadata["temperature"] = std::to_string(request.inferenceSettings.temperature);
+	manifest.replay.metadata["model_path"] = request.modelPath;
+	manifest.metadata["backend"] = result.backendName;
+	manifest.metadata["elapsed_ms"] = std::to_string(result.elapsedMs);
+	manifest.metadata["section_count"] = std::to_string(result.sections.size());
+	manifest.metadata["cue_count"] = std::to_string(result.voiceCues.size());
+
+	ofJson sharedManifest = manifest.toJson();
+	sharedManifest["workflow_details"] = std::move(workflowDetails);
+	return sharedManifest.dump(2);
 }
 
 ofxGgmlVideoEssayResult ofxGgmlVideoEssayWorkflow::run(
