@@ -1689,6 +1689,16 @@ TEST_CASE("Metrics summary handles stream counters and bounded timings", "[infer
 	REQUIRE(summary.find("Streaming:") != std::string::npos);
 	REQUIRE(summary.find("server.http") != std::string::npos);
 	REQUIRE(summary.find("n=1000") != std::string::npos);
+
+	metrics.setMaxTimingSamples(8);
+	REQUIRE(metrics.getMaxTimingSamples() == 8);
+	for (int i = 0; i < 13; ++i) {
+		metrics.recordTiming("bounded.hot.path", static_cast<double>(i));
+	}
+	const std::string boundedSummary = metrics.getSummary();
+	REQUIRE(boundedSummary.find("bounded.hot.path") != std::string::npos);
+	REQUIRE(boundedSummary.find("n=8") != std::string::npos);
+	metrics.setMaxTimingSamples(timingSampleLimit);
 }
 
 TEST_CASE("infill returns error without server backend", "[inference]") {

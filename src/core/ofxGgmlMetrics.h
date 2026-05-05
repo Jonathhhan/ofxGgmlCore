@@ -164,13 +164,39 @@ public:
 	/// Record a custom timing.
 	void recordTiming(const std::string& name, double milliseconds) {
 		std::lock_guard<std::mutex> lock(m_mutex);
+		if (m_maxTimingSamples == 0) {
+			m_timings.erase(name);
+			return;
+		}
 		auto& timings = m_timings[name];
 		timings.push_back(milliseconds);
-		// Keep only the last 1000 samples to avoid unbounded growth.
+		// Keep only the newest samples to avoid unbounded growth.
 		// std::deque::pop_front() is O(1), avoiding the O(n) shift of erase(begin()).
-		if (timings.size() > 1000) {
+		while (timings.size() > m_maxTimingSamples) {
 			timings.pop_front();
 		}
+	}
+
+	/// Configure how many timing samples are retained per metric.
+	void setMaxTimingSamples(size_t maxSamples) {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_maxTimingSamples = maxSamples;
+		if (m_maxTimingSamples == 0) {
+			m_timings.clear();
+			return;
+		}
+		for (auto & entry : m_timings) {
+			auto & samples = entry.second;
+			while (samples.size() > m_maxTimingSamples) {
+				samples.pop_front();
+			}
+		}
+	}
+
+	/// Get the timing sample retention cap.
+	size_t getMaxTimingSamples() const {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		return m_maxTimingSamples;
 	}
 
 	/// Get inference stats for a model.
@@ -323,6 +349,8 @@ public:
 	}
 
 private:
+	static constexpr size_t kDefaultMaxTimingSamples = 1000;
+
 	ofxGgmlMetrics() = default;
 	~ofxGgmlMetrics() = default;
 	ofxGgmlMetrics(const ofxGgmlMetrics&) = delete;
@@ -341,4 +369,5 @@ private:
 	std::map<std::string, size_t> m_counters;
 	std::map<std::string, double> m_gauges;
 	std::map<std::string, std::deque<double>> m_timings;
+	size_t m_maxTimingSamples = kDefaultMaxTimingSamples;
 };
