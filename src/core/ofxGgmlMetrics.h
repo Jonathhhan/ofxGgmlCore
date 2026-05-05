@@ -221,6 +221,12 @@ public:
 	/// Get streaming aggregates per transport (derived from counters).
 	std::map<std::string, StreamStats> getStreamStats() const {
 		std::lock_guard<std::mutex> lock(m_mutex);
+		return buildStreamStatsLocked();
+	}
+
+private:
+	/// Build streaming aggregates. Caller must hold m_mutex.
+	std::map<std::string, StreamStats> buildStreamStatsLocked() const {
 		std::map<std::string, StreamStats> stream;
 		static const std::string prefix = "stream.";
 		for (const auto & entry : m_counters) {
@@ -228,7 +234,7 @@ public:
 			if (name.rfind(prefix, 0) != 0) continue;
 			const uint64_t value = entry.second;
 			const std::string rest = name.substr(prefix.size());
-			const auto dot = rest.find('.');
+			const auto dot = rest.rfind('.');
 			const std::string transport = (dot == std::string::npos) ? rest : rest.substr(0, dot);
 			const std::string kind = (dot == std::string::npos) ? "" : rest.substr(dot + 1);
 			auto & agg = stream[transport];
@@ -243,6 +249,7 @@ public:
 		return stream;
 	}
 
+public:
 	/// Get cache hit rate (0.0 to 1.0).
 	double getCacheHitRate(const std::string& cacheName = "default") const {
 		std::lock_guard<std::mutex> lock(m_mutex);

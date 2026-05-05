@@ -1642,6 +1642,23 @@ TEST_CASE("Batch metrics integration", "[inference][batch][metrics]") {
 	}
 }
 
+TEST_CASE("Metrics summary handles stream counters and bounded timings", "[inference][metrics]") {
+	auto& metrics = ofxGgmlMetrics::getInstance();
+	metrics.reset();
+
+	metrics.incrementCounter("stream.server.http.chunks", 2);
+	metrics.incrementCounter("stream.server.http.bytes", 16);
+	metrics.incrementCounter("stream.server.http.cancelled", 1);
+	for (int i = 0; i < 1005; ++i) {
+		metrics.recordTiming("hot.path", static_cast<double>(i));
+	}
+
+	const std::string summary = metrics.getSummary();
+	REQUIRE(summary.find("Streaming:") != std::string::npos);
+	REQUIRE(summary.find("server") != std::string::npos);
+	REQUIRE(summary.find("n=1000") != std::string::npos);
+}
+
 TEST_CASE("infill returns error without server backend", "[inference]") {
 	ofxGgmlInference inf;
 	ofxGgmlInferenceSettings settings;
@@ -1680,4 +1697,3 @@ TEST_CASE("Speculative decoding draft model path is forwarded in settings", "[in
 	settings.draftModelPath = "/models/draft.gguf";
 	REQUIRE(settings.draftModelPath == "/models/draft.gguf");
 }
-

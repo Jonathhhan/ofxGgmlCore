@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -151,32 +152,42 @@ void ofxGgmlProjectMemory::clampMemory() {
 	}
 	if (m_memoryText.size() > m_maxChars) {
 		const std::string separator = "\n\n---\n\n";
-		std::vector<std::string> entries;
-		size_t start = 0;
-		while (start <= m_memoryText.size()) {
-			size_t sep = m_memoryText.find(separator, start);
-			if (sep == std::string::npos) {
-				entries.push_back(m_memoryText.substr(start));
+		std::vector<std::pair<size_t, size_t>> selectedRanges;
+		size_t rebuiltSize = 0;
+		size_t entryEnd = m_memoryText.size();
+		while (entryEnd > 0) {
+			const size_t separatorPos = m_memoryText.rfind(separator, entryEnd - 1);
+			const bool hasPreviousEntry = separatorPos != std::string::npos;
+			const size_t entryStart = hasPreviousEntry ? separatorPos + separator.size() : 0;
+			const size_t entryLen = entryEnd - entryStart;
+			const size_t candidateSize = rebuiltSize +
+				entryLen +
+				(selectedRanges.empty() ? 0 : separator.size());
+			if (candidateSize > m_maxChars) {
 				break;
 			}
-			entries.push_back(m_memoryText.substr(start, sep - start));
-			start = sep + separator.size();
+			selectedRanges.emplace_back(entryStart, entryLen);
+			rebuiltSize = candidateSize;
+			if (!hasPreviousEntry) {
+				break;
+			}
+			entryEnd = separatorPos;
+		}
+
+		if (selectedRanges.empty()) {
+			m_memoryText.erase(0, m_memoryText.size() - m_maxChars);
+			return;
 		}
 
 		std::string rebuilt;
-		for (size_t i = entries.size(); i > 0; --i) {
-			const std::string & e = entries[i - 1];
-			std::string candidate = rebuilt.empty() ? e : (e + separator + rebuilt);
-			if (candidate.size() > m_maxChars) {
-				break;
+		rebuilt.reserve(rebuiltSize);
+		for (size_t i = selectedRanges.size(); i > 0; --i) {
+			if (!rebuilt.empty()) {
+				rebuilt += separator;
 			}
-			rebuilt = std::move(candidate);
-		}
-
-		if (rebuilt.empty()) {
-			rebuilt = m_memoryText.substr(m_memoryText.size() - m_maxChars);
+			const auto & range = selectedRanges[i - 1];
+			rebuilt.append(m_memoryText, range.first, range.second);
 		}
 		m_memoryText = std::move(rebuilt);
 	}
 }
-
