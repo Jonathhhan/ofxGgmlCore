@@ -6,6 +6,16 @@
 #include <string>
 #include <vector>
 
+namespace ofxGgmlWorkflowManifestDetail {
+inline ofJson toStringArray(const std::vector<std::string> & values) {
+	ofJson array = ofJson::array();
+	for (const auto & value : values) {
+		array.push_back(value);
+	}
+	return array;
+}
+}
+
 struct ofxGgmlWorkflowManifestInput {
 	std::string name;
 	std::string type;
@@ -94,22 +104,13 @@ struct ofxGgmlWorkflowExecutionStep {
 		json["started_at"] = startedAt;
 		json["completed_at"] = completedAt;
 		json["resume_token"] = resumeToken;
-		json["input_artifact_ids"] = toStringArray(inputArtifactIds);
-		json["output_artifact_ids"] = toStringArray(outputArtifactIds);
+		json["input_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(inputArtifactIds);
+		json["output_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(outputArtifactIds);
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;
 		}
 		return json;
-	}
-
-private:
-	static ofJson toStringArray(const std::vector<std::string> & values) {
-		ofJson array = ofJson::array();
-		for (const auto & value : values) {
-			array.push_back(value);
-		}
-		return array;
 	}
 };
 
@@ -131,21 +132,12 @@ struct ofxGgmlWorkflowReplayPlan {
 		json["replay_command"] = replayCommand;
 		json["random_seed"] = randomSeed;
 		json["checkpoint_path"] = checkpointPath;
-		json["required_artifact_ids"] = toStringArray(requiredArtifactIds);
+		json["required_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(requiredArtifactIds);
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;
 		}
 		return json;
-	}
-
-private:
-	static ofJson toStringArray(const std::vector<std::string> & values) {
-		ofJson array = ofJson::array();
-		for (const auto & value : values) {
-			array.push_back(value);
-		}
-		return array;
 	}
 };
 
