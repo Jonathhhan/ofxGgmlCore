@@ -1,8 +1,16 @@
 # ofxGgmlGuiExample
 
-This example is a showcase for the addon API layers and UI integration patterns. It is not the project test harness and should not be the first place new feature logic is added.
+This example is a curated showcase for addon API layers and UI integration patterns. It is not the project test harness and should not be the first place new feature logic is added.
 
-The default mode picker stays focused on stable addon APIs. Enable **Show advanced workflows** in the sidebar only when you need companion/example-tier demos such as video essay, long-form video, or MilkDrop.
+The default mode picker stays focused on stable addon APIs. Enable **Show advanced workflows** in the sidebar only when you need companion/example-tier demos such as video essay, long-form video, or MilkDrop. Mode labels, summaries, and stable-vs-advanced grouping live in `src/config/GuiModeCatalog.*` so navigation decisions stay separate from `ofApp.cpp` panel rendering.
+
+## Structure
+
+- `src/config/GuiModeCatalog.*` keeps the sidebar mode catalog and mode summaries.
+- `src/panels/` contains reusable floating/status panel widgets.
+- `src/managers/` wraps long-lived helper servers.
+- `src/utils/` contains shared GUI-example helpers.
+- Mode files such as `TextModes.cpp`, `VisionVideo.cpp`, and `DiffusionClip.cpp` keep panel-specific behavior out of `ofApp.cpp` where practical.
 
 ## Maintenance policy
 
