@@ -61,9 +61,9 @@ Phase 1 focused on high-impact improvements to developer experience and operatio
 - ✅ **Health Monitoring** - Complete with memory usage, server queue status, diagnostics reports
 - ✅ **Semantic Cache** - Complete with CLIP embeddings, LRU eviction, hit rate tracking
 - ✅ **Hybrid Retrieval** - Complete with keyword+semantic+quality scoring, reranking
-- 📋 **Example Cleanup** - Planned (lower priority)
+- 🔄 **Example Cleanup** - Planning complete, ready for implementation (10-15 days estimated)
 
-All high-priority Phase 1 features are now production-ready and available in the current release.
+All high-priority Phase 1 features are now production-ready and available in the current release. Example cleanup planning is complete with detailed implementation strategy documented.
 
 ---
 
@@ -157,10 +157,24 @@ Implemented features:
 **Outcome**: better grounding quality for citation search, RAG, and research-driven assistants with improved relevance and diversity.
 
 ### 5. Roadmap-Aligned Example Cleanup
-**Priority**: MEDIUM  
-**Status**: 📋 Planned
+**Priority**: MEDIUM
+**Status**: 🔄 Planning Complete → Ready for Implementation
 
 Reduce the giant GUI example to a showcase for API layers and UI patterns. Complex workflows should move into focused examples, tutorial projects, or companion addons instead of using the GUI example as a test harness.
+
+**Planning completed**:
+- Detailed implementation plan created in `docs/examples/EXAMPLE_CLEANUP_PLAN.md`
+- Current state analyzed: GUI example is 31K lines with mixed responsibilities
+- Extraction strategy defined for 4 companion workflow examples
+- Migration path documented for existing users
+- Success criteria established
+
+**Implementation approach**:
+- **Phase 1A**: Refactor GUI example to focus on stable addon tier (~40% code reduction)
+- **Phase 1B**: Extract 4 focused companion examples (Video Essay, Visualization, Advanced Vision, Montage)
+- **Phase 1C**: Update documentation and migration guides
+
+**Estimated timeline**: 10-15 days of focused work
 
 **Outcome**: the example becomes easier to maintain, demonstrates stable surfaces clearly, and stops carrying validation responsibility for unrelated workflows.
 
