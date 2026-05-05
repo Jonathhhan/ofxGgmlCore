@@ -1179,6 +1179,7 @@ bool ofxGgmlScriptSource::loadFileContent(int index, std::string & outContent) {
 			if (!readLocalFileStamp(entry.fullPath, &currentSize, &currentWriteTime) ||
 				currentSize != entry.fileSizeBytes ||
 				currentWriteTime != entry.lastWriteTimeTicks) {
+				// Invalidate stale local cache state, then fall through to reload from disk.
 				std::lock_guard<std::mutex> lock(m_mutex);
 				if (index >= 0 && index < static_cast<int>(m_files.size()) &&
 					m_files[static_cast<size_t>(index)].fullPath == entry.fullPath) {
