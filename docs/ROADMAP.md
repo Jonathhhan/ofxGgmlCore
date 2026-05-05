@@ -278,6 +278,7 @@ Implemented foundation:
 
 - `ofxGgmlFocusedExampleCatalog` shared catalog primitive for roadmap-aligned focused example descriptors
 - default catalog entries for research/citation workflows, companion video essay generation, speech/subtitle tooling, coding assistant integration, and CLIP/image visual planning
+- per-example setup notes, handoff contracts, and expected output artifacts for docs, launchers, or companion tooling
 - schema version `ofxGgml.focused_examples.v1`
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
 - unit coverage for stable JSON keys that docs, launchers, or companion tooling can consume

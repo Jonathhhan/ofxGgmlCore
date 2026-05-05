@@ -13,6 +13,9 @@ struct ofxGgmlFocusedExampleDescriptor {
 	std::vector<std::string> goals;
 	std::vector<std::string> addonHeaders;
 	std::vector<std::string> companionBoundaries;
+	std::vector<std::string> setupNotes;
+	std::vector<std::string> handoffContracts;
+	std::vector<std::string> outputArtifacts;
 
 	ofJson toJson() const {
 		ofJson json;
@@ -23,6 +26,9 @@ struct ofxGgmlFocusedExampleDescriptor {
 		json["goals"] = toStringArray(goals);
 		json["addon_headers"] = toStringArray(addonHeaders);
 		json["companion_boundaries"] = toStringArray(companionBoundaries);
+		json["setup_notes"] = toStringArray(setupNotes);
+		json["handoff_contracts"] = toStringArray(handoffContracts);
+		json["output_artifacts"] = toStringArray(outputArtifacts);
 		return json;
 	}
 
@@ -72,6 +78,10 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	research.goals.push_back("extract source-grounded citations");
 	research.goals.push_back("export manifest artifacts for downstream writing");
 	research.addonHeaders.push_back("ofxGgmlWorkflows.h");
+	research.setupNotes.push_back("configure crawler or local-source ingestion before running");
+	research.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	research.outputArtifacts.push_back("cited-notes markdown");
+	research.outputArtifacts.push_back("research workflow manifest");
 	catalog.addExample(research);
 
 	ofxGgmlFocusedExampleDescriptor videoEssay;
@@ -84,6 +94,12 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	videoEssay.goals.push_back("route visual planning to companion-owned rendering tools");
 	videoEssay.addonHeaders.push_back("ofxGgmlWorkflows.h");
 	videoEssay.companionBoundaries.push_back("ofxGgmlCompanionWorkflows.h");
+	videoEssay.setupNotes.push_back("keep rendering and timeline preview in the companion app");
+	videoEssay.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	videoEssay.handoffContracts.push_back("ofxGgmlCompanionProjectMemory");
+	videoEssay.outputArtifacts.push_back("script outline");
+	videoEssay.outputArtifacts.push_back("subtitle timing");
+	videoEssay.outputArtifacts.push_back("video planning manifest");
 	catalog.addExample(videoEssay);
 
 	ofxGgmlFocusedExampleDescriptor speech;
@@ -95,6 +111,10 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	speech.goals.push_back("load and inspect subtitle cue timing");
 	speech.goals.push_back("export review notes for companion editors");
 	speech.addonHeaders.push_back("ofxGgmlModalities.h");
+	speech.setupNotes.push_back("provide a local speech model or mock transcript source");
+	speech.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	speech.outputArtifacts.push_back("transcript text");
+	speech.outputArtifacts.push_back("subtitle cues");
 	catalog.addExample(speech);
 
 	ofxGgmlFocusedExampleDescriptor coding;
@@ -106,6 +126,10 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	coding.goals.push_back("summarize project memory for follow-up requests");
 	coding.goals.push_back("keep workspace changes approval-first");
 	coding.addonHeaders.push_back("ofxGgml.h");
+	coding.setupNotes.push_back("point the assistant at an explicit workspace root");
+	coding.handoffContracts.push_back("ofxGgmlCompanionProjectMemory");
+	coding.outputArtifacts.push_back("review summary");
+	coding.outputArtifacts.push_back("project-memory update");
 	catalog.addExample(coding);
 
 	ofxGgmlFocusedExampleDescriptor visual;
@@ -117,6 +141,10 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	visual.goals.push_back("rank candidates with CLIP-style embeddings");
 	visual.goals.push_back("record selected assets in workflow manifests");
 	visual.addonHeaders.push_back("ofxGgmlWorkflows.h");
+	visual.setupNotes.push_back("configure image-search providers and optional vision bridges explicitly");
+	visual.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	visual.outputArtifacts.push_back("ranked visual references");
+	visual.outputArtifacts.push_back("selected asset manifest");
 	catalog.addExample(visual);
 
 	return catalog;

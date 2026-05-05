@@ -23,6 +23,9 @@ TEST_CASE("Focused example catalog exposes roadmap example tracks", "[focused_ex
 		REQUIRE_FALSE(example.workflowArea.empty());
 		REQUIRE_FALSE(example.goals.empty());
 		REQUIRE_FALSE(example.addonHeaders.empty());
+		REQUIRE_FALSE(example.setupNotes.empty());
+		REQUIRE_FALSE(example.handoffContracts.empty());
+		REQUIRE_FALSE(example.outputArtifacts.empty());
 	}
 
 	REQUIRE(hasResearch);
@@ -42,6 +45,12 @@ TEST_CASE("Focused example catalog serializes stable JSON keys", "[focused_examp
 	REQUIRE(json.find("\"workflow_area\"") != std::string::npos);
 	REQUIRE(json.find("\"addon_headers\"") != std::string::npos);
 	REQUIRE(json.find("\"companion_boundaries\"") != std::string::npos);
+	REQUIRE(json.find("\"setup_notes\"") != std::string::npos);
+	REQUIRE(json.find("\"handoff_contracts\"") != std::string::npos);
+	REQUIRE(json.find("\"output_artifacts\"") != std::string::npos);
+	REQUIRE(json.find("ofxGgmlWorkflowManifest") != std::string::npos);
+	REQUIRE(json.find("ofxGgmlCompanionProjectMemory") != std::string::npos);
+	REQUIRE(json.find("subtitle timing") != std::string::npos);
 	REQUIRE(json.find("research-citations") != std::string::npos);
 	REQUIRE(json.find("companion-video-essay") != std::string::npos);
 	REQUIRE(json.find("speech-subtitles") != std::string::npos);
