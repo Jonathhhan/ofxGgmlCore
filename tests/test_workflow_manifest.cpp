@@ -12,11 +12,15 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	manifest.inputs.front().metadata["language"] = "en";
 	manifest.addIntermediateOutput("outline", "markdown", "outputs/outline.md", "Cited outline");
 	manifest.addArtifact("srt", "subtitle", "outputs/narration.srt", "Narration timing");
+	manifest.addContract("cite_to_outline", "outline", "Shared contract for cited outline handoff");
+	manifest.contracts.front().addInput("citations", "citation_list", "citations", true, "Resolved source citations");
+	manifest.contracts.front().addOutput("outline", "markdown", "outline", true, "Cited markdown outline");
+	manifest.contracts.front().metadata["next_stage"] = "script";
 	manifest.addExecutionStep("crawl", "Crawl source material", "complete");
 	manifest.executionSteps.front().startedAt = "2026-05-05T16:32:12Z";
 	manifest.executionSteps.front().completedAt = "2026-05-05T16:32:40Z";
 	manifest.executionSteps.front().resumeToken = "checkpoint:crawl";
-	manifest.executionSteps.front().outputArtifactIds.push_back("outline");
+	manifest.executionSteps.front().metadata["output_intermediate_ids"] = "outline";
 	manifest.artifacts.front().mimeType = "application/x-subrip";
 	manifest.warnings.push_back("One citation has low confidence.");
 	manifest.reviewNotes.push_back("Check source freshness before publishing.");
@@ -37,6 +41,10 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	REQUIRE(json.find("citation_to_video_plan") != std::string::npos);
 	REQUIRE(json.find("\"intermediate_outputs\"") != std::string::npos);
 	REQUIRE(json.find("outputs/outline.md") != std::string::npos);
+	REQUIRE(json.find("\"contracts\"") != std::string::npos);
+	REQUIRE(json.find("cite_to_outline") != std::string::npos);
+	REQUIRE(json.find("\"required\":true") != std::string::npos);
+	REQUIRE(json.find("citation_list") != std::string::npos);
 	REQUIRE(json.find("application/x-subrip") != std::string::npos);
 	REQUIRE(json.find("\"handoff\"") != std::string::npos);
 	REQUIRE(json.find("video_planner") != std::string::npos);
@@ -58,6 +66,7 @@ TEST_CASE("Workflow manifest emits empty arrays and handoff object by default", 
 	REQUIRE(json.find("\"inputs\":[]") != std::string::npos);
 	REQUIRE(json.find("\"artifacts\":[]") != std::string::npos);
 	REQUIRE(json.find("\"intermediate_outputs\":[]") != std::string::npos);
+	REQUIRE(json.find("\"contracts\":[]") != std::string::npos);
 	REQUIRE(json.find("\"handoff\":{}") != std::string::npos);
 	REQUIRE(json.find("\"execution_steps\":[]") != std::string::npos);
 	REQUIRE(json.find("\"replay\":{}") != std::string::npos);

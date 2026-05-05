@@ -619,6 +619,28 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 		manifest.artifacts.back().metadata["summary"] = result.editPlanSummary;
 	}
 
+	manifest.addContract("crawl_to_cite", "cite", "Source collection handoff into citation grounding");
+	manifest.contracts.back().addInput("topic", "text", "topic", true, "Research topic");
+	manifest.contracts.back().addInput("source_url", "url[]", "source_url", !request.useCrawler, "Loaded source URLs");
+	manifest.contracts.back().addInput("crawler_start_url", "url", "crawler_start_url", request.useCrawler, "Crawler seed URL");
+	manifest.contracts.back().addOutput("citations", "citation_list", "citations", true, "Resolved citations and provenance");
+	manifest.addContract("cite_to_outline", "outline", "Citation handoff into cited outline drafting");
+	manifest.contracts.back().addInput("citations", "citation_list", "citations", true, "Resolved citations and source summaries");
+	manifest.contracts.back().addOutput("outline", "markdown", "outline", true, "Cited outline");
+	manifest.addContract("outline_to_script", "script", "Outline handoff into narration scripting");
+	manifest.contracts.back().addInput("outline", "markdown", "outline", true, "Cited outline");
+	manifest.contracts.back().addInput("citations", "citation_list", "citations", true, "Citation list for inline source references");
+	manifest.contracts.back().addOutput("script", "markdown", "script", true, "Narration script");
+	manifest.addContract("script_to_subtitles", "subtitles", "Narration script handoff into TTS/subtitle timing");
+	manifest.contracts.back().addInput("script", "markdown", "script", true, "Narration script");
+	manifest.contracts.back().addOutput("voice_cues", "json", "voice_cues", true, "TTS cue sheet");
+	manifest.contracts.back().addOutput("subtitles", "subtitle", "subtitles", true, "SRT subtitle artifact");
+	manifest.addContract("subtitles_to_video_plan", "video_plan", "Subtitle and visual concept handoff into scene/edit planning");
+	manifest.contracts.back().addInput("subtitles", "subtitle", "subtitles", true, "Timed subtitle artifact");
+	manifest.contracts.back().addInput("visual_concept", "text", "visual_concept", false, "Creative direction for scene planning");
+	manifest.contracts.back().addOutput("scene_plan", "video_plan", "scene_plan", false, "Scene-level video plan artifact");
+	manifest.contracts.back().addOutput("edit_plan", "video_edit_plan", "edit_plan", false, "Editor handoff artifact");
+
 	manifest.warnings = result.validation.warnings;
 	if (!trimCopy(result.scenePlanningError).empty()) {
 		manifest.warnings.push_back("Scene planning error: " + result.scenePlanningError);
