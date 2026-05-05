@@ -307,4 +307,3 @@ ofxGgmlYoloResult ofxGgmlYoloInference::detectImage(
 	request.outputPath = outputPath;
 	return detect(request);
 }
-

@@ -122,4 +122,3 @@ public:
 private:
 	std::shared_ptr<ofxGgmlYoloBackend> m_backend;
 };
-

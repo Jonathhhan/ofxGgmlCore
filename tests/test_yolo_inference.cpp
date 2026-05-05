@@ -147,4 +147,3 @@ TEST_CASE("ggml YOLO CLI backend helpers", "[yolo_inference][ggml_yolo]") {
 		REQUIRE(result.error.find("model path") != std::string::npos);
 	}
 }
-
