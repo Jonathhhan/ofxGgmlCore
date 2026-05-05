@@ -122,14 +122,23 @@ const std::string & promptPrefixForRole(
 	}
 }
 
-void appendPromptTurn(
-	std::ostringstream & out,
+size_t promptTurnSize(
 	const ofxGgmlConversationTurn & turn,
 	const ofxGgmlConversationPromptSettings & settings,
 	const std::string & turnSeparator) {
-	out << promptPrefixForRole(turn.role, settings)
-		<< turn.content
-		<< turnSeparator;
+	return promptPrefixForRole(turn.role, settings).size() +
+		turn.content.size() +
+		turnSeparator.size();
+}
+
+void appendPromptTurn(
+	std::string & out,
+	const ofxGgmlConversationTurn & turn,
+	const ofxGgmlConversationPromptSettings & settings,
+	const std::string & turnSeparator) {
+	out += promptPrefixForRole(turn.role, settings);
+	out += turn.content;
+	out += turnSeparator;
 }
 
 size_t findFirstUserTurnIndex(
@@ -256,14 +265,22 @@ ofxGgmlConversationManager::getTurns() const {
 
 std::string ofxGgmlConversationManager::buildPrompt(
 	const ofxGgmlConversationPromptSettings & settings) const {
-	std::ostringstream out;
+	size_t promptSize = settings.addFinalPromptPrefix ?
+		settings.assistantPrefix.size() :
+		0;
+	for (const auto & turn : m_turns) {
+		promptSize += promptTurnSize(turn, settings, settings.turnSeparator);
+	}
+
+	std::string out;
+	out.reserve(promptSize);
 	for (const auto & turn : m_turns) {
 		appendPromptTurn(out, turn, settings, settings.turnSeparator);
 	}
 	if (settings.addFinalPromptPrefix) {
-		out << settings.assistantPrefix;
+		out += settings.assistantPrefix;
 	}
-	return out.str();
+	return out;
 }
 
 std::string ofxGgmlConversationManager::toJson() const {
@@ -313,22 +330,30 @@ ofxGgmlConversationManager::summarizeHistory(
 		return result;
 	}
 
-	std::ostringstream prompt;
-	prompt
-		<< "Summarize the following conversation in 2-4 sentences.\n"
-		<< "Focus on the key topics, decisions, and outcomes.\n"
-		<< "Do not add new information. Do not use bullet points.\n\n"
-		<< "Conversation:\n";
+	const std::string header =
+		"Summarize the following conversation in 2-4 sentences.\n"
+		"Focus on the key topics, decisions, and outcomes.\n"
+		"Do not add new information. Do not use bullet points.\n\n"
+		"Conversation:\n";
+	const std::string suffix = "\nSummary:";
 
 	const ofxGgmlConversationPromptSettings promptSettings;
+	size_t promptSize = header.size() + suffix.size();
+	for (const auto & turn : m_turns) {
+		promptSize += promptTurnSize(turn, promptSettings, "\n");
+	}
+
+	std::string prompt;
+	prompt.reserve(promptSize);
+	prompt += header;
 	for (const auto & turn : m_turns) {
 		appendPromptTurn(prompt, turn, promptSettings, "\n");
 	}
-	prompt << "\nSummary:";
+	prompt += suffix;
 
 	result.inference = m_inference.generate(
 		modelPath,
-		prompt.str(),
+		prompt,
 		settings,
 		std::move(onChunk));
 	result.success = result.inference.success;
