@@ -329,7 +329,7 @@ Implemented foundation:
 
 ### 3. Continuity, Consistency, and Asset Reuse
 **Priority**: MEDIUM-HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Let companion systems build on core provenance and manifest support for:
 
@@ -338,6 +338,16 @@ Let companion systems build on core provenance and manifest support for:
 - reusable asset references and project-level constraints
 
 **Outcome**: better long-form coherence for multi-stage creative work.
+
+Implemented foundation:
+
+- `ofxGgmlContinuityAssetLedger` shared schema primitive for scene continuity rules, style constraints, reusable asset references, review notes, and manifest/project-memory handoffs
+- default continuity rules for scene identity and timeline order
+- default style constraints for palette reuse and generation guardrails
+- default reusable asset references for approved hero references and motif prompts
+- schema version `ofxGgml.continuity_asset_ledger.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for default rules, reusable assets, stable JSON keys, and empty-entry handling
 
 ### 4. Trust and Evaluation Suites
 **Priority**: MEDIUM-HIGH  

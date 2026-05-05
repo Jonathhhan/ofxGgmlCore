@@ -44,6 +44,7 @@
 #include "inference/ofxGgmlImageSearch.h"
 #include "inference/ofxGgmlRAGPipeline.h"
 #include "support/ofxGgmlCompanionProjectMemory.h"
+#include "support/ofxGgmlContinuityAssetLedger.h"
 #include "support/ofxGgmlFocusedExampleCatalog.h"
 #include "support/ofxGgmlTimelineCopilotPlan.h"
 #include "support/ofxGgmlWorkflowManifest.h"
