@@ -6,7 +6,7 @@ This document describes how `ofxGgml` should coexist with optional companion add
 
 - `ofxGgml` is the primary `ggml`-centric addon in this workspace.
 - `ofxStableDiffusion` remains a separate addon with its own `stable-diffusion.cpp` integration.
-- `sam.cpp` remains an optional application- or companion-addon-supplied runtime for Segment Anything style masks.
+- `sam.cpp` remains an optional local checkout for Segment Anything style masks; use `scripts/install-sam-cpp.sh` or `scripts\install-sam-cpp.bat` to populate `libs/sam.cpp` at the pinned revision before regenerating examples.
 - We prefer **pinned, tested revisions** over tracking `main` for either upstream.
 - We do **not** assume that one shared `ggml` source tree is automatically safer than two pinned integrations.
 

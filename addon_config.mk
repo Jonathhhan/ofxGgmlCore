@@ -25,6 +25,7 @@ common:
 	ADDON_INCLUDES += src
 	ADDON_INCLUDES += libs/ggml/include
 	ADDON_INCLUDES += libs/clip/include
+	ADDON_INCLUDES += libs/sam.cpp
 	ADDON_INCLUDES += libs/libxml2/include
 	# stable-diffusion.cpp requires GGML_MAX_NAME >= 128 when using this
 	# addon as a system GGML provider. Keep consumers ABI-compatible with
@@ -35,17 +36,27 @@ common:
 	ADDON_SOURCES_EXCLUDE += build/%
 	ADDON_SOURCES_EXCLUDE += libs/ggml/build/%
 	ADDON_SOURCES_EXCLUDE += libs/ggml/.download/%
+	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/.git/%
+	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/build/%
+	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/ggml/%
+	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/examples/%
 	ADDON_SOURCES_EXCLUDE += libs/acestep/%
 	ADDON_SOURCES_EXCLUDE += libs/mojo/%
 	ADDON_SOURCES_EXCLUDE += libs/llama/bin/%
 	ADDON_SOURCES_EXCLUDE += libs/whisper/bin/%
 	ADDON_INCLUDES_EXCLUDE += build/%
 	ADDON_INCLUDES_EXCLUDE += libs/ggml/.download/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/.git/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/build/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/ggml/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/examples/%
 	ADDON_INCLUDES_EXCLUDE += libs/acestep/%
 	ADDON_INCLUDES_EXCLUDE += libs/mojo/%
 	ADDON_INCLUDES_EXCLUDE += libs/llama/bin/%
 	ADDON_INCLUDES_EXCLUDE += libs/whisper/bin/%
 	ADDON_LIBS_EXCLUDE += libs/acestep/%
+	ADDON_LIBS_EXCLUDE += libs/sam.cpp/build/%
+	ADDON_LIBS_EXCLUDE += libs/sam.cpp/ggml/%
 	ADDON_LIBS_EXCLUDE += libs/mojo/%
 	ADDON_LIBS_EXCLUDE += libs/llama/bin/%
 	ADDON_LIBS_EXCLUDE += libs/whisper/bin/%

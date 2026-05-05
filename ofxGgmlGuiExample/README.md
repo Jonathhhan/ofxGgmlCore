@@ -23,4 +23,16 @@ The default mode picker stays focused on stable addon APIs. Enable **Show advanc
 
 The SAM panel follows the upstream `ggml/examples/sam` example defaults where practical: converted ViT-B `ggml-model-f16.bin`, point-prompt inference, CPU thread control, and multi-mask output. Box prompts and direct mask/iou/stability threshold controls are intentionally left out of the GUI until the attached sam.cpp adapter exposes those controls through the addon bridge.
 
+Install the optional sam.cpp checkout before regenerating the example project:
+
+```bash
+../scripts/install-sam-cpp.sh
+```
+
+```bat
+..\scripts\install-sam-cpp.bat
+```
+
+That populates `../libs/sam.cpp`; `addon_config.mk` adds that folder to the include path and lets the Project Generator compile `sam.cpp` while excluding its nested ggml checkout and examples.
+
 Use `../tests/run-tests.sh` for validation coverage instead of relying on manual GUI flows.
