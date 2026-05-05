@@ -325,8 +325,9 @@ TEST_CASE("Server streaming uses portable HTTP in headless tests", "[inference][
 	socklen_t boundLen = sizeof(bound);
 	REQUIRE(getsockname(listenFd, reinterpret_cast<sockaddr *>(&bound), &boundLen) == 0);
 	const int port = ntohs(bound.sin_port);
+	std::string receivedRequest;
 
-	std::thread server([listenFd]() {
+	std::thread server([listenFd, &receivedRequest]() {
 		const int client = accept(listenFd, nullptr, nullptr);
 		if (client < 0) {
 			close(listenFd);
@@ -341,6 +342,29 @@ TEST_CASE("Server streaming uses portable HTTP in headless tests", "[inference][
 			}
 			request.append(buffer.data(), static_cast<size_t>(n));
 		}
+		const size_t headerEnd = request.find("\r\n\r\n");
+		if (headerEnd != std::string::npos) {
+			size_t contentLength = 0;
+			std::istringstream headers(request.substr(0, headerEnd));
+			std::string headerLine;
+			while (std::getline(headers, headerLine)) {
+				if (!headerLine.empty() && headerLine.back() == '\r') {
+					headerLine.pop_back();
+				}
+				const std::string prefix = "Content-Length: ";
+				if (headerLine.rfind(prefix, 0) == 0) {
+					contentLength = static_cast<size_t>(std::stoull(headerLine.substr(prefix.size())));
+				}
+			}
+			while (request.size() < headerEnd + 4 + contentLength) {
+				const ssize_t n = recv(client, buffer.data(), buffer.size(), 0);
+				if (n <= 0) {
+					break;
+				}
+				request.append(buffer.data(), static_cast<size_t>(n));
+			}
+		}
+		receivedRequest = request;
 		const std::string headers =
 			"HTTP/1.1 200 OK\r\n"
 			"Content-Type: text/event-stream\r\n"
@@ -377,6 +401,12 @@ TEST_CASE("Server streaming uses portable HTTP in headless tests", "[inference][
 		});
 
 	server.join();
+	const size_t requestBodyStart = receivedRequest.find("\r\n\r\n");
+	REQUIRE(requestBodyStart != std::string::npos);
+	ofJson requestJson = ofJson::parse(receivedRequest.substr(requestBodyStart + 4));
+	REQUIRE(requestJson["stream"].get<bool>());
+	REQUIRE(requestJson["max_tokens"].get<int>() == 8);
+	REQUIRE(requestJson["messages"][0]["content"].get<std::string>() == "Say hello");
 	REQUIRE(result.success);
 	REQUIRE(result.text == "portable streaming");
 	REQUIRE(streamed == "portable streaming");
@@ -1642,6 +1672,35 @@ TEST_CASE("Batch metrics integration", "[inference][batch][metrics]") {
 	}
 }
 
+TEST_CASE("Metrics summary handles stream counters and bounded timings", "[inference][metrics]") {
+	auto& metrics = ofxGgmlMetrics::getInstance();
+	metrics.reset();
+	constexpr int timingSampleLimit = 1000;
+	constexpr int overflowSamples = 5;
+
+	metrics.incrementCounter("stream.server.http.chunks", 2);
+	metrics.incrementCounter("stream.server.http.bytes", 16);
+	metrics.incrementCounter("stream.server.http.cancelled", 1);
+	for (int i = 0; i < timingSampleLimit + overflowSamples; ++i) {
+		metrics.recordTiming("hot.path", static_cast<double>(i));
+	}
+
+	const std::string summary = metrics.getSummary();
+	REQUIRE(summary.find("Streaming:") != std::string::npos);
+	REQUIRE(summary.find("server.http") != std::string::npos);
+	REQUIRE(summary.find("n=1000") != std::string::npos);
+
+	metrics.setMaxTimingSamples(8);
+	REQUIRE(metrics.getMaxTimingSamples() == 8);
+	for (int i = 0; i < 13; ++i) {
+		metrics.recordTiming("bounded.hot.path", static_cast<double>(i));
+	}
+	const std::string boundedSummary = metrics.getSummary();
+	REQUIRE(boundedSummary.find("bounded.hot.path") != std::string::npos);
+	REQUIRE(boundedSummary.find("n=8") != std::string::npos);
+	metrics.setMaxTimingSamples(timingSampleLimit);
+}
+
 TEST_CASE("infill returns error without server backend", "[inference]") {
 	ofxGgmlInference inf;
 	ofxGgmlInferenceSettings settings;
@@ -1680,4 +1739,3 @@ TEST_CASE("Speculative decoding draft model path is forwarded in settings", "[in
 	settings.draftModelPath = "/models/draft.gguf";
 	REQUIRE(settings.draftModelPath == "/models/draft.gguf");
 }
-

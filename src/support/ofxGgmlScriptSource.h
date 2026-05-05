@@ -21,8 +21,12 @@ struct ofxGgmlScriptSourceFileEntry {
 	std::string name;
 	std::string fullPath;
 	std::string cachedContent;
+	uint64_t fileSizeBytes = 0;
+	int64_t lastWriteTimeTicks = 0;
 	bool isDirectory = false;
 	bool isCached = false;
+
+	ofxGgmlScriptSourceFileEntry withoutCachedContent() const;
 };
 
 struct ofxGgmlScriptSourceFetchDiagnostic {
@@ -107,7 +111,8 @@ public:
 	std::string getGitHubOwnerRepo() const noexcept;
 	std::string getGitHubBranch() const noexcept;
 	std::vector<std::string> getInternetUrls() const;
-	std::vector<ofxGgmlScriptSourceFileEntry> getFiles() const;
+	std::vector<ofxGgmlScriptSourceFileEntry> getFiles(
+		bool includeCachedContent = true) const;
 	ofxGgmlScriptSourceWorkspaceInfo getWorkspaceInfo() const;
 	std::string getStatus() const;
 	bool isFetching() const noexcept;

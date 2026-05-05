@@ -3,6 +3,8 @@
 #include "ggml.h"
 #include "gguf.h"
 
+#include <unordered_map>
+
 // ---------------------------------------------------------------------------
 // PIMPL
 // ---------------------------------------------------------------------------
@@ -11,6 +13,42 @@ struct ofxGgmlModel::Impl {
 	struct gguf_context * ggufCtx = nullptr;
 	struct ggml_context * ggmlCtx = nullptr;
 	std::string path;
+	std::vector<std::string> metadataKeys;
+	std::unordered_map<std::string, int64_t> metadataIndexByKey;
+	std::vector<std::string> tensorNames;
+
+	void clearCaches() {
+		metadataKeys.clear();
+		metadataIndexByKey.clear();
+		tensorNames.clear();
+	}
+
+	void rebuildCaches() {
+		clearCaches();
+		if (!ggufCtx) {
+			return;
+		}
+
+		const int64_t keyCount = static_cast<int64_t>(gguf_get_n_kv(ggufCtx));
+		if (keyCount > 0) {
+			metadataKeys.reserve(static_cast<size_t>(keyCount));
+			metadataIndexByKey.reserve(static_cast<size_t>(keyCount));
+			for (int64_t i = 0; i < keyCount; ++i) {
+				const char * key = gguf_get_key(ggufCtx, static_cast<int>(i));
+				metadataKeys.emplace_back(key ? key : "");
+				metadataIndexByKey.emplace(metadataKeys.back(), i);
+			}
+		}
+
+		const int64_t tensorCount = gguf_get_n_tensors(ggufCtx);
+		if (tensorCount > 0) {
+			tensorNames.reserve(static_cast<size_t>(tensorCount));
+			for (int64_t i = 0; i < tensorCount; ++i) {
+				const char * name = gguf_get_tensor_name(ggufCtx, i);
+				tensorNames.emplace_back(name ? name : "");
+			}
+		}
+	}
 };
 
 // ---------------------------------------------------------------------------
@@ -43,6 +81,7 @@ bool ofxGgmlModel::load(const std::string & path) {
 	m_impl->ggufCtx = ggufCtx;
 	m_impl->ggmlCtx = dataCtx;
 	m_impl->path = path;
+	m_impl->rebuildCaches();
 	return true;
 }
 
@@ -56,6 +95,7 @@ void ofxGgmlModel::close() {
 		m_impl->ggmlCtx = nullptr;
 	}
 	m_impl->path.clear();
+	m_impl->clearCaches();
 }
 
 bool ofxGgmlModel::isLoaded() const {
@@ -71,31 +111,27 @@ std::string ofxGgmlModel::getPath() const {
 // ---------------------------------------------------------------------------
 
 int64_t ofxGgmlModel::getNumMetadataKeys() const {
-	if (!m_impl->ggufCtx) return 0;
-	return static_cast<int64_t>(gguf_get_n_kv(m_impl->ggufCtx));
+	return static_cast<int64_t>(m_impl->metadataKeys.size());
 }
 
 std::string ofxGgmlModel::getMetadataKey(int64_t index) const {
-	if (!m_impl->ggufCtx) return {};
-
-	const int64_t keyCount = static_cast<int64_t>(gguf_get_n_kv(m_impl->ggufCtx));
+	const int64_t keyCount = static_cast<int64_t>(m_impl->metadataKeys.size());
 	if (index < 0 || index >= keyCount) {
 		return {};
 	}
-
-	const char * key = gguf_get_key(m_impl->ggufCtx, static_cast<int>(index));
-	return key ? key : "";
+	return m_impl->metadataKeys[static_cast<size_t>(index)];
 }
 
 int64_t ofxGgmlModel::findMetadataKey(const std::string & key) const {
 	if (!m_impl->ggufCtx) return -1;
-	return gguf_find_key(m_impl->ggufCtx, key.c_str());
+	const auto it = m_impl->metadataIndexByKey.find(key);
+	return it != m_impl->metadataIndexByKey.end() ? it->second : -1;
 }
 
 std::string ofxGgmlModel::getMetadataString(const std::string & key) const {
 	if (!m_impl->ggufCtx) return {};
 
-	const int64_t id = gguf_find_key(m_impl->ggufCtx, key.c_str());
+	const int64_t id = findMetadataKey(key);
 	if (id < 0) return {};
 	if (gguf_get_kv_type(m_impl->ggufCtx, id) != GGUF_TYPE_STRING) return {};
 
@@ -106,7 +142,7 @@ std::string ofxGgmlModel::getMetadataString(const std::string & key) const {
 int32_t ofxGgmlModel::getMetadataInt32(const std::string & key, int32_t defaultVal) const {
 	if (!m_impl->ggufCtx) return defaultVal;
 
-	const int64_t id = gguf_find_key(m_impl->ggufCtx, key.c_str());
+	const int64_t id = findMetadataKey(key);
 	if (id < 0) return defaultVal;
 
 	const enum gguf_type type = gguf_get_kv_type(m_impl->ggufCtx, id);
@@ -122,7 +158,7 @@ int32_t ofxGgmlModel::getMetadataInt32(const std::string & key, int32_t defaultV
 uint32_t ofxGgmlModel::getMetadataUint32(const std::string & key, uint32_t defaultVal) const {
 	if (!m_impl->ggufCtx) return defaultVal;
 
-	const int64_t id = gguf_find_key(m_impl->ggufCtx, key.c_str());
+	const int64_t id = findMetadataKey(key);
 	if (id < 0) return defaultVal;
 
 	const enum gguf_type type = gguf_get_kv_type(m_impl->ggufCtx, id);
@@ -134,7 +170,7 @@ uint32_t ofxGgmlModel::getMetadataUint32(const std::string & key, uint32_t defau
 float ofxGgmlModel::getMetadataFloat(const std::string & key, float defaultVal) const {
 	if (!m_impl->ggufCtx) return defaultVal;
 
-	const int64_t id = gguf_find_key(m_impl->ggufCtx, key.c_str());
+	const int64_t id = findMetadataKey(key);
 	if (id < 0) return defaultVal;
 	if (gguf_get_kv_type(m_impl->ggufCtx, id) != GGUF_TYPE_FLOAT32) return defaultVal;
 
@@ -146,20 +182,15 @@ float ofxGgmlModel::getMetadataFloat(const std::string & key, float defaultVal) 
 // ---------------------------------------------------------------------------
 
 int64_t ofxGgmlModel::getNumTensors() const {
-	if (!m_impl->ggufCtx) return 0;
-	return gguf_get_n_tensors(m_impl->ggufCtx);
+	return static_cast<int64_t>(m_impl->tensorNames.size());
 }
 
 std::string ofxGgmlModel::getTensorName(int64_t index) const {
-	if (!m_impl->ggufCtx) return {};
-
-	const int64_t tensorCount = gguf_get_n_tensors(m_impl->ggufCtx);
+	const int64_t tensorCount = static_cast<int64_t>(m_impl->tensorNames.size());
 	if (index < 0 || index >= tensorCount) {
 		return {};
 	}
-
-	const char * name = gguf_get_tensor_name(m_impl->ggufCtx, index);
-	return name ? name : "";
+	return m_impl->tensorNames[static_cast<size_t>(index)];
 }
 
 ofxGgmlTensor ofxGgmlModel::getTensor(const std::string & name) {
@@ -168,18 +199,7 @@ ofxGgmlTensor ofxGgmlModel::getTensor(const std::string & name) {
 }
 
 std::vector<std::string> ofxGgmlModel::getTensorNames() const {
-	std::vector<std::string> names;
-	if (!m_impl->ggufCtx) {
-		return names;
-	}
-
-	const int64_t tensorCount = gguf_get_n_tensors(m_impl->ggufCtx);
-	names.reserve(static_cast<size_t>(tensorCount));
-	for (int64_t i = 0; i < tensorCount; ++i) {
-		const char * name = gguf_get_tensor_name(m_impl->ggufCtx, i);
-		names.emplace_back(name ? name : "");
-	}
-	return names;
+	return m_impl->tensorNames;
 }
 
 // ---------------------------------------------------------------------------

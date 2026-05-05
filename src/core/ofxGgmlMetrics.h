@@ -164,13 +164,39 @@ public:
 	/// Record a custom timing.
 	void recordTiming(const std::string& name, double milliseconds) {
 		std::lock_guard<std::mutex> lock(m_mutex);
+		if (m_maxTimingSamples == 0) {
+			m_timings.erase(name);
+			return;
+		}
 		auto& timings = m_timings[name];
 		timings.push_back(milliseconds);
-		// Keep only the last 1000 samples to avoid unbounded growth.
+		// Keep only the newest samples to avoid unbounded growth.
 		// std::deque::pop_front() is O(1), avoiding the O(n) shift of erase(begin()).
-		if (timings.size() > 1000) {
+		while (timings.size() > m_maxTimingSamples) {
 			timings.pop_front();
 		}
+	}
+
+	/// Configure how many timing samples are retained per metric.
+	void setMaxTimingSamples(size_t maxSamples) {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_maxTimingSamples = maxSamples;
+		if (m_maxTimingSamples == 0) {
+			m_timings.clear();
+			return;
+		}
+		for (auto & entry : m_timings) {
+			auto & samples = entry.second;
+			while (samples.size() > m_maxTimingSamples) {
+				samples.pop_front();
+			}
+		}
+	}
+
+	/// Get the timing sample retention cap.
+	size_t getMaxTimingSamples() const {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		return m_maxTimingSamples;
 	}
 
 	/// Get inference stats for a model.
@@ -221,6 +247,12 @@ public:
 	/// Get streaming aggregates per transport (derived from counters).
 	std::map<std::string, StreamStats> getStreamStats() const {
 		std::lock_guard<std::mutex> lock(m_mutex);
+		return buildStreamStatsLocked();
+	}
+
+private:
+	/// Build streaming aggregates. Caller must hold m_mutex.
+	std::map<std::string, StreamStats> buildStreamStatsLocked() const {
 		std::map<std::string, StreamStats> stream;
 		static const std::string prefix = "stream.";
 		for (const auto & entry : m_counters) {
@@ -228,7 +260,10 @@ public:
 			if (name.rfind(prefix, 0) != 0) continue;
 			const uint64_t value = entry.second;
 			const std::string rest = name.substr(prefix.size());
-			const auto dot = rest.find('.');
+			// Counter names are stream.<transport>.<kind>, where kind is one of
+			// chunks, bytes, or cancelled. Transport names may themselves contain
+			// dots (for example "server.http"), so split on the final separator.
+			const auto dot = rest.rfind('.');
 			const std::string transport = (dot == std::string::npos) ? rest : rest.substr(0, dot);
 			const std::string kind = (dot == std::string::npos) ? "" : rest.substr(dot + 1);
 			auto & agg = stream[transport];
@@ -243,6 +278,7 @@ public:
 		return stream;
 	}
 
+public:
 	/// Get cache hit rate (0.0 to 1.0).
 	double getCacheHitRate(const std::string& cacheName = "default") const {
 		std::lock_guard<std::mutex> lock(m_mutex);
@@ -313,6 +349,8 @@ public:
 	}
 
 private:
+	static constexpr size_t kDefaultMaxTimingSamples = 1000;
+
 	ofxGgmlMetrics() = default;
 	~ofxGgmlMetrics() = default;
 	ofxGgmlMetrics(const ofxGgmlMetrics&) = delete;
@@ -331,4 +369,5 @@ private:
 	std::map<std::string, size_t> m_counters;
 	std::map<std::string, double> m_gauges;
 	std::map<std::string, std::deque<double>> m_timings;
+	size_t m_maxTimingSamples = kDefaultMaxTimingSamples;
 };

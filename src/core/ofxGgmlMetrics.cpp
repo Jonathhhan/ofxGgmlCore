@@ -62,7 +62,7 @@ std::string ofxGgmlMetrics::getSummary() const {
 
 	// Counters
 	if (!m_counters.empty()) {
-		const auto stream = getStreamStats();
+		const auto stream = buildStreamStatsLocked();
 		if (!stream.empty()) {
 			oss << "Streaming:\n";
 			for (const auto & [transport, agg] : stream) {

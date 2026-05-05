@@ -1,9 +1,18 @@
 #include "catch2.hpp"
 #include "../src/ofxGgml.h"
+#include <atomic>
 #include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
+
+#ifndef _WIN32
+	#include <sys/stat.h>
+#endif
 
 // Benchmark utilities
 namespace benchmark {
@@ -56,6 +65,80 @@ namespace benchmark {
 		return result;
 	}
 }
+
+namespace {
+
+std::filesystem::path makeBenchmarkTempDir(const std::string & name) {
+	const auto base = std::filesystem::temp_directory_path() / "ofxggml_benchmark_tests";
+	std::filesystem::create_directories(base);
+	static std::atomic<uint64_t> counter{0};
+	const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
+	const auto dir = base / (name + "_" + std::to_string(now) + "_" +
+		std::to_string(counter.fetch_add(1, std::memory_order_relaxed)));
+	std::error_code ec;
+	std::filesystem::remove_all(dir, ec);
+	std::filesystem::create_directories(dir);
+	return dir;
+}
+
+std::string createBenchmarkDummyModel() {
+	const auto dir = makeBenchmarkTempDir("model");
+	const auto model = dir / "dummy.gguf";
+	std::ofstream out(model, std::ios::binary);
+	out << "dummy-model";
+	return model.string();
+}
+
+std::string escapeBatchEcho(const std::string & line) {
+	std::string escaped;
+	for (char c : line) {
+		switch (c) {
+		case '^':
+		case '&':
+		case '|':
+		case '<':
+		case '>':
+			escaped.push_back('^');
+			escaped.push_back(c);
+			break;
+		case '%':
+			escaped += "%%";
+			break;
+		default:
+			escaped.push_back(c);
+			break;
+		}
+	}
+	return escaped;
+}
+
+std::string createBenchmarkCompletionExecutable(const std::string & outputLine) {
+	const auto dir = makeBenchmarkTempDir("completion");
+#ifdef _WIN32
+	const auto exe = dir / "benchmark_completion.bat";
+	std::ofstream out(exe);
+	out << "@echo off\r\n";
+	out << "echo " << escapeBatchEcho(outputLine) << "\r\n";
+#else
+	const auto exe = dir / "benchmark_completion.sh";
+	std::ofstream out(exe);
+	out << "#!/usr/bin/env bash\n";
+	out << "printf '%s\\n' " << std::quoted(outputLine) << "\n";
+	out.close();
+	chmod(exe.c_str(), 0755);
+#endif
+	return exe.string();
+}
+
+std::string makeRepeatedText(const std::string & seed, size_t repetitions) {
+	std::ostringstream out;
+	for (size_t i = 0; i < repetitions; ++i) {
+		out << seed << " #" << i << "\n";
+	}
+	return out.str();
+}
+
+} // namespace
 
 static void setupBenchmarkRuntime(ofxGgml & ggml) {
 	ofxGgmlSettings settings;
@@ -432,4 +515,173 @@ TEST_CASE("Benchmark: Memory operations", "[benchmark][!hide]") {
 	}
 
 	REQUIRE(results.size() == 6);
+}
+
+TEST_CASE("Benchmark: Inference command path", "[benchmark][!hide]") {
+	const std::string modelPath = createBenchmarkDummyModel();
+	const std::string completionExe =
+		createBenchmarkCompletionExecutable("benchmark-generated-output");
+
+	ofxGgmlInference inference;
+	inference.setCompletionExecutable(completionExe);
+
+	ofxGgmlInferenceSettings settings;
+	settings.autoPromptCache = false;
+	settings.simpleIo = true;
+	settings.maxTokens = 16;
+
+	auto singleResult = benchmark::measure("Fake CLI single generation", [&]() {
+		const auto result = inference.generate(
+			modelPath,
+			"Summarize the benchmark fixture.",
+			settings);
+		if (!result.success) {
+			throw std::runtime_error(result.error);
+		}
+	}, 10);
+	INFO(singleResult.toString());
+	REQUIRE(singleResult.avgMs > 0.0);
+}
+
+TEST_CASE("Benchmark: Batch inference scheduling", "[benchmark][!hide]") {
+	const std::string modelPath = createBenchmarkDummyModel();
+	const std::string completionExe =
+		createBenchmarkCompletionExecutable("benchmark-batch-output");
+
+	ofxGgmlInference inference;
+	inference.setCompletionExecutable(completionExe);
+
+	ofxGgmlInferenceSettings inferenceSettings;
+	inferenceSettings.autoPromptCache = false;
+	inferenceSettings.simpleIo = true;
+	inferenceSettings.maxTokens = 16;
+
+	ofxGgmlBatchSettings batchSettings;
+	batchSettings.allowParallelProcessing = false;
+	batchSettings.preferServerBatch = false;
+	batchSettings.fallbackToSequential = true;
+
+	const std::vector<std::string> prompts = {
+		"Batch prompt 1",
+		"Batch prompt 2",
+		"Batch prompt 3",
+		"Batch prompt 4"
+	};
+
+	auto batchResult = benchmark::measure("Fake CLI sequential batch generation", [&]() {
+		const auto result = inference.generateBatchSimple(
+			modelPath,
+			prompts,
+			inferenceSettings,
+			batchSettings);
+		if (!result.success) {
+			throw std::runtime_error(result.error);
+		}
+	}, 5, prompts.size());
+	INFO(batchResult.toString());
+	REQUIRE(batchResult.avgMs > 0.0);
+}
+
+TEST_CASE("Benchmark: Support string-heavy paths", "[benchmark][!hide]") {
+	SECTION("Prompt template substitution") {
+		const std::string templateText =
+			"System: {{system}}\n"
+			"Task: {{task}}\n"
+			"Context:\n{{context}}\n"
+			"Constraints:\n{{constraints}}\n"
+			"Output: {{format|plain text}}\n";
+		const ofxGgmlPromptTemplates::VariableMap variables = {
+			{"system", "You are a local benchmark assistant."},
+			{"task", "Rewrite and summarize source-heavy prompt context."},
+			{"context", makeRepeatedText("Context paragraph with source tokens", 80)},
+			{"constraints", makeRepeatedText("Keep citations stable", 20)}
+		};
+		auto result = benchmark::measure("Prompt template fillText", [&]() {
+			const auto filled = ofxGgmlPromptTemplates::fillText(templateText, variables);
+			if (filled.empty()) {
+				throw std::runtime_error("prompt template output was empty");
+			}
+		}, 100);
+		INFO(result.toString());
+		REQUIRE(result.avgMs > 0.0);
+	}
+
+	SECTION("Prompt source assembly") {
+		std::vector<ofxGgmlPromptSource> sources;
+		for (int i = 0; i < 8; ++i) {
+			ofxGgmlPromptSource source;
+			source.label = "Source " + std::to_string(i + 1);
+			source.uri = "file:///source_" + std::to_string(i + 1) + ".cpp";
+			source.content = makeRepeatedText("int value = source_index;", 60);
+			sources.push_back(std::move(source));
+		}
+		ofxGgmlPromptSourceSettings sourceSettings;
+		sourceSettings.maxSources = sources.size();
+		sourceSettings.maxCharsPerSource = 2000;
+		sourceSettings.maxTotalChars = 8000;
+
+		auto result = benchmark::measure("Build prompt with sources", [&]() {
+			std::vector<ofxGgmlPromptSource> usedSources;
+			const auto prompt = ofxGgmlInference::buildPromptWithSources(
+				"Review these source files for performance-sensitive paths.",
+				sources,
+				sourceSettings,
+				&usedSources);
+			if (prompt.empty() || usedSources.empty()) {
+				throw std::runtime_error("source prompt assembly failed");
+			}
+		}, 100, sources.size());
+		INFO(result.toString());
+		REQUIRE(result.avgMs > 0.0);
+	}
+
+	SECTION("Project memory clamp and prompt context") {
+		auto result = benchmark::measure("Project memory add/build context", [&]() {
+			ofxGgmlProjectMemory memory;
+			memory.setMaxChars(12000);
+			for (int i = 0; i < 48; ++i) {
+				if (!memory.addInteraction(
+						"Request " + std::to_string(i) + "\n" +
+							makeRepeatedText("Optimize code path", 4),
+						"Response " + std::to_string(i) + "\n" +
+							makeRepeatedText("Applied careful low-risk change", 4))) {
+					throw std::runtime_error("project memory add failed");
+				}
+			}
+			if (memory.buildPromptContext().empty()) {
+				throw std::runtime_error("project memory prompt context was empty");
+			}
+		}, 50);
+		INFO(result.toString());
+		REQUIRE(result.avgMs > 0.0);
+	}
+
+	SECTION("Script source scan and cached load") {
+		const auto root = makeBenchmarkTempDir("script_source");
+		std::filesystem::create_directories(root / "src");
+		for (int i = 0; i < 32; ++i) {
+			std::ofstream out(root / "src" / ("file_" + std::to_string(i) + ".cpp"));
+			out << makeRepeatedText("int benchmark_symbol() { return 42; }", 8);
+		}
+
+		auto result = benchmark::measure("ScriptSource local scan and cached load", [&]() {
+			ofxGgmlScriptSource source;
+			if (!source.setLocalFolder(root.string())) {
+				throw std::runtime_error("script source scan failed");
+			}
+			std::string content;
+			const auto files = source.getFiles();
+			for (int i = 0; i < static_cast<int>(files.size()); ++i) {
+				if (!files[static_cast<size_t>(i)].isDirectory &&
+					source.loadFileContent(i, content)) {
+					break;
+				}
+			}
+			if (content.empty()) {
+				throw std::runtime_error("script source load failed");
+			}
+		}, 25, 32);
+		INFO(result.toString());
+		REQUIRE(result.avgMs > 0.0);
+	}
 }
