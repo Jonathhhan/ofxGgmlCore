@@ -13,6 +13,7 @@
 #include "utils/PathHelpers.h"
 #include "utils/BackendHelpers.h"
 #include "utils/ScriptCommandHelpers.h"
+#include "config/GuiModeCatalog.h"
 #include "config/ModelPresets.h"
 #include "ofJson.h"
 #include "core/ofxGgmlWindowsUtf8.h"
@@ -70,31 +71,6 @@ const char * const kDefaultTextServerUrl = "http://127.0.0.1:8080";
 const char * const kDefaultSpeechServerUrl = "http://127.0.0.1:8081";
 
 namespace {
-	constexpr std::array<AiMode, 12> kDefaultGuiModes = {
-		AiMode::Easy,
-		AiMode::Chat,
-		AiMode::Script,
-		AiMode::Summarize,
-		AiMode::Write,
-		AiMode::Translate,
-		AiMode::Custom,
-		AiMode::Vision,
-		AiMode::Speech,
-		AiMode::Tts,
-		AiMode::Diffusion,
-		AiMode::Clip
-	};
-
-	constexpr std::array<AiMode, 3> kAdvancedGuiModes = {
-		AiMode::VideoEssay,
-		AiMode::LongVideo,
-		AiMode::MilkDrop
-	};
-
-	bool isAdvancedGuiMode(AiMode mode) {
-		return std::find(kAdvancedGuiModes.begin(), kAdvancedGuiModes.end(), mode) != kAdvancedGuiModes.end();
-	}
-
 	constexpr std::array<int, 8> kSupportedDiffusionImageSizes = {128, 256, 384, 512, 640, 768, 896, 1024};
 	const char * const kVideoStructureSettingLabels[] = {
 		"Three-act cinematic",
@@ -1469,34 +1445,39 @@ const int activeModeIndex = std::clamp(
 	static_cast<int>(activeMode),
 	0,
 	kModeCount - 1);
-if (ImGui::BeginCombo("##ModeSel", modeLabels[activeModeIndex])) {
-	auto drawModeOption = [&](AiMode mode) {
-		const int modeIndex = std::clamp(static_cast<int>(mode), 0, kModeCount - 1);
+const GuiModeDescriptor & activeModeDescriptor = guiModeDescriptor(activeMode);
+if (ImGui::BeginCombo("##ModeSel", activeModeDescriptor.label)) {
+	auto drawModeOption = [&](const GuiModeDescriptor & descriptor) {
+		const int modeIndex = std::clamp(static_cast<int>(descriptor.mode), 0, kModeCount - 1);
 		const bool isSelected = (activeModeIndex == modeIndex);
-		if (ImGui::Selectable(modeLabels[modeIndex], isSelected)) {
-			activeMode = mode;
+		if (ImGui::Selectable(descriptor.label, isSelected)) {
+			activeMode = descriptor.mode;
 			if (useModeTokenBudgets) {
 				maxTokens = std::clamp(modeMaxTokens[static_cast<size_t>(modeIndex)], 32, 4096);
 			}
 			syncTextBackendForActiveMode(false, false);
 		}
+		if (ImGui::IsItemHovered()) {
+			showWrappedTooltip(descriptor.summary);
+		}
 		if (isSelected) {
 			ImGui::SetItemDefaultFocus();
 		}
 	};
-	for (const AiMode mode : kDefaultGuiModes) {
-		drawModeOption(mode);
+	ImGui::TextDisabled("Stable addon APIs");
+	for (const GuiModeDescriptor & descriptor : defaultGuiModeDescriptors()) {
+		drawModeOption(descriptor);
 	}
 	if (showAdvancedGuiModes) {
 		ImGui::Separator();
 		ImGui::TextDisabled("Advanced workflows");
-		for (const AiMode mode : kAdvancedGuiModes) {
-			drawModeOption(mode);
+		for (const GuiModeDescriptor & descriptor : advancedGuiModeDescriptors()) {
+			drawModeOption(descriptor);
 		}
 	} else if (isAdvancedGuiMode(activeMode)) {
 		ImGui::Separator();
 		ImGui::TextDisabled("Current advanced workflow");
-		drawModeOption(activeMode);
+		drawModeOption(activeModeDescriptor);
 	}
 	ImGui::EndCombo();
 }
@@ -1505,6 +1486,7 @@ ImGui::TextDisabled(
 	showAdvancedGuiModes
 		? "Advanced workflow modes are visible."
 		: "Default view keeps the GUI focused on stable addon APIs.");
+drawWrappedDisabledText(activeModeDescriptor.summary);
 
 drawSectionSeparator();
 
