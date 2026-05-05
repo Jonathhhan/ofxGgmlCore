@@ -6,6 +6,15 @@ Canonical architecture and implementation notes for ofxGgml.
 
 The sections below preserve information from superseded standalone documents that were folded into this canonical file.
 
+## Unreleased
+
+### Changed
+
+- Extracted the removed GUI companion workflows into four focused examples: `ofxGgmlVideoEssayExample`, `ofxGgmlVisualizationExample`, `ofxGgmlAdvancedVisionExample`, and `ofxGgmlMontagePlannerExample`.
+- Added `docs/examples/README.md` and `docs/examples/MIGRATION.md` to document example selection and migration from old GUI companion panels.
+- Updated README and feature-selection guidance to point media workflow users to focused companion examples instead of expanding `ofxGgmlGuiExample`.
+
+
 ### From `PHASE1_COMPLETION_SUMMARY.md`
 
 # Phase 1 Completion Summary

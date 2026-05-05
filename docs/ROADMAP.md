@@ -158,7 +158,7 @@ Implemented features:
 
 ### 5. Roadmap-Aligned Example Cleanup
 **Priority**: MEDIUM
-**Status**: ✅ Phase 1A Complete
+**Status**: ✅ Phase 1A/1B/1C Complete
 
 Reduce the giant GUI example to a showcase for API layers and UI patterns. Complex workflows should move into focused examples, tutorial projects, or companion addons instead of using the GUI example as a test harness.
 
@@ -179,12 +179,17 @@ Reduce the giant GUI example to a showcase for API layers and UI patterns. Compl
 - VideoEssay, LongVideo (multi-stage workflows)
 - Diffusion, Clip, MilkDrop, Sam (advanced vision/generation)
 
-**Next steps** (Phase 1B/1C):
-- Extract 4 focused companion examples from removed code
-- Create migration documentation
-- Update main README
+**Phase 1B/1C Completed** (2026-05-05):
+- ✅ Extracted 4 focused companion examples from removed GUI workflow code:
+  - `ofxGgmlVideoEssayExample`
+  - `ofxGgmlVisualizationExample`
+  - `ofxGgmlAdvancedVisionExample`
+  - `ofxGgmlMontagePlannerExample`
+- ✅ Added `docs/examples/README.md` example chooser
+- ✅ Added `docs/examples/MIGRATION.md` migration guide
+- ✅ Updated main README example guidance
 
-**Outcome**: GUI example now demonstrates stable addon tier APIs exclusively. Code reduced by 25% with clear separation between core and companion features.
+**Outcome**: GUI example now demonstrates stable addon tier APIs exclusively. Code reduced by 25% with clear separation between core and companion features, and removed companion workflows now have focused migration targets.
 
 ---
 

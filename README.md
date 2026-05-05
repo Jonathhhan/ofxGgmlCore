@@ -166,6 +166,10 @@ Supporting areas:
 - `ofxGgmlGuiExample/`
 - `ofxGgmlNeuralExample/`
 - `ofxGgmlWebScrapingExample/`
+- `ofxGgmlVideoEssayExample/`
+- `ofxGgmlVisualizationExample/`
+- `ofxGgmlAdvancedVisionExample/`
+- `ofxGgmlMontagePlannerExample/`
 
 Developer tooling:
 
@@ -839,7 +843,7 @@ See [docs/getting-started/QUICKSTART.md](docs/getting-started/QUICKSTART.md)
 
 ### Which Features Do I Need?
 
-See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FEATURES.md) to pick the right subset.
+See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FEATURES.md) to pick the right subset, and [docs/examples/README.md](docs/examples/README.md) to pick the right example project.
 
 ## Examples
 
@@ -853,6 +857,17 @@ See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FE
 ### Showcase Example
 
 - `ofxGgmlGuiExample`: Showcase for API layers and UI patterns, not a test harness. Keep complex workflows in focused examples, tutorial projects, or companion addons instead of growing this example further; see `ofxGgmlGuiExample/README.md`.
+
+### Companion Workflow Examples
+
+These examples preserve the workflows removed from the GUI example during Phase 1A while keeping optional media runtimes explicit:
+
+- `ofxGgmlVideoEssayExample`: citation-grounded video essay planning, script, voice cue, SRT, and manifest handoffs
+- `ofxGgmlVisualizationExample`: MilkDrop prompt generation, preset validation, repair/generation hooks, and `.milk` saving
+- `ofxGgmlAdvancedVisionExample`: CLIP-style ranking, Wikimedia image search, SAM segmentation bridge, and diffusion bridge validation
+- `ofxGgmlMontagePlannerExample`: transcript-driven clip selection, subtitle tracks, editor brief, and EDL/SRT export
+
+See [docs/examples/README.md](docs/examples/README.md) for the full example map and [docs/examples/MIGRATION.md](docs/examples/MIGRATION.md) for migration notes from the old GUI companion panels.
 
 The lightweight examples are keyboard-driven so you can rerun compute and benchmark paths without restarting the app.
 

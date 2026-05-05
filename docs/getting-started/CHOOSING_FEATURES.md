@@ -73,7 +73,7 @@ What you get (includes Basic plus):
 
 ## Companion / Example-Tier Workflows
 
-Video essay orchestration, subtitle montage planning/export, music generation, AceStep bridging, MilkDrop preset generation, and Holoscan bridge code are no longer default addon-tier APIs. For existing examples or experiments that intentionally use them, define `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` before including `ofxGgmlEasy.h`, or include `ofxGgmlCompanionWorkflows.h`. Treat those surfaces as candidates for standalone companion addons or example-level code.
+Video essay orchestration, subtitle montage planning/export, music generation, AceStep bridging, MilkDrop preset generation, and Holoscan bridge code are no longer default addon-tier APIs. For existing examples or experiments that intentionally use them, define `OFXGGML_ENABLE_COMPANION_WORKFLOWS=1` before including `ofxGgmlEasy.h`, or include `ofxGgmlCompanionWorkflows.h`. Treat those surfaces as candidates for standalone companion addons or example-level code. The extracted starting points are `ofxGgmlVideoEssayExample`, `ofxGgmlVisualizationExample`, `ofxGgmlAdvancedVisionExample`, and `ofxGgmlMontagePlannerExample`; see `docs/examples/README.md` and `docs/examples/MIGRATION.md`.
 
 ## Need Multiple Layers?
 
@@ -163,9 +163,9 @@ Or for a comprehensive application (like the GUI example), include all layers:
 - Video workflows
 - Companion-tier media prototypes
 
-### Example 5: Comprehensive Application
+### Example 5: Focused Companion Workflow
 
-**Goal:** Build an application-style example with companion prototypes (like GUI example)
+**Goal:** Build one application-style companion workflow without expanding the main GUI example
 
 **Include:** All layers
 ```cpp
@@ -180,7 +180,7 @@ Or for a comprehensive application (like the GUI example), include all layers:
 
 **You get:** Core addon layers plus companion/example-tier prototypes
 
-**Use when:** Building comprehensive examples that intentionally opt into companion media workflows
+**Use when:** Starting from one of the focused companion examples for video essays, visualization, advanced vision, or montage planning
 
 ## External Dependencies
 
@@ -245,7 +245,8 @@ Each layer includes the previous layers, so migration is just changing the inclu
 1. Start with `ofxGgmlBasic.h`
 2. Use `ofxGgmlEasy` facade
 3. Run `ofxGgmlChatExample`
-4. Read [BASIC_INFERENCE.md](BASIC_INFERENCE.md)
+4. Use [../examples/README.md](../examples/README.md) before choosing a companion workflow
+5. Read [BASIC_INFERENCE.md](BASIC_INFERENCE.md)
 
 ### For Production
 1. Include only needed layers
@@ -254,8 +255,8 @@ Each layer includes the previous layers, so migration is just changing the inclu
 4. Review [../PERFORMANCE.md](../PERFORMANCE.md)
 
 ### For Exploration
-1. Run `ofxGgmlGuiExample`
-2. Try different modes
+1. Run `ofxGgmlGuiExample` for stable addon-tier APIs
+2. Try a focused companion example for media workflows that used to live in the GUI
 3. Start with focused header for your project
 4. Narrow down to specific layer for production
 
