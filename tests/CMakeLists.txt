@@ -209,7 +209,12 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_video_inference.cpp
         test_yolo_inference.cpp
         test_assistant_eval.cpp
+        test_assistant_team.cpp
         test_easy_api.cpp
+        test_companion_project_memory.cpp
+        test_continuity_asset_ledger.cpp
+        test_focused_example_catalog.cpp
+        test_timeline_copilot_plan.cpp
         test_media_prompt_generator.cpp
         test_long_video_planner.cpp
         test_citation_search.cpp
@@ -227,6 +232,7 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_conversation_manager.cpp
         test_feature_synergies.cpp
         test_validation_loop.cpp
+        test_workflow_manifest.cpp
         test_web_crawler.cpp)
 endif()
 

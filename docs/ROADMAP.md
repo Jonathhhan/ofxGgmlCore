@@ -194,7 +194,7 @@ Focus: define small, stable contracts that let companion projects compose workfl
 
 ### 1. Workflow Handoff Contracts
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Standardize lightweight handoff contracts so companion apps can connect stages like:
 
@@ -208,9 +208,15 @@ Target capabilities:
 - inspectable intermediate outputs
 - replay support for deterministic debugging
 
+Implemented foundation:
+
+- `ofxGgmlWorkflowManifest` shared schema primitive for inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream handoff notes
+- JSON serialization for companion/example handoff files without coupling the core addon to a specific creative workflow runtime
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+
 ### 2. Shared Workflow Manifest
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Standardize a manifest format that can carry:
 
@@ -221,11 +227,17 @@ Standardize a manifest format that can carry:
 - warnings, confidence, and review notes
 - downstream handoff metadata
 
+Implemented foundation:
+
+- schema version `ofxGgml.workflow_manifest.v1`
+- optional `handoff` block with target, mode, contract, notes, and metadata
+- unit coverage for stable JSON keys used by downstream companion tools
+
 **Outcome**: outputs from one workflow become reliable inputs for the next.
 
 ### 3. Companion Project Memory
 **Priority**: MEDIUM-HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Keep long-lived creative project memory in companion projects, while ofxGgml provides reusable serialization and provenance primitives for:
 
@@ -234,11 +246,18 @@ Keep long-lived creative project memory in companion projects, while ofxGgml pro
 - style notes and continuity rules
 - preferred tools and workflow settings
 
+Implemented foundation:
+
+- `ofxGgmlCompanionProjectMemory` shared schema primitive for companion-owned creative intent, accepted prompts, curated references, style notes, continuity rules, preferred tool settings, review notes, and metadata
+- schema version `ofxGgml.companion_project_memory.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for stable JSON keys used by companion project-memory files
+
 **Outcome**: long-form creative projects keep context across sessions.
 
 ### 4. Focused Example Applications
 **Priority**: MEDIUM  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Ship more narrowly scoped examples or tutorial projects for:
 
@@ -247,6 +266,14 @@ Ship more narrowly scoped examples or tutorial projects for:
 - speech + subtitle tooling
 - coding assistant integration
 - CLIP/image search and visual planning
+
+Implemented foundation:
+
+- `ofxGgmlFocusedExampleCatalog` shared catalog primitive for roadmap-aligned focused example descriptors
+- default catalog entries for research/citation workflows, companion video essay generation, speech/subtitle tooling, coding assistant integration, and CLIP/image visual planning
+- schema version `ofxGgml.focused_examples.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for stable JSON keys that docs, launchers, or companion tooling can consume
 
 **Outcome**: easier onboarding and less pressure on a single all-in-one showcase.
 
@@ -258,7 +285,7 @@ Focus: keep the core assistant surfaces safe and inspectable while letting compa
 
 ### 1. Specialist Assistant Teams
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Evolve assistants toward explicit roles such as:
 
@@ -270,9 +297,17 @@ Evolve assistants toward explicit roles such as:
 
 The key constraint is to preserve approval-first execution and workspace safety while improving delegation and handoff quality.
 
+Implemented foundation:
+
+- `ofxGgmlAssistantTeamSpec` shared schema primitive for specialist roles, role-to-role handoffs, approval requirements, workspace rules, and metadata
+- default specialist team entry points for researcher, planner, critic, editor, and renderer roles
+- schema version `ofxGgml.assistant_team.v1`
+- assistant-layer exposure through `ofxGgmlAssistants.h`
+- unit coverage for default roles, approval-first constraints, and stable JSON keys
+
 ### 2. Timeline-Aware Companion Copilots
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Explore assistant patterns tailored to media creation outside the default addon boundary:
 
@@ -284,9 +319,17 @@ Explore assistant patterns tailored to media creation outside the default addon 
 
 **Outcome**: companion projects can become purpose-built AI-native creative tools while ofxGgml remains the dependable local inference foundation.
 
+Implemented foundation:
+
+- `ofxGgmlTimelineCopilotPlan` shared schema primitive for companion-owned timeline lanes, anchors, approval checkpoints, workspace rules, and manifest/memory handoffs
+- default media lanes for video essay planning, montage building, music-video planning, subtitle revision, and generative visual pipelines
+- schema version `ofxGgml.timeline_copilot.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for default lanes, review checkpoints, stable JSON keys, and empty-entry handling
+
 ### 3. Continuity, Consistency, and Asset Reuse
 **Priority**: MEDIUM-HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Let companion systems build on core provenance and manifest support for:
 
@@ -295,6 +338,16 @@ Let companion systems build on core provenance and manifest support for:
 - reusable asset references and project-level constraints
 
 **Outcome**: better long-form coherence for multi-stage creative work.
+
+Implemented foundation:
+
+- `ofxGgmlContinuityAssetLedger` shared schema primitive for scene continuity rules, style constraints, reusable asset references, review notes, and manifest/project-memory handoffs
+- default continuity rules for scene identity and timeline order
+- default style constraints for palette reuse and generation guardrails
+- default reusable asset references for approved hero references and motif prompts
+- schema version `ofxGgml.continuity_asset_ledger.v1`
+- workflow-layer exposure through `ofxGgmlWorkflows.h`
+- unit coverage for default rules, reusable assets, stable JSON keys, and empty-entry handling
 
 ### 4. Trust and Evaluation Suites
 **Priority**: MEDIUM-HIGH  

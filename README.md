@@ -82,6 +82,11 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
 - `ofxGgmlHoloscanBridge` is companion/example-tier bridge code; include `ofxGgmlCompanionWorkflows.h` or move it to a companion addon when building Holoscan-style media pipelines
 - `ofxGgmlImageSearch` for internet reference-image lookup through pluggable providers, with a working Wikimedia Commons backend
+- `ofxGgmlWorkflowManifest` provides a small Phase 2 handoff contract for workflow inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream companion-tool routing
+- `ofxGgmlCompanionProjectMemory` provides a small Phase 2 companion-owned memory schema for creative intent, accepted prompts/references, style notes, continuity rules, preferred tool settings, and review notes
+- `ofxGgmlFocusedExampleCatalog` provides a small Phase 2 catalog of focused example tracks for research/citations, companion video essays, speech/subtitles, coding assistants, and CLIP/image planning
+- `ofxGgmlTimelineCopilotPlan` provides a small Phase 3 companion-copilot schema for timeline lanes, anchors, approval checkpoints, workspace rules, and manifest/project-memory handoffs
+- `ofxGgmlContinuityAssetLedger` provides a small Phase 3 companion schema for scene continuity rules, style constraints, reusable asset references, and provenance-aware review notes
 - `ofxGgmlWebCrawler` as an optional website-ingestion bridge layer, with a `Mojo` CLI adapter for local website-to-Markdown crawling workflows
 - `ofxGgmlCitationSearch` for topic-oriented source-grounded quote extraction, with structured citation items built from loaded URLs or crawler-ingested website content
 - `ofxGgmlVideoEssayWorkflow` is kept as companion/example-tier orchestration for `topic -> cited outline -> narrated script -> voice cues -> SRT -> visual concept -> scene/edit planning`, not as a default addon surface
@@ -95,6 +100,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlChatAssistant` for reusable chat prompts, response-language control, and UI-thin conversation flows
 - `ofxGgmlCodeAssistant` for coding-oriented prompts, structured task plans, unified diff output, compile-database-aware semantic retrieval, inline completion, repo context, focused-file assistance, and follow-up scripting actions
 - `ofxGgmlCodeAssistant` now also exposes lightweight assistant sessions, a typed tool registry, approval callbacks for risky proposals, and streamed assistant events so apps can build safer IDE-style coding flows without reimplementing orchestration
+- `ofxGgmlAssistantTeamSpec` provides a small Phase 3 schema for specialist assistant roles, approval-first handoffs, workspace rules, and companion-safe delegation plans
 - `ofxGgmlCodingAgent` as a thin orchestration layer on top of the code and workspace assistants, with persistent session memory, a read-only `Plan` mode, optional patch application, and verification-aware coding runs
 - the GUI example Script mode now surfaces that assistant runtime directly with a default simple ChatPilot-style UI plus optional full `Build` / `Plan` controls, `@` references including read-oriented `@general`, quick slash/intents chips, streamed tool/approval status, and explicit approve/deny handling for risky proposals
 - `ofxGgmlWorkspaceAssistant` for validated patch application, allow-listed edit enforcement, unified-diff transactions with rollback, shadow-workspace safe apply, auto-selected verification commands, and retry-oriented coding loops on top of structured assistant output
