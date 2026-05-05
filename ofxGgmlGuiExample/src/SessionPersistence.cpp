@@ -202,6 +202,8 @@ bool ofApp::saveSession(const std::string & path) {
 		{"clipPrompt", std::string(clipPrompt)},
 		{"clipModelPath", std::string(clipModelPath)},
 		{"clipImagePaths", std::string(clipImagePaths)},
+		{"samModelPath", std::string(samModelPath)},
+		{"samImagePath", std::string(samImagePath)},
 		{"musicToImageDescription", std::string(musicToImageDescription)},
 		{"musicToImageLyrics", std::string(musicToImageLyrics)},
 		{"musicToImageStyle", std::string(musicToImageStyle)},
@@ -253,6 +255,7 @@ bool ofApp::saveSession(const std::string & path) {
 		{"imageSearchMaxResults", imageSearchMaxResults},
 		{"clipTopK", clipTopK},
 		{"clipVerbosity", clipVerbosity},
+		{"samThreads", samThreads},
 		{"imageToMusicDurationSeconds", imageToMusicDurationSeconds},
 		{"imageToMusicAbcBars", imageToMusicAbcBars},
 		{"aceStepBpm", aceStepBpm},
@@ -280,6 +283,8 @@ bool ofApp::saveSession(const std::string & path) {
 		{"ttsMinP", ttsMinP},
 		{"diffusionCfgScale", diffusionCfgScale},
 		{"diffusionStrength", diffusionStrength},
+		{"samPointX", samPointX},
+		{"samPointY", samPointY},
 		{"milkdropRandomness", milkdropRandomness},
 		{"milkdropPreviewBeatSensitivity", milkdropPreviewBeatSensitivity},
 		{"milkdropPreviewPresetDuration", milkdropPreviewPresetDuration},
@@ -317,6 +322,8 @@ bool ofApp::saveSession(const std::string & path) {
 		{"diffusionNormalizeClipEmbeddings", diffusionNormalizeClipEmbeddings},
 		{"diffusionSaveMetadata", diffusionSaveMetadata},
 		{"clipNormalizeEmbeddings", clipNormalizeEmbeddings},
+		{"samPointNormalized", samPointNormalized},
+		{"samReturnMultipleMasks", samReturnMultipleMasks},
 		{"milkdropAutoPreview", milkdropAutoPreview},
 		{"milkdropPreviewFeedMicWhileRecording", milkdropPreviewFeedMicWhileRecording}
 	};
@@ -407,6 +414,7 @@ bool ofApp::saveSession(const std::string & path) {
 		{"aceStepUsedServerUrl", aceStepUsedServerUrl},
 		{"imageSearchOutput", imageSearchOutput},
 		{"clipOutput", clipOutput},
+		{"samOutput", samOutput},
 		{"milkdropOutput", milkdropOutput},
 		{"milkdropSavedPresetPath", milkdropSavedPresetPath},
 		{"milkdropPreviewStatus", milkdropPreviewStatus}
@@ -729,6 +737,8 @@ bool ofApp::loadSession(const std::string & path) {
 	copyJsonString(clipPrompt, sizeof(clipPrompt), buffers, "clipPrompt");
 	copyJsonString(clipModelPath, sizeof(clipModelPath), buffers, "clipModelPath");
 	copyJsonString(clipImagePaths, sizeof(clipImagePaths), buffers, "clipImagePaths");
+	copyJsonString(samModelPath, sizeof(samModelPath), buffers, "samModelPath");
+	copyJsonString(samImagePath, sizeof(samImagePath), buffers, "samImagePath");
 	copyJsonString(musicToImageDescription, sizeof(musicToImageDescription), buffers, "musicToImageDescription");
 	copyJsonString(musicToImageLyrics, sizeof(musicToImageLyrics), buffers, "musicToImageLyrics");
 	copyJsonString(musicToImageStyle, sizeof(musicToImageStyle), buffers, "musicToImageStyle");
@@ -778,6 +788,7 @@ bool ofApp::loadSession(const std::string & path) {
 	imageSearchMaxResults = std::clamp(getInt(indices, "imageSearchMaxResults", imageSearchMaxResults), 1, 32);
 	clipTopK = std::clamp(getInt(indices, "clipTopK", clipTopK), 0, 16);
 	clipVerbosity = std::clamp(getInt(indices, "clipVerbosity", clipVerbosity), 0, 2);
+	samThreads = std::clamp(getInt(indices, "samThreads", samThreads), -1, 64);
 	imageToMusicDurationSeconds = std::clamp(
 		getInt(indices, "imageToMusicDurationSeconds", imageToMusicDurationSeconds),
 		8,
@@ -827,6 +838,8 @@ bool ofApp::loadSession(const std::string & path) {
 	ttsMinP = std::clamp(getFloat(floats, "ttsMinP", ttsMinP), 0.0f, 1.0f);
 	diffusionCfgScale = std::clamp(getFloat(floats, "diffusionCfgScale", diffusionCfgScale), 0.0f, 30.0f);
 	diffusionStrength = std::clamp(getFloat(floats, "diffusionStrength", diffusionStrength), 0.0f, 1.0f);
+	samPointX = std::clamp(getFloat(floats, "samPointX", samPointX), 0.0f, 32768.0f);
+	samPointY = std::clamp(getFloat(floats, "samPointY", samPointY), 0.0f, 32768.0f);
 	milkdropRandomness = std::clamp(getFloat(floats, "milkdropRandomness", milkdropRandomness), 0.0f, 1.0f);
 	milkdropPreviewBeatSensitivity = std::clamp(
 		getFloat(floats, "milkdropPreviewBeatSensitivity", milkdropPreviewBeatSensitivity),
@@ -930,6 +943,8 @@ bool ofApp::loadSession(const std::string & path) {
 	diffusionNormalizeClipEmbeddings = getBool(bools, "diffusionNormalizeClipEmbeddings", diffusionNormalizeClipEmbeddings);
 	diffusionSaveMetadata = getBool(bools, "diffusionSaveMetadata", diffusionSaveMetadata);
 	clipNormalizeEmbeddings = getBool(bools, "clipNormalizeEmbeddings", clipNormalizeEmbeddings);
+	samPointNormalized = getBool(bools, "samPointNormalized", samPointNormalized);
+	samReturnMultipleMasks = getBool(bools, "samReturnMultipleMasks", samReturnMultipleMasks);
 	milkdropAutoPreview = getBool(bools, "milkdropAutoPreview", milkdropAutoPreview);
 	milkdropPreviewFeedMicWhileRecording = getBool(
 		bools,
@@ -1008,6 +1023,7 @@ bool ofApp::loadSession(const std::string & path) {
 	aceStepUsedServerUrl = getString(outputs, "aceStepUsedServerUrl");
 	imageSearchOutput = getString(outputs, "imageSearchOutput");
 	clipOutput = getString(outputs, "clipOutput");
+	samOutput = getString(outputs, "samOutput");
 	milkdropOutput = getString(outputs, "milkdropOutput");
 	milkdropSavedPresetPath = getString(outputs, "milkdropSavedPresetPath");
 	milkdropPreviewStatus = getString(outputs, "milkdropPreviewStatus");

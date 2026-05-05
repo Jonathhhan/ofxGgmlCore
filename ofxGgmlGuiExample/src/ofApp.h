@@ -407,6 +407,13 @@ private:
 	int clipTopK = 3;
 	bool clipNormalizeEmbeddings = true;
 	int clipVerbosity = 1;
+	char samModelPath[1024] = {};
+	char samImagePath[1024] = {};
+	float samPointX = 0.5f;
+	float samPointY = 0.5f;
+	int samThreads = -1;
+	bool samPointNormalized = true;
+	bool samReturnMultipleMasks = true;
 	char musicToImageDescription[4096] = {};
 	char musicToImageLyrics[4096] = {};
 	char musicToImageStyle[1024] = "cinematic still, richly lit, highly detailed";
@@ -507,6 +514,7 @@ private:
 	std::vector<ofxGgmlGeneratedMusicTrack> aceStepGeneratedTracks;
 	std::string imageSearchOutput;
 	std::string clipOutput;
+	std::string samOutput;
 	std::string milkdropOutput;
 	std::string milkdropSavedPresetPath;
 	std::string milkdropPreviewStatus;
@@ -542,6 +550,11 @@ private:
 	std::string imageSearchPreviewLoadedPath;
 	std::string imageSearchPreviewError;
 	std::string imageSearchPreviewSourceUrl;
+	ofImage samPreviewImage;
+	std::string samPreviewLoadedPath;
+	std::string samPreviewError;
+	ofImage samMaskPreviewImage;
+	std::string samMaskPreviewError;
 	int selectedImageSearchResultIndex = -1;
 	std::string deferredImageSearchPrompt;
 	bool hasDeferredImageSearchPrompt = false;
@@ -605,6 +618,9 @@ private:
 	float clipElapsedMs = 0.0f;
 	int clipEmbeddingDimension = 0;
 	std::vector<ofxGgmlClipSimilarityHit> clipHits;
+	std::string samBackendName;
+	float samElapsedMs = 0.0f;
+	std::vector<ofxGgmlSegmentationMask> samMasks;
 #if OFXGGML_HAS_OFXPROJECTM
 	ofxProjectM milkdropPreviewPlayer;
 	bool milkdropPreviewInitialized = false;
@@ -772,6 +788,9 @@ private:
 	float pendingClipElapsedMs = 0.0f;
 	int pendingClipEmbeddingDimension = 0;
 	std::vector<ofxGgmlClipSimilarityHit> pendingClipHits;
+	std::string pendingSamBackendName;
+	float pendingSamElapsedMs = 0.0f;
+	std::vector<ofxGgmlSegmentationMask> pendingSamMasks;
 	AiMode activeGenerationMode = AiMode::Chat;
 	float generationStartTime = 0.0f;
 	std::string streamingOutput;
@@ -799,8 +818,8 @@ private:
 	float mirostatTau = 5.0f;
 	float mirostatEta = 0.1f;
 	int chatLanguageIndex = 0;                       // 0=Auto, otherwise force response language
-	std::array<int, kModeCount> modeMaxTokens = {512, 1024, 384, 512, 512, 512, 896, 896, 384, 512, 512, 512, 384, 640, 512};
-	std::array<int, kModeCount> modeTextBackendIndices = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1};
+	std::array<int, kModeCount> modeMaxTokens = {512, 1024, 384, 512, 512, 512, 896, 896, 384, 512, 512, 512, 384, 640, 512, 384};
+	std::array<int, kModeCount> modeTextBackendIndices = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0};
 	TextInferenceBackend textInferenceBackend = TextInferenceBackend::LlamaServer;
 	ServerStatusState textServerStatus = ServerStatusState::Unknown;
 	std::string textServerStatusMessage;
@@ -871,6 +890,8 @@ private:
 	std::string configuredClipBackendModelPath;
 	int configuredClipBackendVerbosity = -1;
 	bool configuredClipBackendNormalize = true;
+	std::string configuredSamBackendModelPath;
+	int configuredSamBackendThreads = -999;
 	std::string imageSearchBackendName;
 	float imageSearchElapsedMs = 0.0f;
 	std::vector<ofxGgmlImageSearchItem> imageSearchResults;
@@ -908,6 +929,7 @@ private:
 	ofxGgmlImageSearch imageSearch;
 	ofxGgmlCitationSearch citationSearch;
 	ofxGgmlClipInference clipInference;
+	ofxGgmlSegmentationInference samInference;
 	ofxGgmlMilkDropGenerator milkdropGenerator;
 	ofxGgmlVideoEssayWorkflow videoEssayWorkflow;
 #if OFXGGML_HAS_OFXSTABLEDIFFUSION
@@ -1067,6 +1089,7 @@ private:
 	void runLongVideoPlanning();
 	void runLongVideoRenderGeneration(bool renderFullSequence = false);
 	void runClipInference();
+	void runSamSegmentation();
 	void runMilkDropGeneration(
 		bool editExisting = false,
 		bool generateVariants = false,
@@ -1078,6 +1101,7 @@ private:
 		bool normalizeEmbeddings);
 	bool ensureDiffusionBackendConfigured();
 	bool ensureDiffusionClipBackendConfigured();
+	bool ensureSamBackendConfigured(const std::string & modelPath, int threads);
 	static int clampSupportedDiffusionImageSize(int value);
 	static constexpr float kDefaultInferenceTemp = 0.7f;
 	static constexpr float kDefaultInferenceTopP = 0.9f;
@@ -1242,6 +1266,7 @@ private:
 	void drawTtsPanel();
 	void drawDiffusionPanel();
 	void drawClipPanel();
+	void drawSamPanel();
 	void drawImageToMusicSection();
 	void drawAceStepMusicSection();
 	void drawMusicVideoWorkflowSection();

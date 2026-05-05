@@ -23,7 +23,8 @@ enum class AiMode {
 	Diffusion,
 	Clip,
 	MilkDrop,
-	Easy
+	Easy,
+	Sam
 };
 
 // ---------------------------------------------------------------------------
@@ -62,7 +63,7 @@ struct PromptTemplate {
 // Model Preset Initialization
 // ---------------------------------------------------------------------------
 
-constexpr int kModeCount = 15;
+constexpr int kModeCount = 16;
 
 void loadModelPresets(
 	std::vector<ModelPreset> & modelPresets,

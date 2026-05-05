@@ -10,7 +10,7 @@ The default mode picker stays focused on stable addon APIs. Enable **Show advanc
 - `src/panels/` contains reusable floating/status panel widgets.
 - `src/managers/` wraps long-lived helper servers.
 - `src/utils/` contains shared GUI-example helpers.
-- Mode files such as `TextModes.cpp`, `VisionVideo.cpp`, and `DiffusionClip.cpp` keep panel-specific behavior out of `ofApp.cpp` where practical.
+- Mode files such as `TextModes.cpp`, `VisionVideo.cpp`, `DiffusionClip.cpp`, and `SamSegmentation.cpp` keep panel-specific behavior out of `ofApp.cpp` where practical.
 
 ## Maintenance policy
 

@@ -116,6 +116,7 @@ void ofApp::applyServerFriendlyDefaultsForMode(AiMode mode) {
 	case AiMode::Speech:
 	case AiMode::Diffusion:
 	case AiMode::Clip:
+	case AiMode::Sam:
 		tunedMaxTokens = std::clamp(maxTokens, 256, 768);
 		break;
 	}
