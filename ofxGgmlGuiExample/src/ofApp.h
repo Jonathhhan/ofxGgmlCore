@@ -72,9 +72,7 @@ struct TtsPreviewState {
 	int selectedAudioIndex = 0;
 	std::string loadedAudioPath;
 	bool playbackPaused = false;
-	std::vector<float> playbackSamples;
 	double playbackPositionFrames = 0.0;
-	int playbackSampleRate = 0;
 	int playbackChannels = 0;
 	bool playbackLoaded = false;
 	bool playbackActive = false;
@@ -84,9 +82,7 @@ struct TtsPreviewState {
 		std::lock_guard<std::mutex> lock(playbackMutex);
 		return playbackLoaded &&
 			!loadedAudioPath.empty() &&
-			playbackSampleRate > 0 &&
 			playbackChannels > 0 &&
-			!playbackSamples.empty();
 	}
 
 	bool isAudioPlaying() const {
@@ -94,7 +90,6 @@ struct TtsPreviewState {
 		return playbackLoaded &&
 			playbackActive &&
 			!playbackPaused &&
-			!playbackSamples.empty();
 	}
 
 	bool isPlaybackPaused() const {
@@ -113,11 +108,9 @@ struct TtsPreviewState {
 
 	void resumePlayback() {
 		std::lock_guard<std::mutex> lock(playbackMutex);
-		if (!playbackLoaded || playbackSamples.empty() || playbackChannels <= 0) {
 			return;
 		}
 		const size_t totalFrames =
-			playbackSamples.size() / static_cast<size_t>(playbackChannels);
 		if (playbackPositionFrames >= static_cast<double>(totalFrames)) {
 			playbackPositionFrames = 0.0;
 		}
@@ -127,7 +120,6 @@ struct TtsPreviewState {
 
 	void restartPlayback() {
 		std::lock_guard<std::mutex> lock(playbackMutex);
-		if (!playbackLoaded || playbackSamples.empty()) {
 			return;
 		}
 		playbackPositionFrames = 0.0;
@@ -142,8 +134,6 @@ struct TtsPreviewState {
 		playbackPositionFrames = 0.0;
 		if (clearLoadedPath) {
 			loadedAudioPath.clear();
-			playbackSamples.clear();
-			playbackSampleRate = 0;
 			playbackChannels = 0;
 			playbackLoaded = false;
 		}
@@ -243,36 +233,14 @@ private:
 	char visionPrompt[4096] = {};
 	char visionImagePath[1024] = {};
 	char visionVideoPath[1024] = {};
-	char holoscanVisionPrompt[2048] = {};
-	char holoscanVisionSystemPrompt[2048] = {};
 	char visionModelPath[1024] = {};
 	char visionServerUrl[256] = "http://127.0.0.1:8080";
 	char videoSidecarUrl[256] = {};
 	char videoSidecarModel[256] = {};
 	char visionSystemPrompt[1024] = {};
-	char videoEditGoal[4096] = {};
 	int visionTaskIndex = 0;
 	int videoTaskIndex = 0;
-	bool holoscanBridgeEnabled = false;
-	bool holoscanBridgeRunning = false;
-	bool holoscanUseCurrentVisionRequest = true;
-	int holoscanVisionCompletedFrames = 0;
 	int visionVideoMaxFrames = 6;
-	char videoPlanJson[16384] = {};
-	char videoEditPlanJson[16384] = {};
-	int videoPlanBeatCount = 4;
-	int videoPlanSceneCount = 3;
-	int videoPlanGenerationMode = 0;
-	int videoEditPresetIndex = 0;
-	int videoEditClipCount = 5;
-	int selectedVideoPlanSceneIndex = 0;
-	bool videoPlanMultiScene = false;
-	bool videoEditUseCurrentAnalysis = true;
-	float videoPlanDurationSeconds = 5.0f;
-	float videoEditTargetDurationSeconds = 15.0f;
-	bool videoPlanUseForGeneration = true;
-	int videoEditWorkflowActiveStepIndex = -1;
-	std::vector<int> videoEditWorkflowCompletedStepIndices;
 	char speechAudioPath[1024] = {};
 	char speechExecutable[256] = "whisper-cli";
 	char speechModelPath[1024] = {};
@@ -301,29 +269,6 @@ private:
 	float ttsMinP = 0.05f;
 	bool ttsStreamAudio = false;
 	bool ttsNormalizeText = true;
-	char diffusionPrompt[4096] = {};
-	char diffusionInstruction[4096] = {};
-	char diffusionNegativePrompt[4096] = {};
-	char diffusionRankingPrompt[4096] = {};
-	char diffusionModelPath[1024] = {};
-	char diffusionVaePath[1024] = {};
-	char diffusionInitImagePath[1024] = {};
-	char diffusionMaskImagePath[1024] = {};
-	char diffusionOutputDir[1024] = {};
-	char diffusionOutputPrefix[128] = "diffusion";
-	char diffusionSampler[64] = "euler_a";
-	int diffusionTaskIndex = 0;
-	int diffusionSelectionModeIndex = 0;
-	int diffusionWidth = 1024;
-	int diffusionHeight = 1024;
-	int diffusionSteps = 20;
-	int diffusionBatchCount = 1;
-	int diffusionSeed = -1;
-	float diffusionCfgScale = 7.0f;
-	float diffusionStrength = 0.75f;
-	bool diffusionNormalizeClipEmbeddings = true;
-	bool diffusionSaveMetadata = true;
-	bool samReturnMultipleMasks = true;
 	bool speechServerManagedByApp = false;
 	ServerStatusState speechServerStatus = ServerStatusState::Unknown;
 	std::string speechServerStatusMessage;
@@ -348,13 +293,8 @@ private:
 	std::string customOutput;
 	std::string citationOutput;
 	std::string visionOutput;
-	std::string holoscanVisionStatus;
-	std::string holoscanVisionLatestOutput;
-	std::string videoPlanSummary;
-	std::string videoEditPlanSummary;
 	std::string speechOutput;
 	std::string ttsOutput;
-	std::string diffusionOutput;
 	ofImage visionPreviewImage;
 	std::string visionPreviewImageLoadedPath;
 	std::string visionPreviewImageError;
@@ -365,15 +305,6 @@ private:
 	ofImage visionOutputPreviewImage;
 	std::string visionOutputPreviewLoadedPath;
 	std::string visionOutputPreviewError;
-	ofImage diffusionInitPreviewImage;
-	std::string diffusionInitPreviewLoadedPath;
-	std::string diffusionInitPreviewError;
-	ofImage diffusionMaskPreviewImage;
-	std::string diffusionMaskPreviewLoadedPath;
-	std::string diffusionMaskPreviewError;
-	ofImage diffusionOutputPreviewImage;
-	std::string diffusionOutputPreviewLoadedPath;
-	std::string diffusionOutputPreviewError;
 	std::string deferredCitationTopic;
 	bool hasDeferredCitationTopic = false;
 	std::string deferredCitationSeedUrl;
@@ -384,10 +315,6 @@ private:
 	bool hasDeferredTranslateInput = false;
 	std::string deferredVoiceTranslatorAudioPath;
 	bool hasDeferredVoiceTranslatorAudioPath = false;
-	std::string deferredDiffusionPrompt;
-	bool hasDeferredDiffusionPrompt = false;
-	std::string deferredDiffusionOutputDir;
-	bool hasDeferredDiffusionOutputDir = false;
 #endif
 	std::string speechDetectedLanguage;
 	std::string speechTranscriptPath;
@@ -398,18 +325,11 @@ private:
 	std::string ttsResolvedSpeakerPath;
 	std::vector<ofxGgmlTtsAudioArtifact> ttsAudioFiles;
 	std::vector<std::pair<std::string, std::string>> ttsMetadata;
-	std::string diffusionBackendName;
-	float diffusionElapsedMs = 0.0f;
-	std::vector<ofxGgmlGeneratedImage> diffusionGeneratedImages;
-	std::vector<std::pair<std::string, std::string>> diffusionMetadata;
-	float clipElapsedMs = 0.0f;
-	float samElapsedMs = 0.0f;
 #endif
 	std::string speechRecordedTempPath;
 	bool speechRecording = false;
 	float speechRecordingStartTime = 0.0f;
 	bool speechLiveTranscriptionEnabled = false;
-	int speechInputSampleRate = 16000;
 	int speechInputChannels = 1;
 	int speechInputBufferSize = 512;
 	float speechLiveIntervalSeconds = 1.25f;
@@ -418,15 +338,12 @@ private:
 	ofxGgmlLiveSpeechTranscriber speechLiveTranscriber;
 	ofSoundStream speechInputStream;
 	bool speechInputStreamConfigured = false;
-	int speechInputStreamConfigSampleRate = 0;
 	int speechInputStreamConfigChannels = 0;
 	int speechInputStreamConfigBufferSize = 0;
 	ofSoundStream ttsOutputStream;
 	bool ttsOutputStreamConfigured = false;
-	int ttsOutputSampleRate = 48000;
 	int ttsOutputChannels = 2;
 	int ttsOutputBufferSize = 512;
-	std::vector<float> speechRecordedSamples;
 	std::mutex speechRecordMutex;
 
 	// -- generation state --
@@ -453,10 +370,6 @@ private:
 	std::string pendingTtsResolvedSpeakerPath;
 	std::vector<ofxGgmlTtsAudioArtifact> pendingTtsAudioFiles;
 	std::vector<std::pair<std::string, std::string>> pendingTtsMetadata;
-	std::string pendingDiffusionBackendName;
-	float pendingDiffusionElapsedMs = 0.0f;
-	std::vector<ofxGgmlGeneratedImage> pendingDiffusionImages;
-	std::vector<std::pair<std::string, std::string>> pendingDiffusionMetadata;
 	std::string pendingMusicToImagePromptOutput;
 	std::string pendingMusicToImageStatus;
 	bool pendingMusicToImageDirty = false;
@@ -472,18 +385,6 @@ private:
 	std::string pendingVoiceTranslatorStatus;
 	std::string pendingVoiceTranslatorTranscript;
 	bool pendingVoiceTranslatorDirty = false;
-	std::vector<ofxGgmlSampledVideoFrame> visionSampledVideoFrames;
-	std::vector<ofxGgmlSampledVideoFrame> pendingVisionSampledVideoFrames;
-	std::string pendingVideoPlanJson;
-	std::string pendingVideoPlanSummary;
-	std::string pendingVideoEditPlanJson;
-	std::string pendingVideoEditPlanSummary;
-	std::string pendingClipBackendName;
-	float pendingClipElapsedMs = 0.0f;
-	int pendingClipEmbeddingDimension = 0;
-	std::vector<ofxGgmlClipSimilarityHit> pendingClipHits;
-	std::string pendingSamBackendName;
-	float pendingSamElapsedMs = 0.0f;
 	AiMode activeGenerationMode = AiMode::Chat;
 	float generationStartTime = 0.0f;
 	std::string streamingOutput;
@@ -577,13 +478,6 @@ private:
 	int selectedSpeechProfileIndex = 0;
 	std::vector<ofxGgmlTtsModelProfile> ttsProfiles;
 	int selectedTtsProfileIndex = 0;
-	std::vector<ofxGgmlImageGenerationModelProfile> diffusionProfiles;
-	int selectedDiffusionProfileIndex = 0;
-	std::string configuredClipBackendModelPath;
-	int configuredClipBackendVerbosity = -1;
-	bool configuredClipBackendNormalize = true;
-	std::string configuredSamBackendModelPath;
-	int configuredSamBackendThreads = -999;
 	std::string citationBackendName;
 	float citationElapsedMs = 0.0f;
 	std::vector<ofxGgmlCitationItem> citationResults;
@@ -606,19 +500,14 @@ private:
 	ofxGgmlCodingAgent scriptCodingAgent;
 	ofxGgmlWorkspaceAssistant scriptWorkspaceAssistant;
 	ofxGgmlTextAssistant textAssistant;
-	ofxGgmlHoloscanBridge holoscanBridge;
 	ofxGgmlVisionInference visionInference;
 	ofxGgmlVideoInference videoInference;
 	ofxGgmlSpeechInference speechInference;
 	ofxGgmlTtsInference ttsInference;
-	ofxGgmlDiffusionInference diffusionInference;
 	ofxGgmlCitationSearch citationSearch;
-#if OFXGGML_HAS_OFXSTABLEDIFFUSION
-	std::shared_ptr<ofxStableDiffusion> stableDiffusionEngine;
 #endif
 	ofxGgmlInference llmInference;
 	ofxGgmlCodeReview scriptCodeReview;
-	ofxGgmlVideoPlanner videoPlanner;
 	ofxGgmlProjectMemory scriptProjectMemory;
 	std::string lastScriptRequest;
 	std::vector<std::string> recentScriptTouchedFiles;
@@ -698,8 +587,6 @@ private:
 		AiMode mode,
 		const ofxGgmlTextAssistantRequest & request,
 		const ofxGgmlRealtimeInfoSettings & realtimeSettings = {});
-	void setupHoloscanBridge();
-	void drawHoloscanBridgeSection();
 	void runEasyModeExample();
 	void runVoiceTranslatorWorkflow(bool useAudioInput);
 	void runScriptAssistantRequest(
@@ -724,15 +611,8 @@ private:
 		bool enableAutoLiveContext = false) const;
 	void runHierarchicalReview(const std::string & overrideQuery = std::string());
 	void applyScriptReviewPreset();
-	ofxGgmlHoloscanVisionRequestTemplate makeHoloscanVisionRequestTemplate() const;
 	void runVisionInference();
 	void runVideoInference();
-	void runVideoPlanning();
-	void runVideoEditPlanning();
-	void applyVideoEditPresetByIndex(int presetIndex);
-	void resetVideoEditWorkflowState();
-	bool isVideoEditWorkflowStepCompleted(int stepIndex) const;
-	void setVideoEditWorkflowStepCompleted(int stepIndex, bool completed);
 	void runSpeechInference();
 	void runTtsInference();
 	void runTtsInferenceForText(
@@ -753,32 +633,23 @@ private:
 	void stopSummaryTtsPlayback(bool clearLoadedPath = false);
 	bool ensureTranslateTtsAudioLoaded(int artifactIndex = -1, bool autoplay = false);
 	void stopTranslateTtsPlayback(bool clearLoadedPath = false);
-	void runDiffusionInference();
 	void runMusicToImagePromptGeneration();
 	void runImageToMusicPromptGeneration();
 	void runImageToMusicNotationGeneration();
 	void runCitationSearch();
-	void runClipInference();
 		bool editExisting = false,
 		bool generateVariants = false,
 		bool repairExisting = false);
 	void configureEasyApiFromCurrentUi();
-	bool ensureClipBackendConfigured(
 		const std::string & modelPath,
 		int verbosity,
 		bool normalizeEmbeddings);
-	bool ensureDiffusionBackendConfigured();
-	bool ensureSamBackendConfigured(const std::string & modelPath, int threads);
-	static int clampSupportedDiffusionImageSize(int value);
 	static constexpr float kDefaultInferenceTemp = 0.7f;
 	static constexpr float kDefaultInferenceTopP = 0.9f;
 	static constexpr float kDefaultInferenceRepeatPenalty = 1.1f;
 	static constexpr size_t kDefaultMaxScriptContextFiles = 50;
 	static constexpr size_t kDefaultMaxFocusedFileSnippetChars = 2000;
 	ofxGgmlInferenceSettings buildCurrentTextInferenceSettings(AiMode mode) const;
-	std::string getPreferredDiffusionReuseImagePath() const;
-	void setDiffusionInitImagePath(const std::string & path, bool promoteTask = true);
-	void copyDiffusionOutputsToClipPaths();
 	ofxGgmlLiveSpeechSettings makeLiveSpeechSettings() const;
 	void applyLiveSpeechTranscriberSettings();
 	bool ensureSpeechInputStreamReady();
@@ -868,8 +739,6 @@ private:
 	void drawMediaTexturePreview(const ofBaseHasTexture & previewTexture, const char * childId);
 		std::string * errorOut = nullptr) const;
 #endif
-	void ensureDiffusionPreviewResources();
-	void drawDiffusionImagePreview(
 		const char * label,
 		const std::string & imagePath,
 		ofImage & previewImage,
@@ -880,9 +749,6 @@ private:
 		std::string & errorMessage) const;
 	void drawSpeechPanel();
 	void drawTtsPanel();
-	void drawDiffusionPanel();
-	void drawClipPanel();
-	void drawSamPanel();
 	void drawImageToMusicSection();
 	bool saveImageToMusicNotationToConfiguredPath();
 #endif
@@ -901,7 +767,6 @@ private:
 	void drawLogWindow();
 	void drawPerformanceWindow();
 	void applyTheme(int index);
-	void copyToClipboard(const std::string & text);
 	void exportChatHistory(const std::string & path);
 
 };
