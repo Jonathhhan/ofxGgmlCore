@@ -403,10 +403,10 @@ TEST_CASE("Server streaming uses portable HTTP in headless tests", "[inference][
 	server.join();
 	const size_t requestBodyStart = receivedRequest.find("\r\n\r\n");
 	REQUIRE(requestBodyStart != std::string::npos);
-	const ofJson requestJson = ofJson::parse(receivedRequest.substr(requestBodyStart + 4));
+	ofJson requestJson = ofJson::parse(receivedRequest.substr(requestBodyStart + 4));
 	REQUIRE(requestJson["stream"].get<bool>());
 	REQUIRE(requestJson["max_tokens"].get<int>() == 8);
-	REQUIRE(requestJson["messages"].at(0).at("content").get<std::string>() == "Say hello");
+	REQUIRE(requestJson["messages"][0]["content"].get<std::string>() == "Say hello");
 	REQUIRE(result.success);
 	REQUIRE(result.text == "portable streaming");
 	REQUIRE(streamed == "portable streaming");
