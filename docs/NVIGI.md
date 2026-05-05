@@ -22,6 +22,41 @@ The callback approach keeps SDK lifetime, plugin selection, device selection,
 model data paths, and reload semantics under application control while allowing
 the rest of the addon to consume normal ofxGgml results.
 
+## ASR Whisper guide wiring
+
+NVIDIA's NVIGI ASR Whisper programming guide is the right reference for the
+application-owned code that backs `ofxGgmlNvigiAsrSpeechBackend`. Keep the
+guide-specific SDK initialization, plugin handles, model paths, and runtime
+shutdown outside the addon, then pass a transcription callback into
+`ofxGgmlSpeechInference::createNvigiAsrBackend()` or construct
+`ofxGgmlNvigiAsrSpeechBackend` directly.
+
+Map the addon request fields into the NVIGI Whisper ASR request owned by the
+application:
+
+- `audioPath` identifies the source audio to decode or load before submitting to
+  NVIGI.
+- `modelPath` or `ofxGgmlNvigiAsrSpeechBackend::Options::modelId` can select the
+  Whisper model data known to the SDK integration.
+- `languageHint`, `prompt`, and `task` should be forwarded when the selected
+  NVIGI Whisper path supports language hints, initial prompts, transcription,
+  or translation.
+- `returnTimestamps` should request timestamp-capable output when the SDK/plugin
+  path supports segments.
+
+Map the NVIGI response back into `ofxGgmlSpeechResult`:
+
+- set `success`, `text`, `detectedLanguage`, and `rawOutput` from the SDK
+  response;
+- fill `segments` with `ofxGgmlSpeechSegment` values when NVIGI returns
+  timestamped ranges;
+- copy SDK failures into `error` instead of throwing through the bridge.
+
+The addon intentionally does not include NVIGI headers in this bridge. A project
+that follows the guide should define `OFXGGML_ENABLE_NVIGI=1`, include the NVIGI
+SDK in the application target, and keep SDK objects alive for as long as the
+callback can be invoked.
+
 ## Layered includes
 
 - `ofxGgmlBasic.h` exposes NVIGI GPT and reload helpers when
