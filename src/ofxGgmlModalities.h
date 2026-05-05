@@ -8,6 +8,7 @@
 /// - Vision and video understanding (LLaVA-style models)
 /// - Image generation (Stable Diffusion integration)
 /// - CLIP embeddings (text/image similarity)
+/// - Image segmentation adapters (SAM / sam.cpp)
 ///
 /// Include this when you need audio or visual AI workflows.
 /// Requires basic inference functionality from ofxGgmlBasic.h
@@ -48,3 +49,7 @@
 // CLIP embeddings
 #include "inference/ofxGgmlClipInference.h"
 #include "inference/ofxGgmlClipCppAdapters.h"
+
+// Image segmentation
+#include "inference/ofxGgmlSegmentationInference.h"
+#include "inference/ofxGgmlSamCppAdapters.h"

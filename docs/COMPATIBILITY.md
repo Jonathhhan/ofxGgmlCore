@@ -1,11 +1,12 @@
 # Compatibility And Versioning
 
-This document describes how `ofxGgml` should coexist with optional companion addons such as `ofxStableDiffusion`, and how to manage upstream `ggml` / `stable-diffusion.cpp` updates safely.
+This document describes how `ofxGgml` should coexist with optional companion addons such as `ofxStableDiffusion` and sam.cpp-based segmentation integrations, and how to manage upstream `ggml` / `stable-diffusion.cpp` / `sam.cpp` updates safely.
 
 ## Short version
 
 - `ofxGgml` is the primary `ggml`-centric addon in this workspace.
 - `ofxStableDiffusion` remains a separate addon with its own `stable-diffusion.cpp` integration.
+- `sam.cpp` remains an optional application- or companion-addon-supplied runtime for Segment Anything style masks.
 - We prefer **pinned, tested revisions** over tracking `main` for either upstream.
 - We do **not** assume that one shared `ggml` source tree is automatically safer than two pinned integrations.
 
@@ -17,7 +18,8 @@ For each addon release:
 
 - pin the `ggml` revision used by `ofxGgml`
 - pin the `stable-diffusion.cpp` revision used by `ofxStableDiffusion`
-- record whether that pair was tested together
+- pin the `sam.cpp` revision when using the segmentation adapter
+- record whether that combination was tested together
 - only upgrade one side when the pair is revalidated
 
 This reduces three common failure modes:

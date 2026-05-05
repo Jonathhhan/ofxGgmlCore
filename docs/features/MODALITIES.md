@@ -11,6 +11,7 @@ Include `ofxGgmlModalities.h` to get:
 - Vision and video understanding
 - Image generation (Stable Diffusion)
 - CLIP text/image embeddings
+- Image segmentation bridge adapters
 
 ## Speech-to-Text
 
@@ -248,6 +249,41 @@ auto result = diffusion.generate(
     settings
 );
 ```
+
+## Image Segmentation
+
+`ofxGgmlSegmentationInference` is a small bridge layer for segmentation
+backends. It does not bundle Segment Anything weights or a sam.cpp checkout;
+applications can attach a custom callback or include/link
+[sam.cpp](https://github.com/YavorGIvanov/sam.cpp) and use
+`ofxGgmlSamCppAdapters`.
+
+```cpp
+#include "ofxGgmlModalities.h"
+
+ofxGgmlSegmentationInference segmenter;
+ofxGgmlSamCppAdapters::RuntimeOptions options;
+options.threads = 8;
+ofxGgmlSamCppAdapters::attachBackend(
+    segmenter,
+    "models/sam/ggml-model-f16.bin",
+    options);
+
+ofxGgmlSegmentationRequest request;
+request.imageWidth = width;
+request.imageHeight = height;
+request.imageRgb = rgbPixels; // width * height * 3 bytes
+request.points.push_back({x, y, true});
+
+auto result = segmenter.segment(request);
+if (result.success && !result.masks.empty()) {
+    // result.masks[0].pixels contains an 8-bit mask
+}
+```
+
+Use this layer when you want a stable ofxGgml-facing contract while keeping
+the sam.cpp source, model conversion flow, and binary packaging owned by the
+application or a companion addon.
 
 ## CLIP Embeddings
 
