@@ -209,6 +209,7 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_video_inference.cpp
         test_yolo_inference.cpp
         test_assistant_eval.cpp
+        test_assistant_team.cpp
         test_easy_api.cpp
         test_companion_project_memory.cpp
         test_focused_example_catalog.cpp

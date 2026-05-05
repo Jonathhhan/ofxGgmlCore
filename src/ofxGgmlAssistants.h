@@ -9,6 +9,7 @@
 /// - Coding agent (orchestration layer with approval callbacks)
 /// - Code review (hierarchical analysis, embedding-based ranking)
 /// - Text assistant (translation, summarization, rewriting)
+/// - Specialist assistant team specs (roles, handoffs, safety rules)
 ///
 /// These assistants provide higher-level task-oriented APIs
 /// on top of the basic inference layer.
@@ -33,3 +34,4 @@
 #include "assistants/ofxGgmlWorkspaceAssistant.h"
 #include "assistants/ofxGgmlCodingAgent.h"
 #include "assistants/ofxGgmlCodeReview.h"
+#include "assistants/ofxGgmlAssistantTeam.h"

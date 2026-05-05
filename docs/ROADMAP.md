@@ -285,7 +285,7 @@ Focus: keep the core assistant surfaces safe and inspectable while letting compa
 
 ### 1. Specialist Assistant Teams
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Evolve assistants toward explicit roles such as:
 
@@ -296,6 +296,14 @@ Evolve assistants toward explicit roles such as:
 - renderer
 
 The key constraint is to preserve approval-first execution and workspace safety while improving delegation and handoff quality.
+
+Implemented foundation:
+
+- `ofxGgmlAssistantTeamSpec` shared schema primitive for specialist roles, role-to-role handoffs, approval requirements, workspace rules, and metadata
+- default specialist team entry points for researcher, planner, critic, editor, and renderer roles
+- schema version `ofxGgml.assistant_team.v1`
+- assistant-layer exposure through `ofxGgmlAssistants.h`
+- unit coverage for default roles, approval-first constraints, and stable JSON keys
 
 ### 2. Timeline-Aware Companion Copilots
 **Priority**: HIGH  
