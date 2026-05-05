@@ -122,6 +122,7 @@ endif()
 
 set(ADDON_SOURCES
     ../src/core/ofxGgmlCore.cpp
+    ../src/core/ofxGgmlMetrics.cpp
     ../src/compute/ofxGgmlGraph.cpp
     ../src/compute/ofxGgmlTensor.cpp
     ../src/model/ofxGgmlModel.cpp
