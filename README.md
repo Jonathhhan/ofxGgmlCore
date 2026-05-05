@@ -82,7 +82,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
 - `ofxGgmlHoloscanBridge` is companion/example-tier bridge code; include `ofxGgmlCompanionWorkflows.h` or move it to a companion addon when building Holoscan-style media pipelines
 - `ofxGgmlImageSearch` for internet reference-image lookup through pluggable providers, with a working Wikimedia Commons backend
-- `ofxGgmlWorkflowManifest` provides a small Phase 2 handoff contract for workflow inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream companion-tool routing
+- `ofxGgmlWorkflowManifest` provides a small Phase 2 handoff contract for workflow inputs, artifacts, intermediate outputs, warnings, review notes, execution-step checkpoints, replay metadata, and downstream companion-tool routing
 - `ofxGgmlCompanionProjectMemory` provides a small Phase 2 companion-owned memory schema for creative intent, accepted prompts/references, style notes, continuity rules, preferred tool settings, and review notes
 - `ofxGgmlFocusedExampleCatalog` provides a small Phase 2 catalog of focused example tracks for research/citations, companion video essays, speech/subtitles, coding assistants, and CLIP/image planning
 - `ofxGgmlTimelineCopilotPlan` provides a small Phase 3 companion-copilot schema for timeline lanes, anchors, approval checkpoints, workspace rules, and manifest/project-memory handoffs

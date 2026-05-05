@@ -216,6 +216,7 @@ Target capabilities:
 Implemented foundation:
 
 - `ofxGgmlWorkflowManifest` shared schema primitive for inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream handoff notes
+- resumable execution-step checkpoints and deterministic replay hints for debugging companion pipelines
 - JSON serialization for companion/example handoff files without coupling the core addon to a specific creative workflow runtime
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
 
@@ -236,6 +237,7 @@ Implemented foundation:
 
 - schema version `ofxGgml.workflow_manifest.v1`
 - optional `handoff` block with target, mode, contract, notes, and metadata
+- optional `execution_steps` and `replay` blocks for resumable execution and deterministic debugging
 - unit coverage for stable JSON keys used by downstream companion tools
 
 **Outcome**: outputs from one workflow become reliable inputs for the next.
