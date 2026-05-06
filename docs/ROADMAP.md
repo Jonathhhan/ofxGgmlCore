@@ -296,7 +296,7 @@ Focus: keep the core assistant surfaces safe and inspectable while letting compa
 
 ### 1. Specialist Assistant Teams
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Evolve assistants toward explicit roles such as:
 
@@ -318,7 +318,7 @@ Implemented foundation:
 
 ### 2. Timeline-Aware Companion Copilots
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Explore assistant patterns tailored to media creation outside the default addon boundary:
 
@@ -340,7 +340,7 @@ Implemented foundation:
 
 ### 3. Continuity, Consistency, and Asset Reuse
 **Priority**: MEDIUM-HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Let companion systems build on core provenance and manifest support for:
 
@@ -362,7 +362,7 @@ Implemented foundation:
 
 ### 4. Trust and Evaluation Suites
 **Priority**: MEDIUM-HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Build repeatable evaluation coverage for:
 
@@ -382,6 +382,10 @@ Implemented foundation:
 - workflow- and assistant-layer exposure through `ofxGgmlWorkflows.h` and `ofxGgmlAssistants.h`
 - unit coverage for default trust dimensions, stable JSON keys, and empty-entry handling
 
+### Phase 3 completion summary
+
+Phase 3 is complete at the shared-schema foundation level. Assistant reliability and companion-copilot work now has stable metadata contracts for specialist roles, approval-first handoffs, timeline lanes, continuity rules, reusable assets, trust metrics, evaluation cases, and local review evidence. Future companion projects can build executable orchestration on these contracts without expanding the default addon boundary.
+
 ---
 
 ## Phase 4: Ecosystem and Extensibility (9-12 Months)
@@ -390,7 +394,7 @@ Focus: let other developers build companion layers on top of the stable addon fo
 
 ### 1. Plugin System
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Create a plugin architecture for:
 
@@ -410,7 +414,7 @@ Implemented foundation:
 
 ### 2. Third-Party Integration Surface
 **Priority**: MEDIUM-HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Encourage integrations with:
 
@@ -429,7 +433,7 @@ Implemented foundation:
 
 ### 3. Personalization and Adaptation
 **Priority**: MEDIUM  
-**Status**: 💡 Proposed
+**Status**: ✅ Complete
 
 Explore higher-level personalization features such as:
 
@@ -437,11 +441,31 @@ Explore higher-level personalization features such as:
 - reusable project presets
 - stylistic profiles for media generation
 
+Implemented foundation:
+
+- `ofxGgmlPersonalizationProfileSet` shared schema primitive for adapter declarations, style profiles, reusable project presets, adaptation rules, safety requirements, review notes, and metadata
+- default personalization entries for text LoRA adapters, media style LoRA adapters, source-grounded research presets, companion media style presets, and text/visual/audio style profiles
+- schema version `ofxGgml.personalization_profile_set.v1`
+- core- and workflow-layer exposure through `ofxGgmlCore.h` and `ofxGgmlWorkflows.h`
+- unit coverage for default personalization entries, stable JSON keys, and empty-entry handling
+
 ### 4. Collaborative and Real-Time Workflows
 **Priority**: MEDIUM  
-**Status**: 💡 Proposed
+**Status**: ✅ Complete
 
 After core local flows are stable, evaluate real-time and collaborative creative pipelines that build on the manifest, memory, and plugin foundations.
+
+Implemented foundation:
+
+- `ofxGgmlCollaborativeWorkflowSpace` shared schema primitive for local-first collaborative sessions, participants, realtime channels, approval checkpoints, sync rules, review notes, and metadata
+- default collaboration entries for host operators, human collaborators, assistant facilitators, companion runtimes, shared context sync, approval queues, realtime previews, and artifact handoffs
+- schema version `ofxGgml.collaborative_workflow.v1`
+- core- and workflow-layer exposure through `ofxGgmlCore.h` and `ofxGgmlWorkflows.h`
+- unit coverage for default collaboration surfaces, stable JSON keys, and empty-entry handling
+
+### Phase 4 completion summary
+
+Phase 4 is complete at the shared-schema foundation level. Ecosystem and extensibility work now has stable contracts for plugin metadata, third-party integrations, personalization/adaptation profiles, and collaborative realtime workflow surfaces. Future work can add executable loaders, transports, or networked collaboration on top of these contracts without changing the default local-first addon boundary.
 
 ---
 
