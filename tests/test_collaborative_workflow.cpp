@@ -1,5 +1,5 @@
 #include "catch2.hpp"
-#include "../src/ofxGgmlCompanionWorkflows.h"
+#include "../src/support/ofxGgmlCollaborativeWorkflow.h"
 
 #include <set>
 

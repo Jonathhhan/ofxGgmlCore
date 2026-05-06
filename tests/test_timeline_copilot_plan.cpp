@@ -1,5 +1,5 @@
 #include "catch2.hpp"
-#include "../src/ofxGgmlCompanionWorkflows.h"
+#include "../src/support/ofxGgmlTimelineCopilotPlan.h"
 
 TEST_CASE("Timeline copilot plan exposes roadmap media lanes", "[timeline_copilot]") {
 	const auto plan = ofxGgmlDefaultTimelineCopilotPlan();
