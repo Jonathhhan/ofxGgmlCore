@@ -26,7 +26,7 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	manifest.reviewNotes.push_back("Check source freshness before publishing.");
 	manifest.handoff.target = "video_planner";
 	manifest.handoff.mode = "scene_outline";
-	manifest.handoff.contract = "crawl->cite->outline->script->tts->subtitles->video_plan";
+	manifest.handoff.contract = "crawl->cite->outline->script->subtitles->video_plan";
 	manifest.handoff.metadata["requires_review"] = "true";
 	manifest.replay.deterministic = true;
 	manifest.replay.replayCommand = "ofxGgmlVideoEssayExample --replay manifest.json";

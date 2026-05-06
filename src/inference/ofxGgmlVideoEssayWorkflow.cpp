@@ -653,7 +653,7 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 	manifest.reviewNotes.push_back("Review citations and source freshness before publishing.");
 	manifest.handoff.target = "video_planner";
 	manifest.handoff.mode = "essay_pipeline";
-	manifest.handoff.contract = "crawl->cite->outline->script->tts->subtitles->video_plan";
+	manifest.handoff.contract = "crawl->cite->outline->script->subtitles->video_plan";
 	manifest.handoff.notes = "Artifacts and intermediate outputs are inline for companion workflow inspection.";
 	manifest.handoff.metadata["source"] = "ofxGgmlVideoEssayWorkflow";
 	manifest.handoff.metadata["status"] = manifest.status;
