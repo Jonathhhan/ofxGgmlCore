@@ -19,12 +19,10 @@ void configureMockBackends();
 void rebuildPreview();
 void runImageSearch();
 void runRanking();
-void runSegmentation();
 void runDiffusionValidation();
 
 ofxGgmlClipInference clip;
 ofxGgmlImageSearch imageSearch;
-ofxGgmlSegmentationInference segmentation;
 ofxGgmlDiffusionInference diffusion;
 std::vector<std::string> candidateImages;
 std::vector<std::string> lines;

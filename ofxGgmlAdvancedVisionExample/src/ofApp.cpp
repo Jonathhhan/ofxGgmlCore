@@ -47,22 +47,6 @@ return result;
 }));
 imageSearch.setClipInference(&clip);
 
-segmentation.setBackend(ofxGgmlSegmentationInference::createSamCppBridgeBackend(
-[](const ofxGgmlSegmentationRequest & request) {
-ofxGgmlSegmentationResult result;
-result.success = true;
-result.backendName = "example-sam-bridge";
-result.imagePath = request.imagePath;
-ofxGgmlSegmentationMask mask;
-mask.maskId = "point-mask-preview";
-mask.width = std::max(1, request.imageWidth);
-mask.height = std::max(1, request.imageHeight);
-mask.score = 0.87f;
-mask.metadata.push_back({ "points", ofToString(request.points.size()) });
-result.masks.push_back(mask);
-return result;
-}));
-
 diffusion.setBackend(ofxGgmlDiffusionInference::createStableDiffusionBridgeBackend(
 [](const ofxGgmlImageGenerationRequest & request) {
 ofxGgmlImageGenerationResult result;
@@ -81,13 +65,13 @@ return result;
 
 void ofApp::rebuildPreview() {
 lines.clear();
-lines.push_back("Extracted from removed Diffusion/CLIP, SAM, and ImageSearch GUI panels into one focused vision example.");
-lines.push_back("Demonstrates bridge boundaries without requiring ofxStableDiffusion, sam.cpp, or network search at launch.");
+lines.push_back("Extracted from removed Diffusion/CLIP and ImageSearch GUI panels into one focused vision example.");
+lines.push_back("Demonstrates bridge boundaries without requiring ofxStableDiffusion or network search at launch.");
 lines.push_back("");
 lines.push_back("Press C: rank local candidate images with CLIP-style embeddings.");
-lines.push_back("Press M: run a point-prompt SAM bridge request.");
 lines.push_back("Press D: validate and dispatch a diffusion bridge request.");
 lines.push_back("Press W: query Wikimedia Commons image search (network optional).");
+lines.push_back("Use ofxGgmlSamExample for interactive point-prompt segmentation.");
 status = "Mock bridge backends configured.";
 }
 
@@ -118,20 +102,6 @@ for (const auto & hit : result.hits) {
 lines.push_back(ofToString(hit.score, 3) + "  " + hit.imagePath);
 }
 status = "Ranking complete.";
-}
-
-void ofApp::runSegmentation() {
-ofxGgmlSegmentationRequest request;
-request.imagePath = candidateImages.front();
-request.imageWidth = 640;
-request.imageHeight = 360;
-request.modelPath = "models/sam-vit-b/ggml-model-f16.bin";
-request.points.push_back({ 0.5f, 0.5f, true });
-const auto result = segmentation.segment(request);
-lines.push_back("");
-lines.push_back(std::string("SAM bridge: ") + (result.success ? "success" : "failed"));
-lines.push_back("Masks: " + ofToString(result.masks.size()));
-status = "Segmentation bridge request complete.";
 }
 
 void ofApp::runDiffusionValidation() {
@@ -169,6 +139,5 @@ ofDrawBitmapString(status, 28, ofGetHeight() - 34);
 void ofApp::keyPressed(int key) {
 if (key == 'w' || key == 'W') runImageSearch();
 if (key == 'c' || key == 'C') runRanking();
-if (key == 'm' || key == 'M') runSegmentation();
 if (key == 'd' || key == 'D') runDiffusionValidation();
 }

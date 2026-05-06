@@ -3,6 +3,7 @@
 #include "ModelPresets.h"
 
 #include <array>
+#include <cstddef>
 
 enum class GuiModeTier {
 	Stable,
@@ -16,7 +17,10 @@ struct GuiModeDescriptor {
 	GuiModeTier tier;
 };
 
-const std::array<GuiModeDescriptor, 13> & defaultGuiModeDescriptors();
-const std::array<GuiModeDescriptor, 3> & advancedGuiModeDescriptors();
+constexpr std::size_t kDefaultGuiModeDescriptorCount = 12;
+constexpr std::size_t kAdvancedGuiModeDescriptorCount = 3;
+
+const std::array<GuiModeDescriptor, kDefaultGuiModeDescriptorCount> & defaultGuiModeDescriptors();
+const std::array<GuiModeDescriptor, kAdvancedGuiModeDescriptorCount> & advancedGuiModeDescriptors();
 const GuiModeDescriptor & guiModeDescriptor(AiMode mode);
 bool isAdvancedGuiMode(AiMode mode);

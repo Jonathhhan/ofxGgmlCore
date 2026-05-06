@@ -37,9 +37,11 @@ cat <<EOF
 Source: ${DEST_DIR}
 Ref:    ${SAM_CPP_REF}
 
-The openFrameworks Project Generator can now see sam.h and sam.cpp through
-addon_config.mk. Regenerate ofxGgmlGuiExample after installing.
+The pinned source targets older ggml allocator APIs, so addon_config.mk does
+not compile it automatically. Use the preview backend by default, or define
+OFXGGML_ENABLE_SAMCPP_ADAPTER=1 and link a ggml-compatible SAM implementation.
+Regenerate ofxGgmlSamExample after changing addon_config.mk or project sources.
 
-To use the GUI SAM panel, convert a Segment Anything checkpoint following:
+To use the SAM example with the real adapter, convert a Segment Anything checkpoint following:
   https://github.com/ggml-org/ggml/tree/master/examples/sam
 EOF

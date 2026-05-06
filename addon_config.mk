@@ -37,6 +37,7 @@ common:
 	ADDON_SOURCES_EXCLUDE += libs/ggml/build/%
 	ADDON_SOURCES_EXCLUDE += libs/ggml/.download/%
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/.git/%
+	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/sam.cpp
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/build/%
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/ggml/%
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/examples/%
@@ -90,6 +91,10 @@ vs:
 	ADDON_LIBS += libs/ggml/lib/ggml-cpu.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-cuda.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-vulkan.lib
+	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cublas.lib
+	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cudart.lib
+	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cuda.lib
+	ADDON_LIBS += $(VULKAN_SDK)/Lib/vulkan-1.lib
 	# @DIFFUSION_LIBS_END vs
 android/armeabi:
 android/armeabi-v7a:
@@ -102,4 +107,3 @@ osx:
 	ADDON_FRAMEWORKS += Accelerate
 ios:
 emscripten:
-

@@ -449,8 +449,18 @@ if [[ "$AUTO_DETECT" -eq 1 ]]; then
 			ENABLE_CUDA="ON"
 		fi
 	fi
-	if [[ -z "$ENABLE_VULKAN" ]] && { command -v glslc >/dev/null 2>&1 || [[ -n "${VULKAN_SDK:-}" ]]; }; then
-		ENABLE_VULKAN="ON"
+	if [[ -z "$ENABLE_VULKAN" ]]; then
+		if [[ "$OS_NAME" == MINGW* || "$OS_NAME" == MSYS* || "$OS_NAME" == CYGWIN* ]]; then
+			vulkan_sdk_unix=""
+			if [[ -n "${VULKAN_SDK:-}" ]]; then
+				vulkan_sdk_unix="$(cygpath -u "$VULKAN_SDK" 2>/dev/null || printf '%s\n' "$VULKAN_SDK")"
+			fi
+			if [[ -n "$vulkan_sdk_unix" && -f "$vulkan_sdk_unix/Lib/vulkan-1.lib" ]]; then
+				ENABLE_VULKAN="ON"
+			fi
+		elif command -v glslc >/dev/null 2>&1 || [[ -n "${VULKAN_SDK:-}" ]]; then
+			ENABLE_VULKAN="ON"
+		fi
 	fi
 	if [[ "$(uname -s)" == "Darwin" && -z "$ENABLE_METAL" ]]; then
 		ENABLE_METAL="ON"
@@ -679,6 +689,74 @@ update_addon_config() {
 	if [[ ${#libs[@]} -eq 0 ]]; then
 		write_step "Warning: No libraries found to update in addon_config.mk."
 		return 0
+	fi
+
+	if [[ "$section" == "vs" ]]; then
+		local cuda_link_root=""
+		local cuda_env_var=""
+		for candidate_env in CUDA_PATH CUDAToolkit_ROOT; do
+			local candidate_root="${!candidate_env:-}"
+			if [[ -z "$candidate_root" ]]; then
+				continue
+			fi
+			local candidate_unix
+			candidate_unix="$(cygpath -u "$candidate_root" 2>/dev/null || printf '%s\n' "$candidate_root")"
+			if [[ -f "$candidate_unix/lib/x64/cublas.lib" &&
+				-f "$candidate_unix/lib/x64/cudart.lib" &&
+				-f "$candidate_unix/lib/x64/cuda.lib" ]]; then
+				cuda_env_var="$candidate_env"
+				cuda_link_root="\$($candidate_env)/lib/x64"
+				break
+			fi
+		done
+
+		local vulkan_link_root=""
+		if [[ -n "${VULKAN_SDK:-}" ]]; then
+			local vulkan_unix
+			vulkan_unix="$(cygpath -u "$VULKAN_SDK" 2>/dev/null || printf '%s\n' "$VULKAN_SDK")"
+			if [[ -f "$vulkan_unix/Lib/vulkan-1.lib" ]]; then
+				vulkan_link_root="\$(VULKAN_SDK)/Lib"
+			fi
+		fi
+
+		local adjusted_libs=()
+		local needs_cuda_runtime_libs=0
+		local needs_vulkan_loader_lib=0
+		for lib_path in "${libs[@]}"; do
+			case "$(basename "$lib_path")" in
+				ggml-cuda.lib)
+					if [[ -n "$cuda_link_root" ]]; then
+						adjusted_libs+=("$lib_path")
+						needs_cuda_runtime_libs=1
+					else
+						write_step "Warning: ggml-cuda.lib is present but CUDA link libraries were not found; skipping it in addon_config.mk."
+					fi
+					;;
+				ggml-vulkan.lib)
+					if [[ -n "$vulkan_link_root" ]]; then
+						adjusted_libs+=("$lib_path")
+						needs_vulkan_loader_lib=1
+					else
+						write_step "Warning: ggml-vulkan.lib is present but VULKAN_SDK/Lib/vulkan-1.lib was not found; skipping it in addon_config.mk."
+					fi
+					;;
+				*)
+					adjusted_libs+=("$lib_path")
+					;;
+			esac
+		done
+
+		if [[ "$needs_cuda_runtime_libs" -eq 1 ]]; then
+			adjusted_libs+=("$cuda_link_root/cublas.lib")
+			adjusted_libs+=("$cuda_link_root/cudart.lib")
+			adjusted_libs+=("$cuda_link_root/cuda.lib")
+			write_step "Adding CUDA link libraries via \$($cuda_env_var)."
+		fi
+		if [[ "$needs_vulkan_loader_lib" -eq 1 ]]; then
+			adjusted_libs+=("$vulkan_link_root/vulkan-1.lib")
+			write_step "Adding Vulkan loader library via \$(VULKAN_SDK)."
+		fi
+		libs=("${adjusted_libs[@]}")
 	fi
 
 	local replacement=""

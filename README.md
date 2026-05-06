@@ -77,7 +77,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlVisionInference` for multimodal image-to-text requests against `llama-server`-style OpenAI-compatible endpoints
 - `ofxGgmlYoloInference` for object-detection requests through the ggml `examples/yolo` `yolov3-tiny` CLI adapter, using GGUF models such as `yolov3-tiny.gguf`
 - `ofxGgmlVideoInference` for backend-driven video understanding, starting with sampled-frame analysis and room for future specialized video backends
-- `ofxGgmlSegmentationInference` as a lightweight image-segmentation bridge layer, with optional adapter helpers for [sam.cpp](https://github.com/YavorGIvanov/sam.cpp); run `scripts/install-sam-cpp.sh` or `scripts\install-sam-cpp.bat` to place the local sam.cpp checkout under `libs/sam.cpp`
+- `ofxGgmlSegmentationInference` as a lightweight image-segmentation bridge layer, with optional adapter helpers for [sam.cpp](https://github.com/YavorGIvanov/sam.cpp); the pinned sam.cpp checkout is not compiled automatically because it targets older ggml allocator APIs, so real SAM backends must opt in with `OFXGGML_ENABLE_SAMCPP_ADAPTER=1` and a ggml-compatible linked implementation
 - `ofxGgmlVideoPlanner` for beat planning, multi-scene sequencing, and AI-assisted edit-plan generation that can feed video, diffusion, or writing workflows
   - the planner remains generation-agnostic so apps can pair those plans with `ofxStableDiffusion`, `ofxVlc4`, or external renderers while keeping one shared planning/export manifest
 - `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
@@ -136,7 +136,7 @@ This addon is released under the [MIT License](LICENSE).
   - `ofxVlc4` is no longer included in the default `ofxGgmlGuiExample/addons.make`; add it back manually only if you want those optional VLC preview and texture-record export lanes
 - GUI example Summarize mode now includes a dedicated citation-research section that can extract quoted evidence from loaded URLs or crawl a seed website before building a cited summary
 - GUI example Diffusion mode now includes a `Music -> Image` helper that can turn a music caption plus optional lyrics/transcript into a reusable visual prompt for the existing diffusion flow
-- GUI example SAM mode demonstrates the segmentation bridge with point-prompt controls, ggml `examples/sam` defaults, and local `sam.cpp` runtime attachment after installing the included `libs/sam.cpp` checkout helper
+- The optional segmentation bridge remains available through `src/inference/ofxGgmlSamCppAdapters.h`; the GUI example no longer exposes a default SAM panel.
 - GUI example Vision mode now also includes a dedicated `Music Video` workflow section that can turn song text into a visual concept, apply music-video planning defaults, and hand the result directly into video planning, diffusion, and edit-plan generation
 - the shared video planner now also supports music-video-aware section planning, including intro / verse / chorus / bridge style sections, section-level energy and cut-density hints, and section summaries that feed prompt generation and Music Video planning review
 - GUI example Vision mode now also includes an `Image / Prompt -> Music` helper that can turn a scene description into a reusable music-generation prompt and a local ABC notation sketch, with direct handoff into Custom mode or `.abc` saving
@@ -165,7 +165,7 @@ Supporting areas:
 
 - `libs/ggml/`
 - `scripts/` for user-facing setup, build, download, and benchmark entry points
-  - includes `scripts/install-sam-cpp.sh` / `scripts/install-sam-cpp.bat` for fetching the optional `sam.cpp` source checkout into `libs/sam.cpp` so the GUI SAM panel can compile against `sam.h`
+  - includes `scripts/install-sam-cpp.sh` / `scripts/install-sam-cpp.bat` for fetching the optional `sam.cpp` source checkout into `libs/sam.cpp` for projects that use the segmentation bridge
   - includes `scripts/install-acestep.ps1` / `scripts/install-acestep.bat` for building a local AceStep runtime while keeping only the final launcher/runtime binaries under `libs/acestep/bin`
 - `scripts/dev/` for maintainer update and patching helpers
 - `docs/`
@@ -177,6 +177,7 @@ Supporting areas:
 - `ofxGgmlVideoEssayExample/`
 - `ofxGgmlVisualizationExample/`
 - `ofxGgmlAdvancedVisionExample/`
+- `ofxGgmlSamExample/`
 - `ofxGgmlMontagePlannerExample/`
 
 Developer tooling:
@@ -872,7 +873,8 @@ These examples preserve the workflows removed from the GUI example during Phase 
 
 - `ofxGgmlVideoEssayExample`: citation-grounded video essay planning, script, voice cue, SRT, and manifest handoffs
 - `ofxGgmlVisualizationExample`: MilkDrop prompt generation, preset validation, repair/generation hooks, and `.milk` saving
-- `ofxGgmlAdvancedVisionExample`: CLIP-style ranking, Wikimedia image search, SAM segmentation bridge, and diffusion bridge validation
+- `ofxGgmlAdvancedVisionExample`: CLIP-style ranking, Wikimedia image search, and diffusion bridge validation
+- `ofxGgmlSamExample`: interactive point-prompt SAM segmentation with `sam.cpp` adapter fallback
 - `ofxGgmlMontagePlannerExample`: transcript-driven clip selection, subtitle tracks, editor brief, and EDL/SRT export
 
 See [docs/examples/README.md](docs/examples/README.md) for the full example map and [docs/examples/MIGRATION.md](docs/examples/MIGRATION.md) for migration notes from the old GUI companion panels.

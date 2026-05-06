@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#if defined(__has_include)
+#if defined(OFXGGML_ENABLE_SAMCPP_ADAPTER) && defined(__has_include)
 #if __has_include("sam.h")
 #define OFXGGML_HAS_SAMCPP 1
 #include "sam.h"

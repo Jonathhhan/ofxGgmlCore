@@ -8,7 +8,9 @@
 #include "ggml-cpu.h"
 #if defined(_WIN32)
 #include "ggml-cuda.h"
+#if defined(OFXGGML_ENABLE_VULKAN_DIRECT)
 #include "ggml-vulkan.h"
+#endif
 #endif
 
 #include <chrono>
@@ -574,6 +576,7 @@ Result<void> ofxGgml::setup(const ofxGgmlSettings & settings) {
 			}, "direct CUDA backend init");
 		}
 
+#if defined(OFXGGML_ENABLE_VULKAN_DIRECT)
 		if (!m_impl->backend && !isEnvVarSet("GGML_DISABLE_VULKAN")) {
 			const int vkCount = ggml_backend_vk_get_device_count();
 			if (vkCount > 0) {
@@ -585,6 +588,7 @@ Result<void> ofxGgml::setup(const ofxGgmlSettings & settings) {
 				}, "direct Vulkan backend init");
 			}
 		}
+#endif
 	}
 #endif
 

@@ -10,7 +10,7 @@ namespace {
 		GuiModeTier::Stable
 	};
 
-	constexpr std::array<GuiModeDescriptor, 13> kDefaultGuiModes = {{
+	constexpr std::array<GuiModeDescriptor, kDefaultGuiModeDescriptorCount> kDefaultGuiModes = {{
 		{AiMode::Easy, "Easy", "Guided setup and simple addon onboarding.", GuiModeTier::Stable},
 		{AiMode::Chat, "Chat", "General local text assistant.", GuiModeTier::Stable},
 		{AiMode::Script, "Script", "Coding assistant with simple and advanced layouts.", GuiModeTier::Stable},
@@ -22,11 +22,10 @@ namespace {
 		{AiMode::Speech, "Speech", "Transcribe microphone or file audio.", GuiModeTier::Stable},
 		{AiMode::Tts, "TTS", "Preview local text-to-speech voices.", GuiModeTier::Stable},
 		{AiMode::Diffusion, "Image", "Generate and transform images with diffusion profiles.", GuiModeTier::Stable},
-		{AiMode::Clip, "CLIP", "Search and compare image/text embeddings.", GuiModeTier::Stable},
-		{AiMode::Sam, "SAM", "Segment images with optional sam.cpp integration.", GuiModeTier::Stable}
+		{AiMode::Clip, "CLIP", "Search and compare image/text embeddings.", GuiModeTier::Stable}
 	}};
 
-	constexpr std::array<GuiModeDescriptor, 3> kAdvancedGuiModes = {{
+	constexpr std::array<GuiModeDescriptor, kAdvancedGuiModeDescriptorCount> kAdvancedGuiModes = {{
 		{AiMode::VideoEssay, "Video Essay", "Companion workflow for structured video essays.", GuiModeTier::Advanced},
 		{AiMode::LongVideo, "Video", "Long-form planning and montage workflow experiments.", GuiModeTier::Advanced},
 		{AiMode::MilkDrop, "MilkDrop", "Audio-reactive visualization companion workflow.", GuiModeTier::Advanced}
@@ -46,11 +45,11 @@ namespace {
 	}
 }
 
-const std::array<GuiModeDescriptor, 13> & defaultGuiModeDescriptors() {
+const std::array<GuiModeDescriptor, kDefaultGuiModeDescriptorCount> & defaultGuiModeDescriptors() {
 	return kDefaultGuiModes;
 }
 
-const std::array<GuiModeDescriptor, 3> & advancedGuiModeDescriptors() {
+const std::array<GuiModeDescriptor, kAdvancedGuiModeDescriptorCount> & advancedGuiModeDescriptors() {
 	return kAdvancedGuiModes;
 }
 

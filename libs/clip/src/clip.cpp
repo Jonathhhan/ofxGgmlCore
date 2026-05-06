@@ -1,11 +1,13 @@
+#include <algorithm>
 #include <cassert>
+#include <climits>
 #include <cmath>
+#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <pthread.h>
 #include <regex>
 #include <stdexcept>
 #include <thread>
@@ -938,84 +940,43 @@ bool clip_image_preprocess(const clip_ctx * ctx, const clip_image_u8 * img, clip
     return true;
 }
 
-// Structure to hold the image data as an input to function to be executed for thread
-typedef struct {
-    const clip_image_u8 * input;
-    clip_image_f32 * resized;
-    const clip_ctx * ctx;
-} ImageData;
-
-// Structure to hold the range of images to be processed by a thread
-// closed interval
-typedef struct {
-    ImageData* start;
-    ImageData* end;
-} ImageDataRange;
-
-// Function to preprocess a single image in a thread
-void * preprocess_image(void * arg) {
-    ImageDataRange * imageDataRange = static_cast<ImageDataRange *>(arg);
-
-    ImageData * imageData_start = imageDataRange->start;
-    ImageData * imageData_end = imageDataRange->end;
-
-    for (ImageData * imageData = imageData_start; imageData <= imageData_end; imageData++) {
-        const clip_image_u8 * input = imageData->input;
-        clip_image_f32 * resized = imageData->resized; 
-        const clip_ctx * ctx = imageData->ctx;
-
-        // Call the original preprocess function on the image
-        clip_image_preprocess(ctx, input, resized); 
-    }
-    
-    pthread_exit(NULL);
-}
-
-// Function to batch-preprocess multiple images i
 void clip_image_batch_preprocess(const clip_ctx * ctx, const int n_threads, const clip_image_u8_batch * img_inputs,
                                  clip_image_f32_batch * imgs_resized) {
+    if (!img_inputs || !imgs_resized) {
+        return;
+    }
     imgs_resized->size = img_inputs->size;
 
-    int num_threads = std::min(n_threads, static_cast<int>(img_inputs->size));
-    int i, t;
+    if (img_inputs->size == 0) {
+        return;
+    }
 
-    // Divide the images among the threads
-    int images_per_thread = img_inputs->size / num_threads;
+    const int requested_threads = std::max(1, n_threads);
+    const int num_threads = std::min(requested_threads, static_cast<int>(img_inputs->size));
 
     if (num_threads == 1) {
-        // Single-threaded case
-        for (i = 0; i < img_inputs->size; i++) {
+        for (size_t i = 0; i < img_inputs->size; i++) {
             clip_image_preprocess(ctx, &img_inputs->data[i], &imgs_resized->data[i]);
         }
-    } else {
-        // Multi-threaded case
+        return;
+    }
 
-        std::vector<pthread_t> threads(num_threads);
-        std::vector<ImageData> imageData(img_inputs->size);
-        ImageDataRange* imageDataRange = new ImageDataRange[num_threads]();
-        
-        for (t = 0; t < num_threads; t++) {
-            int start_index = t * images_per_thread;
-            int end_index = (t == num_threads - 1) ? img_inputs->size : start_index + images_per_thread;
+    const size_t chunk_size = (img_inputs->size + static_cast<size_t>(num_threads) - 1) /
+        static_cast<size_t>(num_threads);
+    std::vector<std::thread> threads;
+    threads.reserve(static_cast<size_t>(num_threads));
 
-            // Create ImageData for each thread
-            for (i = start_index; i < end_index; i++) {
-                imageData[i].input = &img_inputs->data[i];
-                imageData[i].resized = &imgs_resized->data[i];
-                imageData[i].ctx = ctx;
+    for (size_t start = 0; start < img_inputs->size; start += chunk_size) {
+        const size_t end = std::min(start + chunk_size, img_inputs->size);
+        threads.emplace_back([ctx, img_inputs, imgs_resized, start, end]() {
+            for (size_t i = start; i < end; i++) {
+                clip_image_preprocess(ctx, &img_inputs->data[i], &imgs_resized->data[i]);
             }
+        });
+    }
 
-            // Create a thread for each batch of images
-            imageDataRange[t] = {&imageData[start_index], &imageData[end_index - 1]};
-            pthread_create(&threads[t], NULL, preprocess_image, static_cast<void *>(&imageDataRange[t]));
-        }
-
-        // Wait for all threads to finish
-        for (t = 0; t < num_threads; t++) {
-            pthread_join(threads[t], NULL);
-        }
-
-        delete[] imageDataRange;
+    for (std::thread & thread : threads) {
+        thread.join();
     }
 }
 
@@ -1552,32 +1513,39 @@ bool clip_compare_text_and_image(const clip_ctx * ctx, const int n_threads, cons
 
     // prepare image and text vectors
     const int projection_dim = ctx->vision_model.hparams.projection_dim;
-    float img_vec[projection_dim];
-    float txt_vec[projection_dim];
+    if (projection_dim <= 0) {
+        return false;
+    }
+    std::vector<float> img_vec(static_cast<size_t>(projection_dim));
+    std::vector<float> txt_vec(static_cast<size_t>(projection_dim));
 
     // tokenize and encode text
-    clip_tokens tokens;
+    clip_tokens tokens{};
     if (!clip_tokenize(ctx, text, &tokens)) {
         return false;
     }
 
-    if (!clip_text_encode(ctx, n_threads, &tokens, txt_vec, true)) {
+    if (!clip_text_encode(ctx, n_threads, &tokens, txt_vec.data(), true)) {
+        std::free(tokens.data);
         return false;
     }
+    std::free(tokens.data);
 
     // preprocess and encode image
-    clip_image_f32 img_res;
+    clip_image_f32 img_res{};
 
     if (!clip_image_preprocess(ctx, image, &img_res)) {
         return false;
     }
 
-    if (!clip_image_encode(ctx, n_threads, &img_res, img_vec, true)) {
+    if (!clip_image_encode(ctx, n_threads, &img_res, img_vec.data(), true)) {
+        clip_image_f32_clean(&img_res);
         return false;
     }
+    clip_image_f32_clean(&img_res);
 
     // compute similarity
-    *score = clip_similarity_score(img_vec, txt_vec, projection_dim);
+    *score = clip_similarity_score(img_vec.data(), txt_vec.data(), projection_dim);
 
     return true;
 }
@@ -1639,33 +1607,49 @@ bool clip_zero_shot_label_image(struct clip_ctx * ctx, const int n_threads, cons
         printf("clip_zero_shot_label_image function can only be used with two-tower models\n");
         return false;
     }
-
-    // load the image
-    clip_image_f32 img_res;
-
-    const int vec_dim = clip_get_vision_hparams(ctx)->projection_dim;
-
-    clip_image_preprocess(ctx, input_img, &img_res);
-
-    float img_vec[vec_dim];
-    if (!clip_image_encode(ctx, n_threads, &img_res, img_vec, false)) {
+    if (!labels || !scores || !indices || n_labels == 0 || n_labels > static_cast<size_t>(INT_MAX)) {
         return false;
     }
 
-    // encode texts and compute similarities
-    float txt_vec[vec_dim];
-    float similarities[n_labels];
+    // load the image
+    clip_image_f32 img_res{};
 
-    for (int i = 0; i < n_labels; i++) {
+    const int vec_dim = clip_get_vision_hparams(ctx)->projection_dim;
+    if (vec_dim <= 0) {
+        return false;
+    }
+
+    if (!clip_image_preprocess(ctx, input_img, &img_res)) {
+        return false;
+    }
+
+    std::vector<float> img_vec(static_cast<size_t>(vec_dim));
+    if (!clip_image_encode(ctx, n_threads, &img_res, img_vec.data(), false)) {
+        clip_image_f32_clean(&img_res);
+        return false;
+    }
+    clip_image_f32_clean(&img_res);
+
+    // encode texts and compute similarities
+    std::vector<float> txt_vec(static_cast<size_t>(vec_dim));
+    std::vector<float> similarities(n_labels);
+
+    for (size_t i = 0; i < n_labels; i++) {
         const auto & text = labels[i];
-        clip_tokens tokens;
-        clip_tokenize(ctx, text, &tokens);
-        clip_text_encode(ctx, n_threads, &tokens, txt_vec, false);
-        similarities[i] = clip_similarity_score(img_vec, txt_vec, vec_dim);
+        clip_tokens tokens{};
+        if (!clip_tokenize(ctx, text, &tokens)) {
+            return false;
+        }
+        const bool encoded = clip_text_encode(ctx, n_threads, &tokens, txt_vec.data(), false);
+        std::free(tokens.data);
+        if (!encoded) {
+            return false;
+        }
+        similarities[i] = clip_similarity_score(img_vec.data(), txt_vec.data(), vec_dim);
     }
 
     // apply softmax and sort scores
-    softmax_with_sorting(similarities, n_labels, scores, indices);
+    softmax_with_sorting(similarities.data(), static_cast<int>(n_labels), scores, indices);
 
     return true;
 }

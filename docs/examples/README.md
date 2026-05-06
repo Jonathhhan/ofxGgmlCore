@@ -11,7 +11,8 @@ Use the smallest example that matches the layer you want to learn or ship.
 | `ofxGgmlGuiExample` | Stable addon showcase | You want one UI that demonstrates core text, assistant, speech, TTS, vision, and Easy APIs. |
 | `ofxGgmlVideoEssayExample` | Companion workflow | You want citation-grounded video essay planning and script/SRT handoffs. |
 | `ofxGgmlVisualizationExample` | Companion workflow | You want MilkDrop preset generation, repair, validation, and saving. |
-| `ofxGgmlAdvancedVisionExample` | Companion workflow | You want CLIP ranking, image search, SAM-style segmentation, and diffusion bridge patterns. |
+| `ofxGgmlAdvancedVisionExample` | Companion workflow | You want CLIP ranking, image search, and diffusion bridge patterns. |
+| `ofxGgmlSamExample` | Companion workflow | You want interactive point-prompt SAM segmentation through `ofxGgmlSegmentationInference`. |
 | `ofxGgmlMontagePlannerExample` | Companion workflow | You want transcript/subtitle-driven clip selection plus SRT/EDL exports. |
 
 ## Recommended path
@@ -28,6 +29,6 @@ The four companion examples were split out of removed GUI code so the main GUI s
 - video preview/rendering belongs in an app or companion addon such as an `ofxVlc4`-enabled project
 - MilkDrop live preview belongs in an app that opts into `ofxProjectM`
 - diffusion generation belongs behind an `ofxStableDiffusion` bridge
-- SAM segmentation belongs behind a `sam.cpp` bridge
+- SAM segmentation belongs in `ofxGgmlSamExample` behind a `sam.cpp` bridge
 
 This keeps `ofxGgml` focused on handoff contracts, validation, and local-first inference helpers.

@@ -38,6 +38,8 @@ if errorlevel 1 exit /b 1
 echo ==^> sam.cpp is installed.
 echo Source: %DEST_DIR%
 echo Ref:    %OFXGGML_SAM_CPP_REF%
-echo Regenerate ofxGgmlGuiExample with the openFrameworks Project Generator.
+echo Note: this source is not compiled automatically because the pinned checkout targets older ggml allocator APIs.
+echo Use the preview backend by default, or define OFXGGML_ENABLE_SAMCPP_ADAPTER=1 and link a ggml-compatible SAM implementation.
+echo Regenerate ofxGgmlSamExample with the openFrameworks Project Generator after changing addon_config.mk or project sources.
 
 endlocal

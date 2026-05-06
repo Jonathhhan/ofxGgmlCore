@@ -274,12 +274,12 @@ private:
 			text = text.substr(0, m_config.maxPromptLength);
 		}
 
-		// Generate embedding using CLIP inference
-		ofxGgmlClipInferenceRequest request;
-		request.modelPath = m_config.embeddingModelPath;
-		request.text = text;
-
-		auto result = m_embeddingInference->inferText(request);
+		// Generate embedding using the configured CLIP backend.
+		auto result = m_embeddingInference->embedText(
+			text,
+			true,
+			"semantic-cache",
+			"Semantic cache prompt");
 		if (!result.success || result.embedding.empty()) {
 			return std::nullopt;
 		}

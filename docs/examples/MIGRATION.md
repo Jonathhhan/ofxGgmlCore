@@ -17,7 +17,8 @@ If you only used those APIs, no migration is required.
 |--------------|---------------------|--------------|
 | Video Essay / Long Video | `ofxGgmlVideoEssayExample` | `ofxGgmlVideoEssayWorkflow`, `ofxGgmlVideoPlanner`, citation search, SRT helpers |
 | MilkDrop | `ofxGgmlVisualizationExample` | `ofxGgmlMilkDropGenerator` |
-| Diffusion / CLIP / Image Search / SAM | `ofxGgmlAdvancedVisionExample` | `ofxGgmlDiffusionInference`, `ofxGgmlClipInference`, `ofxGgmlImageSearch`, `ofxGgmlSegmentationInference` |
+| Diffusion / CLIP / Image Search | `ofxGgmlAdvancedVisionExample` | `ofxGgmlDiffusionInference`, `ofxGgmlClipInference`, `ofxGgmlImageSearch` |
+| SAM segmentation | `ofxGgmlSamExample` | `ofxGgmlSegmentationInference`, `ofxGgmlSamCppAdapters` |
 | Montage planning | `ofxGgmlMontagePlannerExample` | `ofxGgmlMontagePlanner`, subtitle helpers, EDL export |
 
 ## Migration checklist

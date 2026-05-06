@@ -195,8 +195,20 @@ void ofApp::runEasyModeExample() {
 	const int citationCount = easyCitationCount;
 	const bool useCrawler = easyUseCrawler;
 	const float targetDuration = easyTargetDurationSeconds;
+	const std::string modelPath = getSelectedModelPath();
+	const auto inferenceSettings = buildCurrentTextInferenceSettings(AiMode::Easy);
+	const std::string completionExecutable = llmInference.getCompletionExecutable();
 
-	workerThread = std::thread([this, actionIndex, primaryInput, secondaryInput, citationCount, useCrawler, targetDuration]() {
+	workerThread = std::thread([this,
+		actionIndex,
+		primaryInput,
+		secondaryInput,
+		citationCount,
+		useCrawler,
+		targetDuration,
+		modelPath,
+		inferenceSettings,
+		completionExecutable]() {
 		try {
 			std::string output;
 			switch (actionIndex) {
@@ -237,17 +249,25 @@ void ofApp::runEasyModeExample() {
 				break;
 			}
 			case EasyActionVideoEssay: {
+				videoEssayWorkflow.getTextAssistant().setCompletionExecutable(
+					completionExecutable);
+				videoEssayWorkflow.getCitationSearch().getInference().setCompletionExecutable(
+					completionExecutable);
 				ofxGgmlVideoEssayRequest request;
+				request.modelPath = modelPath;
 				request.topic = primaryInput;
 				request.maxCitations = static_cast<size_t>(std::max(1, citationCount));
 				request.useCrawler = useCrawler;
 				request.targetDurationSeconds = std::max(30.0f, targetDuration);
+				request.inferenceSettings = inferenceSettings;
+				request.sourceSettings.maxTotalChars = 14000;
+				request.sourceSettings.requestCitations = true;
 				if (useCrawler) {
 					request.crawlerRequest.startUrl = secondaryInput;
 				} else if (!secondaryInput.empty()) {
 					request.sourceUrls.push_back(secondaryInput);
 				}
-				const auto result = easyApi.planVideoEssay(request);
+				const auto result = videoEssayWorkflow.run(request);
 				output = formatEasyVideoEssayResult(result);
 				break;
 			}
