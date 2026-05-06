@@ -81,6 +81,31 @@ They remain available for existing experiments through
 `ofxGgmlCompanionWorkflows.h`, but should be treated as companion-addon or
 focused-example surfaces rather than stable addon-tier APIs.
 
+## Workflow Handoff Contracts
+
+`ofxGgmlWorkflowManifest` is the completed Phase 2 handoff schema for companion
+pipelines. It keeps the addon boundary small while giving companion tools a
+stable JSON shape for:
+
+- typed stage contracts in the `contracts` array
+- workflow inputs, intermediate outputs, and final artifacts
+- resumable `execution_steps` with checkpoint tokens
+- structured intermediate/artifact references between stages
+- deterministic replay hints and required replay inputs
+- downstream `handoff` routing notes and review metadata
+
+The video essay companion workflow emits canonical contract IDs for:
+
+- `crawl_to_cite`
+- `cite_to_outline`
+- `outline_to_script`
+- `script_to_subtitles`
+- `subtitles_to_video_plan`
+
+Use these IDs as lightweight integration points in companion launchers,
+inspectors, and project-memory links instead of hard-coding one monolithic
+workflow runtime into ofxGgml.
+
 ## Citation Search
 
 ### Search for Cited Sources

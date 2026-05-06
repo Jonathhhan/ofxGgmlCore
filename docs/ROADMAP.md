@@ -193,13 +193,13 @@ Reduce the giant GUI example to a showcase for API layers and UI patterns. Compl
 
 ---
 
-## Phase 2: Companion Handoff Contracts (3-6 Months)
+## Phase 2: Companion Handoff Contracts (Complete)
 
 Focus: define small, stable contracts that let companion projects compose workflows without turning ofxGgml into the workflow application.
 
 ### 1. Workflow Handoff Contracts
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Standardize lightweight handoff contracts so companion apps can connect stages like:
 
@@ -216,13 +216,15 @@ Target capabilities:
 Implemented foundation:
 
 - `ofxGgmlWorkflowManifest` shared schema primitive for inputs, artifacts, intermediate outputs, warnings, review notes, metadata, and downstream handoff notes
+- typed stage-level input/output contracts for companion chains such as `crawl_to_cite`, `cite_to_outline`, `outline_to_script`, `script_to_subtitles`, and `subtitles_to_video_plan`
 - resumable execution-step checkpoints and deterministic replay hints for debugging companion pipelines
+- structured `input_intermediate_ids`, `output_intermediate_ids`, and replay `required_intermediate_ids` arrays for downstream tooling
 - JSON serialization for companion/example handoff files without coupling the core addon to a specific creative workflow runtime
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
 
 ### 2. Shared Workflow Manifest
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Standardize a manifest format that can carry:
 
@@ -236,6 +238,7 @@ Standardize a manifest format that can carry:
 Implemented foundation:
 
 - schema version `ofxGgml.workflow_manifest.v1`
+- `contracts` block with typed stage inputs and outputs, source IDs, required flags, descriptions, and metadata
 - optional `handoff` block with target, mode, contract, notes, and metadata
 - optional `execution_steps` and `replay` blocks for resumable execution and deterministic debugging
 - unit coverage for stable JSON keys used by downstream companion tools
@@ -244,7 +247,7 @@ Implemented foundation:
 
 ### 3. Companion Project Memory
 **Priority**: MEDIUM-HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Keep long-lived creative project memory in companion projects, while ofxGgml provides reusable serialization and provenance primitives for:
 
@@ -264,7 +267,7 @@ Implemented foundation:
 
 ### 4. Focused Example Applications
 **Priority**: MEDIUM  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Ship more narrowly scoped examples or tutorial projects for:
 
@@ -278,7 +281,7 @@ Implemented foundation:
 
 - `ofxGgmlFocusedExampleCatalog` shared catalog primitive for roadmap-aligned focused example descriptors
 - default catalog entries for research/citation workflows, companion video essay generation, speech/subtitle tooling, coding assistant integration, and CLIP/image visual planning
-- per-example setup notes, handoff contracts, and expected output artifacts for docs, launchers, or companion tooling
+- per-example setup notes, canonical handoff contract IDs, and expected output artifacts for docs, launchers, or companion tooling
 - schema version `ofxGgml.focused_examples.v1`
 - workflow-layer exposure through `ofxGgmlWorkflows.h`
 - unit coverage for stable JSON keys that docs, launchers, or companion tooling can consume

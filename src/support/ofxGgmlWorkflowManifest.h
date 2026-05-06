@@ -60,6 +60,90 @@ struct ofxGgmlWorkflowManifestArtifact {
 	}
 };
 
+struct ofxGgmlWorkflowContractField {
+	std::string name;
+	std::string type;
+	std::string sourceId;
+	bool required = true;
+	std::string description;
+	std::map<std::string, std::string> metadata;
+
+	ofJson toJson() const {
+		ofJson json;
+		json["name"] = name;
+		json["type"] = type;
+		json["source_id"] = sourceId;
+		json["required"] = required;
+		json["description"] = description;
+		json["metadata"] = ofJson::object();
+		for (const auto & item : metadata) {
+			json["metadata"][item.first] = item.second;
+		}
+		return json;
+	}
+};
+
+struct ofxGgmlWorkflowStageContract {
+	std::string id;
+	std::string stage;
+	std::string description;
+	std::vector<ofxGgmlWorkflowContractField> inputs;
+	std::vector<ofxGgmlWorkflowContractField> outputs;
+	std::map<std::string, std::string> metadata;
+
+	void addInput(
+		const std::string & name,
+		const std::string & type,
+		const std::string & sourceId = "",
+		bool required = true,
+		const std::string & description = "") {
+		ofxGgmlWorkflowContractField field;
+		field.name = name;
+		field.type = type;
+		field.sourceId = sourceId;
+		field.required = required;
+		field.description = description;
+		inputs.push_back(field);
+	}
+
+	void addOutput(
+		const std::string & name,
+		const std::string & type,
+		const std::string & sourceId = "",
+		bool required = true,
+		const std::string & description = "") {
+		ofxGgmlWorkflowContractField field;
+		field.name = name;
+		field.type = type;
+		field.sourceId = sourceId;
+		field.required = required;
+		field.description = description;
+		outputs.push_back(field);
+	}
+
+	ofJson toJson() const {
+		ofJson json;
+		json["id"] = id;
+		json["stage"] = stage;
+		json["description"] = description;
+		ofJson inputArray = ofJson::array();
+		for (const auto & input : inputs) {
+			inputArray.push_back(input.toJson());
+		}
+		json["inputs"] = std::move(inputArray);
+		ofJson outputArray = ofJson::array();
+		for (const auto & output : outputs) {
+			outputArray.push_back(output.toJson());
+		}
+		json["outputs"] = std::move(outputArray);
+		json["metadata"] = ofJson::object();
+		for (const auto & item : metadata) {
+			json["metadata"][item.first] = item.second;
+		}
+		return json;
+	}
+};
+
 struct ofxGgmlWorkflowHandoff {
 	std::string target;
 	std::string mode;
@@ -94,6 +178,8 @@ struct ofxGgmlWorkflowExecutionStep {
 	std::string resumeToken;
 	std::vector<std::string> inputArtifactIds;
 	std::vector<std::string> outputArtifactIds;
+	std::vector<std::string> inputIntermediateIds;
+	std::vector<std::string> outputIntermediateIds;
 	std::map<std::string, std::string> metadata;
 
 	ofJson toJson() const {
@@ -106,6 +192,8 @@ struct ofxGgmlWorkflowExecutionStep {
 		json["resume_token"] = resumeToken;
 		json["input_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(inputArtifactIds);
 		json["output_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(outputArtifactIds);
+		json["input_intermediate_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(inputIntermediateIds);
+		json["output_intermediate_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(outputIntermediateIds);
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;
@@ -120,10 +208,11 @@ struct ofxGgmlWorkflowReplayPlan {
 	std::string randomSeed;
 	std::string checkpointPath;
 	std::vector<std::string> requiredArtifactIds;
+	std::vector<std::string> requiredIntermediateIds;
 	std::map<std::string, std::string> metadata;
 
 	bool empty() const {
-		return !deterministic && replayCommand.empty() && randomSeed.empty() && checkpointPath.empty() && requiredArtifactIds.empty() && metadata.empty();
+		return !deterministic && replayCommand.empty() && randomSeed.empty() && checkpointPath.empty() && requiredArtifactIds.empty() && requiredIntermediateIds.empty() && metadata.empty();
 	}
 
 	ofJson toJson() const {
@@ -133,6 +222,7 @@ struct ofxGgmlWorkflowReplayPlan {
 		json["random_seed"] = randomSeed;
 		json["checkpoint_path"] = checkpointPath;
 		json["required_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(requiredArtifactIds);
+		json["required_intermediate_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(requiredIntermediateIds);
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;
@@ -151,6 +241,7 @@ struct ofxGgmlWorkflowManifest {
 	std::vector<ofxGgmlWorkflowManifestInput> inputs;
 	std::vector<ofxGgmlWorkflowManifestArtifact> artifacts;
 	std::vector<ofxGgmlWorkflowManifestArtifact> intermediateOutputs;
+	std::vector<ofxGgmlWorkflowStageContract> contracts;
 	std::vector<std::string> warnings;
 	std::vector<std::string> reviewNotes;
 	ofxGgmlWorkflowHandoff handoff;
@@ -197,6 +288,17 @@ struct ofxGgmlWorkflowManifest {
 		intermediateOutputs.push_back(artifact);
 	}
 
+	void addContract(
+		const std::string & id,
+		const std::string & stage,
+		const std::string & description = "") {
+		ofxGgmlWorkflowStageContract contract;
+		contract.id = id;
+		contract.stage = stage;
+		contract.description = description;
+		contracts.push_back(contract);
+	}
+
 	void addExecutionStep(
 		const std::string & id,
 		const std::string & name,
@@ -234,6 +336,12 @@ struct ofxGgmlWorkflowManifest {
 			intermediateArray.push_back(artifact.toJson());
 		}
 		json["intermediate_outputs"] = std::move(intermediateArray);
+
+		ofJson contractArray = ofJson::array();
+		for (const auto & contract : contracts) {
+			contractArray.push_back(contract.toJson());
+		}
+		json["contracts"] = std::move(contractArray);
 
 		ofJson warningArray = ofJson::array();
 		for (const auto & warning : warnings) {
