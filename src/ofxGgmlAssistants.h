@@ -10,6 +10,7 @@
 /// - Code review (hierarchical analysis, embedding-based ranking)
 /// - Text assistant (translation, summarization, rewriting)
 /// - Specialist assistant team specs (roles, handoffs, safety rules)
+/// - Trust evaluation suite specs (metrics, cases, approval evidence)
 ///
 /// These assistants provide higher-level task-oriented APIs
 /// on top of the basic inference layer.
@@ -35,3 +36,4 @@
 #include "assistants/ofxGgmlCodingAgent.h"
 #include "assistants/ofxGgmlCodeReview.h"
 #include "assistants/ofxGgmlAssistantTeam.h"
+#include "support/ofxGgmlTrustEvaluationSuite.h"
