@@ -34,6 +34,7 @@ It is aimed at local-first AI tools, lightweight inference utilities, prompt-dri
 - ✅ **Health Monitoring** - Memory usage (`getMemoryUsage()`), server queue status, diagnostics API
 - ✅ **Semantic Cache** - CLIP-based prompt caching with 30-50% reduction in redundant LLM calls
 - ✅ **Hybrid Retrieval** - RAG pipeline with keyword+semantic+quality scoring for better grounding
+- ✅ **Example Cleanup** - GUI example narrowed to addon APIs, with companion workflows moved to focused examples
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the completed phased foundation and active maintenance backlog.
 
