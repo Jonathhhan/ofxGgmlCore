@@ -32,7 +32,6 @@ src/assistants/ofxGgmlWorkspaceAssistant.cpp:2018:19: style: Consider using std:
 src/assistants/ofxGgmlWorkspaceAssistant.cpp:219:44: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
 src/assistants/ofxGgmlWorkspaceAssistant.cpp:383:9: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
 src/assistants/ofxGgmlWorkspaceAssistant.cpp:506:14: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
-src/compute/ofxGgmlGraph.cpp:280:18: style: Local variable 'scale' shadows outer function [shadowFunction]
 src/inference/ofxGgmlInference.cpp:103:6: style: Condition '!normalized.empty()' is always true [knownConditionTrueFalse]
 src/inference/ofxGgmlInference.cpp:1155:134: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
 src/inference/ofxGgmlInference.cpp:1179:79: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]

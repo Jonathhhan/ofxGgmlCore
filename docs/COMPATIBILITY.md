@@ -62,8 +62,8 @@ Fill this table in when updating either upstream:
 
 | ofxGgml release | ofxGgml ggml revision | ofxStableDiffusion release | stable-diffusion.cpp revision | Status | Notes |
 | --- | --- | --- | --- | --- | --- |
-| 1.0.4 | `ggml v0.10.0` (`1c40d85`) | Not bundled | Not bundled | Tested for ofxGgml CPU headless tier | `scripts/build-ggml.sh --cpu-only` and `./tests/run-tests.sh` validate the addon-local ggml build. |
-| 1.0.4 | `ggml v0.10.0` (`1c40d85`) | `record exact addon tag/commit` | `record exact commit/tag` | Pending | Fill this row when validating a combined ofxGgml + ofxStableDiffusion workspace. |
+| 1.0.5 | `ggml v0.10.0` (`1c40d85`) | Not bundled | Not bundled | Tested for ofxGgml CPU headless tier | `scripts/build-ggml.sh --cpu-only` and `./tests/run-tests.sh` validate the addon-local ggml build. |
+| 1.0.5 | `ggml v0.10.0` (`1c40d85`) | `record exact addon tag/commit` | `record exact commit/tag` | Pending | Fill this row when validating a combined ofxGgml + ofxStableDiffusion workspace. |
 
 ## Diffusion bridge compatibility checklist
 

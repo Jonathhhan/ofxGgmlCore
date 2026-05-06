@@ -1,7 +1,7 @@
 # ofxGgml Strategic Roadmap
 
 **Last Updated**: 2026-05-06  
-**Current Version**: 1.0.4  
+**Current Version**: 1.0.5  
 **Roadmap State**: ✅ Foundation roadmap complete; active work has moved to maintenance, polish, and companion-layer execution.
 
 This document tracks the Option A direction for ofxGgml: keep the default addon boring, dependable, and focused on ggml tensors plus basic local LLM inference. Larger creative-application workflows should stay in companion addons or focused examples so every user does not inherit every experiment.
