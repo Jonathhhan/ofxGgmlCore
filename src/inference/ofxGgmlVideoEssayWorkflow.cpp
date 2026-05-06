@@ -654,7 +654,7 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 	manifest.handoff.target = "video_planner";
 	manifest.handoff.mode = "essay_pipeline";
 	manifest.handoff.contract = "crawl->cite->outline->script->subtitles->video_plan";
-	manifest.handoff.notes = "Artifacts and intermediate outputs are inline for companion workflow inspection.";
+	manifest.handoff.notes = "Artifacts and intermediate outputs are inline for companion workflow inspection; TTS timing is represented by script_to_subtitles.";
 	manifest.handoff.metadata["source"] = "ofxGgmlVideoEssayWorkflow";
 	manifest.handoff.metadata["status"] = manifest.status;
 

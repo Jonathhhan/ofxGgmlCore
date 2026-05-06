@@ -49,6 +49,7 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	REQUIRE(json.find("application/x-subrip") != std::string::npos);
 	REQUIRE(json.find("\"handoff\"") != std::string::npos);
 	REQUIRE(json.find("video_planner") != std::string::npos);
+	REQUIRE(json.find("crawl->cite->outline->script->tts->subtitles->video_plan") == std::string::npos);
 	REQUIRE(json.find("requires_review") != std::string::npos);
 	REQUIRE(json.find("\"execution_steps\"") != std::string::npos);
 	REQUIRE(json.find("\"output_intermediate_ids\"") != std::string::npos);
