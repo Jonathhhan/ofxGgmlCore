@@ -277,14 +277,14 @@ ofxGgmlTensor ofxGgmlGraph::flashAttn(
 	ofxGgmlTensor v,
 	ofxGgmlTensor mask) {
 	if (!q.raw() || !k.raw() || !v.raw()) return ofxGgmlTensor();
-	constexpr float scale = 1.0f;
+	constexpr float attentionScale = 1.0f;
 	return ofxGgmlTensor(ggml_flash_attn_ext(
 		m_ctx,
 		q.raw(),
 		k.raw(),
 		v.raw(),
 		mask.raw(),
-		scale,
+		attentionScale,
 		0.0f,
 		0.0f));
 }

@@ -48,7 +48,7 @@ This addon is released under the [MIT License](LICENSE).
 
 ## Release
 
-- addon release version: `1.0.4`
+- addon release version: `1.0.5`
 - public version guards: `OFXGGML_VERSION_MAJOR`, `OFXGGML_VERSION_MINOR`, `OFXGGML_VERSION_PATCH`
 - API stability policy: `docs/API_STABILITY.md`
 - changelog: `CHANGELOG.md`

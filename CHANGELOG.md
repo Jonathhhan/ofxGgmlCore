@@ -4,6 +4,8 @@ All notable changes to `ofxGgml` are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-05-06
+
 ### Enhanced
 
 - **ofxGgml/ofxStableDiffusion Integration Improvements**:
