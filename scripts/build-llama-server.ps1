@@ -28,6 +28,46 @@ function Get-CommandPathOrNull {
     }
 }
 
+function Invoke-NativeCommand {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments,
+        [string]$Description
+    )
+
+    & $FilePath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Description failed with exit code $LASTEXITCODE."
+    }
+}
+
+function Find-BuiltExecutable {
+    param(
+        [string]$BuildDir,
+        [string]$FileName
+    )
+
+    $preferredPath = Join-Path (Join-Path $BuildDir 'bin\Release') $FileName
+    if (Test-Path -LiteralPath $preferredPath) {
+        return $preferredPath
+    }
+
+    $match = Get-ChildItem -LiteralPath $BuildDir -Recurse -Filter $FileName -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -match '\\Release\\' } |
+        Select-Object -First 1
+    if ($match) {
+        return $match.FullName
+    }
+
+    $match = Get-ChildItem -LiteralPath $BuildDir -Recurse -Filter $FileName -File -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($match) {
+        return $match.FullName
+    }
+
+    return $null
+}
+
 function Resolve-VisualStudioAsmCompiler {
     $preferredRoots = @(
         'C:\Program Files\Microsoft Visual Studio\18\Professional\VC\Tools\MSVC',
@@ -71,6 +111,31 @@ function Test-CudaAvailable {
     return $false
 }
 
+function Resolve-CudaToolkitRoot {
+    if ($env:CUDA_PATH -and (Test-Path -LiteralPath $env:CUDA_PATH)) {
+        $nvcc = Join-Path $env:CUDA_PATH 'bin\nvcc.exe'
+        $msbuildExtensions = Join-Path $env:CUDA_PATH 'extras\visual_studio_integration\MSBuildExtensions'
+        $cudaProps = Get-ChildItem -LiteralPath $msbuildExtensions -Filter 'CUDA *.props' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $cudaTargets = Get-ChildItem -LiteralPath $msbuildExtensions -Filter 'CUDA *.targets' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ((Test-Path -LiteralPath $nvcc) -and $cudaProps -and $cudaTargets) {
+            return $env:CUDA_PATH
+        }
+    }
+
+    $nvccCommand = Get-CommandPathOrNull 'nvcc.exe'
+    if ($nvccCommand) {
+        $candidate = Split-Path -Parent (Split-Path -Parent $nvccCommand)
+        $msbuildExtensions = Join-Path $candidate 'extras\visual_studio_integration\MSBuildExtensions'
+        $cudaProps = Get-ChildItem -LiteralPath $msbuildExtensions -Filter 'CUDA *.props' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $cudaTargets = Get-ChildItem -LiteralPath $msbuildExtensions -Filter 'CUDA *.targets' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($cudaProps -and $cudaTargets) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
 function Get-DefaultRuntimeRoot {
     param([string]$AddonRoot)
 
@@ -108,11 +173,21 @@ if (-not $cmake) {
 }
 
 $useCuda = Test-CudaAvailable
+$cudaToolkitRoot = $null
 $asmCompiler = $null
 if ($useCuda) {
     $asmCompiler = Resolve-VisualStudioAsmCompiler
     if (-not $asmCompiler) {
         throw "CUDA build requested or detected, but ml64.exe was not found. Open a Visual Studio developer shell or install MSVC build tools."
+    }
+    $cudaToolkitRoot = Resolve-CudaToolkitRoot
+    if (-not $cudaToolkitRoot) {
+        if ($Cuda) {
+            throw "CUDA build requested, but CUDA Visual Studio integration files were not found. Install CUDA with Visual Studio Integration, or rerun with -CpuOnly."
+        }
+        Write-Warning "CUDA was detected, but CUDA Visual Studio integration files were not found. Building llama.cpp CPU-only. Rerun with -Cuda to require CUDA."
+        $useCuda = $false
+        $asmCompiler = $null
     }
 }
 
@@ -133,21 +208,27 @@ if (-not (Test-Path -LiteralPath $SourceDir)) {
     if ($DryRun) {
         Write-Host "$git $($cloneArgs -join ' ')"
     } else {
-        & $git @cloneArgs
+        Invoke-NativeCommand $git $cloneArgs "git clone llama.cpp"
     }
 } else {
     Write-Step "Using existing llama.cpp source at $SourceDir"
     $fetchArgs = @('-C', $SourceDir, 'fetch', 'origin', $Branch, '--depth', '1')
-    $checkoutArgs = @('-C', $SourceDir, 'checkout', $Branch)
-    $pullArgs = @('-C', $SourceDir, 'pull', '--ff-only', 'origin', $Branch)
+    $statusArgs = @('-C', $SourceDir, 'status', '--porcelain')
+    $checkoutArgs = @('-C', $SourceDir, 'checkout', '--detach', 'FETCH_HEAD')
     if ($DryRun) {
         Write-Host "$git $($fetchArgs -join ' ')"
+        Write-Host "$git $($statusArgs -join ' ')"
         Write-Host "$git $($checkoutArgs -join ' ')"
-        Write-Host "$git $($pullArgs -join ' ')"
     } else {
-        & $git @fetchArgs
-        & $git @checkoutArgs
-        & $git @pullArgs
+        Invoke-NativeCommand $git $fetchArgs "git fetch llama.cpp"
+        $sourceStatus = & $git @statusArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "git status llama.cpp failed with exit code $LASTEXITCODE."
+        }
+        if ($sourceStatus) {
+            throw "Existing llama.cpp source has local changes at $SourceDir. Commit/stash them, or rerun with -Refetch to discard the cached source."
+        }
+        Invoke-NativeCommand $git $checkoutArgs "git checkout llama.cpp fetched ref"
     }
 }
 
@@ -157,14 +238,20 @@ New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 $configureArgs = @(
     '-S', $SourceDir,
     '-B', $BuildDir,
+    '-A', 'x64',
     '-DLLAMA_BUILD_SERVER=ON',
+    '-DLLAMA_BUILD_TOOLS=ON',
     '-DLLAMA_BUILD_TESTS=OFF',
-    '-DLLAMA_BUILD_EXAMPLES=OFF',
+    '-DLLAMA_BUILD_EXAMPLES=ON',
     '-DLLAMA_CURL=OFF',
     '-DGGML_VULKAN=OFF'
 )
 if ($useCuda) {
-    $configureArgs += @('-DGGML_CUDA=ON', "-DCMAKE_ASM_COMPILER=$asmCompiler")
+    $configureArgs += @(
+        '-T', "host=x64,cuda=$cudaToolkitRoot",
+        '-DGGML_CUDA=ON',
+        "-DCMAKE_ASM_COMPILER=$asmCompiler"
+    )
 } else {
     $configureArgs += '-DGGML_CUDA=OFF'
 }
@@ -173,7 +260,7 @@ Write-Step ("Configuring llama.cpp for " + ($(if ($useCuda) { 'CUDA' } else { 'C
 if ($DryRun) {
     Write-Host "$cmake $($configureArgs -join ' ')"
 } else {
-    & $cmake @configureArgs
+    Invoke-NativeCommand $cmake $configureArgs "CMake configure"
 }
 
 $requiredTargets = @('llama-server', 'llama-completion', 'llama-cli')
@@ -191,7 +278,7 @@ foreach ($target in $requiredTargets) {
     if ($DryRun) {
         Write-Host "$cmake $($buildArgs -join ' ')"
     } else {
-        & $cmake @buildArgs
+        Invoke-NativeCommand $cmake $buildArgs "CMake build $target"
     }
 }
 
@@ -208,7 +295,7 @@ foreach ($target in $optionalTargets) {
         Write-Host "$cmake $($buildArgs -join ' ')"
     } else {
         try {
-            & $cmake @buildArgs
+            Invoke-NativeCommand $cmake $buildArgs "CMake build optional $target"
         } catch {
             Write-Warning "$target is unavailable in this llama.cpp checkout; continuing without it."
         }
@@ -216,10 +303,10 @@ foreach ($target in $optionalTargets) {
 }
 
 $releaseBinDir = Join-Path $BuildDir 'bin\Release'
-$serverExe = Join-Path $releaseBinDir 'llama-server.exe'
-$completionExe = Join-Path $releaseBinDir 'llama-completion.exe'
-$cliExe = Join-Path $releaseBinDir 'llama-cli.exe'
-$embeddingExe = Join-Path $releaseBinDir 'llama-embedding.exe'
+$serverExe = Find-BuiltExecutable $BuildDir 'llama-server.exe'
+$completionExe = Find-BuiltExecutable $BuildDir 'llama-completion.exe'
+$cliExe = Find-BuiltExecutable $BuildDir 'llama-cli.exe'
+$embeddingExe = Find-BuiltExecutable $BuildDir 'llama-embedding.exe'
 if (-not $DryRun) {
     $requiredExecutables = @(
         @{ Name = 'llama-server.exe'; Path = $serverExe },
@@ -227,8 +314,8 @@ if (-not $DryRun) {
         @{ Name = 'llama-cli.exe'; Path = $cliExe }
     )
     foreach ($exe in $requiredExecutables) {
-        if (-not (Test-Path -LiteralPath $exe.Path)) {
-            throw "Build finished but $($exe.Name) was not found at $($exe.Path)"
+        if ([string]::IsNullOrWhiteSpace($exe.Path) -or -not (Test-Path -LiteralPath $exe.Path)) {
+            throw "Build finished but $($exe.Name) was not found under $BuildDir"
         }
     }
 }
@@ -244,10 +331,11 @@ if ($DryRun) {
     Copy-Item -LiteralPath $serverExe -Destination $InstallDir -Force
     Copy-Item -LiteralPath $completionExe -Destination $InstallDir -Force
     Copy-Item -LiteralPath $cliExe -Destination $InstallDir -Force
-    if (Test-Path -LiteralPath $embeddingExe) {
+    if (-not [string]::IsNullOrWhiteSpace($embeddingExe) -and (Test-Path -LiteralPath $embeddingExe)) {
         Copy-Item -LiteralPath $embeddingExe -Destination $InstallDir -Force
     }
-    Get-ChildItem -LiteralPath $releaseBinDir -Filter '*.dll' | ForEach-Object {
+    $dllSearchRoot = if (Test-Path -LiteralPath $releaseBinDir) { $releaseBinDir } else { $BuildDir }
+    Get-ChildItem -LiteralPath $dllSearchRoot -Recurse -Filter '*.dll' -File -ErrorAction SilentlyContinue | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination $InstallDir -Force
     }
 

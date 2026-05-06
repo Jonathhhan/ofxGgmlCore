@@ -19,7 +19,7 @@
 #   --cpu-only     Disable GPU autodetection, build CPU backend only
 #   --clean        Remove build and download cache before building
 #   --with-debug   Also build Debug libraries when using a multi-config generator
-#   --ref REF      Git ref to checkout from the ggml repo (default: v0.10.0)
+#   --ref REF      Git ref to checkout from the ggml repo (default: v0.11.0)
 #   --repo URL     Upstream ggml repository (default: https://github.com/ggml-org/ggml.git)
 #   --help         Show this help message
 # ---------------------------------------------------------------------------
@@ -31,9 +31,10 @@ GGML_DIR="$ADDON_ROOT/libs/ggml"
 INCLUDE_DIR="$GGML_DIR/include"
 LIB_DIR="$GGML_DIR/lib"
 GGML_REPO="https://github.com/ggml-org/ggml.git"
-GGML_REF="v0.10.0"
+GGML_REF="v0.11.0"
 JOBS=""
 ENABLE_CUDA=""
+EXPLICIT_CUDA=0
 ENABLE_VULKAN=""
 ENABLE_METAL=""
 AUTO_DETECT=1
@@ -187,6 +188,7 @@ cuda_msbuild_extensions_present() {
 	local msbuild_dir="$cuda_root/extras/visual_studio_integration/MSBuildExtensions"
 
 	[[ -d "$msbuild_dir" ]] || return 1
+	find "$msbuild_dir" -maxdepth 1 -name 'CUDA *.props' -print -quit | grep -q . || return 1
 	find "$msbuild_dir" -maxdepth 1 -name 'CUDA *.targets' -print -quit | grep -q .
 }
 
@@ -225,6 +227,9 @@ configure_windows_cuda_toolset() {
 		CMAKE_GENERATOR_TOOLSET="host=x64,cuda=$cuda_root"
 		CMAKE_GENERATOR_ARGS+=(-T "$CMAKE_GENERATOR_TOOLSET")
 		write_step "Using CUDA toolkit integration: $cuda_root"
+	elif [[ "$EXPLICIT_CUDA" -eq 0 ]]; then
+		write_step "Warning: CUDA was detected, but CUDA Visual Studio integration files were not found. Building ggml CPU-only. Rerun with --cuda to require CUDA."
+		ENABLE_CUDA="OFF"
 	else
 		die "CUDA was requested, but CUDA Visual Studio integration files were not found. Install CUDA with Visual Studio Integration, or rerun with --cpu-only."
 	fi
@@ -316,6 +321,7 @@ while [[ $# -gt 0 ]]; do
 			;;
 		--gpu|--cuda)
 			ENABLE_CUDA="ON"
+			EXPLICIT_CUDA=1
 			shift
 			;;
 		--vulkan)
@@ -434,8 +440,14 @@ write_step "Using ggml commit: $GGML_COMMIT"
 # ---------------------------------------------------------------------------
 
 if [[ "$AUTO_DETECT" -eq 1 ]]; then
-	if [[ -z "$ENABLE_CUDA" ]] && { command -v nvcc >/dev/null 2>&1 || resolve_cuda_toolkit_root >/dev/null 2>&1; }; then
-		ENABLE_CUDA="ON"
+	if [[ -z "$ENABLE_CUDA" ]]; then
+		if [[ "$OS_NAME" == MINGW* || "$OS_NAME" == MSYS* || "$OS_NAME" == CYGWIN* ]]; then
+			if command -v nvcc >/dev/null 2>&1 || [[ -n "${CUDA_PATH:-}" ]]; then
+				ENABLE_CUDA="ON"
+			fi
+		elif command -v nvcc >/dev/null 2>&1 || resolve_cuda_toolkit_root >/dev/null 2>&1; then
+			ENABLE_CUDA="ON"
+		fi
 	fi
 	if [[ -z "$ENABLE_VULKAN" ]] && { command -v glslc >/dev/null 2>&1 || [[ -n "${VULKAN_SDK:-}" ]]; }; then
 		ENABLE_VULKAN="ON"

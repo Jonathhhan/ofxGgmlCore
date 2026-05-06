@@ -15,9 +15,14 @@ enum class AiMode {
 	Write,
 	Translate,
 	Custom,
+	VideoEssay,
+	LongVideo,
 	Vision,
 	Speech,
 	Tts,
+	Diffusion,
+	Clip,
+	MilkDrop,
 	Easy
 };
 
@@ -34,6 +39,16 @@ struct ModelPreset {
 	std::string bestFor;      // e.g. "chat, general"
 };
 
+struct VideoRenderPreset {
+	std::string name;
+	std::string filename;
+	std::string url;
+	std::string description;
+	std::string backend;
+	std::string family;
+	std::string bestFor;
+};
+
 // ---------------------------------------------------------------------------
 // PromptTemplate — predefined system prompt for the Custom panel.
 // ---------------------------------------------------------------------------
@@ -47,11 +62,16 @@ struct PromptTemplate {
 // Model Preset Initialization
 // ---------------------------------------------------------------------------
 
-constexpr int kModeCount = 10;
+constexpr int kModeCount = 15;
 
 void loadModelPresets(
 	std::vector<ModelPreset> & modelPresets,
 	std::array<int, kModeCount> & taskDefaultModelIndices,
+	const char * catalogPath = nullptr);
+
+void loadVideoRenderPresets(
+	std::vector<VideoRenderPreset> & presets,
+	int & recommendedIndex,
 	const char * catalogPath = nullptr);
 
 void loadPromptTemplates(std::vector<PromptTemplate> & promptTemplates);

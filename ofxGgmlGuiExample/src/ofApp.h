@@ -5,8 +5,10 @@
 #include "ofxGgmlBasic.h"
 #include "ofxGgmlModalities.h"
 #include "ofxGgmlWorkflows.h"
+#include "ofxGgmlCompanionWorkflows.h"
 #include "ofxGgmlAssistants.h"
 #include "support/ofxGgmlEasy.h"
+#include "bridges/ofxGgmlHoloscanBridge.h"
 #include "ofxImGui.h"
 #include "config/ModelPresets.h"
 #include "panels/DeviceInfoPanel.h"
@@ -15,6 +17,7 @@
 #include "panels/StatusBar.h"
 #include "managers/TextServerManager.h"
 #include "managers/SpeechServerManager.h"
+#include "managers/AceStepServerManager.h"
 
 #include <atomic>
 #include <array>
@@ -28,6 +31,27 @@
 #include <unordered_map>
 #include <vector>
 
+#if defined(__has_include)
+#if __has_include("ofxVlc4.h")
+#define OFXGGML_HAS_OFXVLC4 1
+#include "ofxVlc4.h"
+#else
+#define OFXGGML_HAS_OFXVLC4 0
+#endif
+#else
+#define OFXGGML_HAS_OFXVLC4 0
+#endif
+
+#if defined(__has_include)
+#if __has_include("ofxProjectM.h")
+#define OFXGGML_HAS_OFXPROJECTM 1
+#include "ofxProjectM.h"
+#else
+#define OFXGGML_HAS_OFXPROJECTM 0
+#endif
+#else
+#define OFXGGML_HAS_OFXPROJECTM 0
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -72,7 +96,9 @@ struct TtsPreviewState {
 	int selectedAudioIndex = 0;
 	std::string loadedAudioPath;
 	bool playbackPaused = false;
+	std::vector<float> playbackSamples;
 	double playbackPositionFrames = 0.0;
+	int playbackSampleRate = 0;
 	int playbackChannels = 0;
 	bool playbackLoaded = false;
 	bool playbackActive = false;
@@ -82,7 +108,9 @@ struct TtsPreviewState {
 		std::lock_guard<std::mutex> lock(playbackMutex);
 		return playbackLoaded &&
 			!loadedAudioPath.empty() &&
+			playbackSampleRate > 0 &&
 			playbackChannels > 0 &&
+			!playbackSamples.empty();
 	}
 
 	bool isAudioPlaying() const {
@@ -90,6 +118,7 @@ struct TtsPreviewState {
 		return playbackLoaded &&
 			playbackActive &&
 			!playbackPaused &&
+			!playbackSamples.empty();
 	}
 
 	bool isPlaybackPaused() const {
@@ -108,9 +137,11 @@ struct TtsPreviewState {
 
 	void resumePlayback() {
 		std::lock_guard<std::mutex> lock(playbackMutex);
+		if (!playbackLoaded || playbackSamples.empty() || playbackChannels <= 0) {
 			return;
 		}
 		const size_t totalFrames =
+			playbackSamples.size() / static_cast<size_t>(playbackChannels);
 		if (playbackPositionFrames >= static_cast<double>(totalFrames)) {
 			playbackPositionFrames = 0.0;
 		}
@@ -120,6 +151,7 @@ struct TtsPreviewState {
 
 	void restartPlayback() {
 		std::lock_guard<std::mutex> lock(playbackMutex);
+		if (!playbackLoaded || playbackSamples.empty()) {
 			return;
 		}
 		playbackPositionFrames = 0.0;
@@ -134,6 +166,8 @@ struct TtsPreviewState {
 		playbackPositionFrames = 0.0;
 		if (clearLoadedPath) {
 			loadedAudioPath.clear();
+			playbackSamples.clear();
+			playbackSampleRate = 0;
 			playbackChannels = 0;
 			playbackLoaded = false;
 		}
@@ -149,7 +183,7 @@ struct TtsPreviewState {
 };
 
 // ---------------------------------------------------------------------------
-// ofApp — ofxGgml GUI example with ofxImGui
+// ofApp — ofxGgml AI Studio with ofxImGui
 // ---------------------------------------------------------------------------
 
 class ofApp : public ofBaseApp {
@@ -186,6 +220,7 @@ private:
 	// -- Server Managers --
 	TextServerManager textServerManager;
 	SpeechServerManager speechServerManager;
+	AceStepServerManager aceStepServerManager;
 
 	// -- mode --
 	AiMode activeMode = AiMode::Chat;
@@ -223,6 +258,40 @@ private:
 	char translateTtsSpeakerPath[1024] = {};
 	char voiceTranslatorAudioPath[1024] = {};
 	bool voiceTranslatorSpeakOutput = true;
+	char videoEssayTopic[1024] = {};
+	char videoEssaySeedUrl[1024] = {};
+	char videoEssaySourceVideoPath[1024] = {};
+	bool videoEssayUseCrawler = false;
+	bool videoEssayIncludeCounterpoints = true;
+	bool videoEssayUseCustomTtsVoice = false;
+	char videoEssayTtsModelPath[1024] = {};
+	char videoEssayTtsSpeakerPath[1024] = {};
+	int videoEssayCitationCount = 100;
+	float videoEssayTargetDurationSeconds = 90.0f;
+	int videoEssayToneIndex = 0;
+	int videoEssayAudienceIndex = 0;
+	char longVideoConcept[4096] = {};
+	char longVideoStyle[1024] = "cinematic, coherent, detailed, motion-aware";
+	char longVideoNegativeStyle[1024] = "flicker, identity drift, abrupt style changes, broken continuity";
+	char longVideoContinuityGoal[2048] = "Preserve subject identity, camera language, palette, and motion logic across adjacent chunks.";
+	float longVideoTargetDurationSeconds = 60.0f;
+	int longVideoChunkCount = 6;
+	int longVideoStructureIndex = 0;
+	int longVideoPacingIndex = 0;
+	int longVideoWidth = 640;
+	int longVideoHeight = 384;
+	int longVideoFps = 12;
+	int longVideoFramesPerChunk = 49;
+	int longVideoSeed = -1;
+	bool longVideoUsePromptInheritance = true;
+	bool longVideoFavorLoopableEnding = false;
+	char longVideoRenderSourceImagePath[1024] = {};
+	char longVideoRenderEndImagePath[1024] = {};
+	char longVideoRenderOutputDir[1024] = {};
+	char longVideoRenderOutputPrefix[128] = "video-segment";
+	int longVideoRenderPresetIndex = 2;
+	int longVideoRenderModeIndex = 0;
+	int longVideoRenderSelectedChunkIndex = 0;
 	char customInput[4096] = {};
 	char customSystemPrompt[2048] = {};
 	char sourceUrlsInput[2048] = {};
@@ -233,14 +302,51 @@ private:
 	char visionPrompt[4096] = {};
 	char visionImagePath[1024] = {};
 	char visionVideoPath[1024] = {};
+	char holoscanVisionPrompt[2048] = {};
+	char holoscanVisionSystemPrompt[2048] = {};
+	char imageSearchPrompt[1024] = {};
 	char visionModelPath[1024] = {};
 	char visionServerUrl[256] = "http://127.0.0.1:8080";
 	char videoSidecarUrl[256] = {};
 	char videoSidecarModel[256] = {};
 	char visionSystemPrompt[1024] = {};
+	char montageSubtitlePath[1024] = {};
+	char montageGoal[4096] = {};
+	char montageEdlTitle[128] = "MONTAGE";
+	char montageReelName[32] = "AX";
+	char montageClipPaths[16384] = {};
+	char montageRenderAudioPath[1024] = {};
+	char videoEditGoal[4096] = {};
 	int visionTaskIndex = 0;
 	int videoTaskIndex = 0;
+	bool holoscanBridgeEnabled = false;
+	bool holoscanBridgeRunning = false;
+	bool holoscanUseCurrentVisionRequest = true;
+	int holoscanVisionCompletedFrames = 0;
 	int visionVideoMaxFrames = 6;
+	char videoPlanJson[16384] = {};
+	char videoEditPlanJson[16384] = {};
+	int montageMaxClips = 8;
+	int montageFps = 25;
+	int videoPlanBeatCount = 4;
+	int videoPlanSceneCount = 3;
+	int videoPlanGenerationMode = 0;
+	int videoEditPresetIndex = 0;
+	int videoEditClipCount = 5;
+	int selectedVideoPlanSceneIndex = 0;
+	float montageMinScore = 0.18f;
+	float montageTargetDurationSeconds = 12.0f;
+	float montageMinSpacingSeconds = 1.5f;
+	float montagePreRollSeconds = 0.25f;
+	float montagePostRollSeconds = 0.35f;
+	bool videoPlanMultiScene = false;
+	bool montagePreserveChronology = true;
+	bool videoEditUseCurrentAnalysis = true;
+	float videoPlanDurationSeconds = 5.0f;
+	float videoEditTargetDurationSeconds = 15.0f;
+	bool videoPlanUseForGeneration = true;
+	int videoEditWorkflowActiveStepIndex = -1;
+	std::vector<int> videoEditWorkflowCompletedStepIndices;
 	char speechAudioPath[1024] = {};
 	char speechExecutable[256] = "whisper-cli";
 	char speechModelPath[1024] = {};
@@ -269,9 +375,81 @@ private:
 	float ttsMinP = 0.05f;
 	bool ttsStreamAudio = false;
 	bool ttsNormalizeText = true;
+	char diffusionPrompt[4096] = {};
+	char diffusionInstruction[4096] = {};
+	char diffusionNegativePrompt[4096] = {};
+	char diffusionRankingPrompt[4096] = {};
+	char diffusionModelPath[1024] = {};
+	char diffusionVaePath[1024] = {};
+	char diffusionInitImagePath[1024] = {};
+	char diffusionMaskImagePath[1024] = {};
+	char diffusionOutputDir[1024] = {};
+	char diffusionOutputPrefix[128] = "diffusion";
+	char diffusionSampler[64] = "euler_a";
+	int diffusionTaskIndex = 0;
+	int diffusionSelectionModeIndex = 0;
+	int diffusionWidth = 1024;
+	int diffusionHeight = 1024;
+	int diffusionSteps = 20;
+	int diffusionBatchCount = 1;
+	int diffusionSeed = -1;
+	float diffusionCfgScale = 7.0f;
+	float diffusionStrength = 0.75f;
+	bool diffusionNormalizeClipEmbeddings = true;
+	bool diffusionSaveMetadata = true;
+	int imageSearchMaxResults = 8;
+	char clipPrompt[4096] = {};
+	char clipModelPath[1024] = {};
+	char clipImagePaths[8192] = {};
+	int clipTopK = 3;
+	bool clipNormalizeEmbeddings = true;
+	int clipVerbosity = 1;
+	char musicToImageDescription[4096] = {};
+	char musicToImageLyrics[4096] = {};
+	char musicToImageStyle[1024] = "cinematic still, richly lit, highly detailed";
+	bool musicToImageIncludeLyrics = true;
+	char imageToMusicDescription[4096] = {};
+	char imageToMusicSceneNotes[2048] = {};
+	char imageToMusicStyle[1024] = "cinematic instrumental soundtrack, expressive, high fidelity";
+	char imageToMusicInstrumentation[512] = "analog synth bass, glassy pads, restrained percussion";
+	char imageToMusicAbcTitle[256] = "Generated Theme";
+	char imageToMusicAbcKey[64] = "Cm";
+	char imageToMusicAbcOutputPath[1024] = {};
+	int imageToMusicDurationSeconds = 30;
+	int imageToMusicAbcBars = 16;
+	bool imageToMusicInstrumentalOnly = true;
+	char aceStepServerUrl[256] = "http://127.0.0.1:8085";
+	char aceStepPrompt[4096] = {};
+	char aceStepLyrics[4096] = {};
+	char aceStepAudioPath[1024] = {};
+	char aceStepOutputDir[1024] = {};
+	char aceStepOutputPrefix[128] = "acestep";
+	char aceStepKeyscale[64] = {};
+	char aceStepTimesignature[64] = "4";
+	int aceStepBpm = 0;
+	int aceStepDurationSeconds = 30;
+	int aceStepSeed = -1;
+	int aceStepSelectedTrackIndex = 0;
+	bool aceStepUseWav = true;
+	bool aceStepInstrumentalOnly = false;
+	int musicVideoSectionCount = 4;
+	int musicVideoStructureIndex = 0;
+	float musicVideoCutIntensity = 0.7f;
+	char milkdropPrompt[4096] = {};
+	char milkdropPresetPath[1024] = {};
+	int milkdropCategoryIndex = 0;
+	int milkdropVariantCount = 3;
+	float milkdropRandomness = 0.55f;
+	bool milkdropAutoPreview = true;
+	float milkdropPreviewBeatSensitivity = 1.25f;
+	float milkdropPreviewPresetDuration = 24.0f;
+	bool milkdropPreviewFeedMicWhileRecording = true;
 	bool speechServerManagedByApp = false;
 	ServerStatusState speechServerStatus = ServerStatusState::Unknown;
 	std::string speechServerStatusMessage;
+	bool aceStepServerManagedByApp = false;
+	ServerStatusState aceStepServerStatus = ServerStatusState::Unknown;
+	std::string aceStepServerStatusMessage;
 
 	// -- conversation / output --
 	std::deque<Message> chatMessages;
@@ -290,11 +468,48 @@ private:
 	std::string voiceTranslatorStatus;
 	std::string voiceTranslatorTranscript;
 	TtsPreviewState translateTtsPreview;
+	TtsPreviewState videoEssayTtsPreview;
 	std::string customOutput;
 	std::string citationOutput;
 	std::string visionOutput;
+	std::string holoscanVisionStatus;
+	std::string holoscanVisionLatestOutput;
+	std::string montageSummary;
+	std::string montageEditorBrief;
+	std::string montageEdlText;
+	std::string montageSrtText;
+	std::string montageVttText;
+	std::string montageClipPlaylistManifestPath;
+	std::string montageClipPlaylistStatusMessage;
+	std::string montageClipRenderOutputPath;
+	bool montageClipAutoRecordPending = false;
+	std::string videoPlanSummary;
+	std::string videoEditPlanSummary;
 	std::string speechOutput;
 	std::string ttsOutput;
+	std::string diffusionOutput;
+	std::string musicToImagePromptOutput;
+	std::string musicToImageStatus;
+	std::string musicVideoSectionSummary;
+	std::string imageToMusicPromptOutput;
+	std::string imageToMusicNotationOutput;
+	std::string imageToMusicStatus;
+	std::string imageToMusicSavedNotationPath;
+	std::string aceStepStatus;
+	std::string aceStepGeneratedRequestJson;
+	std::string aceStepUnderstoodSummary;
+	std::string aceStepUnderstoodCaption;
+	std::string aceStepUnderstoodLyrics;
+	std::string aceStepUsedServerUrl;
+	std::vector<ofxGgmlGeneratedMusicTrack> aceStepGeneratedTracks;
+	std::string imageSearchOutput;
+	std::string clipOutput;
+	std::string milkdropOutput;
+	std::string milkdropSavedPresetPath;
+	std::string milkdropPreviewStatus;
+	ofxGgmlMilkDropValidation milkdropValidation;
+	std::vector<ofxGgmlMilkDropVariant> milkdropVariants;
+	int milkdropSelectedVariantIndex = -1;
 	ofImage visionPreviewImage;
 	std::string visionPreviewImageLoadedPath;
 	std::string visionPreviewImageError;
@@ -305,6 +520,28 @@ private:
 	ofImage visionOutputPreviewImage;
 	std::string visionOutputPreviewLoadedPath;
 	std::string visionOutputPreviewError;
+	ofImage diffusionInitPreviewImage;
+	std::string diffusionInitPreviewLoadedPath;
+	std::string diffusionInitPreviewError;
+	ofImage diffusionMaskPreviewImage;
+	std::string diffusionMaskPreviewLoadedPath;
+	std::string diffusionMaskPreviewError;
+	ofImage diffusionOutputPreviewImage;
+	std::string diffusionOutputPreviewLoadedPath;
+	std::string diffusionOutputPreviewError;
+	ofImage longVideoRenderSourcePreviewImage;
+	std::string longVideoRenderSourcePreviewLoadedPath;
+	std::string longVideoRenderSourcePreviewError;
+	ofImage longVideoRenderEndPreviewImage;
+	std::string longVideoRenderEndPreviewLoadedPath;
+	std::string longVideoRenderEndPreviewError;
+	ofImage imageSearchPreviewImage;
+	std::string imageSearchPreviewLoadedPath;
+	std::string imageSearchPreviewError;
+	std::string imageSearchPreviewSourceUrl;
+	int selectedImageSearchResultIndex = -1;
+	std::string deferredImageSearchPrompt;
+	bool hasDeferredImageSearchPrompt = false;
 	std::string deferredCitationTopic;
 	bool hasDeferredCitationTopic = false;
 	std::string deferredCitationSeedUrl;
@@ -315,7 +552,39 @@ private:
 	bool hasDeferredTranslateInput = false;
 	std::string deferredVoiceTranslatorAudioPath;
 	bool hasDeferredVoiceTranslatorAudioPath = false;
+	std::string deferredDiffusionPrompt;
+	bool hasDeferredDiffusionPrompt = false;
+	std::string deferredDiffusionOutputDir;
+	bool hasDeferredDiffusionOutputDir = false;
+	std::string deferredMontageSubtitlePath;
+	bool hasDeferredMontageSubtitlePath = false;
+	bool montageSubtitlePlaybackEnabled = false;
+	int montagePreviewTimingModeIndex = 0;
+	bool montagePreviewTimelinePlaying = false;
+	double montagePreviewTimelineSeconds = 0.0;
+	float montagePreviewTimelineLastTickTime = 0.0f;
+	std::string montagePreviewSubtitleSlavePath;
+	std::string montagePreviewStatusMessage;
+#if OFXGGML_HAS_OFXVLC4
+	ofxVlc4 montageVlcPreviewPlayer;
+	bool montageVlcPreviewInitialized = false;
+	std::string montageVlcPreviewLoadedVideoPath;
+	std::string montageVlcPreviewLoadedSubtitlePath;
+	std::string montageVlcPreviewError;
+	ofxVlc4 montageClipVlcPlayer;
+	bool montageClipVlcInitialized = false;
+	std::string montageClipVlcError;
+	ofxVlc4 aceStepVlcPlayer;
+	bool aceStepVlcInitialized = false;
+	std::string aceStepVlcLoadedAudioPath;
+	std::string aceStepVlcError;
+	ofxVlc4 videoEssayVlcPreviewPlayer;
+	bool videoEssayVlcPreviewInitialized = false;
+	std::string videoEssayVlcPreviewLoadedVideoPath;
+	std::string videoEssayVlcPreviewLoadedSubtitlePath;
+	std::string videoEssayVlcPreviewError;
 #endif
+	int selectedMontageCueIndex = -1;
 	std::string speechDetectedLanguage;
 	std::string speechTranscriptPath;
 	std::string speechSrtPath;
@@ -325,11 +594,28 @@ private:
 	std::string ttsResolvedSpeakerPath;
 	std::vector<ofxGgmlTtsAudioArtifact> ttsAudioFiles;
 	std::vector<std::pair<std::string, std::string>> ttsMetadata;
+	std::string diffusionBackendName;
+	float diffusionElapsedMs = 0.0f;
+	std::vector<ofxGgmlGeneratedImage> diffusionGeneratedImages;
+	std::vector<std::pair<std::string, std::string>> diffusionMetadata;
+	std::string clipBackendName;
+	float clipElapsedMs = 0.0f;
+	int clipEmbeddingDimension = 0;
+	std::vector<ofxGgmlClipSimilarityHit> clipHits;
+#if OFXGGML_HAS_OFXPROJECTM
+	ofxProjectM milkdropPreviewPlayer;
+	bool milkdropPreviewInitialized = false;
+	std::string milkdropPreviewError;
 #endif
+	std::vector<float> milkdropPreviewAudioSamples;
+	int milkdropPreviewAudioFrames = 0;
+	int milkdropPreviewAudioChannels = 0;
+	std::mutex milkdropPreviewAudioMutex;
 	std::string speechRecordedTempPath;
 	bool speechRecording = false;
 	float speechRecordingStartTime = 0.0f;
 	bool speechLiveTranscriptionEnabled = false;
+	int speechInputSampleRate = 16000;
 	int speechInputChannels = 1;
 	int speechInputBufferSize = 512;
 	float speechLiveIntervalSeconds = 1.25f;
@@ -338,12 +624,15 @@ private:
 	ofxGgmlLiveSpeechTranscriber speechLiveTranscriber;
 	ofSoundStream speechInputStream;
 	bool speechInputStreamConfigured = false;
+	int speechInputStreamConfigSampleRate = 0;
 	int speechInputStreamConfigChannels = 0;
 	int speechInputStreamConfigBufferSize = 0;
 	ofSoundStream ttsOutputStream;
 	bool ttsOutputStreamConfigured = false;
+	int ttsOutputSampleRate = 48000;
 	int ttsOutputChannels = 2;
 	int ttsOutputBufferSize = 512;
+	std::vector<float> speechRecordedSamples;
 	std::mutex speechRecordMutex;
 
 	// -- generation state --
@@ -370,6 +659,12 @@ private:
 	std::string pendingTtsResolvedSpeakerPath;
 	std::vector<ofxGgmlTtsAudioArtifact> pendingTtsAudioFiles;
 	std::vector<std::pair<std::string, std::string>> pendingTtsMetadata;
+	ofxGgmlMilkDropValidation pendingMilkDropValidation;
+	std::vector<ofxGgmlMilkDropVariant> pendingMilkDropVariants;
+	std::string pendingDiffusionBackendName;
+	float pendingDiffusionElapsedMs = 0.0f;
+	std::vector<ofxGgmlGeneratedImage> pendingDiffusionImages;
+	std::vector<std::pair<std::string, std::string>> pendingDiffusionMetadata;
 	std::string pendingMusicToImagePromptOutput;
 	std::string pendingMusicToImageStatus;
 	bool pendingMusicToImageDirty = false;
@@ -377,6 +672,19 @@ private:
 	std::string pendingImageToMusicNotationOutput;
 	std::string pendingImageToMusicStatus;
 	bool pendingImageToMusicDirty = false;
+	std::string pendingAceStepStatus;
+	std::string pendingAceStepGeneratedRequestJson;
+	std::string pendingAceStepUnderstoodSummary;
+	std::string pendingAceStepUnderstoodCaption;
+	std::string pendingAceStepUnderstoodLyrics;
+	std::string pendingAceStepUsedServerUrl;
+	std::vector<ofxGgmlGeneratedMusicTrack> pendingAceStepGeneratedTracks;
+	bool pendingAceStepDirty = false;
+	std::string pendingImageSearchOutput;
+	std::string pendingImageSearchBackendName;
+	float pendingImageSearchElapsedMs = 0.0f;
+	std::vector<ofxGgmlImageSearchItem> pendingImageSearchResults;
+	bool pendingImageSearchDirty = false;
 	std::string pendingCitationOutput;
 	std::string pendingCitationBackendName;
 	float pendingCitationElapsedMs = 0.0f;
@@ -385,6 +693,82 @@ private:
 	std::string pendingVoiceTranslatorStatus;
 	std::string pendingVoiceTranslatorTranscript;
 	bool pendingVoiceTranslatorDirty = false;
+	std::string videoEssayStatus;
+	std::string videoEssayOutline;
+	std::string videoEssayScript;
+	std::string videoEssaySrtText;
+	std::string videoEssayVisualConcept;
+	std::string videoEssayScenePlanJson;
+	std::string videoEssayScenePlanSummary;
+	std::string videoEssayScenePlanningError;
+	std::string videoEssayEditPlanJson;
+	std::string videoEssayEditPlanSummary;
+	std::string videoEssayEditPlanningError;
+	std::string videoEssayEditorBrief;
+	std::vector<ofxGgmlCitationItem> videoEssayCitations;
+	std::vector<ofxGgmlVideoEssaySection> videoEssaySections;
+	std::vector<ofxGgmlVideoEssayVoiceCue> videoEssayVoiceCues;
+	int selectedVideoEssaySceneIndex = 0;
+	std::string videoEssayVlcPreviewSubtitlePath;
+	std::string videoEssayVlcPreviewStatusMessage;
+	std::string videoEssayLastRenderedVideoPath;
+	std::string longVideoStatus;
+	std::string longVideoContinuityBible;
+	std::string longVideoManifestJson;
+	std::string longVideoRenderStatus;
+	std::string longVideoRenderOutputDirectory;
+	std::string longVideoRenderMetadataPath;
+	std::string longVideoRenderManifestPath;
+	std::string longVideoRenderManifestJson;
+	std::vector<ofxGgmlLongVideoPlanChunk> longVideoChunks;
+	std::string pendingVideoEssayStatus;
+	std::string pendingVideoEssayOutline;
+	std::string pendingVideoEssayScript;
+	std::string pendingVideoEssaySrtText;
+	std::string pendingVideoEssayVisualConcept;
+	std::string pendingVideoEssayScenePlanJson;
+	std::string pendingVideoEssayScenePlanSummary;
+	std::string pendingVideoEssayScenePlanningError;
+	std::string pendingVideoEssayEditPlanJson;
+	std::string pendingVideoEssayEditPlanSummary;
+	std::string pendingVideoEssayEditPlanningError;
+	std::string pendingVideoEssayEditorBrief;
+	std::vector<ofxGgmlCitationItem> pendingVideoEssayCitations;
+	std::vector<ofxGgmlVideoEssaySection> pendingVideoEssaySections;
+	std::vector<ofxGgmlVideoEssayVoiceCue> pendingVideoEssayVoiceCues;
+	bool pendingVideoEssayDirty = false;
+	std::string pendingLongVideoStatus;
+	std::string pendingLongVideoContinuityBible;
+	std::string pendingLongVideoManifestJson;
+	std::vector<ofxGgmlLongVideoPlanChunk> pendingLongVideoChunks;
+	bool pendingLongVideoDirty = false;
+	std::string pendingLongVideoRenderStatus;
+	std::string pendingLongVideoRenderOutputDirectory;
+	std::string pendingLongVideoRenderMetadataPath;
+	std::string pendingLongVideoRenderManifestPath;
+	std::string pendingLongVideoRenderManifestJson;
+	bool pendingLongVideoRenderDirty = false;
+	std::vector<ofxGgmlSampledVideoFrame> visionSampledVideoFrames;
+	std::vector<ofxGgmlSampledVideoFrame> pendingVisionSampledVideoFrames;
+	std::string pendingMontageSummary;
+	std::string pendingMontageEditorBrief;
+	std::string pendingMontageEdlText;
+	std::string pendingMontageSrtText;
+	std::string pendingMontageVttText;
+	ofxGgmlMontagePreviewBundle montagePreviewBundle;
+	ofxGgmlMontageSubtitleTrack montageSubtitleTrack;
+	ofxGgmlMontageSubtitleTrack montageSourceSubtitleTrack;
+	ofxGgmlMontagePreviewBundle pendingMontagePreviewBundle;
+	ofxGgmlMontageSubtitleTrack pendingMontageSubtitleTrack;
+	ofxGgmlMontageSubtitleTrack pendingMontageSourceSubtitleTrack;
+	std::string pendingVideoPlanJson;
+	std::string pendingVideoPlanSummary;
+	std::string pendingVideoEditPlanJson;
+	std::string pendingVideoEditPlanSummary;
+	std::string pendingClipBackendName;
+	float pendingClipElapsedMs = 0.0f;
+	int pendingClipEmbeddingDimension = 0;
+	std::vector<ofxGgmlClipSimilarityHit> pendingClipHits;
 	AiMode activeGenerationMode = AiMode::Chat;
 	float generationStartTime = 0.0f;
 	std::string streamingOutput;
@@ -412,8 +796,8 @@ private:
 	float mirostatTau = 5.0f;
 	float mirostatEta = 0.1f;
 	int chatLanguageIndex = 0;                       // 0=Auto, otherwise force response language
-	std::array<int, kModeCount> modeMaxTokens = {512, 1024, 384, 512, 512, 512, 896, 896, 384, 512, 512, 512, 384, 640, 512, 384};
-	std::array<int, kModeCount> modeTextBackendIndices = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0};
+	std::array<int, kModeCount> modeMaxTokens = {512, 1024, 384, 512, 512, 512, 896, 896, 384, 512, 512, 512, 384, 640, 512};
+	std::array<int, kModeCount> modeTextBackendIndices = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1};
 	TextInferenceBackend textInferenceBackend = TextInferenceBackend::LlamaServer;
 	ServerStatusState textServerStatus = ServerStatusState::Unknown;
 	std::string textServerStatusMessage;
@@ -425,7 +809,6 @@ private:
 	bool showDeviceInfo = false;
 	bool showLog = false;
 	bool showPerformance = false;
-	bool showAdvancedGuiModes = false;
 	ofLogLevel logLevel = OF_LOG_NOTICE;
 	std::deque<std::string> logMessages;
 	std::mutex logMutex;
@@ -478,6 +861,15 @@ private:
 	int selectedSpeechProfileIndex = 0;
 	std::vector<ofxGgmlTtsModelProfile> ttsProfiles;
 	int selectedTtsProfileIndex = 0;
+	std::vector<ofxGgmlImageGenerationModelProfile> diffusionProfiles;
+	int selectedDiffusionProfileIndex = 0;
+	std::vector<ofxGgmlMilkDropCategoryOption> milkdropCategories;
+	std::string configuredClipBackendModelPath;
+	int configuredClipBackendVerbosity = -1;
+	bool configuredClipBackendNormalize = true;
+	std::string imageSearchBackendName;
+	float imageSearchElapsedMs = 0.0f;
+	std::vector<ofxGgmlImageSearchItem> imageSearchResults;
 	std::string citationBackendName;
 	float citationElapsedMs = 0.0f;
 	std::vector<ofxGgmlCitationItem> citationResults;
@@ -500,14 +892,26 @@ private:
 	ofxGgmlCodingAgent scriptCodingAgent;
 	ofxGgmlWorkspaceAssistant scriptWorkspaceAssistant;
 	ofxGgmlTextAssistant textAssistant;
+	ofxGgmlHoloscanBridge holoscanBridge;
 	ofxGgmlVisionInference visionInference;
 	ofxGgmlVideoInference videoInference;
 	ofxGgmlSpeechInference speechInference;
 	ofxGgmlTtsInference ttsInference;
+	ofxGgmlDiffusionInference diffusionInference;
+	ofxGgmlMediaPromptGenerator mediaPromptGenerator;
+	ofxGgmlMusicGenerator musicGenerator;
+	ofxGgmlAceStepBridge aceStepBridge;
+	ofxGgmlImageSearch imageSearch;
 	ofxGgmlCitationSearch citationSearch;
+	ofxGgmlClipInference clipInference;
+	ofxGgmlMilkDropGenerator milkdropGenerator;
+	ofxGgmlVideoEssayWorkflow videoEssayWorkflow;
+#if OFXGGML_HAS_OFXSTABLEDIFFUSION
+	std::shared_ptr<ofxStableDiffusion> stableDiffusionEngine;
 #endif
 	ofxGgmlInference llmInference;
 	ofxGgmlCodeReview scriptCodeReview;
+	ofxGgmlVideoPlanner videoPlanner;
 	ofxGgmlProjectMemory scriptProjectMemory;
 	std::string lastScriptRequest;
 	std::vector<std::string> recentScriptTouchedFiles;
@@ -587,6 +991,8 @@ private:
 		AiMode mode,
 		const ofxGgmlTextAssistantRequest & request,
 		const ofxGgmlRealtimeInfoSettings & realtimeSettings = {});
+	void setupHoloscanBridge();
+	void drawHoloscanBridgeSection();
 	void runEasyModeExample();
 	void runVoiceTranslatorWorkflow(bool useAudioInput);
 	void runScriptAssistantRequest(
@@ -611,8 +1017,17 @@ private:
 		bool enableAutoLiveContext = false) const;
 	void runHierarchicalReview(const std::string & overrideQuery = std::string());
 	void applyScriptReviewPreset();
+	ofxGgmlHoloscanVisionRequestTemplate makeHoloscanVisionRequestTemplate() const;
 	void runVisionInference();
 	void runVideoInference();
+	void runVideoPlanning();
+	void runMontagePlanning();
+	void runVideoEditPlanning();
+	void applyVideoEditPresetByIndex(int presetIndex);
+	void applyMusicVideoWorkflowDefaults(bool overwriteVisionPrompt = false);
+	void resetVideoEditWorkflowState();
+	bool isVideoEditWorkflowStepCompleted(int stepIndex) const;
+	void setVideoEditWorkflowStepCompleted(int stepIndex, bool completed);
 	void runSpeechInference();
 	void runTtsInference();
 	void runTtsInferenceForText(
@@ -625,6 +1040,7 @@ private:
 	void speakLatestChatExchange(bool mirrorIntoTtsInput = false);
 	void speakLatestSummary(bool mirrorIntoTtsInput = true);
 	void speakTranslatedReply(bool mirrorIntoTtsInput = true);
+	void speakVideoEssayReply(bool mirrorIntoTtsInput = true);
 	bool ensureTtsPanelAudioLoaded(int artifactIndex = -1, bool autoplay = false);
 	void stopTtsPanelPlayback(bool clearLoadedPath = false);
 	bool ensureChatTtsAudioLoaded(int artifactIndex = -1, bool autoplay = false);
@@ -633,23 +1049,41 @@ private:
 	void stopSummaryTtsPlayback(bool clearLoadedPath = false);
 	bool ensureTranslateTtsAudioLoaded(int artifactIndex = -1, bool autoplay = false);
 	void stopTranslateTtsPlayback(bool clearLoadedPath = false);
+	bool ensureVideoEssayTtsAudioLoaded(int artifactIndex = -1, bool autoplay = false);
+	void stopVideoEssayTtsPlayback(bool clearLoadedPath = false);
+	void runDiffusionInference();
 	void runMusicToImagePromptGeneration();
 	void runImageToMusicPromptGeneration();
 	void runImageToMusicNotationGeneration();
+	void runAceStepMusicGeneration();
+	void runAceStepAudioUnderstanding();
+	void runImageSearch();
 	void runCitationSearch();
+	void runVideoEssayWorkflow();
+	void runLongVideoPlanning();
+	void runLongVideoRenderGeneration();
+	void runClipInference();
+	void runMilkDropGeneration(
 		bool editExisting = false,
 		bool generateVariants = false,
 		bool repairExisting = false);
 	void configureEasyApiFromCurrentUi();
+	bool ensureClipBackendConfigured(
 		const std::string & modelPath,
 		int verbosity,
 		bool normalizeEmbeddings);
+	bool ensureDiffusionBackendConfigured();
+	bool ensureDiffusionClipBackendConfigured();
+	static int clampSupportedDiffusionImageSize(int value);
 	static constexpr float kDefaultInferenceTemp = 0.7f;
 	static constexpr float kDefaultInferenceTopP = 0.9f;
 	static constexpr float kDefaultInferenceRepeatPenalty = 1.1f;
 	static constexpr size_t kDefaultMaxScriptContextFiles = 50;
 	static constexpr size_t kDefaultMaxFocusedFileSnippetChars = 2000;
 	ofxGgmlInferenceSettings buildCurrentTextInferenceSettings(AiMode mode) const;
+	std::string getPreferredDiffusionReuseImagePath() const;
+	void setDiffusionInitImagePath(const std::string & path, bool promoteTask = true);
+	void copyDiffusionOutputsToClipPaths();
 	ofxGgmlLiveSpeechSettings makeLiveSpeechSettings() const;
 	void applyLiveSpeechTranscriberSettings();
 	bool ensureSpeechInputStreamReady();
@@ -694,6 +1128,13 @@ private:
 	bool isManagedSpeechServerRunning();
 	void startLocalSpeechServer();
 	void stopLocalSpeechServer(bool logResult = true);
+	std::string effectiveAceStepServerUrl(const std::string & configuredUrl) const;
+	std::string findLocalAceStepServerExecutable(bool refresh = false);
+	std::string findLocalAceStepModelsDirectory(bool refresh = false);
+	bool isManagedAceStepServerRunning();
+	bool ensureAceStepServerReady(bool logResult = false, bool allowLaunch = true);
+	void startLocalAceStepServer();
+	void stopLocalAceStepServer(bool logResult = true);
 	ofLogLevel mapGgmlLogLevel(int level) const;
 	void probeLlamaCli(const std::string & customPath = "");
 	void probeCliCapabilities();
@@ -719,7 +1160,11 @@ private:
 	void drawWritePanel();
 	void drawTranslatePanel();
 	void drawCustomPanel();
+	void drawVideoEssayPanel();
+	void drawLongVideoPanel();
 	void drawVisionPanel();
+	void drawMilkDropPanel();
+	void drawImageSearchPanel(
 		const char * copyPromptButtonLabel,
 		const std::string & suggestedPrompt);
 	void ensureVisionPreviewResources();
@@ -737,21 +1182,73 @@ private:
 	void drawVisionImagePreview(const std::string & imagePath);
 	void drawVisionVideoPreview(const std::string & videoPath);
 	void drawMediaTexturePreview(const ofBaseHasTexture & previewTexture, const char * childId);
+	double getVideoEssaySectionStartSeconds(int sectionIndex) const;
+	std::string exportVideoEssaySubtitleTrack(std::string * errorOut = nullptr) const;
+	int findActiveMontageSourceCueIndex() const;
+	ofxGgmlMontagePreviewTimingMode getSelectedMontagePreviewTimingMode() const;
+	const ofxGgmlMontagePreviewTrack * getSelectedMontagePreviewTrack() const;
+	double getSelectedMontagePreviewTimeSeconds() const;
+	int findActiveMontagePreviewCueIndex() const;
+	std::string exportSelectedMontagePreviewTrack(
+		ofxGgmlMontagePreviewTextFormat format,
 		std::string * errorOut = nullptr) const;
+	std::string exportMontageClipPlaylistManifest(std::string * errorOut = nullptr) const;
+	std::vector<std::string> collectGeneratedMontageClipPaths(std::string * statusOut = nullptr) const;
+	bool populateMontageClipPlaylistFromGeneratedOutputs(std::string * statusOut = nullptr);
+#if OFXGGML_HAS_OFXVLC4
+	bool ensureAceStepVlcPreviewInitialized(std::string * errorOut = nullptr);
+	bool loadAceStepVlcPreview(int trackIndex, std::string * errorOut = nullptr);
+	void closeAceStepVlcPreview();
+	void drawAceStepVlcPreview();
+	bool ensureVideoEssayVlcPreviewInitialized(std::string * errorOut = nullptr);
+	bool loadVideoEssayVlcPreview(std::string * errorOut = nullptr);
+	void closeVideoEssayVlcPreview();
+	void drawVideoEssayVlcPreview();
+	bool startVideoEssayVlcRecording(std::string * errorOut = nullptr);
+	bool stopVideoEssayVlcRecording(std::string * errorOut = nullptr);
+	bool ensureMontageVlcPreviewInitialized(std::string * errorOut = nullptr);
+	bool loadMontageVlcPreview(std::string * errorOut = nullptr);
+	void closeMontageVlcPreview();
+	void drawMontageVlcPreview();
+	bool ensureMontageClipVlcPreviewInitialized(std::string * errorOut = nullptr);
+	bool loadMontageClipVlcPreview(std::string * errorOut = nullptr);
+	void closeMontageClipVlcPreview();
+	void drawMontageClipVlcPreview();
+	bool startMontageClipVlcRecording(std::string * errorOut = nullptr);
+	bool stopMontageClipVlcRecording(std::string * errorOut = nullptr);
+	bool startMontageGeneratedClipPreviewAndRecording(std::string * errorOut = nullptr);
 #endif
+	void rebuildMontageSubtitleTrackFromText();
+	void ensureDiffusionPreviewResources();
+	void drawDiffusionImagePreview(
 		const char * label,
 		const std::string & imagePath,
 		ofImage & previewImage,
 		const std::string & errorMessage,
 		const char * childId);
+	void ensureImageSearchPreviewResources();
+	bool cacheImageSearchResultAsset(
+		const ofxGgmlImageSearchItem & item,
 		bool preferThumbnail,
 		std::string & localPath,
 		std::string & errorMessage) const;
+	void useImageSearchResultForVision(size_t index);
+	void useImageSearchResultForDiffusion(size_t index);
 	void drawSpeechPanel();
 	void drawTtsPanel();
+	void drawDiffusionPanel();
+	void drawClipPanel();
 	void drawImageToMusicSection();
+	void drawAceStepMusicSection();
+	void drawMusicVideoWorkflowSection();
+	bool saveMilkDropPresetToConfiguredPath();
 	bool saveImageToMusicNotationToConfiguredPath();
+	std::string defaultMilkDropPresetDir() const;
+#if OFXGGML_HAS_OFXPROJECTM
+	bool ensureMilkDropPreviewReady();
+	bool loadMilkDropPresetIntoPreview(const std::string & presetText);
 #endif
+	void validateCurrentMilkDropPreset();
 	bool ensureTtsProfilesLoaded();
 	ofxGgmlTtsModelProfile getSelectedTtsProfile() const;
 	void applyTtsProfileDefaults(
@@ -767,6 +1264,7 @@ private:
 	void drawLogWindow();
 	void drawPerformanceWindow();
 	void applyTheme(int index);
+	void copyToClipboard(const std::string & text);
 	void exportChatHistory(const std::string & path);
 
 };

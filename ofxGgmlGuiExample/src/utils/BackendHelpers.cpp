@@ -110,7 +110,6 @@ bool aiModeSupportsTextBackend(AiMode mode) {
 	case AiMode::Speech:
 	case AiMode::Diffusion:
 	case AiMode::Clip:
-	case AiMode::Sam:
 		return false;
 	}
 	return false;

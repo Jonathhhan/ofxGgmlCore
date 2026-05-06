@@ -1,5 +1,6 @@
 #include "ofxGgmlScriptSource.h"
 #include "core/ofxGgmlWindowsUtf8.h"
+#include "ofxGgmlProcessSecurity.h"
 
 #include <algorithm>
 #include <cctype>

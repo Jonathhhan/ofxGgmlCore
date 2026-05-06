@@ -731,7 +731,6 @@ inline std::shared_ptr<ofxGgmlImageGenerationBackend> createImageBackend(
 				? options.defaultControlStrength
 				: request.controlStrength;
 			sdRequest.styleStrength = options.styleStrength;
-			sdRequest.normalizeInput = options.normalizeInput;
 			sdRequest.inputIdImagesPath = options.inputIdImagesPath;
 
 			if (sdRequest.mode != ofxStableDiffusionImageMode::TextToImage) {
