@@ -32,4 +32,5 @@
 #include "model/ofxGgmlModelRegistry.h"
 
 // Extensibility metadata
+#include "support/ofxGgmlIntegrationSurface.h"
 #include "support/ofxGgmlPluginRegistry.h"

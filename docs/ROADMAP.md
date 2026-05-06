@@ -410,7 +410,7 @@ Implemented foundation:
 
 ### 2. Third-Party Integration Surface
 **Priority**: MEDIUM-HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Encourage integrations with:
 
@@ -418,6 +418,14 @@ Encourage integrations with:
 - external renderers and media tools
 - search providers and research pipelines
 - hardware/media runtimes
+
+Implemented foundation:
+
+- `ofxGgmlIntegrationSurface` shared schema primitive for integration targets, endpoints, host boundaries, payload keys, failure modes, setup requirements, safety requirements, compatibility notes, and metadata
+- default integration targets for editor/IDE-like shells, external renderers/media tools, search/research pipelines, and hardware/media runtimes
+- schema version `ofxGgml.integration_surface.v1`
+- core- and workflow-layer exposure through `ofxGgmlCore.h` and `ofxGgmlWorkflows.h`
+- unit coverage for default integration targets, stable JSON keys, and empty-entry handling
 
 ### 3. Personalization and Adaptation
 **Priority**: MEDIUM  

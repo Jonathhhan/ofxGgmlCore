@@ -192,6 +192,7 @@ set(TEST_SOURCES
     test_core.cpp
     test_model.cpp
     test_project_memory.cpp
+    test_integration_surface.cpp
     test_plugin_registry.cpp
     test_integration.cpp
     test_helpers.cpp
