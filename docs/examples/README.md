@@ -14,6 +14,7 @@ Use the smallest example that matches the layer you want to learn or ship.
 | `ofxGgmlAdvancedVisionExample` | Companion workflow | You want CLIP ranking, image search, and diffusion bridge patterns. |
 | `ofxGgmlSamExample` | Companion workflow | You want interactive point-prompt SAM segmentation through `ofxGgmlSegmentationInference`. |
 | `ofxGgmlMontagePlannerExample` | Companion workflow | You want transcript/subtitle-driven clip selection plus SRT/EDL exports. |
+| `ofxGgmlMusicExample` | Companion workflow | You want local music prompts, ABC sketches, and optional AceStep rendered audio. |
 
 ## Recommended path
 
@@ -29,6 +30,7 @@ The four companion examples were split out of removed GUI code so the main GUI s
 - video preview/rendering belongs in an app or companion addon such as an `ofxVlc4`-enabled project
 - MilkDrop live preview belongs in an app that opts into `ofxProjectM`
 - diffusion generation belongs behind an `ofxStableDiffusion` bridge
-- SAM segmentation belongs in `ofxGgmlSamExample` behind a `sam.cpp` bridge
+- SAM segmentation belongs in `ofxGgmlSamExample`; prefer the optional `sam3.cpp` runtime for new SAM 2/2.1/3 or EdgeTAM experiments, and keep the older `sam.cpp` bridge as a compatibility path
+- rendered music generation belongs behind an AceStep-compatible server with GGUF assets under `models/acestep/gguf`
 
 This keeps `ofxGgml` focused on handoff contracts, validation, and local-first inference helpers.

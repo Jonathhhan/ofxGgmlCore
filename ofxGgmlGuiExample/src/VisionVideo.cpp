@@ -2160,7 +2160,10 @@ void ofApp::drawAceStepMusicSection() {
 		}
 	}
 	ImGui::SameLine();
-	ImGui::BeginDisabled(findLocalAceStepServerExecutable().empty() || findLocalAceStepModelsDirectory().empty() || isManagedAceStepServerRunning());
+	const std::string localAceStepExe = findLocalAceStepServerExecutable();
+	const std::string localAceStepModels = findLocalAceStepModelsDirectory();
+	const std::string detectedAceStepModels = aceStepServerManager.findLocalModelsDirectory();
+	ImGui::BeginDisabled(localAceStepExe.empty() || localAceStepModels.empty() || isManagedAceStepServerRunning());
 	if (ImGui::SmallButton("Start local AceStep")) {
 		startLocalAceStepServer();
 	}
@@ -2181,8 +2184,6 @@ void ofApp::drawAceStepMusicSection() {
 	ImGui::SameLine();
 	ImGui::TextDisabled("Installer: scripts\\install-acestep.ps1");
 
-	const std::string localAceStepExe = findLocalAceStepServerExecutable();
-	const std::string localAceStepModels = findLocalAceStepModelsDirectory();
 	if (!localAceStepExe.empty()) {
 		ImGui::TextDisabled("Local AceStep exe: %s", ofFilePath::getFileName(localAceStepExe).c_str());
 		if (ImGui::IsItemHovered()) {
@@ -2195,6 +2196,10 @@ void ofApp::drawAceStepMusicSection() {
 		ImGui::TextDisabled("Local AceStep models: %s", localAceStepModels.c_str());
 	} else {
 		ImGui::TextDisabled("Local AceStep models: not found");
+	}
+	if (!trim(aceStepModelsDir).empty() && !detectedAceStepModels.empty() &&
+		detectedAceStepModels != localAceStepModels) {
+		ImGui::TextDisabled("Auto-detected AceStep models: %s", detectedAceStepModels.c_str());
 	}
 	if (!aceStepServerStatusMessage.empty()) {
 		const ImVec4 statusColor =
@@ -2209,6 +2214,74 @@ void ofApp::drawAceStepMusicSection() {
 		"AceStep server",
 		aceStepServerUrl,
 		sizeof(aceStepServerUrl));
+	ImGui::SetNextItemWidth(-340);
+	ImGui::InputTextWithHint(
+		"AceStep models dir",
+		"blank = auto-detect models/acestep/gguf",
+		aceStepModelsDir,
+		sizeof(aceStepModelsDir));
+	if (ImGui::IsItemDeactivatedAfterEdit()) {
+		aceStepServerStatus = ServerStatusState::Unknown;
+		aceStepServerStatusMessage.clear();
+		autoSaveSession();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Browse folder...", ImVec2(120, 0))) {
+		ofFileDialogResult result = ofSystemLoadDialog("Select AceStep GGUF models directory", true);
+		if (result.bSuccess) {
+			copyStringToBuffer(
+				aceStepModelsDir,
+				sizeof(aceStepModelsDir),
+				result.getPath());
+			aceStepServerStatus = ServerStatusState::Unknown;
+			aceStepServerStatusMessage.clear();
+			autoSaveSession();
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Browse GGUF...", ImVec2(110, 0))) {
+		ofFileDialogResult result = ofSystemLoadDialog("Select one AceStep GGUF model", false);
+		if (result.bSuccess) {
+			const std::filesystem::path selectedPath(result.getPath());
+			copyStringToBuffer(
+				aceStepModelsDir,
+				sizeof(aceStepModelsDir),
+				selectedPath.parent_path().string());
+			aceStepServerStatus = ServerStatusState::Unknown;
+			aceStepServerStatusMessage.clear();
+			autoSaveSession();
+		}
+	}
+	ImGui::SameLine();
+	ImGui::BeginDisabled(detectedAceStepModels.empty());
+	if (ImGui::Button("Use detected##AceStepModels", ImVec2(80, 0))) {
+		copyStringToBuffer(
+			aceStepModelsDir,
+			sizeof(aceStepModelsDir),
+			detectedAceStepModels);
+		aceStepServerStatus = ServerStatusState::Unknown;
+		aceStepServerStatusMessage.clear();
+		autoSaveSession();
+	}
+	ImGui::EndDisabled();
+	if (!trim(aceStepModelsDir).empty() && localAceStepModels.empty()) {
+		const auto missingModelTypes =
+			ofxGgmlAceStepServerManagerInternal::missingAceStepModelTypes(
+				trim(aceStepModelsDir));
+		std::string warning =
+			"Selected AceStep models directory is incomplete.";
+		if (!missingModelTypes.empty()) {
+			warning +=
+				" Missing: " +
+				ofxGgmlAceStepServerManagerInternal::joinAceStepModelTypes(
+					missingModelTypes) +
+				".";
+		}
+		ImGui::TextColored(
+			ImVec4(0.95f, 0.45f, 0.4f, 1.0f),
+			"%s",
+			warning.c_str());
+	}
 
 	ImGui::BeginDisabled(trim(imageToMusicPromptOutput).empty());
 	if (ImGui::Button("Use Image->Music Prompt", ImVec2(180, 0))) {

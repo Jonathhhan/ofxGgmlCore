@@ -20,6 +20,7 @@ obj/
 libs/llama/bin/
 libs/whisper/bin/
 libs/sam.cpp/
+libs/sam3.cpp/
 libs/acestep/
 libs/mojo/project/
 libs/mojo/bin/

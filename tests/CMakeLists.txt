@@ -20,7 +20,7 @@
 cmake_minimum_required(VERSION 3.18)
 project(ofxGgml-tests CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(OFXGGML_WITH_OPENFRAMEWORKS "Build tests against full openFrameworks (headers + libs)" OFF)
@@ -294,21 +294,44 @@ foreach(lib ${GGML_CORE_LIBS})
 endforeach()
 
 set(GGML_OPTIONAL_LIBS)
+set(CUDA_RUNTIME_LIBS)
 set(VULKAN_RUNTIME_LIBS)
 if(WIN32)
-    file(GLOB GGML_OPTIONAL_LIBS "${GGML_LIB_DIR}/ggml-*.lib")
-    list(FILTER GGML_OPTIONAL_LIBS EXCLUDE REGEX "ggml(-base|-cpu)?\\.lib$")
-
-    set(CUDA_RUNTIME_LIBS)
-    if(GGML_OPTIONAL_LIBS MATCHES "ggml-cuda\\.lib")
-        set(CUDA_ROOT "$ENV{CUDA_PATH}")
-        if(CUDA_ROOT AND EXISTS "${CUDA_ROOT}/lib/x64/cublas.lib")
-            list(APPEND CUDA_RUNTIME_LIBS
-                "${CUDA_ROOT}/lib/x64/cublas.lib"
-                "${CUDA_ROOT}/lib/x64/cudart.lib"
-                "${CUDA_ROOT}/lib/x64/cuda.lib")
-        endif()
+    set(CUDA_ROOT "$ENV{CUDA_PATH}")
+    set(HAS_CUDA_RUNTIME OFF)
+    if(CUDA_ROOT
+        AND EXISTS "${CUDA_ROOT}/lib/x64/cublas.lib"
+        AND EXISTS "${CUDA_ROOT}/lib/x64/cudart.lib"
+        AND EXISTS "${CUDA_ROOT}/lib/x64/cuda.lib")
+        set(HAS_CUDA_RUNTIME ON)
+        list(APPEND CUDA_RUNTIME_LIBS
+            "${CUDA_ROOT}/lib/x64/cublas.lib"
+            "${CUDA_ROOT}/lib/x64/cudart.lib"
+            "${CUDA_ROOT}/lib/x64/cuda.lib")
     endif()
+
+    set(HAS_VULKAN_RUNTIME OFF)
+    find_package(Vulkan QUIET)
+    if(TARGET Vulkan::Vulkan)
+        set(HAS_VULKAN_RUNTIME ON)
+        list(APPEND VULKAN_RUNTIME_LIBS Vulkan::Vulkan)
+    elseif(DEFINED ENV{VULKAN_SDK} AND EXISTS "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
+        set(HAS_VULKAN_RUNTIME ON)
+        list(APPEND VULKAN_RUNTIME_LIBS "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
+    endif()
+
+    foreach(optlib ggml-cuda.lib ggml-vulkan.lib)
+        set(_p "${GGML_LIB_DIR}/${optlib}")
+        if(EXISTS "${_p}")
+            if(optlib STREQUAL "ggml-cuda.lib" AND HAS_CUDA_RUNTIME)
+                list(APPEND GGML_OPTIONAL_LIBS "${_p}")
+            elseif(optlib STREQUAL "ggml-vulkan.lib" AND HAS_VULKAN_RUNTIME)
+                list(APPEND GGML_OPTIONAL_LIBS "${_p}")
+            else()
+                message(STATUS "Skipping optional ${optlib}; matching runtime libraries were not found.")
+            endif()
+        endif()
+    endforeach()
 else()
     foreach(optlib libggml-cuda.a libggml-vulkan.a libggml-metal.a libggml-blas.a libggml-opencl.a libggml-sycl.a libggml-virtgpu.a libggml-zdnn.a)
         set(_p "${GGML_LIB_DIR}/${optlib}")
@@ -318,7 +341,7 @@ else()
     endforeach()
 endif()
 
-if(GGML_OPTIONAL_LIBS MATCHES "ggml-vulkan")
+if(NOT WIN32 AND GGML_OPTIONAL_LIBS MATCHES "ggml-vulkan")
     find_package(Vulkan QUIET)
     if(TARGET Vulkan::Vulkan)
         list(APPEND VULKAN_RUNTIME_LIBS Vulkan::Vulkan)

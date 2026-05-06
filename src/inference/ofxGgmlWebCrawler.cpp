@@ -1692,6 +1692,125 @@ bool isSupportedRemoteUrlScheme(const std::string & url) {
 	return lowered.rfind("http://", 0) == 0 || lowered.rfind("https://", 0) == 0;
 }
 
+int hexDigitValue(char ch) {
+	if (ch >= '0' && ch <= '9') {
+		return ch - '0';
+	}
+	if (ch >= 'a' && ch <= 'f') {
+		return 10 + (ch - 'a');
+	}
+	if (ch >= 'A' && ch <= 'F') {
+		return 10 + (ch - 'A');
+	}
+	return -1;
+}
+
+std::string percentDecodeUrlPath(const std::string & text) {
+	std::string decoded;
+	decoded.reserve(text.size());
+	for (size_t i = 0; i < text.size(); ++i) {
+		if (text[i] == '%' && i + 2 < text.size()) {
+			const int hi = hexDigitValue(text[i + 1]);
+			const int lo = hexDigitValue(text[i + 2]);
+			if (hi >= 0 && lo >= 0) {
+				decoded.push_back(static_cast<char>((hi << 4) | lo));
+				i += 2;
+				continue;
+			}
+		}
+		decoded.push_back(text[i]);
+	}
+	return decoded;
+}
+
+std::filesystem::path fileUrlToPath(
+	const std::string & rawUrl,
+	std::string * errorOut = nullptr) {
+
+	if (errorOut) {
+		errorOut->clear();
+	}
+	std::string url = trimCopy(stripUrlFragment(rawUrl));
+	const size_t queryPos = url.find('?');
+	if (queryPos != std::string::npos) {
+		url = url.substr(0, queryPos);
+	}
+	if (!isFileUrl(url)) {
+		if (errorOut) {
+			*errorOut = "URL is not a file URL.";
+		}
+		return {};
+	}
+
+	const std::string rest = url.substr(std::string("file://").size());
+	const size_t pathStart = rest.find_first_of("/\\");
+	const std::string authority = pathStart == std::string::npos
+		? percentDecodeUrlPath(rest)
+		: percentDecodeUrlPath(rest.substr(0, pathStart));
+	std::string pathPart = pathStart == std::string::npos
+		? std::string()
+		: percentDecodeUrlPath(rest.substr(pathStart));
+
+	const std::string loweredAuthority = toLowerCopy(authority);
+	const bool hasRemoteAuthority =
+		!authority.empty() && loweredAuthority != "localhost";
+
+#ifdef _WIN32
+	std::replace(pathPart.begin(), pathPart.end(), '/', '\\');
+	if (hasRemoteAuthority) {
+		if (!pathPart.empty() && pathPart.front() != '\\') {
+			pathPart.insert(pathPart.begin(), '\\');
+		}
+		pathPart = "\\\\" + authority + pathPart;
+	} else if (pathPart.size() >= 3 &&
+			   (pathPart[0] == '\\' || pathPart[0] == '/') &&
+			   std::isalpha(static_cast<unsigned char>(pathPart[1])) &&
+			   pathPart[2] == ':') {
+		pathPart.erase(pathPart.begin());
+	}
+#else
+	if (hasRemoteAuthority) {
+		pathPart = "//" + authority + pathPart;
+	}
+#endif
+
+	if (pathPart.empty()) {
+		if (errorOut) {
+			*errorOut = "File URL did not contain a path.";
+		}
+		return {};
+	}
+	return std::filesystem::path(pathPart);
+}
+
+NativeFetchResult fetchFileUrl(const std::string & url) {
+	NativeFetchResult result;
+	result.effectiveUrl = url;
+	result.contentType = "text/html";
+
+	std::string pathError;
+	const std::filesystem::path path = fileUrlToPath(url, &pathError);
+	if (path.empty()) {
+		result.error = pathError.empty()
+			? "Could not convert file URL to a local path."
+			: pathError;
+		return result;
+	}
+
+	size_t bodySize = 0;
+	if (!readTextFile(path, &result.body, &bodySize)) {
+		result.error = "Could not read local file: " + path.string();
+		return result;
+	}
+	if (result.body.empty()) {
+		result.error = "Local file was empty: " + path.string();
+		return result;
+	}
+
+	result.success = true;
+	return result;
+}
+
 bool isTransientNetworkError(const NativeFetchResult & result) {
 	if (result.success) {
 		return false;
@@ -1712,6 +1831,9 @@ NativeFetchResult fetchUrlWithCurl(const std::string & url, int timeoutSeconds =
 	if (!isFileUrl(url) && !isSupportedRemoteUrlScheme(url)) {
 		result.error = "Unsupported URL scheme for native web crawling.";
 		return result;
+	}
+	if (isFileUrl(url)) {
+		return fetchFileUrl(url);
 	}
 
 	const std::string curlExe = resolveCurlExecutable();

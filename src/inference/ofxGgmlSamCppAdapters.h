@@ -42,6 +42,20 @@ inline int resolveThreadCount(const RuntimeOptions & options) {
 
 using ModelHandle = std::shared_ptr<sam_state>;
 
+inline ModelHandle manageModelHandle(ModelHandle model) {
+	if (!model) {
+		return {};
+	}
+	return ModelHandle(
+		model.get(),
+		[model = std::move(model)](sam_state * state) mutable {
+			if (state) {
+				sam_deinit(*state);
+			}
+			model.reset();
+		});
+}
+
 inline ModelHandle loadModel(
 	const std::string & modelPath,
 	const RuntimeOptions & options = {},
@@ -64,7 +78,7 @@ inline ModelHandle loadModel(
 		}
 		return {};
 	}
-	return model;
+	return manageModelHandle(std::move(model));
 }
 
 inline bool fillSamImage(

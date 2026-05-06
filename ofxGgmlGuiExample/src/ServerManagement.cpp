@@ -23,9 +23,9 @@ namespace {
 constexpr size_t kMaxLogMessages = 500;
 const char * const kDefaultTextServerUrl = "http://127.0.0.1:8080";
 const char * const kDefaultAceStepServerUrl = "http://127.0.0.1:8085";
-constexpr long kAceStepQuickHealthTimeoutMs = 900L;
-constexpr int kAceStepStartupProbeAttempts = 8;
-constexpr int kAceStepStartupProbeSleepMs = 150;
+constexpr long kAceStepQuickHealthTimeoutMs = 2500L;
+constexpr int kAceStepStartupProbeAttempts = 12;
+constexpr int kAceStepStartupProbeSleepMs = 500;
 }
 
 void ofApp::applyLogLevel(ofLogLevel level) {
@@ -428,6 +428,17 @@ std::string ofApp::findLocalAceStepServerExecutable(bool refresh) {
 }
 
 std::string ofApp::findLocalAceStepModelsDirectory(bool refresh) {
+	const std::string configuredModelsDir = trim(aceStepModelsDir);
+	if (!configuredModelsDir.empty()) {
+		std::filesystem::path candidate(configuredModelsDir);
+		if (ofxGgmlAceStepServerManagerInternal::directoryContainsUsableAceStepPipeline(candidate)) {
+			std::error_code ec;
+			const std::filesystem::path normalized =
+				std::filesystem::weakly_canonical(candidate, ec);
+			return (ec ? candidate : normalized).string();
+		}
+		return {};
+	}
 	return aceStepServerManager.findLocalModelsDirectory(refresh);
 }
 
@@ -467,8 +478,23 @@ bool ofApp::ensureAceStepServerReady(bool logResult, bool allowLaunch) {
 	if (!findLocalAceStepServerExecutable().empty() &&
 		findLocalAceStepModelsDirectory().empty()) {
 		aceStepServerStatus = ServerStatusState::Unreachable;
-		aceStepServerStatusMessage =
-			"Local AceStep server executable was found, but no GGUF AceStep models directory is available.";
+		const std::string configuredModelsDir = trim(aceStepModelsDir);
+		if (configuredModelsDir.empty()) {
+			aceStepServerStatusMessage =
+				"Local AceStep server executable was found, but no complete AceStep models directory is available.";
+		} else {
+			const auto missingModelTypes =
+				ofxGgmlAceStepServerManagerInternal::missingAceStepModelTypes(configuredModelsDir);
+			aceStepServerStatusMessage =
+				"Selected AceStep models directory is incomplete: " + configuredModelsDir;
+			if (!missingModelTypes.empty()) {
+				aceStepServerStatusMessage +=
+					". Missing: " +
+					ofxGgmlAceStepServerManagerInternal::joinAceStepModelTypes(missingModelTypes);
+			}
+			aceStepServerStatusMessage +=
+				". Required: LM, text encoder, DiT, and VAE GGUF files.";
+		}
 		if (logResult) {
 			logWithLevel(OF_LOG_WARNING, aceStepServerStatusMessage);
 		}
@@ -479,6 +505,7 @@ bool ofApp::ensureAceStepServerReady(bool logResult, bool allowLaunch) {
 		startLocalAceStepServer();
 	}
 
+	std::string lastProbeError = aceStepServerStatusMessage;
 	for (int attempt = 0; attempt < kAceStepStartupProbeAttempts; ++attempt) {
 		std::this_thread::sleep_for(
 			std::chrono::milliseconds(kAceStepStartupProbeSleepMs));
@@ -515,6 +542,7 @@ bool ofApp::ensureAceStepServerReady(bool logResult, bool allowLaunch) {
 			return true;
 		}
 		if (!probe.error.empty()) {
+			lastProbeError = probe.error;
 			aceStepServerStatusMessage =
 				"AceStep server not reachable at " + configuredUrl + ". " + probe.error;
 		}
@@ -524,11 +552,16 @@ bool ofApp::ensureAceStepServerReady(bool logResult, bool allowLaunch) {
 		aceStepServerStatus = ServerStatusState::Unknown;
 		aceStepServerStatusMessage =
 			"Local AceStep server is still starting at " + configuredUrl +
-			". Try again in a moment.";
+			". It may still be loading AceStep GGUF models.";
+		if (!lastProbeError.empty()) {
+			aceStepServerStatusMessage += " Last health probe: " + lastProbeError;
+		}
 	}
 
 	if (logResult) {
-		logWithLevel(OF_LOG_WARNING, aceStepServerStatusMessage);
+		logWithLevel(
+			aceStepServerStatus == ServerStatusState::Unknown ? OF_LOG_NOTICE : OF_LOG_WARNING,
+			aceStepServerStatusMessage);
 	}
 	return false;
 }
@@ -551,8 +584,23 @@ void ofApp::startLocalAceStepServer() {
 	const std::string modelsDir = findLocalAceStepModelsDirectory(true);
 	if (modelsDir.empty()) {
 		aceStepServerStatus = ServerStatusState::Unreachable;
-		aceStepServerStatusMessage =
-			"No local GGUF AceStep models directory was found. Put the downloaded GGUF models in libs/acestep/bin/models or a shared models/acestep folder first.";
+		const std::string configuredModelsDir = trim(aceStepModelsDir);
+		if (configuredModelsDir.empty()) {
+			aceStepServerStatusMessage =
+				"No complete local AceStep models directory was found. Put the LM, text encoder, DiT, and VAE GGUF files in models/acestep/gguf or choose that models directory manually.";
+		} else {
+			const auto missingModelTypes =
+				ofxGgmlAceStepServerManagerInternal::missingAceStepModelTypes(configuredModelsDir);
+			aceStepServerStatusMessage =
+				"Selected AceStep models directory is incomplete: " + configuredModelsDir;
+			if (!missingModelTypes.empty()) {
+				aceStepServerStatusMessage +=
+					". Missing: " +
+					ofxGgmlAceStepServerManagerInternal::joinAceStepModelTypes(missingModelTypes);
+			}
+			aceStepServerStatusMessage +=
+				". Required: LM, text encoder, DiT, and VAE GGUF files.";
+		}
 		logWithLevel(OF_LOG_ERROR, aceStepServerStatusMessage);
 		return;
 	}

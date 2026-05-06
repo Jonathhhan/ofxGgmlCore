@@ -95,6 +95,95 @@ inline bool directoryContainsAceStepModels(const std::filesystem::path & directo
 	return directoryContainsFilesWithExtensions(directory, {".gguf"});
 }
 
+inline std::vector<std::string> missingAceStepModelTypes(const std::filesystem::path & directory) {
+	bool hasLm = false;
+	bool hasTextEncoder = false;
+	bool hasDit = false;
+	bool hasVae = false;
+
+	std::error_code ec;
+	if (!std::filesystem::exists(directory, ec) || ec) {
+		return {"LM", "text encoder", "DiT", "VAE"};
+	}
+
+	for (const auto & entry : std::filesystem::recursive_directory_iterator(directory, ec)) {
+		if (ec) {
+			break;
+		}
+		if (!entry.is_regular_file()) {
+			continue;
+		}
+
+		std::string extension = entry.path().extension().string();
+		std::transform(
+			extension.begin(),
+			extension.end(),
+			extension.begin(),
+			[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		if (extension != ".gguf") {
+			continue;
+		}
+
+		std::string filename = entry.path().filename().string();
+		std::transform(
+			filename.begin(),
+			filename.end(),
+			filename.begin(),
+			[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+		const bool looksLikeLm =
+			filename.find("5hz") != std::string::npos &&
+			filename.find("lm") != std::string::npos;
+		const bool looksLikeTextEncoder =
+			filename.find("embedding") != std::string::npos ||
+			filename.find("text-enc") != std::string::npos ||
+			filename.find("text_encoder") != std::string::npos;
+		const bool looksLikeVae = filename.find("vae") != std::string::npos;
+		const bool looksLikeDit =
+			!looksLikeLm &&
+			!looksLikeTextEncoder &&
+			!looksLikeVae &&
+			(filename.find("acestep-v15") != std::string::npos ||
+				filename.find("ace-step") != std::string::npos ||
+				filename.find("dit") != std::string::npos);
+
+		hasLm = hasLm || looksLikeLm;
+		hasTextEncoder = hasTextEncoder || looksLikeTextEncoder;
+		hasDit = hasDit || looksLikeDit;
+		hasVae = hasVae || looksLikeVae;
+	}
+
+	std::vector<std::string> missing;
+	if (!hasLm) {
+		missing.emplace_back("LM");
+	}
+	if (!hasTextEncoder) {
+		missing.emplace_back("text encoder");
+	}
+	if (!hasDit) {
+		missing.emplace_back("DiT");
+	}
+	if (!hasVae) {
+		missing.emplace_back("VAE");
+	}
+	return missing;
+}
+
+inline bool directoryContainsUsableAceStepPipeline(const std::filesystem::path & directory) {
+	return missingAceStepModelTypes(directory).empty();
+}
+
+inline std::string joinAceStepModelTypes(const std::vector<std::string> & types) {
+	std::string joined;
+	for (size_t i = 0; i < types.size(); ++i) {
+		if (i > 0) {
+			joined += (i + 1 == types.size()) ? " and " : ", ";
+		}
+		joined += types[i];
+	}
+	return joined;
+}
+
 inline bool directoryContainsAceStepAdapters(const std::filesystem::path & directory) {
 	return directoryContainsFilesWithExtensions(directory, {".safetensors"});
 }
@@ -134,10 +223,19 @@ inline void AceStepServerManager::startLocalServer(
 		return;
 	}
 
-	if (modelsDir.empty() ||
-		!ofxGgmlAceStepServerManagerInternal::directoryContainsAceStepModels(modelsDir)) {
+	if (modelsDir.empty()) {
 		status_ = ServerStatusState::Unreachable;
-		statusMessage_ = "AceStep models directory is missing or does not contain GGUF model files.";
+		statusMessage_ = "AceStep models directory is missing.";
+		return;
+	}
+	const auto missingModelTypes =
+		ofxGgmlAceStepServerManagerInternal::missingAceStepModelTypes(modelsDir);
+	if (!missingModelTypes.empty()) {
+		status_ = ServerStatusState::Unreachable;
+		statusMessage_ =
+			"AceStep models directory is incomplete. Missing: " +
+			ofxGgmlAceStepServerManagerInternal::joinAceStepModelTypes(missingModelTypes) +
+			". Required: LM, text encoder, DiT, and VAE GGUF files.";
 		return;
 	}
 
@@ -321,7 +419,7 @@ inline std::string AceStepServerManager::findLocalModelsDirectory(bool refresh) 
 
 	cachedModelsDirectory_.clear();
 	for (const auto & candidate : candidates) {
-		if (ofxGgmlAceStepServerManagerInternal::directoryContainsAceStepModels(candidate)) {
+		if (ofxGgmlAceStepServerManagerInternal::directoryContainsUsableAceStepPipeline(candidate)) {
 			std::error_code ec;
 			const std::filesystem::path normalized =
 				std::filesystem::weakly_canonical(candidate, ec);

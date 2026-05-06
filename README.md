@@ -77,7 +77,7 @@ This addon is released under the [MIT License](LICENSE).
 - `ofxGgmlVisionInference` for multimodal image-to-text requests against `llama-server`-style OpenAI-compatible endpoints
 - `ofxGgmlYoloInference` for object-detection requests through the ggml `examples/yolo` `yolov3-tiny` CLI adapter, using GGUF models such as `yolov3-tiny.gguf`
 - `ofxGgmlVideoInference` for backend-driven video understanding, starting with sampled-frame analysis and room for future specialized video backends
-- `ofxGgmlSegmentationInference` as a lightweight image-segmentation bridge layer, with optional adapter helpers for [sam.cpp](https://github.com/YavorGIvanov/sam.cpp); the pinned sam.cpp checkout is not compiled automatically because it targets older ggml allocator APIs, so real SAM backends must opt in with `OFXGGML_ENABLE_SAMCPP_ADAPTER=1` and a ggml-compatible linked implementation
+- `ofxGgmlSegmentationInference` as a lightweight image-segmentation bridge layer, with optional adapter helpers for [sam.cpp](https://github.com/YavorGIvanov/sam.cpp) and a newer optional [sam3.cpp](https://github.com/PABannier/sam3.cpp) checkout path for SAM 2/2.1/3 and EdgeTAM. The old pinned `sam.cpp` checkout is not compiled automatically because it targets older ggml allocator APIs; use `scripts/build-sam3-cpp.bat -Cuda` for the current CUDA-capable sam3.cpp runtime experiment.
 - `ofxGgmlVideoPlanner` for beat planning, multi-scene sequencing, and AI-assisted edit-plan generation that can feed video, diffusion, or writing workflows
   - the planner remains generation-agnostic so apps can pair those plans with `ofxStableDiffusion`, `ofxVlc4`, or external renderers while keeping one shared planning/export manifest
 - `ofxGgmlMontagePlanner` and `ofxGgmlMontagePreviewBridge` are companion/example-tier surfaces for subtitle-driven montage planning, preview tracks, and CMX-style EDL export
@@ -165,7 +165,7 @@ Supporting areas:
 
 - `libs/ggml/`
 - `scripts/` for user-facing setup, build, download, and benchmark entry points
-  - includes `scripts/install-sam-cpp.sh` / `scripts/install-sam-cpp.bat` for fetching the optional `sam.cpp` source checkout into `libs/sam.cpp` for projects that use the segmentation bridge
+- includes `scripts/install-sam-cpp.sh` / `scripts/install-sam-cpp.bat` for fetching the optional legacy `sam.cpp` source checkout into `libs/sam.cpp`, plus `scripts/install-sam3-cpp.bat` and `scripts/build-sam3-cpp.bat` for the newer optional `sam3.cpp` runtime. On Windows, `build-sam3-cpp.bat -Cuda` configures ggml with CUDA when the CUDA Toolkit and Visual Studio CUDA integration are present.
   - includes `scripts/install-acestep.ps1` / `scripts/install-acestep.bat` for building a local AceStep runtime while keeping only the final launcher/runtime binaries under `libs/acestep/bin`
 - `scripts/dev/` for maintainer update and patching helpers
 - `docs/`
@@ -179,6 +179,7 @@ Supporting areas:
 - `ofxGgmlAdvancedVisionExample/`
 - `ofxGgmlSamExample/`
 - `ofxGgmlMontagePlannerExample/`
+- `ofxGgmlMusicExample/`
 
 Developer tooling:
 
@@ -724,13 +725,17 @@ scripts\install-acestep.bat
 
 The installer now auto-detects the remote default branch when possible, falls back across common branch names (`main`, `master`, `dev`, `trunk`), and initializes required submodules so upstream branch/layout changes fail less often.
 
-By default the helper now keeps the heavy checkout/build tree outside the addon under `%LOCALAPPDATA%\ofxGgml\acestep\`, copies the final runtime files into:
+By default the helper now keeps the heavy checkout/build tree outside the addon under `%LOCALAPPDATA%\ofxGgml\acestep\`, creates the shared GGUF model folder at:
+
+- `models/acestep/gguf`
+
+and copies the final runtime files into:
 
 - `libs/acestep/bin`
 
 and prunes the temporary source/build artifacts after a successful install. Pass `-KeepArtifacts` if you intentionally want to keep the checkout/build tree for debugging.
 
-After starting the AceStep server, open the GUI example's `Vision -> AceStep Music Backend` section and use `Check AceStep server` to verify that the configured URL is reachable.
+After starting the AceStep server, open the GUI example's `Vision -> AceStep Music Backend` section and use `Check AceStep server` to verify that the configured URL is reachable. The standalone `ofxGgmlMusicExample` also starts without models, shows the local prompt/ABC path, and can render through AceStep when the server is configured.
 
 `setup_windows.bat` and `setup_linux_macos.sh` now follow the server-first path by default: they build `ggml`, leave the local `llama.cpp` runtime optional, and let you opt into addon-local `llama-server` plus CLI fallback tools with `--with-llama-cli` only when you want them.
 
@@ -876,6 +881,7 @@ These examples preserve the workflows removed from the GUI example during Phase 
 - `ofxGgmlAdvancedVisionExample`: CLIP-style ranking, Wikimedia image search, and diffusion bridge validation
 - `ofxGgmlSamExample`: interactive point-prompt SAM segmentation with `sam.cpp` adapter fallback
 - `ofxGgmlMontagePlannerExample`: transcript-driven clip selection, subtitle tracks, editor brief, and EDL/SRT export
+- `ofxGgmlMusicExample`: local music prompt and ABC sketch generation, plus optional AceStep rendered audio
 
 See [docs/examples/README.md](docs/examples/README.md) for the full example map and [docs/examples/MIGRATION.md](docs/examples/MIGRATION.md) for migration notes from the old GUI companion panels.
 

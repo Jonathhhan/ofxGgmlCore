@@ -4,6 +4,7 @@ param(
     [string]$SourceDir = "",
     [string]$BuildDir = "",
     [string]$InstallDir = "",
+    [string]$ModelDir = "",
     [int]$Jobs = 0,
     [switch]$Refetch,
     [switch]$Clean,
@@ -210,6 +211,9 @@ if ([string]::IsNullOrWhiteSpace($BuildDir)) {
 if ([string]::IsNullOrWhiteSpace($InstallDir)) {
     $InstallDir = Join-Path $addonRoot 'libs\acestep\bin'
 }
+if ([string]::IsNullOrWhiteSpace($ModelDir)) {
+    $ModelDir = Join-Path $addonRoot 'models\acestep\gguf'
+}
 if ($Jobs -le 0) {
     $Jobs = [Math]::Max(1, [Environment]::ProcessorCount)
 }
@@ -257,6 +261,7 @@ if (-not $DryRun) {
 
     New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $ModelDir | Out-Null
 }
 
 Write-Step "Configuring AceStep"
@@ -307,6 +312,7 @@ Write-Host "AceStep install helper complete."
 Write-Host "  source:  $SourceDir"
 Write-Host "  build:   $BuildDir"
 Write-Host "  install: $InstallDir"
+Write-Host "  models:  $ModelDir"
 if (-not [string]::IsNullOrWhiteSpace($resolvedBranch)) {
     Write-Host "  branch:  $resolvedBranch"
 }
@@ -316,7 +322,7 @@ if (-not $KeepArtifacts) {
 Write-Host "  server url default in ofxGgml: http://127.0.0.1:8085"
 Write-Host ""
 Write-Host "Next steps:"
-Write-Host "  1. Download the required GGUF model files into libs/acestep/bin/models or source/models."
+Write-Host "  1. Download the required GGUF model files into models/acestep/gguf."
 Write-Host "     Required types: LM, text encoder, DiT, and VAE."
 Write-Host "  2. Start the AceStep server from the installed binaries or the build tree."
 Write-Host "  3. In the GUI example, open Vision -> AceStep Music Backend."

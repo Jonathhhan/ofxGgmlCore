@@ -20,6 +20,7 @@ If you only used those APIs, no migration is required.
 | Diffusion / CLIP / Image Search | `ofxGgmlAdvancedVisionExample` | `ofxGgmlDiffusionInference`, `ofxGgmlClipInference`, `ofxGgmlImageSearch` |
 | SAM segmentation | `ofxGgmlSamExample` | `ofxGgmlSegmentationInference`, `ofxGgmlSamCppAdapters` |
 | Montage planning | `ofxGgmlMontagePlannerExample` | `ofxGgmlMontagePlanner`, subtitle helpers, EDL export |
+| Image / Prompt -> Music and AceStep | `ofxGgmlMusicExample` | `ofxGgmlMusicGenerator`, `ofxGgmlAceStepBridge` |
 
 ## Migration checklist
 

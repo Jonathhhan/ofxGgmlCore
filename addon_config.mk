@@ -26,6 +26,8 @@ common:
 	ADDON_INCLUDES += libs/ggml/include
 	ADDON_INCLUDES += libs/clip/include
 	ADDON_INCLUDES += libs/sam.cpp
+	ADDON_INCLUDES += libs/sam3.cpp
+	ADDON_INCLUDES += libs/sam3.cpp/stb
 	ADDON_INCLUDES += libs/libxml2/include
 	# stable-diffusion.cpp requires GGML_MAX_NAME >= 128 when using this
 	# addon as a system GGML provider. Keep consumers ABI-compatible with
@@ -41,6 +43,12 @@ common:
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/build/%
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/ggml/%
 	ADDON_SOURCES_EXCLUDE += libs/sam.cpp/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/.git/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/sam3.cpp
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/build/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/ggml/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/tests/%
 	ADDON_SOURCES_EXCLUDE += libs/acestep/%
 	ADDON_SOURCES_EXCLUDE += libs/mojo/%
 	ADDON_SOURCES_EXCLUDE += libs/llama/bin/%
@@ -51,6 +59,11 @@ common:
 	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/build/%
 	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/ggml/%
 	ADDON_INCLUDES_EXCLUDE += libs/sam.cpp/examples/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/.git/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/build/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/ggml/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/examples/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/tests/%
 	ADDON_INCLUDES_EXCLUDE += libs/acestep/%
 	ADDON_INCLUDES_EXCLUDE += libs/mojo/%
 	ADDON_INCLUDES_EXCLUDE += libs/llama/bin/%
@@ -58,6 +71,8 @@ common:
 	ADDON_LIBS_EXCLUDE += libs/acestep/%
 	ADDON_LIBS_EXCLUDE += libs/sam.cpp/build/%
 	ADDON_LIBS_EXCLUDE += libs/sam.cpp/ggml/%
+	ADDON_LIBS_EXCLUDE += libs/sam3.cpp/build/%
+	ADDON_LIBS_EXCLUDE += libs/sam3.cpp/ggml/%
 	ADDON_LIBS_EXCLUDE += libs/mojo/%
 	ADDON_LIBS_EXCLUDE += libs/llama/bin/%
 	ADDON_LIBS_EXCLUDE += libs/whisper/bin/%
@@ -81,6 +96,8 @@ msys2:
 vs:
 	ADDON_INCLUDES += src
 	ADDON_INCLUDES += libs/ggml/include
+	ADDON_INCLUDES += libs/clip/include
+	ADDON_INCLUDES += libs/clip/src
 	# Keep the checked-in Visual Studio defaults CPU-safe.
 	# Re-run scripts\build-ggml.bat on the target machine after enabling
 	# optional backends so the generated project can pick up the exact local
@@ -89,12 +106,6 @@ vs:
 	ADDON_LIBS += libs/ggml/lib/ggml.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-base.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-cpu.lib
-	ADDON_LIBS += libs/ggml/lib/ggml-cuda.lib
-	ADDON_LIBS += libs/ggml/lib/ggml-vulkan.lib
-	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cublas.lib
-	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cudart.lib
-	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cuda.lib
-	ADDON_LIBS += $(VULKAN_SDK)/Lib/vulkan-1.lib
 	# @DIFFUSION_LIBS_END vs
 android/armeabi:
 android/armeabi-v7a:

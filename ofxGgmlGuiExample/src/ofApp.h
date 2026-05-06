@@ -419,6 +419,7 @@ private:
 	int imageToMusicAbcBars = 16;
 	bool imageToMusicInstrumentalOnly = true;
 	char aceStepServerUrl[256] = "http://127.0.0.1:8085";
+	char aceStepModelsDir[1024] = {};
 	char aceStepPrompt[4096] = {};
 	char aceStepLyrics[4096] = {};
 	char aceStepAudioPath[1024] = {};

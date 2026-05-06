@@ -213,6 +213,7 @@ bool ofApp::saveSession(const std::string & path) {
 		{"imageToMusicAbcKey", std::string(imageToMusicAbcKey)},
 		{"imageToMusicAbcOutputPath", std::string(imageToMusicAbcOutputPath)},
 		{"aceStepServerUrl", std::string(aceStepServerUrl)},
+		{"aceStepModelsDir", std::string(aceStepModelsDir)},
 		{"aceStepPrompt", std::string(aceStepPrompt)},
 		{"aceStepLyrics", std::string(aceStepLyrics)},
 		{"aceStepAudioPath", std::string(aceStepAudioPath)},
@@ -740,6 +741,7 @@ bool ofApp::loadSession(const std::string & path) {
 	copyJsonString(imageToMusicAbcKey, sizeof(imageToMusicAbcKey), buffers, "imageToMusicAbcKey");
 	copyJsonString(imageToMusicAbcOutputPath, sizeof(imageToMusicAbcOutputPath), buffers, "imageToMusicAbcOutputPath");
 	copyJsonString(aceStepServerUrl, sizeof(aceStepServerUrl), buffers, "aceStepServerUrl");
+	copyJsonString(aceStepModelsDir, sizeof(aceStepModelsDir), buffers, "aceStepModelsDir");
 	copyJsonString(aceStepPrompt, sizeof(aceStepPrompt), buffers, "aceStepPrompt");
 	copyJsonString(aceStepLyrics, sizeof(aceStepLyrics), buffers, "aceStepLyrics");
 	copyJsonString(aceStepAudioPath, sizeof(aceStepAudioPath), buffers, "aceStepAudioPath");
