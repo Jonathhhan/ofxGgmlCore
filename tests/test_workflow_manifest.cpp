@@ -20,7 +20,7 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	manifest.executionSteps.front().startedAt = "2026-05-05T16:32:12Z";
 	manifest.executionSteps.front().completedAt = "2026-05-05T16:32:40Z";
 	manifest.executionSteps.front().resumeToken = "checkpoint:crawl";
-	manifest.executionSteps.front().metadata["output_intermediate_ids"] = "outline";
+	manifest.executionSteps.front().outputIntermediateIds.push_back("outline");
 	manifest.artifacts.front().mimeType = "application/x-subrip";
 	manifest.warnings.push_back("One citation has low confidence.");
 	manifest.reviewNotes.push_back("Check source freshness before publishing.");
@@ -32,7 +32,8 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	manifest.replay.replayCommand = "ofxGgmlVideoEssayExample --replay manifest.json";
 	manifest.replay.randomSeed = "1234";
 	manifest.replay.checkpointPath = "checkpoints/crawl.json";
-	manifest.replay.requiredArtifactIds.push_back("outline");
+	manifest.replay.requiredIntermediateIds.push_back("outline");
+	manifest.replay.requiredArtifactIds.push_back("srt");
 	manifest.metadata["model"] = "mock-model.gguf";
 
 	const auto json = manifest.toJsonString();
@@ -50,8 +51,10 @@ TEST_CASE("Workflow manifest serializes shared handoff contract", "[workflow_man
 	REQUIRE(json.find("video_planner") != std::string::npos);
 	REQUIRE(json.find("requires_review") != std::string::npos);
 	REQUIRE(json.find("\"execution_steps\"") != std::string::npos);
+	REQUIRE(json.find("\"output_intermediate_ids\"") != std::string::npos);
 	REQUIRE(json.find("checkpoint:crawl") != std::string::npos);
 	REQUIRE(json.find("\"replay\"") != std::string::npos);
+	REQUIRE(json.find("\"required_intermediate_ids\"") != std::string::npos);
 	REQUIRE(json.find("\"deterministic\":true") != std::string::npos);
 	REQUIRE(json.find("ofxGgmlVideoEssayExample --replay manifest.json") != std::string::npos);
 }

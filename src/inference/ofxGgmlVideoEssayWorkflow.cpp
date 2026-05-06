@@ -621,8 +621,10 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 
 	manifest.addContract("crawl_to_cite", "cite", "Source collection handoff into citation grounding");
 	manifest.contracts.back().addInput("topic", "text", "topic", true, "Research topic");
-	manifest.contracts.back().addInput("source_url", "url[]", "source_url", !request.useCrawler, "Loaded source URLs");
-	manifest.contracts.back().addInput("crawler_start_url", "url", "crawler_start_url", request.useCrawler, "Crawler seed URL");
+	manifest.contracts.back().addInput("source_url", "url[]", "source_url", false, "Loaded source URLs");
+	manifest.contracts.back().inputs.back().metadata["required_when"] = "use_crawler=false";
+	manifest.contracts.back().addInput("crawler_start_url", "url", "crawler_start_url", false, "Crawler seed URL");
+	manifest.contracts.back().inputs.back().metadata["required_when"] = "use_crawler=true";
 	manifest.contracts.back().addOutput("citations", "citation_list", "citations", true, "Resolved citations and provenance");
 	manifest.addContract("cite_to_outline", "outline", "Citation handoff into cited outline drafting");
 	manifest.contracts.back().addInput("citations", "citation_list", "citations", true, "Resolved citations and source summaries");
@@ -657,22 +659,23 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 	manifest.handoff.metadata["status"] = manifest.status;
 
 	manifest.addExecutionStep("crawl", request.useCrawler ? "Crawl source material" : "Collect source URLs", result.validation.ok ? "complete" : "failed");
-	manifest.executionSteps.back().metadata["output_intermediate_ids"] = "citations";
+	manifest.executionSteps.back().outputIntermediateIds.push_back("citations");
 	manifest.executionSteps.back().resumeToken = "checkpoint:crawl";
 	manifest.addExecutionStep("cite", "Build grounded citations", result.citationResult.success ? "complete" : (result.validation.ok ? "failed" : "blocked"));
-	manifest.executionSteps.back().metadata["input_intermediate_ids"] = "citations";
-	manifest.executionSteps.back().metadata["output_intermediate_ids"] = "outline";
+	manifest.executionSteps.back().inputIntermediateIds.push_back("citations");
+	manifest.executionSteps.back().outputIntermediateIds.push_back("outline");
 	manifest.executionSteps.back().resumeToken = "checkpoint:citations";
 	manifest.addExecutionStep("outline", "Draft cited outline", !trimCopy(result.outline).empty() ? "complete" : "blocked");
-	manifest.executionSteps.back().metadata["input_intermediate_ids"] = "citations";
-	manifest.executionSteps.back().metadata["output_intermediate_ids"] = "script";
+	manifest.executionSteps.back().inputIntermediateIds.push_back("citations");
+	manifest.executionSteps.back().outputIntermediateIds.push_back("script");
 	manifest.executionSteps.back().resumeToken = "checkpoint:outline";
 	manifest.addExecutionStep("script", "Write narration script", !trimCopy(result.script).empty() ? "complete" : "blocked");
-	manifest.executionSteps.back().metadata["input_intermediate_ids"] = "outline";
-	manifest.executionSteps.back().metadata["output_intermediate_ids"] = "voice_cues";
+	manifest.executionSteps.back().inputIntermediateIds.push_back("outline");
+	manifest.executionSteps.back().outputIntermediateIds.push_back("voice_cues");
 	manifest.executionSteps.back().resumeToken = "checkpoint:script";
 	manifest.addExecutionStep("subtitles", "Build cue sheet and SRT subtitles", !trimCopy(result.srtText).empty() ? "complete" : "blocked");
-	manifest.executionSteps.back().metadata["input_intermediate_ids"] = "script,voice_cues";
+	manifest.executionSteps.back().inputIntermediateIds.push_back("script");
+	manifest.executionSteps.back().inputIntermediateIds.push_back("voice_cues");
 	manifest.executionSteps.back().outputArtifactIds.push_back("subtitles");
 	manifest.executionSteps.back().resumeToken = "checkpoint:subtitles";
 	manifest.addExecutionStep("video_plan", "Prepare scene and edit plan handoff", (!trimCopy(result.scenePlanSummary).empty() || !trimCopy(result.editPlanSummary).empty()) ? "complete" : (result.success ? "pending" : "blocked"));
@@ -688,7 +691,7 @@ std::string ofxGgmlVideoEssayWorkflow::buildWorkflowManifest(
 	manifest.replay.replayCommand = "ofxGgmlVideoEssayExample --replay workflow_manifest.json";
 	manifest.replay.checkpointPath = "checkpoints/video_essay_workflow_manifest.json";
 	manifest.replay.requiredArtifactIds = {"subtitles", "scene_plan", "edit_plan"};
-	manifest.replay.metadata["required_intermediate_ids"] = "citations,outline,script";
+	manifest.replay.requiredIntermediateIds = {"citations", "outline", "script"};
 	manifest.replay.metadata["temperature"] = std::to_string(request.inferenceSettings.temperature);
 	manifest.replay.metadata["model_path"] = request.modelPath;
 	manifest.metadata["backend"] = result.backendName;

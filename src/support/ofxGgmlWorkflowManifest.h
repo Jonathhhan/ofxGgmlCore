@@ -178,6 +178,8 @@ struct ofxGgmlWorkflowExecutionStep {
 	std::string resumeToken;
 	std::vector<std::string> inputArtifactIds;
 	std::vector<std::string> outputArtifactIds;
+	std::vector<std::string> inputIntermediateIds;
+	std::vector<std::string> outputIntermediateIds;
 	std::map<std::string, std::string> metadata;
 
 	ofJson toJson() const {
@@ -190,6 +192,8 @@ struct ofxGgmlWorkflowExecutionStep {
 		json["resume_token"] = resumeToken;
 		json["input_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(inputArtifactIds);
 		json["output_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(outputArtifactIds);
+		json["input_intermediate_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(inputIntermediateIds);
+		json["output_intermediate_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(outputIntermediateIds);
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;
@@ -204,10 +208,11 @@ struct ofxGgmlWorkflowReplayPlan {
 	std::string randomSeed;
 	std::string checkpointPath;
 	std::vector<std::string> requiredArtifactIds;
+	std::vector<std::string> requiredIntermediateIds;
 	std::map<std::string, std::string> metadata;
 
 	bool empty() const {
-		return !deterministic && replayCommand.empty() && randomSeed.empty() && checkpointPath.empty() && requiredArtifactIds.empty() && metadata.empty();
+		return !deterministic && replayCommand.empty() && randomSeed.empty() && checkpointPath.empty() && requiredArtifactIds.empty() && requiredIntermediateIds.empty() && metadata.empty();
 	}
 
 	ofJson toJson() const {
@@ -217,6 +222,7 @@ struct ofxGgmlWorkflowReplayPlan {
 		json["random_seed"] = randomSeed;
 		json["checkpoint_path"] = checkpointPath;
 		json["required_artifact_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(requiredArtifactIds);
+		json["required_intermediate_ids"] = ofxGgmlWorkflowManifestDetail::toStringArray(requiredIntermediateIds);
 		json["metadata"] = ofJson::object();
 		for (const auto & item : metadata) {
 			json["metadata"][item.first] = item.second;

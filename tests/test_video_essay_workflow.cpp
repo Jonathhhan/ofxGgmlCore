@@ -178,8 +178,11 @@ TEST_CASE("Video essay workflow emits shared handoff manifest", "[video_essay][w
 	REQUIRE(manifest.find("\"handoff\"") != std::string::npos);
 	REQUIRE(manifest.find("\"contract\": \"crawl->cite->outline->script->tts->subtitles->video_plan\"") != std::string::npos);
 	REQUIRE(manifest.find("\"execution_steps\"") != std::string::npos);
+	REQUIRE(manifest.find("\"input_intermediate_ids\"") != std::string::npos);
+	REQUIRE(manifest.find("\"output_intermediate_ids\"") != std::string::npos);
 	REQUIRE(manifest.find("\"resume_token\": \"checkpoint:script\"") != std::string::npos);
 	REQUIRE(manifest.find("\"replay\"") != std::string::npos);
+	REQUIRE(manifest.find("\"required_intermediate_ids\"") != std::string::npos);
 	REQUIRE(manifest.find("\"random_seed\": \"1234\"") != std::string::npos);
 	REQUIRE(manifest.find("\"workflow_details\"") != std::string::npos);
 	REQUIRE(manifest.find("\"voice_cues\"") != std::string::npos);
