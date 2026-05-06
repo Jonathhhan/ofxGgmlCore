@@ -43,6 +43,7 @@
 #include "inference/ofxGgmlWebCrawler.h"
 #include "inference/ofxGgmlImageSearch.h"
 #include "inference/ofxGgmlRAGPipeline.h"
+#include "support/ofxGgmlCollaborativeWorkflow.h"
 #include "support/ofxGgmlCompanionProjectMemory.h"
 #include "support/ofxGgmlContinuityAssetLedger.h"
 #include "support/ofxGgmlFocusedExampleCatalog.h"

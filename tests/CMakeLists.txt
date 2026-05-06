@@ -192,6 +192,7 @@ set(TEST_SOURCES
     test_core.cpp
     test_model.cpp
     test_project_memory.cpp
+    test_collaborative_workflow.cpp
     test_integration_surface.cpp
     test_personalization_profile.cpp
     test_plugin_registry.cpp
