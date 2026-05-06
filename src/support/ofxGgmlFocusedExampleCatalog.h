@@ -80,6 +80,8 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	research.addonHeaders.push_back("ofxGgmlWorkflows.h");
 	research.setupNotes.push_back("configure crawler or local-source ingestion before running");
 	research.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	research.handoffContracts.push_back("crawl_to_cite");
+	research.handoffContracts.push_back("cite_to_outline");
 	research.outputArtifacts.push_back("cited-notes markdown");
 	research.outputArtifacts.push_back("research workflow manifest");
 	catalog.addExample(research);
@@ -97,6 +99,11 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	videoEssay.setupNotes.push_back("keep rendering and timeline preview in the companion app");
 	videoEssay.handoffContracts.push_back("ofxGgmlWorkflowManifest");
 	videoEssay.handoffContracts.push_back("ofxGgmlCompanionProjectMemory");
+	videoEssay.handoffContracts.push_back("crawl_to_cite");
+	videoEssay.handoffContracts.push_back("cite_to_outline");
+	videoEssay.handoffContracts.push_back("outline_to_script");
+	videoEssay.handoffContracts.push_back("script_to_subtitles");
+	videoEssay.handoffContracts.push_back("subtitles_to_video_plan");
 	videoEssay.outputArtifacts.push_back("script outline");
 	videoEssay.outputArtifacts.push_back("subtitle timing");
 	videoEssay.outputArtifacts.push_back("video planning manifest");
@@ -113,6 +120,7 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	speech.addonHeaders.push_back("ofxGgmlModalities.h");
 	speech.setupNotes.push_back("provide a local speech model or mock transcript source");
 	speech.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	speech.handoffContracts.push_back("script_to_subtitles");
 	speech.outputArtifacts.push_back("transcript text");
 	speech.outputArtifacts.push_back("subtitle cues");
 	catalog.addExample(speech);
@@ -143,6 +151,7 @@ inline ofxGgmlFocusedExampleCatalog ofxGgmlDefaultFocusedExampleCatalog() {
 	visual.addonHeaders.push_back("ofxGgmlWorkflows.h");
 	visual.setupNotes.push_back("configure image-search providers and optional vision bridges explicitly");
 	visual.handoffContracts.push_back("ofxGgmlWorkflowManifest");
+	visual.handoffContracts.push_back("subtitles_to_video_plan");
 	visual.outputArtifacts.push_back("ranked visual references");
 	visual.outputArtifacts.push_back("selected asset manifest");
 	catalog.addExample(visual);

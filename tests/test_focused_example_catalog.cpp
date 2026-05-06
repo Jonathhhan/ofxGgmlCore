@@ -50,6 +50,11 @@ TEST_CASE("Focused example catalog serializes stable JSON keys", "[focused_examp
 	REQUIRE(json.find("\"output_artifacts\"") != std::string::npos);
 	REQUIRE(json.find("ofxGgmlWorkflowManifest") != std::string::npos);
 	REQUIRE(json.find("ofxGgmlCompanionProjectMemory") != std::string::npos);
+	REQUIRE(json.find("crawl_to_cite") != std::string::npos);
+	REQUIRE(json.find("cite_to_outline") != std::string::npos);
+	REQUIRE(json.find("outline_to_script") != std::string::npos);
+	REQUIRE(json.find("script_to_subtitles") != std::string::npos);
+	REQUIRE(json.find("subtitles_to_video_plan") != std::string::npos);
 	REQUIRE(json.find("subtitle timing") != std::string::npos);
 	REQUIRE(json.find("research-citations") != std::string::npos);
 	REQUIRE(json.find("companion-video-essay") != std::string::npos);
