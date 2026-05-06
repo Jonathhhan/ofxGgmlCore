@@ -398,7 +398,7 @@ for (const auto& docEmb : docEmbeddings) {
 
 ## See Also
 
-- [Quick Wins Documentation](QUICK_WINS.md) - Streaming API and metrics
+- [Strategic Roadmap](ROADMAP.md) - completed quick wins, streaming API, and metrics context
 - [Performance Guide](PERFORMANCE.md) - Performance tuning
 - Main API: `src/inference/ofxGgmlInference.h`
 - Metrics API: `src/core/ofxGgmlMetrics.h`
