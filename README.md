@@ -28,14 +28,15 @@ See [docs/getting-started/CHOOSING_FEATURES.md](docs/getting-started/CHOOSING_FE
 
 It is aimed at local-first AI tools, lightweight inference utilities, prompt-driven creative apps, and openFrameworks projects that want ggml runtime access without wiring the low-level backend API by hand.
 
-**Phase 1 Quick Wins (80% Complete)** - Recent production-ready features:
+**Phase 1 Quick Wins (100% Complete)** - Production-ready foundation features:
 
 - ✅ **Model Onboarding** - Downloads, SHA256 verification, catalog-based presets, provenance tracking
 - ✅ **Health Monitoring** - Memory usage (`getMemoryUsage()`), server queue status, diagnostics API
 - ✅ **Semantic Cache** - CLIP-based prompt caching with 30-50% reduction in redundant LLM calls
 - ✅ **Hybrid Retrieval** - RAG pipeline with keyword+semantic+quality scoring for better grounding
+- ✅ **Example Cleanup** - GUI example narrowed to addon APIs, with companion workflows moved to focused examples
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full phased roadmap and upcoming features.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the completed phased foundation and active maintenance backlog.
 
 ## Note
 

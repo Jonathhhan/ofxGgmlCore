@@ -508,7 +508,7 @@ src/
 - Custom result structs (inconsistent)
 - Result<T> template (defined but underused)
 
-**Solution**: [Documented in IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md#3-resultt-error-handling-standardization-)
+**Solution**: [tracked in ROADMAP.md](ROADMAP.md#2-polish-api-consistency)
 - Phase 1: Add `Result<T>` Ex variants (non-breaking)
 - Phase 2: Migrate custom structs
 - Phase 3: Deprecate old methods
@@ -544,7 +544,7 @@ if (hasPrefixIgnoreCase(ggml_backend_name(backend), "CPU")) {
 }
 ```
 
-**Solution**: [Documented in IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md#2-raii-guards-integration-)
+**Solution**: [summarized in ROADMAP.md](ROADMAP.md#completed-foundation)
 - Use `std::optional<GgmlBackendGuard>` for cpuBackend
 - Helper method `getCpuBackend()` returns correct pointer
 - Automatic cleanup on destruction
@@ -557,7 +557,7 @@ if (hasPrefixIgnoreCase(ggml_backend_name(backend), "CPU")) {
 - All UI panels in `ofApp.cpp`
 - Difficult to navigate and maintain
 
-**Solution**: [Documented in IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md#4-gui-example-refactoring-)
+**Solution**: [tracked in ROADMAP.md](ROADMAP.md#1-keep-the-core-boundary-small)
 - Split into panel classes (Chat, Script, Vision, Speech, etc.)
 - Shared state manager
 - Each panel <1500 lines
@@ -695,8 +695,8 @@ Build+Scripts   Inference Tests    cppcheck+clang-tidy   lcov+Codecov
 
 ## Additional Resources
 
-- **Improvements Roadmap**: [IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md)
-- **Architecture Notes**: [ARCHITECTURE_IMPROVEMENTS.md](ARCHITECTURE_IMPROVEMENTS.md)
+- **Strategic Roadmap**: [ROADMAP.md](ROADMAP.md)
+- **Architecture Notes**: this document
 - **Performance Guide**: [PERFORMANCE.md](PERFORMANCE.md)
 - **Security Notes**: [../SECURITY_NOTES.md](../SECURITY_NOTES.md)
 - **Main README**: [../README.md](../README.md)
