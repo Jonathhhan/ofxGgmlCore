@@ -296,7 +296,7 @@ Focus: keep the core assistant surfaces safe and inspectable while letting compa
 
 ### 1. Specialist Assistant Teams
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Evolve assistants toward explicit roles such as:
 
@@ -318,7 +318,7 @@ Implemented foundation:
 
 ### 2. Timeline-Aware Companion Copilots
 **Priority**: HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Explore assistant patterns tailored to media creation outside the default addon boundary:
 
@@ -340,7 +340,7 @@ Implemented foundation:
 
 ### 3. Continuity, Consistency, and Asset Reuse
 **Priority**: MEDIUM-HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Let companion systems build on core provenance and manifest support for:
 
@@ -362,7 +362,7 @@ Implemented foundation:
 
 ### 4. Trust and Evaluation Suites
 **Priority**: MEDIUM-HIGH  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 Build repeatable evaluation coverage for:
 
@@ -381,6 +381,10 @@ Implemented foundation:
 - schema version `ofxGgml.trust_evaluation_suite.v1`
 - workflow- and assistant-layer exposure through `ofxGgmlWorkflows.h` and `ofxGgmlAssistants.h`
 - unit coverage for default trust dimensions, stable JSON keys, and empty-entry handling
+
+### Phase 3 completion summary
+
+Phase 3 is complete at the shared-schema foundation level. Assistant reliability and companion-copilot work now has stable metadata contracts for specialist roles, approval-first handoffs, timeline lanes, continuity rules, reusable assets, trust metrics, evaluation cases, and local review evidence. Future companion projects can build executable orchestration on these contracts without expanding the default addon boundary.
 
 ---
 

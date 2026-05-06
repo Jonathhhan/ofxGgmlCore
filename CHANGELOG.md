@@ -60,6 +60,7 @@ All notable changes to `ofxGgml` are documented in this file.
   - `ofxGgmlMemoryUsage` struct with detailed memory metrics including model weights, graph allocations, and backend memory stats
   - `ofxGgmlServerQueueStatus` struct with queue length, processing count, and completion statistics
 - `ofxGgmlTrustEvaluationSuite` as a Phase 3 trust/evaluation schema for citation quality, workflow correctness, latency/throughput, multimodal coherence, assistant safety, approval rules, and evidence-backed evaluation cases.
+- Phase 3 roadmap foundation is now marked complete, covering specialist assistant teams, timeline-aware companion copilots, continuity/asset reuse, and trust/evaluation suite contracts.
 - `ofxGgmlPluginRegistry` as a Phase 4 plugin metadata schema for plugin descriptors, capabilities, ABI markers, lifecycle notes, safety requirements, and compatibility rules.
 - `ofxGgmlIntegrationSurface` as a Phase 4 third-party integration schema for editor shells, external renderers/media tools, search/research pipelines, and hardware/media runtimes.
 - `ofxGgmlPersonalizationProfileSet` as a Phase 4 personalization/adaptation schema for LoRA-style adapters, reusable project presets, text/visual/audio style profiles, adaptation rules, safety requirements, and review notes.
