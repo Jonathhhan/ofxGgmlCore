@@ -47,6 +47,7 @@
 #include "support/ofxGgmlContinuityAssetLedger.h"
 #include "support/ofxGgmlFocusedExampleCatalog.h"
 #include "support/ofxGgmlIntegrationSurface.h"
+#include "support/ofxGgmlPersonalizationProfile.h"
 #include "support/ofxGgmlPluginRegistry.h"
 #include "support/ofxGgmlTimelineCopilotPlan.h"
 #include "support/ofxGgmlTrustEvaluationSuite.h"

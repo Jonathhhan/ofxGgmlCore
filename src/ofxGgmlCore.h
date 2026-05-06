@@ -33,4 +33,5 @@
 
 // Extensibility metadata
 #include "support/ofxGgmlIntegrationSurface.h"
+#include "support/ofxGgmlPersonalizationProfile.h"
 #include "support/ofxGgmlPluginRegistry.h"

@@ -429,13 +429,21 @@ Implemented foundation:
 
 ### 3. Personalization and Adaptation
 **Priority**: MEDIUM  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Explore higher-level personalization features such as:
 
 - LoRA adapter support
 - reusable project presets
 - stylistic profiles for media generation
+
+Implemented foundation:
+
+- `ofxGgmlPersonalizationProfileSet` shared schema primitive for adapter declarations, style profiles, reusable project presets, adaptation rules, safety requirements, review notes, and metadata
+- default personalization entries for text LoRA adapters, media style LoRA adapters, source-grounded research presets, companion media style presets, and text/visual/audio style profiles
+- schema version `ofxGgml.personalization_profile_set.v1`
+- core- and workflow-layer exposure through `ofxGgmlCore.h` and `ofxGgmlWorkflows.h`
+- unit coverage for default personalization entries, stable JSON keys, and empty-entry handling
 
 ### 4. Collaborative and Real-Time Workflows
 **Priority**: MEDIUM  
