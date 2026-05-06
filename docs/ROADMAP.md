@@ -362,7 +362,7 @@ Implemented foundation:
 
 ### 4. Trust and Evaluation Suites
 **Priority**: MEDIUM-HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Build repeatable evaluation coverage for:
 
@@ -374,6 +374,14 @@ Build repeatable evaluation coverage for:
 
 **Outcome**: “local and verifiable” becomes an enforceable product property, not just positioning.
 
+Implemented foundation:
+
+- `ofxGgmlTrustEvaluationSuite` shared schema primitive for trust metrics, evaluation cases, approval rules, evidence references, review notes, and metadata
+- default evaluation dimensions for citation quality, workflow correctness, latency/throughput, multimodal coherence, and assistant safety
+- schema version `ofxGgml.trust_evaluation_suite.v1`
+- workflow- and assistant-layer exposure through `ofxGgmlWorkflows.h` and `ofxGgmlAssistants.h`
+- unit coverage for default trust dimensions, stable JSON keys, and empty-entry handling
+
 ---
 
 ## Phase 4: Ecosystem and Extensibility (9-12 Months)
@@ -382,7 +390,7 @@ Focus: let other developers build companion layers on top of the stable addon fo
 
 ### 1. Plugin System
 **Priority**: HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Create a plugin architecture for:
 
@@ -392,9 +400,17 @@ Create a plugin architecture for:
 - search/retrieval providers
 - tool adapters and assistant capabilities
 
+Implemented foundation:
+
+- `ofxGgmlPluginRegistry` shared schema primitive for plugin descriptors, capability declarations, ABI/schema versions, lifecycle notes, safety requirements, compatibility rules, and metadata
+- default plugin categories for custom inference backends, companion workflow nodes, modality/renderer adapters, search/retrieval providers, and assistant tool adapters
+- schema version `ofxGgml.plugin_registry.v1` and ABI marker `ofxGgml.plugin.v1`
+- core- and workflow-layer exposure through `ofxGgmlCore.h` and `ofxGgmlWorkflows.h`
+- unit coverage for default plugin categories, stable JSON keys, and empty-entry handling
+
 ### 2. Third-Party Integration Surface
 **Priority**: MEDIUM-HIGH  
-**Status**: 💡 Proposed
+**Status**: 🔄 In Progress
 
 Encourage integrations with:
 
@@ -402,6 +418,14 @@ Encourage integrations with:
 - external renderers and media tools
 - search providers and research pipelines
 - hardware/media runtimes
+
+Implemented foundation:
+
+- `ofxGgmlIntegrationSurface` shared schema primitive for integration targets, endpoints, host boundaries, payload keys, failure modes, setup requirements, safety requirements, compatibility notes, and metadata
+- default integration targets for editor/IDE-like shells, external renderers/media tools, search/research pipelines, and hardware/media runtimes
+- schema version `ofxGgml.integration_surface.v1`
+- core- and workflow-layer exposure through `ofxGgmlCore.h` and `ofxGgmlWorkflows.h`
+- unit coverage for default integration targets, stable JSON keys, and empty-entry handling
 
 ### 3. Personalization and Adaptation
 **Priority**: MEDIUM  

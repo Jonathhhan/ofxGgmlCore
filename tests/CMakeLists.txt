@@ -192,6 +192,8 @@ set(TEST_SOURCES
     test_core.cpp
     test_model.cpp
     test_project_memory.cpp
+    test_integration_surface.cpp
+    test_plugin_registry.cpp
     test_integration.cpp
     test_helpers.cpp
     test_resource_guards.cpp
@@ -215,6 +217,7 @@ if(OFXGGML_WITH_OPENFRAMEWORKS OR OFXGGML_ENABLE_RUNTIME_SOURCES)
         test_continuity_asset_ledger.cpp
         test_focused_example_catalog.cpp
         test_timeline_copilot_plan.cpp
+        test_trust_evaluation_suite.cpp
         test_media_prompt_generator.cpp
         test_long_video_planner.cpp
         test_citation_search.cpp

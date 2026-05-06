@@ -46,7 +46,10 @@
 #include "support/ofxGgmlCompanionProjectMemory.h"
 #include "support/ofxGgmlContinuityAssetLedger.h"
 #include "support/ofxGgmlFocusedExampleCatalog.h"
+#include "support/ofxGgmlIntegrationSurface.h"
+#include "support/ofxGgmlPluginRegistry.h"
 #include "support/ofxGgmlTimelineCopilotPlan.h"
+#include "support/ofxGgmlTrustEvaluationSuite.h"
 #include "support/ofxGgmlWorkflowManifest.h"
 #if OFXGGML_ENABLE_NVIGI
 #include "inference/ofxGgmlNvigiRagBackend.h"
