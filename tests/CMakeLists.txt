@@ -10,6 +10,8 @@ add_executable(ofxGgml_rewrite_tests
 	test_public_headers.cpp
 	test_tensor.cpp
 	test_graph.cpp
+	test_runtime.cpp
+	../src/core/ofxGgmlRuntime.cpp
 	../src/compute/ofxGgmlTensor.cpp
 	../src/compute/ofxGgmlGraph.cpp)
 

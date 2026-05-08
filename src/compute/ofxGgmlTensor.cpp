@@ -7,6 +7,27 @@
 #define OFXGGML_HAS_GGML 0
 #endif
 
+#if OFXGGML_HAS_GGML
+namespace {
+ofxGgmlType fromGgmlType(ggml_type type) {
+	switch (type) {
+	case GGML_TYPE_F32:
+		return ofxGgmlType::F32;
+	case GGML_TYPE_F16:
+		return ofxGgmlType::F16;
+	case GGML_TYPE_I32:
+		return ofxGgmlType::I32;
+	case GGML_TYPE_I16:
+		return ofxGgmlType::I16;
+	case GGML_TYPE_I8:
+		return ofxGgmlType::I8;
+	default:
+		return ofxGgmlType::F32;
+	}
+}
+}
+#endif
+
 ofxGgmlTensor::ofxGgmlTensor(ggml_tensor * tensor)
 	: tensor(tensor) {}
 
@@ -24,7 +45,7 @@ ggml_tensor * ofxGgmlTensor::raw() const {
 
 ofxGgmlType ofxGgmlTensor::type() const {
 #if OFXGGML_HAS_GGML
-	return tensor ? static_cast<ofxGgmlType>(tensor->type) : ofxGgmlType::F32;
+	return tensor ? fromGgmlType(tensor->type) : ofxGgmlType::F32;
 #else
 	return ofxGgmlType::F32;
 #endif

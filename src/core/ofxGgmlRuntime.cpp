@@ -122,6 +122,10 @@ ofxGgmlComputeResult ofxGgmlRuntime::compute(ofxGgmlGraph & graph) {
 		result.error = "graph is not built";
 		return result;
 	}
+	if (!impl->buffer) {
+		result.error = "graph tensors are not allocated";
+		return result;
+	}
 	const auto start = std::chrono::steady_clock::now();
 	const ggml_status status = ggml_backend_graph_compute(impl->backend, graph.raw());
 	const auto stop = std::chrono::steady_clock::now();
@@ -139,6 +143,8 @@ ofxGgmlComputeResult ofxGgmlRuntime::compute(ofxGgmlGraph & graph) {
 
 ofxGgmlResult<void> ofxGgmlRuntime::setData(ofxGgmlTensor tensor, const void * data, std::size_t bytes) {
 #if OFXGGML_HAS_GGML
+	if (!isReady()) return ofxGgmlResult<void>::failure("runtime is not ready");
+	if (!impl->buffer) return ofxGgmlResult<void>::failure("graph tensors are not allocated");
 	if (!tensor || !data) return ofxGgmlResult<void>::failure("invalid tensor data");
 	if (bytes != tensor.bytes()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
 	ggml_backend_tensor_set(tensor.raw(), data, 0, bytes);
@@ -153,6 +159,8 @@ ofxGgmlResult<void> ofxGgmlRuntime::setData(ofxGgmlTensor tensor, const void * d
 
 ofxGgmlResult<void> ofxGgmlRuntime::getData(ofxGgmlTensor tensor, void * data, std::size_t bytes) {
 #if OFXGGML_HAS_GGML
+	if (!isReady()) return ofxGgmlResult<void>::failure("runtime is not ready");
+	if (!impl->buffer) return ofxGgmlResult<void>::failure("graph tensors are not allocated");
 	if (!tensor || !data) return ofxGgmlResult<void>::failure("invalid tensor data");
 	if (bytes != tensor.bytes()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
 	ggml_backend_tensor_get(tensor.raw(), data, 0, bytes);

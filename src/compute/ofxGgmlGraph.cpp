@@ -10,6 +10,26 @@
 #include <algorithm>
 #include <utility>
 
+#if OFXGGML_HAS_GGML
+namespace {
+ggml_type toGgmlType(ofxGgmlType type) {
+	switch (type) {
+	case ofxGgmlType::F32:
+		return GGML_TYPE_F32;
+	case ofxGgmlType::F16:
+		return GGML_TYPE_F16;
+	case ofxGgmlType::I32:
+		return GGML_TYPE_I32;
+	case ofxGgmlType::I16:
+		return GGML_TYPE_I16;
+	case ofxGgmlType::I8:
+		return GGML_TYPE_I8;
+	}
+	return GGML_TYPE_F32;
+}
+}
+#endif
+
 ofxGgmlGraph::ofxGgmlGraph(std::size_t memoryBytes)
 	: memoryBytes(std::max<std::size_t>(memoryBytes, 1024u * 1024u)) {
 #if OFXGGML_HAS_GGML
@@ -43,7 +63,7 @@ ofxGgmlGraph & ofxGgmlGraph::operator=(ofxGgmlGraph && other) noexcept {
 ofxGgmlTensor ofxGgmlGraph::tensor1d(ofxGgmlType type, int64_t ne0) {
 #if OFXGGML_HAS_GGML
 	if (!ctx || ne0 <= 0) return {};
-	return ofxGgmlTensor(ggml_new_tensor_1d(ctx, static_cast<ggml_type>(type), ne0));
+	return ofxGgmlTensor(ggml_new_tensor_1d(ctx, toGgmlType(type), ne0));
 #else
 	(void) type;
 	(void) ne0;
@@ -54,7 +74,7 @@ ofxGgmlTensor ofxGgmlGraph::tensor1d(ofxGgmlType type, int64_t ne0) {
 ofxGgmlTensor ofxGgmlGraph::tensor2d(ofxGgmlType type, int64_t ne0, int64_t ne1) {
 #if OFXGGML_HAS_GGML
 	if (!ctx || ne0 <= 0 || ne1 <= 0) return {};
-	return ofxGgmlTensor(ggml_new_tensor_2d(ctx, static_cast<ggml_type>(type), ne0, ne1));
+	return ofxGgmlTensor(ggml_new_tensor_2d(ctx, toGgmlType(type), ne0, ne1));
 #else
 	(void) type;
 	(void) ne0;

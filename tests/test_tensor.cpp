@@ -27,6 +27,16 @@ OFXGGML_TEST(tensor_reports_shape_and_storage) {
 	OFXGGML_REQUIRE(tensor.bytes() == 48);
 }
 
+OFXGGML_TEST(tensor_maps_public_type_to_ggml_type) {
+	ofxGgmlGraph graph;
+	ofxGgmlTensor tensor = graph.tensor1d(ofxGgmlType::I32, 5);
+
+	OFXGGML_REQUIRE(tensor);
+	OFXGGML_REQUIRE(tensor.type() == ofxGgmlType::I32);
+	OFXGGML_REQUIRE(tensor.elementCount() == 5);
+	OFXGGML_REQUIRE(tensor.bytes() == 20);
+}
+
 OFXGGML_TEST(tensor_rejects_invalid_dimensions) {
 	ofxGgmlGraph graph;
 
