@@ -1,5 +1,18 @@
-#define CATCH_CONFIG_MAIN
-#include "catch2.hpp"
+#include "test_harness.h"
 
-// This file provides the main() function for all test files.
-// Individual test files should NOT define their own main().
+#include <exception>
+#include <iostream>
+
+int main() {
+	int failed = 0;
+	for (const auto & test : ofxGgmlTests()) {
+		try {
+			test.run();
+			std::cout << "[ok] " << test.name << "\n";
+		} catch (const std::exception & e) {
+			++failed;
+			std::cerr << "[fail] " << test.name << ": " << e.what() << "\n";
+		}
+	}
+	return failed == 0 ? 0 : 1;
+}

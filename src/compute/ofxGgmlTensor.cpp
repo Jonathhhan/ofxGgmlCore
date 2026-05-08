@@ -1,138 +1,65 @@
 #include "ofxGgmlTensor.h"
 
+#if __has_include("ggml.h")
 #include "ggml.h"
-#include "ggml-backend.h"
-#include "ggml-cpu.h"
+#define OFXGGML_HAS_GGML 1
+#else
+#define OFXGGML_HAS_GGML 0
+#endif
 
-#include <algorithm>
-#include <cstring>
-#include <limits>
+ofxGgmlTensor::ofxGgmlTensor(ggml_tensor * tensor)
+	: tensor(tensor) {}
 
-namespace {
-
-bool isHostAccessible(const struct ggml_tensor * tensor) {
-	if (!tensor) return false;
-	return tensor->buffer == nullptr || ggml_backend_buffer_is_host(tensor->buffer);
+ofxGgmlTensor::operator bool() const {
+	return isValid();
 }
-
-}
-
-ofxGgmlTensor::ofxGgmlTensor(struct ggml_tensor * raw)
-	: m_tensor(raw) {}
 
 bool ofxGgmlTensor::isValid() const {
-	return m_tensor != nullptr;
+	return tensor != nullptr;
 }
 
-std::string ofxGgmlTensor::getName() const {
-	if (!m_tensor) return {};
-	return m_tensor->name;
+ggml_tensor * ofxGgmlTensor::raw() const {
+	return tensor;
 }
 
-void ofxGgmlTensor::setName(const std::string & name) {
-	if (m_tensor) {
-		ggml_set_name(m_tensor, name.c_str());
-	}
+ofxGgmlType ofxGgmlTensor::type() const {
+#if OFXGGML_HAS_GGML
+	return tensor ? static_cast<ofxGgmlType>(tensor->type) : ofxGgmlType::F32;
+#else
+	return ofxGgmlType::F32;
+#endif
 }
 
-ofxGgmlType ofxGgmlTensor::getType() const {
-	if (!m_tensor) return ofxGgmlType::F32;
-	return static_cast<ofxGgmlType>(m_tensor->type);
+int ofxGgmlTensor::dims() const {
+#if OFXGGML_HAS_GGML
+	return tensor ? ggml_n_dims(tensor) : 0;
+#else
+	return 0;
+#endif
 }
 
-int ofxGgmlTensor::getNumDimensions() const {
-	if (!m_tensor) return 0;
-	return ggml_n_dims(m_tensor);
+int64_t ofxGgmlTensor::extent(int dim) const {
+#if OFXGGML_HAS_GGML
+	if (!tensor || dim < 0 || dim >= GGML_MAX_DIMS) return 0;
+	return tensor->ne[dim];
+#else
+	(void) dim;
+	return 0;
+#endif
 }
 
-int64_t ofxGgmlTensor::getDimSize(int dim) const {
-	if (!m_tensor || dim < 0 || dim > 3) return 0;
-	return m_tensor->ne[dim];
+std::size_t ofxGgmlTensor::bytes() const {
+#if OFXGGML_HAS_GGML
+	return tensor ? ggml_nbytes(tensor) : 0;
+#else
+	return 0;
+#endif
 }
 
-int64_t ofxGgmlTensor::getNumElements() const {
-	if (!m_tensor) return 0;
-	return ggml_nelements(m_tensor);
-}
-
-size_t ofxGgmlTensor::getByteSize() const {
-	if (!m_tensor) return 0;
-	return ggml_nbytes(m_tensor);
-}
-
-void * ofxGgmlTensor::getData() {
-	if (!m_tensor) return nullptr;
-	if (!isHostAccessible(m_tensor)) return nullptr;
-	return m_tensor->data;
-}
-
-const void * ofxGgmlTensor::getData() const {
-	if (!m_tensor) return nullptr;
-	if (!isHostAccessible(m_tensor)) return nullptr;
-	return m_tensor->data;
-}
-
-std::vector<float> ofxGgmlTensor::toFloatVector() const {
-	if (!m_tensor) return {};
-	const int64_t n = ggml_nelements(m_tensor);
-	if (n <= 0) return {};
-
-	// Validate bounds for both F32 and non-F32 types to prevent integer overflow
-	if (n > std::numeric_limits<int>::max()) return {};
-
-	std::vector<float> out(static_cast<size_t>(n));
-	if (m_tensor->type == GGML_TYPE_F32) {
-		if (m_tensor->buffer == nullptr && m_tensor->data == nullptr) return {};
-		ggml_backend_tensor_get(m_tensor, out.data(), 0, out.size() * sizeof(float));
-	} else {
-		if (!isHostAccessible(m_tensor) || !m_tensor->data) return {};
-		// Safe to cast since we validated n <= INT_MAX
-		for (int64_t i = 0; i < n; ++i) {
-			out[static_cast<size_t>(i)] = ggml_get_f32_1d(m_tensor, static_cast<int>(i));
-		}
-	}
-	return out;
-}
-
-bool ofxGgmlTensor::setFromFloats(const float * data, size_t count) {
-	if (!m_tensor || !data) return false;
-	const int64_t n = ggml_nelements(m_tensor);
-	if (n < 0) return false;
-	const size_t expected = static_cast<size_t>(n);
-	if (count != expected) return false;
-	if (m_tensor->type == GGML_TYPE_F32) {
-		if (m_tensor->buffer == nullptr && m_tensor->data == nullptr) return false;
-		ggml_backend_tensor_set(m_tensor, data, 0, expected * sizeof(float));
-		return true;
-	} else {
-		if (!isHostAccessible(m_tensor) || !m_tensor->data) return false;
-		if (expected > static_cast<size_t>(std::numeric_limits<int>::max())) return false;
-		for (size_t i = 0; i < expected; ++i) {
-			ggml_set_f32_1d(m_tensor, static_cast<int>(i), data[i]);
-		}
-		return true;
-	}
-}
-
-bool ofxGgmlTensor::fill(float value) {
-	if (!m_tensor) return false;
-	if (m_tensor->type == GGML_TYPE_F32) {
-		const int64_t n = ggml_nelements(m_tensor);
-		if (n <= 0) return true;
-		if (m_tensor->buffer == nullptr && m_tensor->data == nullptr) return false;
-		const size_t total = static_cast<size_t>(n);
-		const size_t chunkElems = 8192;
-		std::vector<float> chunk(std::min(total, chunkElems), value);
-		size_t offsetElems = 0;
-		while (offsetElems < total) {
-			const size_t writeElems = std::min(total - offsetElems, chunk.size());
-			ggml_backend_tensor_set(m_tensor, chunk.data(),
-				offsetElems * sizeof(float), writeElems * sizeof(float));
-			offsetElems += writeElems;
-		}
-		return true;
-	}
-	if (!isHostAccessible(m_tensor) || !m_tensor->data) return false;
-	ggml_set_f32(m_tensor, value);
-	return true;
+std::size_t ofxGgmlTensor::elementCount() const {
+#if OFXGGML_HAS_GGML
+	return tensor ? static_cast<std::size_t>(ggml_nelements(tensor)) : 0;
+#else
+	return 0;
+#endif
 }

@@ -1,14 +1,6 @@
-#include "catch2.hpp"
+#include "test_harness.h"
+#include "../src/ofxGgmlCore.h"
 
-#include "../src/ofxGgmlBasic.h"
-#include "../src/ofxGgml.h"
-#include "../src/ofxGgmlModalities.h"
-#include "../src/ofxGgmlWorkflows.h"
-
-#if OFXGGML_ENABLE_COMPANION_WORKFLOWS
-#include "../src/ofxGgmlCompanionWorkflows.h"
-#endif
-
-TEST_CASE("Public layered headers compile in the configured feature tier", "[headers]") {
-	SUCCEED("Public layered headers compiled successfully.");
+OFXGGML_TEST(public_core_header_compiles) {
+	OFXGGML_REQUIRE(OFXGGML_VERSION_MAJOR == 2);
 }

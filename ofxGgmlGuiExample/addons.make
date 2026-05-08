@@ -1,3 +1,0 @@
-ofxGgml
-ofxImGui
-ofxStableDiffusion
