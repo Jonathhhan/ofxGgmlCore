@@ -84,11 +84,13 @@ have not run dependency setup.
 
 Core dependency setup must be reproducible:
 
-- pin ggml revision before the first rewrite release
+- pin ggml to `v0.11.0` before the first rewrite release
 - populate `libs/ggml/include`
 - populate `libs/ggml/lib`
 - do not commit generated ggml binaries by default
-- keep CUDA as an explicit setup option
+- support CPU by default
+- keep CUDA, Vulkan, Metal, and OpenCL as explicit setup options
+- allow auto-detection to enable locally available backends
 
 The setup script should be safe to rerun and should not delete files outside the
 addon.
@@ -135,7 +137,7 @@ layer.
 
 ## Immediate Milestones
 
-1. Make `scripts/setup-ggml.ps1` build CPU ggml from a pinned revision.
+1. Make `scripts/setup-ggml.ps1` build ggml `v0.11.0` for CPU and optional local backends.
 2. Add headless tests for `ofxGgmlGraph` and `ofxGgmlTensor`.
 3. Make `ofxGgmlRuntime` execute a CPU graph end to end.
 4. Add GGUF metadata tests with a tiny fixture or generated test file.

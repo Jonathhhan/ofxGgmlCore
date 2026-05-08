@@ -46,4 +46,14 @@ libs/ggml/include
 libs/ggml/lib
 ```
 
-from pinned upstream ggml revisions.
+from the pinned upstream ggml `v0.11.0` revision.
+
+```powershell
+.\scripts\setup-ggml.ps1 -CpuOnly
+.\scripts\setup-ggml.ps1 -Cuda
+.\scripts\setup-ggml.ps1 -Vulkan
+.\scripts\setup-ggml.ps1 -AllBackends
+```
+
+Backend binaries remain generated local artifacts. `addon_config.mk` is updated
+by the setup script to reference the ggml libraries that were actually built.
