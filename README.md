@@ -49,11 +49,16 @@ libs/ggml/lib
 from the pinned upstream ggml `v0.11.0` revision.
 
 ```powershell
+.\scripts\setup-ggml.ps1
 .\scripts\setup-ggml.ps1 -CpuOnly
 .\scripts\setup-ggml.ps1 -Cuda
 .\scripts\setup-ggml.ps1 -Vulkan
 .\scripts\setup-ggml.ps1 -AllBackends
 ```
+
+Running without backend switches is the default `-Auto` mode. Explicit backend
+switches keep the build narrow, and adding `-Auto` to an explicit backend also
+enables any other locally detected backend.
 
 Backend binaries remain generated local artifacts. `addon_config.mk` is updated
 by the setup script to reference the ggml libraries that were actually built.

@@ -2,6 +2,7 @@ param(
 	[string]$Revision = "v0.11.0",
 	[string]$Repo = "https://github.com/ggml-org/ggml.git",
 	[int]$Jobs = 0,
+	# Default behavior when no backend switch is supplied.
 	[switch]$Auto,
 	[switch]$CpuOnly,
 	[switch]$Cuda,
@@ -205,6 +206,9 @@ if ($CpuOnly -and ($Cuda -or $Vulkan -or $Metal -or $OpenCL -or $AllBackends)) {
 	throw "-CpuOnly cannot be combined with backend switches"
 }
 
+$explicitBackendRequested = $CpuOnly -or $Cuda -or $Vulkan -or $Metal -or $OpenCL -or $AllBackends
+$autoRequested = $Auto -or !$explicitBackendRequested
+
 if ($AllBackends) {
 	$Cuda = $true
 	$Vulkan = $true
@@ -214,11 +218,7 @@ if ($AllBackends) {
 	}
 }
 
-if (!$CpuOnly -and !$Cuda -and !$Vulkan -and !$Metal -and !$OpenCL) {
-	$Auto = $true
-}
-
-if ($Auto -and !$CpuOnly) {
+if ($autoRequested -and !$CpuOnly) {
 	if (Test-CudaAvailable) {
 		$Cuda = $true
 	}
