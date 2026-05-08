@@ -11,9 +11,11 @@ add_executable(ofxGgml_rewrite_tests
 	test_tensor.cpp
 	test_graph.cpp
 	test_runtime.cpp
+	test_model.cpp
 	../src/core/ofxGgmlRuntime.cpp
 	../src/compute/ofxGgmlTensor.cpp
-	../src/compute/ofxGgmlGraph.cpp)
+	../src/compute/ofxGgmlGraph.cpp
+	../src/model/ofxGgmlModel.cpp)
 
 target_include_directories(ofxGgml_rewrite_tests PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}

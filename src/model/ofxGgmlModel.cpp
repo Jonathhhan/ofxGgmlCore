@@ -7,6 +7,8 @@
 #define OFXGGML_HAS_GGUF 0
 #endif
 
+#include <utility>
+
 ofxGgmlResult<ofxGgmlModelInfo> ofxGgmlModel::inspect(const std::string & path) const {
 	if (path.empty()) {
 		return ofxGgmlResult<ofxGgmlModelInfo>::failure("model path is empty");

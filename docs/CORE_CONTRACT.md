@@ -142,6 +142,6 @@ layer.
 1. Done: make `scripts/setup-ggml.ps1` build ggml `v0.11.0` for CPU and optional local backends.
 2. Done: add headless tests for `ofxGgmlGraph` and `ofxGgmlTensor`.
 3. Done: make `ofxGgmlRuntime` execute a CPU graph end to end.
-4. Next: add GGUF metadata tests with a tiny fixture or generated test file.
-5. Build `ofxGgmlSimpleExample` through openFrameworks.
+4. Done: add GGUF metadata tests with a tiny fixture or generated test file.
+5. Next: build `ofxGgmlSimpleExample` through openFrameworks.
 6. Only then design `ofxGgmlText.h`.
