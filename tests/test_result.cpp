@@ -1,7 +1,9 @@
 #include "catch2.hpp"
 #include "../src/core/ofxGgmlResult.h"
+#include "../src/core/ofxGgmlEnhancedError.h"
 
 #include <cstring>
+#include <memory>
 
 TEST_CASE("Result with success value", "[result]") {
 	SECTION("Integer result") {
@@ -132,6 +134,12 @@ TEST_CASE("Result copy and move", "[result]") {
 	}
 }
 
+TEST_CASE("Result supports move-only success values", "[result]") {
+	Result<std::unique_ptr<int>> r(std::make_unique<int>(77));
+	REQUIRE(r.isOk());
+	REQUIRE(*r.value() == 77);
+}
+
 TEST_CASE("Result exception safety", "[result]") {
 	SECTION("value() on error throws") {
 		Result<int> r(ofxGgmlErrorCode::InvalidArgument, "Invalid");
@@ -173,4 +181,14 @@ TEST_CASE("Error code coverage", "[result]") {
 		ofxGgmlError err(code);
 		REQUIRE(std::strlen(err.codeString()) > 0);
 	}
+}
+
+TEST_CASE("EnhancedError converts to Result", "[result][enhanced-error]") {
+	auto result = OFXGGML_ERROR(ofxGgmlErrorCode::ModelLoadFailed, "missing model")
+		.withContext("path", "models/missing.gguf")
+		.toResult<int>();
+
+	REQUIRE(result.isError());
+	REQUIRE(result.error().code == ofxGgmlErrorCode::ModelLoadFailed);
+	REQUIRE(result.error().message == "missing model");
 }

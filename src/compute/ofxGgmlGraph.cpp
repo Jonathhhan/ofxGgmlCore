@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cstdio>
 #include <stdexcept>
+#include <utility>
 
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -16,7 +17,7 @@ static uint64_t nextGraphCacheToken() {
 }
 
 ofxGgmlGraph::ofxGgmlGraph(size_t maxNodes)
-	: m_maxNodes(maxNodes)
+	: m_maxNodes(maxNodes == 0 ? 1 : maxNodes)
 	, m_cacheToken(nextGraphCacheToken()) {
 	ensureContext();
 }
@@ -26,6 +27,27 @@ ofxGgmlGraph::~ofxGgmlGraph() {
 		ggml_free(m_ctx);
 		m_ctx = nullptr;
 	}
+}
+
+ofxGgmlGraph::ofxGgmlGraph(ofxGgmlGraph && other) noexcept
+	: m_ctx(std::exchange(other.m_ctx, nullptr))
+	, m_graph(std::exchange(other.m_graph, nullptr))
+	, m_buf(std::move(other.m_buf))
+	, m_maxNodes(std::exchange(other.m_maxNodes, 1))
+	, m_cacheToken(std::exchange(other.m_cacheToken, 0)) {}
+
+ofxGgmlGraph & ofxGgmlGraph::operator=(ofxGgmlGraph && other) noexcept {
+	if (this != &other) {
+		if (m_ctx) {
+			ggml_free(m_ctx);
+		}
+		m_ctx = std::exchange(other.m_ctx, nullptr);
+		m_graph = std::exchange(other.m_graph, nullptr);
+		m_buf = std::move(other.m_buf);
+		m_maxNodes = std::exchange(other.m_maxNodes, 1);
+		m_cacheToken = std::exchange(other.m_cacheToken, 0);
+	}
+	return *this;
 }
 
 void ofxGgmlGraph::reset() {

@@ -62,10 +62,10 @@ public:
 
 	/// Set the full tensor contents from a float buffer.
 	/// The caller must supply exactly getNumElements() floats.
-	void setFromFloats(const float * data, size_t count);
+	bool setFromFloats(const float * data, size_t count);
 
 	/// Convenience: set all elements to a single scalar.
-	void fill(float value);
+	bool fill(float value);
 
 	// ------------------------------------------------------------------
 	//  Underlying handle

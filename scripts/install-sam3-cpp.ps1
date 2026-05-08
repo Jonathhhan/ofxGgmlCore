@@ -25,15 +25,23 @@ function Patch-Sam3CudaSupport {
     $cppPath = Join-Path $SourceDir "sam3.cpp"
 
     $cmake = Get-Content -Raw -LiteralPath $cmakePath
-    if ($cmake -notmatch "GGML_USE_CUDA") {
+    if ($cmake -notmatch "STB_IMAGE_STATIC") {
         $cmake = [regex]::Replace(
             $cmake,
             "target_compile_features\(sam3 PUBLIC cxx_std_14\)",
-            "target_compile_features(sam3 PUBLIC cxx_std_14)`n`nif(GGML_CUDA)`n    target_compile_definitions(sam3 PUBLIC GGML_USE_CUDA)`nendif()",
+            "target_compile_features(sam3 PUBLIC cxx_std_14)`n`ntarget_compile_definitions(sam3 PRIVATE STB_IMAGE_STATIC)",
             1)
-        Set-Content -LiteralPath $cmakePath -Value $cmake -Encoding UTF8
+        Write-Host "Patched sam3 CMake STB private linkage."
+    }
+    if ($cmake -notmatch "GGML_USE_CUDA") {
+        $cmake = [regex]::Replace(
+            $cmake,
+            "(target_compile_features\(sam3 PUBLIC cxx_std_14\)(?:\r?\n\r?\ntarget_compile_definitions\(sam3 PRIVATE STB_IMAGE_STATIC\))?)",
+            "`$1`n`nif(GGML_CUDA)`n    target_compile_definitions(sam3 PUBLIC GGML_USE_CUDA)`nendif()",
+            1)
         Write-Host "Patched sam3 CMake CUDA compile definition."
     }
+    Set-Content -LiteralPath $cmakePath -Value $cmake -Encoding UTF8
 
     $cpp = Get-Content -Raw -LiteralPath $cppPath
     if ($cpp -notmatch "ggml-cuda.h") {

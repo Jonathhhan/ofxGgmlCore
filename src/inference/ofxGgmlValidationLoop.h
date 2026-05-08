@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -101,10 +102,17 @@ public:
 			result.error = "Validation loop not fully configured. Need generator, validator, and scorer.";
 			return result;
 		}
+		if (m_config.maxAttempts <= 0) {
+			result.error = "Validation loop maxAttempts must be greater than zero.";
+			return result;
+		}
 
 		float previousScore = 0.0f;
+		bool hasPreviousScore = false;
+		bool hasSuccessfulAttempt = false;
 		bool foundGoodResult = false;
 		bool shouldStopEarly = false;  // separate flag: quality not reached but no point continuing
+		bool cancelled = false;
 
 		for (int attempt = 1; attempt <= m_config.maxAttempts && !foundGoodResult && !shouldStopEarly; ++attempt) {
 			ofxGgmlValidationAttempt<TGenerated, TAnalysis> attemptResult;
@@ -125,11 +133,12 @@ public:
 				attemptResult.success = true;
 
 				// Check if this is the best so far
-				if (attemptResult.score > result.bestScore) {
+				if (!hasSuccessfulAttempt || attemptResult.score > result.bestScore) {
 					result.bestScore = attemptResult.score;
 					result.bestGenerated = attemptResult.generated;
 					result.bestAnalysis = attemptResult.analysis;
 					result.bestAttemptIndex = result.totalAttempts;
+					hasSuccessfulAttempt = true;
 				}
 
 				// Check if quality threshold met
@@ -138,7 +147,7 @@ public:
 				}
 
 				// Check if we're improving enough to continue
-				if (attempt > 1 &&
+				if (hasPreviousScore &&
 					m_config.enableRefinement &&
 					!m_config.collectAllAttempts &&
 					!m_refine) {
@@ -151,6 +160,7 @@ public:
 				}
 
 				previousScore = attemptResult.score;
+				hasPreviousScore = true;
 
 			} catch (const std::exception& e) {
 				attemptResult.success = false;
@@ -174,6 +184,7 @@ public:
 				bool shouldContinue = m_progressCallback(attemptResult);
 				if (!shouldContinue) {
 					result.warnings.push_back("Validation loop cancelled by progress callback");
+					cancelled = true;
 					break;
 				}
 			}
@@ -190,6 +201,22 @@ public:
 		}
 
 		result.success = foundGoodResult;
+		if (!result.success && result.error.empty()) {
+			if (cancelled) {
+				result.error = "Validation loop cancelled by progress callback.";
+			} else if (!hasSuccessfulAttempt) {
+				result.error = result.warnings.empty() ?
+					"Validation loop did not produce a successful attempt." :
+					result.warnings.back();
+			} else {
+				std::ostringstream out;
+				out << "Validation loop did not reach quality threshold "
+				    << m_config.qualityThreshold << " after "
+				    << result.totalAttempts << " attempt(s); best score was "
+				    << result.bestScore << ".";
+				result.error = out.str();
+			}
+		}
 		return result;
 	}
 

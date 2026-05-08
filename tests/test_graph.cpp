@@ -1,6 +1,8 @@
 #include "catch2.hpp"
 #include "../src/ofxGgml.h"
 
+#include <utility>
+
 TEST_CASE("Graph creation and lifecycle", "[graph]") {
 	SECTION("Default construction") {
 		ofxGgmlGraph graph;
@@ -23,6 +25,22 @@ TEST_CASE("Graph creation and lifecycle", "[graph]") {
 		graph.reset();
 		auto t2 = graph.newTensor1d(ofxGgmlType::F32, 5);
 		REQUIRE(t2.isValid());
+	}
+
+	SECTION("Graph builders can be moved") {
+		ofxGgmlGraph graph;
+		auto t1 = graph.newTensor1d(ofxGgmlType::F32, 10);
+		REQUIRE(t1.isValid());
+
+		ofxGgmlGraph moved(std::move(graph));
+		auto t2 = moved.newTensor1d(ofxGgmlType::F32, 5);
+		REQUIRE(t2.isValid());
+	}
+
+	SECTION("Zero max nodes is clamped to a usable arena") {
+		ofxGgmlGraph graph(0);
+		auto t = graph.newTensor1d(ofxGgmlType::F32, 1);
+		REQUIRE(t.isValid());
 	}
 }
 

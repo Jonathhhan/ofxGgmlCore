@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <utility>
 #include <type_traits>
+#include <variant>
 
 /// Error codes for ofxGgml operations.
 enum class ofxGgmlErrorCode {
@@ -113,115 +114,78 @@ struct ofxGgmlError {
 ///   }
 template<typename T>
 class Result {
+	static_assert(!std::is_same_v<std::decay_t<T>, ofxGgmlError>,
+		"Result<ofxGgmlError> is ambiguous; return Result<void> or wrap the error in another type.");
 public:
 	/// Construct a successful result.
-	Result(T && val) : m_hasValue(true) {
-		new (&m_storage.value) T(std::move(val));
-	}
+	Result(T && val) : m_storage(std::in_place_index<0>, std::move(val)) {}
 
-	Result(const T & val) : m_hasValue(true) {
-		new (&m_storage.value) T(val);
-	}
+	Result(const T & val) : m_storage(std::in_place_index<0>, val) {}
 
 	/// Construct an error result.
-	Result(const ofxGgmlError & err) : m_hasValue(false) {
-		new (&m_storage.error) ofxGgmlError(err);
-	}
+	Result(const ofxGgmlError & err) : m_storage(std::in_place_index<1>, err) {}
+
+	Result(ofxGgmlError && err) : m_storage(std::in_place_index<1>, std::move(err)) {}
 
 	Result(ofxGgmlErrorCode code, const std::string & msg = "")
-		: m_hasValue(false) {
-		new (&m_storage.error) ofxGgmlError(code, msg);
-	}
+		: m_storage(std::in_place_index<1>, code, msg) {}
 
-	/// Copy constructor
-	Result(const Result & other) : m_hasValue(other.m_hasValue) {
-		if (m_hasValue) {
-			new (&m_storage.value) T(other.m_storage.value);
-		} else {
-			new (&m_storage.error) ofxGgmlError(other.m_storage.error);
-		}
-	}
-
-	/// Move constructor
-	Result(Result && other) noexcept : m_hasValue(other.m_hasValue) {
-		if (m_hasValue) {
-			new (&m_storage.value) T(std::move(other.m_storage.value));
-		} else {
-			new (&m_storage.error) ofxGgmlError(std::move(other.m_storage.error));
-		}
-	}
-
-	/// Destructor
-	~Result() {
-		if (m_hasValue) {
-			m_storage.value.~T();
-		} else {
-			m_storage.error.~ofxGgmlError();
-		}
-	}
-
-	/// Copy assignment
-	Result & operator=(const Result & other) {
-		if (this != &other) {
-			this->~Result();
-			new (this) Result(other);
-		}
-		return *this;
-	}
-
-	/// Move assignment
-	Result & operator=(Result && other) noexcept {
-		if (this != &other) {
-			this->~Result();
-			new (this) Result(std::move(other));
-		}
-		return *this;
+	/// Factory for fluent error builders such as EnhancedError::toResult<T>().
+	static Result error(const ofxGgmlError & err) {
+		return Result(err);
 	}
 
 	/// Returns true if this contains a value (success).
-	constexpr bool isOk() const noexcept { return m_hasValue; }
+	bool isOk() const noexcept { return std::holds_alternative<T>(m_storage); }
 
 	/// Returns true if this contains an error.
-	constexpr bool isError() const noexcept { return !m_hasValue; }
+	bool isError() const noexcept { return std::holds_alternative<ofxGgmlError>(m_storage); }
 
 	/// Returns the success value. Throws if this contains an error.
-	T & value() {
-		if (!m_hasValue) {
-			throw std::runtime_error("Result::value() called on error: " + m_storage.error.toString());
+	T & value() & {
+		if (isError()) {
+			throw std::runtime_error("Result::value() called on error: " + std::get<ofxGgmlError>(m_storage).toString());
 		}
-		return m_storage.value;
+		return std::get<T>(m_storage);
 	}
 
-	const T & value() const {
-		if (!m_hasValue) {
-			throw std::runtime_error("Result::value() called on error: " + m_storage.error.toString());
+	const T & value() const & {
+		if (isError()) {
+			throw std::runtime_error("Result::value() called on error: " + std::get<ofxGgmlError>(m_storage).toString());
 		}
-		return m_storage.value;
+		return std::get<T>(m_storage);
+	}
+
+	T && value() && {
+		if (isError()) {
+			throw std::runtime_error("Result::value() called on error: " + std::get<ofxGgmlError>(m_storage).toString());
+		}
+		return std::move(std::get<T>(m_storage));
 	}
 
 	/// Returns the error. Throws if this contains a value.
 	ofxGgmlError & error() {
-		if (m_hasValue) {
+		if (isOk()) {
 			throw std::runtime_error("Result::error() called on success value");
 		}
-		return m_storage.error;
+		return std::get<ofxGgmlError>(m_storage);
 	}
 
 	const ofxGgmlError & error() const {
-		if (m_hasValue) {
+		if (isOk()) {
 			throw std::runtime_error("Result::error() called on success value");
 		}
-		return m_storage.error;
+		return std::get<ofxGgmlError>(m_storage);
 	}
 
 	/// Returns the value if present, otherwise returns the default value.
 	T valueOr(const T & defaultValue) const {
-		return m_hasValue ? m_storage.value : defaultValue;
+		return isOk() ? std::get<T>(m_storage) : defaultValue;
 	}
 
 	T valueOr(T && defaultValue) const {
-		if (m_hasValue) {
-			return m_storage.value;
+		if (isOk()) {
+			return std::get<T>(m_storage);
 		}
 		return std::move(defaultValue);
 	}
@@ -230,17 +194,7 @@ public:
 	explicit operator bool() const { return isOk(); }
 
 private:
-	bool m_hasValue;
-	// Use aligned storage to ensure proper alignment for both T and ofxGgmlError
-	union Storage {
-		alignas(T) alignas(ofxGgmlError) T value;
-		alignas(T) alignas(ofxGgmlError) ofxGgmlError error;
-
-		Storage() {} // Uninitialized
-		~Storage() {} // Handled by Result destructor
-	} m_storage;
-	static_assert(alignof(Storage) >= alignof(T), "Storage alignment must satisfy T alignment");
-	static_assert(alignof(Storage) >= alignof(ofxGgmlError), "Storage alignment must satisfy ofxGgmlError alignment");
+	std::variant<T, ofxGgmlError> m_storage;
 };
 
 /// Specialization for void (operations that don't return a value).
@@ -255,6 +209,10 @@ public:
 
 	Result(ofxGgmlErrorCode code, const std::string & msg = "")
 		: m_error(code, msg) {}
+
+	static Result error(const ofxGgmlError & err) {
+		return Result(err);
+	}
 
 	/// Returns true if this represents success.
 	constexpr bool isOk() const noexcept { return !m_error.hasError(); }

@@ -8,7 +8,7 @@
 /// - Vision, YOLO object detection, and video understanding (LLaVA-style models)
 /// - Image generation (Stable Diffusion integration)
 /// - CLIP embeddings (text/image similarity)
-/// - Image segmentation adapters (SAM / sam.cpp)
+/// - Image segmentation adapters (SAM / sam3.cpp / legacy sam.cpp)
 ///
 /// Include this when you need audio or visual AI workflows.
 /// Requires basic inference functionality from ofxGgmlBasic.h
@@ -57,4 +57,5 @@
 
 // Image segmentation
 #include "inference/ofxGgmlSegmentationInference.h"
+#include "inference/ofxGgmlSam3Adapters.h"
 #include "inference/ofxGgmlSamCppAdapters.h"

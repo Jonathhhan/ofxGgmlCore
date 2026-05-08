@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cctype>
+#include <filesystem>
+#include <fstream>
 #include <thread>
 
 namespace {
@@ -11,9 +14,51 @@ constexpr float kHelpY = 58.0f;
 constexpr float kLogLineHeight = 17.0f;
 constexpr int kFallbackImageWidth = 960;
 constexpr int kFallbackImageHeight = 540;
+constexpr uint32_t kSam3Magic = 0x73616D33u;
+constexpr uint32_t kSam2Magic = 0x73616D32u;
 
-std::string defaultModelPath() {
-	return ofToDataPath("models/sam/ggml-model-f16.bin", true);
+bool hasSam3ModelMagic(const std::filesystem::path & path) {
+	std::ifstream input(path, std::ios::binary);
+	uint32_t magic = 0;
+	input.read(reinterpret_cast<char *>(&magic), sizeof(magic));
+	return input.gcount() == sizeof(magic) &&
+		(magic == kSam3Magic || magic == kSam2Magic);
+}
+
+std::string findDefaultModelPath() {
+	const std::filesystem::path modelDirectory =
+		ofToDataPath("models/sam3", true);
+	std::error_code ec;
+	if (std::filesystem::exists(modelDirectory, ec) && !ec) {
+		std::vector<std::filesystem::path> candidates;
+		for (const auto & entry : std::filesystem::directory_iterator(modelDirectory, ec)) {
+			if (ec) {
+				break;
+			}
+			if (!entry.is_regular_file()) {
+				continue;
+			}
+			std::string extension = entry.path().extension().string();
+			std::transform(
+				extension.begin(),
+				extension.end(),
+				extension.begin(),
+				[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			if (extension == ".gguf" || extension == ".ggml" || extension == ".bin") {
+				candidates.push_back(entry.path());
+			}
+		}
+		std::sort(candidates.begin(), candidates.end());
+		for (const auto & candidate : candidates) {
+			if (hasSam3ModelMagic(candidate)) {
+				return candidate.string();
+			}
+		}
+		if (!candidates.empty()) {
+			return candidates.front().string();
+		}
+	}
+	return ofToDataPath("models/sam3/model.ggml", true);
 }
 
 std::string defaultImagePath() {
@@ -38,7 +83,7 @@ void ofApp::setup() {
 	ofSetWindowTitle("ofxGgml SAM Example");
 	ofSetFrameRate(60);
 	ofBackground(12, 14, 18);
-	modelPath = defaultModelPath();
+	modelPath = findDefaultModelPath();
 	loadDefaultImage();
 	configureSegmentationBackend();
 	appendStatus("Ready. Click the image to move the point prompt, then press S.");
@@ -52,24 +97,54 @@ void ofApp::configureSegmentationBackend() {
 	usingPreviewBackend = true;
 	backendName = "preview segmentation";
 
-#if OFXGGML_HAS_SAMCPP
+#if OFXGGML_HAS_SAM3
 	if (ofFile::doesFileExist(modelPath)) {
-		ofxGgmlSamCppAdapters::RuntimeOptions options;
+		ofxGgmlSam3Adapters::RuntimeOptions options;
 		options.threads = std::max(1u, std::thread::hardware_concurrency());
+		options.useGpu = true;
+		std::string error;
+		auto runtime = ofxGgmlSam3Adapters::loadRuntime(
+			modelPath,
+			options,
+			&error);
+		if (runtime) {
+			appendStatus("sam3.cpp model and state initialized.");
+			segmentation.setBackend(
+				ofxGgmlSam3Adapters::createBackend(std::move(runtime)));
+			usingPreviewBackend = false;
+			backendName = "sam3.cpp";
+			appendStatus("sam3.cpp backend attached: " + modelPath);
+			return;
+		}
+		appendStatus(error.empty()
+			? "Failed to initialize sam3.cpp backend: " + modelPath
+			: error);
+		const std::string capturedError = error.empty()
+			? "Failed to initialize sam3.cpp backend: " + modelPath
+			: error;
 		segmentation.setBackend(
-			ofxGgmlSamCppAdapters::createBackend(modelPath, options));
+			ofxGgmlSegmentationInference::createSegmentationBridgeBackend(
+				[capturedError](const ofxGgmlSegmentationRequest & request) {
+					ofxGgmlSegmentationResult result;
+					result.backendName = "sam3.cpp";
+					result.imagePath = request.imagePath;
+					result.error = capturedError;
+					return result;
+				},
+				"sam3.cpp"));
 		usingPreviewBackend = false;
-		backendName = "sam.cpp";
-		appendStatus("sam.cpp backend attached: " + modelPath);
+		backendName = "sam3.cpp";
 		return;
 	}
-	appendStatus("sam.cpp headers found, but model is missing: " + modelPath);
+	else {
+		appendStatus("sam3.cpp adapter enabled, but model is missing: " + modelPath);
+	}
 #else
-	appendStatus("sam.cpp headers not found. Using preview backend.");
+	appendStatus("sam3.cpp adapter not enabled. Using preview backend.");
 #endif
 
 	segmentation.setBackend(
-		ofxGgmlSegmentationInference::createSamCppBridgeBackend(
+		ofxGgmlSegmentationInference::createSegmentationBridgeBackend(
 			[this](const ofxGgmlSegmentationRequest & request) {
 				return runPreviewSegmentation(request);
 			},
@@ -302,7 +377,7 @@ void ofApp::draw() {
 		kMargin,
 		kHelpY);
 	ofDrawBitmapString(
-		"Backend: " + backendName + (usingPreviewBackend ? " (install sam.cpp + model for real masks)" : ""),
+		"Backend: " + backendName + (usingPreviewBackend ? " (enable sam3.cpp + model for real masks)" : ""),
 		kMargin,
 		kHelpY + 22.0f);
 	ofDrawBitmapString("Model: " + modelPath, kMargin, kHelpY + 44.0f);

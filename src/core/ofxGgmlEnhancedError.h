@@ -4,7 +4,10 @@
 #include <map>
 #include <vector>
 #include <chrono>
+#include <ctime>
 #include <optional>
+#include <sstream>
+#include <type_traits>
 
 #if __cplusplus >= 202002L
 #include <source_location>
@@ -89,9 +92,20 @@ struct EnhancedError : public ofxGgmlError {
 		return *this;
 	}
 
+	EnhancedError& withContext(const std::string& key, const char* value) {
+		context[key] = value ? value : "";
+		return *this;
+	}
+
 	template<typename T>
 	EnhancedError& withContext(const std::string& key, const T& value) {
-		context[key] = std::to_string(value);
+		if constexpr (std::is_arithmetic_v<T>) {
+			context[key] = std::to_string(value);
+		} else {
+			std::ostringstream out;
+			out << value;
+			context[key] = out.str();
+		}
 		return *this;
 	}
 
@@ -253,7 +267,7 @@ private:
 			return OFXGGML_ERROR(errorCode, errorMsg) \
 				.withContext("expression", #expr) \
 				.withCause(_result.error()) \
-				.toResult<decltype(_result.value())>(); \
+				.toResult<std::decay_t<decltype(_result.value())>>(); \
 		} \
 		_result.value(); \
 	})

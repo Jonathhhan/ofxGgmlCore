@@ -98,6 +98,8 @@ vs:
 	ADDON_INCLUDES += libs/ggml/include
 	ADDON_INCLUDES += libs/clip/include
 	ADDON_INCLUDES += libs/clip/src
+	ADDON_INCLUDES += libs/sam3.cpp
+	ADDON_INCLUDES += libs/sam3.cpp/stb
 	# Keep the checked-in Visual Studio defaults CPU-safe.
 	# Re-run scripts\build-ggml.bat on the target machine after enabling
 	# optional backends so the generated project can pick up the exact local

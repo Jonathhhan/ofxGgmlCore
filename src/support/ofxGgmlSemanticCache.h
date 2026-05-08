@@ -3,11 +3,13 @@
 #include "ofMain.h"
 #include "ofxGgmlInference.h"
 #include "ofxGgmlClipInference.h"
+#include <cmath>
 #include <mutex>
 #include <vector>
 #include <optional>
 #include <chrono>
 #include <algorithm>
+#include <memory>
 
 /// Semantic cache entry storing prompt embedding and response.
 struct ofxGgmlSemanticCacheEntry {
@@ -125,38 +127,55 @@ public:
 		const std::string& modelPath,
 		const ofxGgmlInferenceSettings& settings
 	) {
-		if (!m_config.enabled) return std::nullopt;
-		if (prompt.size() < m_config.minPromptLength) return std::nullopt;
+		ofxGgmlSemanticCacheConfig config;
+		std::shared_ptr<ofxGgmlClipInference> embeddingInference;
+		std::string settingsHash;
 
-		std::lock_guard<std::mutex> lock(m_mutex);
-		m_stats.totalLookups++;
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+			config = m_config;
+			if (!config.enabled) return std::nullopt;
+			if (prompt.size() < config.minPromptLength) return std::nullopt;
 
-		std::string settingsHash = computeSettingsHash(settings);
+			m_stats.totalLookups++;
+			settingsHash = computeSettingsHash(settings);
 
-		// Try exact match first (fast path)
-		if (m_config.tryExactMatchFirst) {
-			for (auto& entry : m_entries) {
-				if (entry.promptText == prompt &&
-				    entry.modelPath == modelPath &&
-				    entry.settingsHash == settingsHash) {
-					entry.hitCount++;
-					m_stats.exactHits++;
-					return entry.response;
+			// Try exact match first (fast path)
+			if (config.tryExactMatchFirst) {
+				for (auto& entry : m_entries) {
+					if (entry.promptText == prompt &&
+					    entry.modelPath == modelPath &&
+					    entry.settingsHash == settingsHash) {
+						entry.hitCount++;
+						m_stats.exactHits++;
+						return entry.response;
+					}
 				}
 			}
+
+			embeddingInference = m_embeddingInference;
 		}
 
 		// Semantic matching (requires embedding)
-		if (!m_embeddingInference) return std::nullopt;
+		if (!embeddingInference) {
+			std::lock_guard<std::mutex> lock(m_mutex);
+			recordMiss(0.0f);
+			return std::nullopt;
+		}
 
 		// Generate embedding for query
-		auto queryEmbedding = embedPrompt(prompt);
-		if (!queryEmbedding) return std::nullopt;
+		auto queryEmbedding = embedPrompt(prompt, config.maxPromptLength, embeddingInference);
+		if (!queryEmbedding) {
+			std::lock_guard<std::mutex> lock(m_mutex);
+			recordMiss(0.0f);
+			return std::nullopt;
+		}
 
 		// Find best matching entry
 		float bestSimilarity = 0.0f;
 		ofxGgmlSemanticCacheEntry* bestEntry = nullptr;
 
+		std::lock_guard<std::mutex> lock(m_mutex);
 		for (auto& entry : m_entries) {
 			// Only match same model and settings
 			if (entry.modelPath != modelPath || entry.settingsHash != settingsHash) {
@@ -184,12 +203,7 @@ public:
 		}
 
 		// Cache miss
-		m_stats.misses++;
-		if (bestSimilarity > 0.0f) {
-			m_stats.avgSimilarityOnMiss =
-				(m_stats.avgSimilarityOnMiss * (m_stats.misses - 1) + bestSimilarity) /
-				m_stats.misses;
-		}
+		recordMiss(bestSimilarity);
 
 		return std::nullopt;
 	}
@@ -201,14 +215,21 @@ public:
 		const std::string& modelPath,
 		const ofxGgmlInferenceSettings& settings
 	) {
-		if (!m_config.enabled) return;
-		if (prompt.size() < m_config.minPromptLength) return;
 		if (response.empty()) return;
 
-		std::lock_guard<std::mutex> lock(m_mutex);
+		ofxGgmlSemanticCacheConfig config;
+		std::shared_ptr<ofxGgmlClipInference> embeddingInference;
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+			config = m_config;
+			if (!config.enabled) return;
+			if (prompt.size() < config.minPromptLength) return;
+			if (config.maxEntries == 0) return;
+			embeddingInference = m_embeddingInference;
+		}
 
 		// Generate embedding
-		auto embedding = embedPrompt(prompt);
+		auto embedding = embedPrompt(prompt, config.maxPromptLength, embeddingInference);
 		if (!embedding) return;
 
 		// Create entry
@@ -219,6 +240,9 @@ public:
 		entry.timestamp = std::chrono::system_clock::now();
 		entry.modelPath = modelPath;
 		entry.settingsHash = computeSettingsHash(settings);
+
+		std::lock_guard<std::mutex> lock(m_mutex);
+		if (!m_config.enabled || m_config.maxEntries == 0) return;
 
 		// Evict old entries if needed
 		evictOldEntries();
@@ -265,17 +289,20 @@ public:
 
 private:
 	/// Generate embedding for a prompt
-	std::optional<std::vector<float>> embedPrompt(const std::string& prompt) {
-		if (!m_embeddingInference) return std::nullopt;
+	static std::optional<std::vector<float>> embedPrompt(
+		const std::string& prompt,
+		size_t maxPromptLength,
+		const std::shared_ptr<ofxGgmlClipInference>& embeddingInference) {
+		if (!embeddingInference) return std::nullopt;
 
 		// Truncate if too long
 		std::string text = prompt;
-		if (text.size() > m_config.maxPromptLength) {
-			text = text.substr(0, m_config.maxPromptLength);
+		if (text.size() > maxPromptLength) {
+			text = text.substr(0, maxPromptLength);
 		}
 
 		// Generate embedding using the configured CLIP backend.
-		auto result = m_embeddingInference->embedText(
+		auto result = embeddingInference->embedText(
 			text,
 			true,
 			"semantic-cache",
@@ -285,6 +312,15 @@ private:
 		}
 
 		return result.embedding;
+	}
+
+	void recordMiss(float similarity) {
+		m_stats.misses++;
+		if (similarity > 0.0f) {
+			m_stats.avgSimilarityOnMiss =
+				(m_stats.avgSimilarityOnMiss * (m_stats.misses - 1) + similarity) /
+				m_stats.misses;
+		}
 	}
 
 	/// Compute cosine similarity between two embeddings

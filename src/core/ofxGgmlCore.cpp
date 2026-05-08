@@ -351,6 +351,37 @@ static void unregisterLogCallbackOwner(ofxGgml::Impl * impl) {
 	}
 }
 
+static bool areElementwiseShapesCompatible(
+	const struct ggml_tensor * lhs,
+	const struct ggml_tensor * rhs,
+	int & incompatibleDim) {
+	if (!lhs || !rhs) {
+		incompatibleDim = -1;
+		return false;
+	}
+
+	const int lhsDims = ggml_n_dims(lhs);
+	const int rhsDims = ggml_n_dims(rhs);
+	if (lhsDims <= 0 || rhsDims <= 0 ||
+	    lhsDims > GGML_MAX_DIMS || rhsDims > GGML_MAX_DIMS) {
+		incompatibleDim = -1;
+		return false;
+	}
+
+	const int dimsToCheck = std::max(lhsDims, rhsDims);
+	for (int d = 0; d < dimsToCheck; ++d) {
+		const int64_t lhsExtent = d < lhsDims ? lhs->ne[d] : 1;
+		const int64_t rhsExtent = d < rhsDims ? rhs->ne[d] : 1;
+		if (lhsExtent <= 0 || rhsExtent <= 0 ||
+		    (lhsExtent != rhsExtent && lhsExtent != 1 && rhsExtent != 1)) {
+			incompatibleDim = d;
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static bool validateGraphForCompute(struct ggml_cgraph * graph, std::string & error) {
 	if (!graph) {
 		error = "graph not built (call graph.build() first)";
@@ -364,7 +395,6 @@ static bool validateGraphForCompute(struct ggml_cgraph * graph, std::string & er
 
 	// Track visited nodes to detect cycles
 	std::unordered_set<const struct ggml_tensor *> visited;
-	std::unordered_set<const struct ggml_tensor *> inProgress;
 
 	for (int i = 0; i < n; ++i) {
 		struct ggml_tensor * node = ggml_graph_node(graph, i);
@@ -406,23 +436,14 @@ static bool validateGraphForCompute(struct ggml_cgraph * graph, std::string & er
 		if (node->op == GGML_OP_ADD || node->op == GGML_OP_SUB ||
 		    node->op == GGML_OP_MUL || node->op == GGML_OP_DIV) {
 			if (node->src[0] && node->src[1]) {
-				// For element-wise ops, check dimension compatibility
-				const int nd0 = ggml_n_dims(node->src[0]);
-				const int nd1 = ggml_n_dims(node->src[1]);
-				if (nd0 != nd1 && nd0 > 0 && nd1 > 0) {
-					// Allow broadcasting, but at least check dimensions exist
-					bool compatible = true;
-					for (int d = 0; d < std::min(nd0, nd1); ++d) {
-						if (node->src[0]->ne[d] != node->src[1]->ne[d] &&
-						    node->src[0]->ne[d] != 1 && node->src[1]->ne[d] != 1) {
-							compatible = false;
-							break;
-						}
+				int incompatibleDim = -1;
+				if (!areElementwiseShapesCompatible(node->src[0], node->src[1], incompatibleDim)) {
+					error = "graph node " + std::to_string(i) +
+						" has incompatible input shapes for element-wise operation";
+					if (incompatibleDim >= 0) {
+						error += " at dim " + std::to_string(incompatibleDim);
 					}
-					if (!compatible) {
-						error = "graph node " + std::to_string(i) + " has incompatible input shapes for element-wise operation";
-						return false;
-					}
+					return false;
 				}
 			}
 		}

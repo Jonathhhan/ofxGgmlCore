@@ -24,6 +24,8 @@ public:
 
 	ofxGgmlGraph(const ofxGgmlGraph &) = delete;
 	ofxGgmlGraph & operator=(const ofxGgmlGraph &) = delete;
+	ofxGgmlGraph(ofxGgmlGraph && other) noexcept;
+	ofxGgmlGraph & operator=(ofxGgmlGraph && other) noexcept;
 
 	/// Discard the current graph and recreate the builder context.
 	void reset();

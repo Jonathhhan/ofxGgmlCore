@@ -2,7 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxGgmlModalities.h"
-#include "inference/ofxGgmlSamCppAdapters.h"
+#include "inference/ofxGgmlSam3Adapters.h"
 
 #include <string>
 #include <vector>

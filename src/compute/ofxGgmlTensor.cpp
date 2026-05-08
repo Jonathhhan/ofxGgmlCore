@@ -82,6 +82,7 @@ std::vector<float> ofxGgmlTensor::toFloatVector() const {
 
 	std::vector<float> out(static_cast<size_t>(n));
 	if (m_tensor->type == GGML_TYPE_F32) {
+		if (m_tensor->buffer == nullptr && m_tensor->data == nullptr) return {};
 		ggml_backend_tensor_get(m_tensor, out.data(), 0, out.size() * sizeof(float));
 	} else {
 		if (!isHostAccessible(m_tensor) || !m_tensor->data) return {};
@@ -93,26 +94,32 @@ std::vector<float> ofxGgmlTensor::toFloatVector() const {
 	return out;
 }
 
-void ofxGgmlTensor::setFromFloats(const float * data, size_t count) {
-	if (!m_tensor || !data) return;
+bool ofxGgmlTensor::setFromFloats(const float * data, size_t count) {
+	if (!m_tensor || !data) return false;
 	const int64_t n = ggml_nelements(m_tensor);
-	const size_t actual = std::min(count, static_cast<size_t>(n));
+	if (n < 0) return false;
+	const size_t expected = static_cast<size_t>(n);
+	if (count != expected) return false;
 	if (m_tensor->type == GGML_TYPE_F32) {
-		ggml_backend_tensor_set(m_tensor, data, 0, actual * sizeof(float));
+		if (m_tensor->buffer == nullptr && m_tensor->data == nullptr) return false;
+		ggml_backend_tensor_set(m_tensor, data, 0, expected * sizeof(float));
+		return true;
 	} else {
-		if (!isHostAccessible(m_tensor) || !m_tensor->data) return;
-		if (actual > static_cast<size_t>(std::numeric_limits<int>::max())) return;
-		for (size_t i = 0; i < actual; ++i) {
+		if (!isHostAccessible(m_tensor) || !m_tensor->data) return false;
+		if (expected > static_cast<size_t>(std::numeric_limits<int>::max())) return false;
+		for (size_t i = 0; i < expected; ++i) {
 			ggml_set_f32_1d(m_tensor, static_cast<int>(i), data[i]);
 		}
+		return true;
 	}
 }
 
-void ofxGgmlTensor::fill(float value) {
-	if (!m_tensor) return;
+bool ofxGgmlTensor::fill(float value) {
+	if (!m_tensor) return false;
 	if (m_tensor->type == GGML_TYPE_F32) {
 		const int64_t n = ggml_nelements(m_tensor);
-		if (n <= 0) return;
+		if (n <= 0) return true;
+		if (m_tensor->buffer == nullptr && m_tensor->data == nullptr) return false;
 		const size_t total = static_cast<size_t>(n);
 		const size_t chunkElems = 8192;
 		std::vector<float> chunk(std::min(total, chunkElems), value);
@@ -123,8 +130,9 @@ void ofxGgmlTensor::fill(float value) {
 				offsetElems * sizeof(float), writeElems * sizeof(float));
 			offsetElems += writeElems;
 		}
-		return;
+		return true;
 	}
-	if (!isHostAccessible(m_tensor) || !m_tensor->data) return;
+	if (!isHostAccessible(m_tensor) || !m_tensor->data) return false;
 	ggml_set_f32(m_tensor, value);
+	return true;
 }

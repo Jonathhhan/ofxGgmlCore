@@ -87,6 +87,17 @@ TEST_CASE("Tensor properties", "[tensor]") {
 	}
 }
 
+TEST_CASE("Tensor data access rejects unallocated graph tensors", "[tensor]") {
+	ofxGgmlGraph graph;
+	auto t = graph.newTensor1d(ofxGgmlType::F32, 4);
+	const float values[] = {1.0f, 2.0f, 3.0f, 4.0f};
+
+	REQUIRE(t.toFloatVector().empty());
+	REQUIRE_FALSE(t.setFromFloats(values, 3));
+	REQUIRE_FALSE(t.setFromFloats(values, 4));
+	REQUIRE_FALSE(t.fill(0.5f));
+}
+
 TEST_CASE("Element-wise operations", "[tensor][ops]") {
 	ofxGgmlGraph graph;
 

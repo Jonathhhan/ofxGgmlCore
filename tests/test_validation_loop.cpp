@@ -1,6 +1,7 @@
 #include "catch2.hpp"
 #include "../src/inference/ofxGgmlValidationLoop.h"
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -286,6 +287,71 @@ TEST_CASE("Validation loop - missing configuration", "[validation_loop]") {
 		REQUIRE_FALSE(result.success);
 		REQUIRE_FALSE(result.error.empty());
 	}
+}
+
+TEST_CASE("Validation loop - invalid attempt count fails clearly", "[validation_loop]") {
+	ofxGgmlValidationLoopConfig config;
+	config.maxAttempts = 0;
+
+	ofxGgmlValidationLoop<TestGenerated, TestAnalysis> loop(config);
+	loop.setGenerator([](int) { return TestGenerated(); });
+	loop.setValidator([](const TestGenerated&) { return TestAnalysis(); });
+	loop.setScorer([](const TestGenerated&, const TestAnalysis&) { return 1.0f; });
+
+	auto result = loop.run();
+
+	REQUIRE_FALSE(result.success);
+	REQUIRE(result.totalAttempts == 0);
+	REQUIRE(result.error.find("maxAttempts") != std::string::npos);
+}
+
+TEST_CASE("Validation loop - unsuccessful run reports final error", "[validation_loop]") {
+	ofxGgmlValidationLoopConfig config;
+	config.maxAttempts = 2;
+	config.qualityThreshold = 0.9f;
+	config.collectAllAttempts = true;
+
+	ofxGgmlValidationLoop<TestGenerated, TestAnalysis> loop(config);
+	loop.setGenerator([](int attempt) {
+		TestGenerated gen;
+		gen.content = "Attempt " + std::to_string(attempt);
+		return gen;
+	});
+	loop.setValidator([](const TestGenerated&) {
+		TestAnalysis analysis;
+		analysis.quality = 0.4f;
+		return analysis;
+	});
+	loop.setScorer([](const TestGenerated&, const TestAnalysis& analysis) {
+		return analysis.quality;
+	});
+
+	auto result = loop.run();
+
+	REQUIRE_FALSE(result.success);
+	REQUIRE(result.totalAttempts == 2);
+	REQUIRE(result.bestScore == 0.4f);
+	REQUIRE(result.error.find("quality threshold") != std::string::npos);
+}
+
+TEST_CASE("Validation loop - exceptions surface as result error", "[validation_loop]") {
+	ofxGgmlValidationLoopConfig config;
+	config.maxAttempts = 2;
+	config.collectAllAttempts = true;
+
+	ofxGgmlValidationLoop<TestGenerated, TestAnalysis> loop(config);
+	loop.setGenerator([](int) -> TestGenerated {
+		throw std::runtime_error("generator unavailable");
+	});
+	loop.setValidator([](const TestGenerated&) { return TestAnalysis(); });
+	loop.setScorer([](const TestGenerated&, const TestAnalysis&) { return 1.0f; });
+
+	auto result = loop.run();
+
+	REQUIRE_FALSE(result.success);
+	REQUIRE(result.totalAttempts == 2);
+	REQUIRE(result.attempts.size() == 2);
+	REQUIRE(result.error.find("generator unavailable") != std::string::npos);
 }
 
 TEST_CASE("Validation loop - validateOnce helper", "[validation_loop][helpers]") {
