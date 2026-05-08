@@ -81,11 +81,85 @@ function Test-CudaAvailable {
 	return Test-Command "nvcc"
 }
 
+function Test-CudaLinkLibrariesAvailable {
+	if (!$env:CUDA_PATH) {
+		return $false
+	}
+	$libDir = Join-Path $env:CUDA_PATH "lib\x64"
+	return (Test-Path (Join-Path $libDir "cublas.lib")) -and
+		(Test-Path (Join-Path $libDir "cudart.lib")) -and
+		(Test-Path (Join-Path $libDir "cuda.lib"))
+}
+
+function Test-CudaBuildAvailable {
+	if (!(Test-CudaAvailable)) {
+		return $false
+	}
+	if (!$IsLinux -and !$IsMacOS) {
+		return Test-CudaLinkLibrariesAvailable
+	}
+	return $true
+}
+
 function Test-VulkanAvailable {
 	if ($env:VULKAN_SDK -and (Test-Path (Join-Path $env:VULKAN_SDK "Lib\vulkan-1.lib"))) {
 		return $true
 	}
+	if (!$IsLinux -and !$IsMacOS) {
+		return $false
+	}
 	return (Test-Command "glslc")
+}
+
+function Test-OpenCLAvailable {
+	$knownRoots = @(
+		$env:OPENCL_ROOT,
+		$env:OpenCL_ROOT,
+		$env:OCL_ROOT,
+		$env:INTELOCLSDKROOT,
+		$env:AMDAPPSDKROOT,
+		$env:CUDA_PATH
+	) | Where-Object { $_ }
+
+	foreach ($root in $knownRoots) {
+		$includePath = Join-Path $root (Join-Path "include" (Join-Path "CL" "cl.h"))
+		$windowsIncludePath = Join-Path $root (Join-Path "Include" (Join-Path "CL" "cl.h"))
+		if ((Test-Path $includePath) -or (Test-Path $windowsIncludePath)) {
+			return $true
+		}
+	}
+
+	if (Test-Command "pkg-config") {
+		pkg-config --exists OpenCL 2>$null
+		return ($LASTEXITCODE -eq 0)
+	}
+
+	return $false
+}
+
+function Assert-RequestedBackendsAvailable {
+	param(
+		[bool]$RequireCuda,
+		[bool]$RequireVulkan,
+		[bool]$RequireMetal,
+		[bool]$RequireOpenCL
+	)
+
+	if ($RequireCuda -and !(Test-CudaAvailable)) {
+		throw "CUDA was requested, but CUDA was not found. Install the NVIDIA CUDA Toolkit or use -Auto/-CpuOnly."
+	}
+	if ($RequireCuda -and !$IsLinux -and !$IsMacOS -and !(Test-CudaLinkLibrariesAvailable)) {
+		throw "CUDA was requested, but CUDA link libraries were not found under CUDA_PATH. Install the NVIDIA CUDA Toolkit or use -Auto/-CpuOnly."
+	}
+	if ($RequireVulkan -and !(Test-VulkanAvailable)) {
+		throw "Vulkan was requested, but Vulkan SDK/tools were not found. Install the Vulkan SDK or use -Auto/-CpuOnly."
+	}
+	if ($RequireMetal -and !$IsMacOS) {
+		throw "Metal was requested, but Metal builds are only supported on macOS."
+	}
+	if ($RequireOpenCL -and !(Test-OpenCLAvailable)) {
+		throw "OpenCL was requested, but OpenCL headers/tools were not found. Install an OpenCL SDK or use -Auto/-CpuOnly."
+	}
 }
 
 function Get-PlatformSection {
@@ -219,6 +293,10 @@ if ($CpuOnly -and ($Cuda -or $Vulkan -or $Metal -or $OpenCL -or $AllBackends)) {
 
 $explicitBackendRequested = $CpuOnly -or $Cuda -or $Vulkan -or $Metal -or $OpenCL -or $AllBackends
 $autoRequested = $Auto -or !$explicitBackendRequested
+$requireCuda = $Cuda -or $AllBackends
+$requireVulkan = $Vulkan -or $AllBackends
+$requireMetal = $Metal -or ($AllBackends -and $IsMacOS)
+$requireOpenCL = $OpenCL -or $AllBackends
 
 if ($AllBackends) {
 	$Cuda = $true
@@ -229,8 +307,14 @@ if ($AllBackends) {
 	}
 }
 
+Assert-RequestedBackendsAvailable `
+	-RequireCuda $requireCuda `
+	-RequireVulkan $requireVulkan `
+	-RequireMetal $requireMetal `
+	-RequireOpenCL $requireOpenCL
+
 if ($autoRequested -and !$CpuOnly) {
-	if (Test-CudaAvailable) {
+	if (Test-CudaBuildAvailable) {
 		$Cuda = $true
 	}
 	if (Test-VulkanAvailable) {

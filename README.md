@@ -74,7 +74,11 @@ enables any other locally detected backend.
 | Option | Behavior |
 | --- | --- |
 | `-Auto` | Detects local SDKs/tools and enables only available backends. |
-| `-AllBackends` | Forces every supported backend option on, even if a local SDK may be missing. |
+| `-AllBackends` | Requires every supported backend SDK/toolchain and fails early if one is missing. |
+
+Explicit backend switches are requirements. For example, `-Cuda` fails before
+configuration if the CUDA Toolkit cannot be found. Use default `-Auto` when you
+want the script to skip unavailable GPU backends.
 
 Backend binaries remain generated local artifacts. `addon_config.mk` is updated
 by the setup script to reference the ggml libraries that were actually built.
