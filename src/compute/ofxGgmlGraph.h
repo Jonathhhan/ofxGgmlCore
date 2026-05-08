@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <vector>
 
 struct ggml_context;
@@ -27,6 +28,7 @@ public:
 	ofxGgmlTensor matmul(ofxGgmlTensor a, ofxGgmlTensor b);
 
 	void build(ofxGgmlTensor output);
+	void build(std::initializer_list<ofxGgmlTensor> outputs);
 	void build(const std::vector<ofxGgmlTensor> & outputs);
 	bool isBuilt() const;
 	int nodeCount() const;

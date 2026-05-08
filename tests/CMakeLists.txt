@@ -7,7 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(ofxGgml_rewrite_tests
 	test_main.cpp
 	test_result.cpp
-	test_public_headers.cpp)
+	test_public_headers.cpp
+	test_tensor.cpp
+	test_graph.cpp
+	../src/compute/ofxGgmlTensor.cpp
+	../src/compute/ofxGgmlGraph.cpp)
 
 target_include_directories(ofxGgml_rewrite_tests PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}

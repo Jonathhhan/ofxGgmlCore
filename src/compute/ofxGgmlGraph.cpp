@@ -109,6 +109,10 @@ void ofxGgmlGraph::build(ofxGgmlTensor output) {
 #endif
 }
 
+void ofxGgmlGraph::build(std::initializer_list<ofxGgmlTensor> outputs) {
+	build(std::vector<ofxGgmlTensor>(outputs));
+}
+
 void ofxGgmlGraph::build(const std::vector<ofxGgmlTensor> & outputs) {
 #if OFXGGML_HAS_GGML
 	if (!ctx || outputs.empty()) {
