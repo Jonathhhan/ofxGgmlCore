@@ -1,8 +1,10 @@
 #include "ofApp.h"
 
 #include <cstdlib>
+#include <cctype>
 #include <memory>
 #include <sstream>
+#include <utility>
 
 namespace {
 
@@ -32,18 +34,29 @@ void ofApp::setup() {
 	ofSetWindowTitle("ofxGgml text example");
 	ofBackground(12);
 
-	settings.executablePath = envValue("OFXGGML_LLAMA_CLI");
-	modelPath = envValue("OFXGGML_TEXT_MODEL");
+	settings.executablePath = normalizeEnvPath(envValue("OFXGGML_LLAMA_CLI"));
+	modelPath = normalizeEnvPath(envValue("OFXGGML_TEXT_MODEL"));
 	prompt = "Write one concise sentence about local inference in openFrameworks.";
 
 	generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
-	runPrompt();
+	{
+		std::lock_guard<std::mutex> lock(stateMutex);
+		status = "starting text request...";
+		rebuildLinesLocked();
+	}
+	startPrompt();
 }
 
 void ofApp::draw() {
+	std::vector<std::string> snapshot;
+	{
+		std::lock_guard<std::mutex> lock(stateMutex);
+		snapshot = lines;
+	}
+
 	ofSetColor(240);
 	int y = 36;
-	for (const auto & line : lines) {
+	for (const auto & line : snapshot) {
 		ofDrawBitmapString(line, 32, y);
 		y += 22;
 	}
@@ -51,26 +64,97 @@ void ofApp::draw() {
 
 void ofApp::keyPressed(int key) {
 	if (key == 'r' || key == 'R') {
-		runPrompt();
+		startPrompt();
+		return;
+	}
+	if (key == 'c' || key == 'C') {
+		cancelRequested = true;
+		std::lock_guard<std::mutex> lock(stateMutex);
+		if (running) {
+			status = "cancelling after the next llama.cpp output chunk...";
+			rebuildLinesLocked();
+		}
 	}
 }
 
-void ofApp::runPrompt() {
-	output.clear();
-	if (settings.executablePath.empty() || modelPath.empty()) {
-		status =
-			"Set OFXGGML_LLAMA_CLI and OFXGGML_TEXT_MODEL, then restart this example.";
-		rebuildLines();
+void ofApp::exit() {
+	cancelRequested = true;
+	if (worker.joinable()) {
+		worker.join();
+	}
+}
+
+void ofApp::startPrompt() {
+	{
+		std::lock_guard<std::mutex> lock(stateMutex);
+		if (running) {
+			status = "text request is already running";
+			rebuildLinesLocked();
+			return;
+		}
+	}
+
+	if (worker.joinable()) {
+		worker.join();
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(stateMutex);
+		output.clear();
+		status = "checking text backend configuration...";
+		running = true;
+		cancelRequested = false;
+		rebuildLinesLocked();
+	}
+
+	worker = std::thread(&ofApp::runPromptWorker, this);
+}
+
+void ofApp::runPromptWorker() {
+	auto fail = [this](std::string message) {
+		std::lock_guard<std::mutex> lock(stateMutex);
+		status = std::move(message);
+		running = false;
+		rebuildLinesLocked();
+	};
+
+	ofxGgmlTextGenerationSettings requestSettings;
+	std::string requestModelPath;
+	std::string requestPrompt;
+	{
+		std::lock_guard<std::mutex> lock(stateMutex);
+		requestSettings = settings;
+		requestModelPath = modelPath;
+		requestPrompt = prompt;
+	}
+
+	if (requestSettings.executablePath.empty()) {
+		fail("Set OFXGGML_LLAMA_CLI to a llama.cpp CLI executable, then press R.");
+		return;
+	}
+	if (!fileExists(requestSettings.executablePath)) {
+		fail("OFXGGML_LLAMA_CLI was not found: " + requestSettings.executablePath);
+		return;
+	}
+	if (requestModelPath.empty()) {
+		fail("Set OFXGGML_TEXT_MODEL to a GGUF model file, then press R.");
+		return;
+	}
+	if (!fileExists(requestModelPath)) {
+		fail("OFXGGML_TEXT_MODEL was not found: " + requestModelPath);
 		return;
 	}
 
-	status = "running llama.cpp CLI...";
-	rebuildLines();
+	{
+		std::lock_guard<std::mutex> lock(stateMutex);
+		status = "running llama.cpp CLI...";
+		rebuildLinesLocked();
+	}
 
 	ofxGgmlTextRequest request;
-	request.modelPath = modelPath;
-	request.prompt = prompt;
-	request.settings = settings;
+	request.modelPath = requestModelPath;
+	request.prompt = requestPrompt;
+	request.settings = requestSettings;
 	request.settings.maxTokens = 64;
 	request.settings.temperature = 0.7f;
 	request.settings.gpuLayers = -1;
@@ -78,24 +162,37 @@ void ofApp::runPrompt() {
 	const auto result = generator.generate(
 		request,
 		[this](const std::string & chunk) {
+			if (cancelRequested) {
+				return false;
+			}
+			std::lock_guard<std::mutex> lock(stateMutex);
 			output += chunk;
-			rebuildLines();
-			return true;
+			status = "receiving llama.cpp output...";
+			rebuildLinesLocked();
+			return !cancelRequested;
 		});
 
+	std::lock_guard<std::mutex> lock(stateMutex);
 	if (result.success) {
 		output = result.text;
-		status = "complete via " + result.backendName;
+		status = "complete via " + result.backendName + " in " +
+			std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
 	} else {
+		if (output.empty() && !result.rawOutput.empty()) {
+			output = result.rawOutput;
+		}
 		status = "text error: " + result.error;
 	}
-	rebuildLines();
+	running = false;
+	rebuildLinesLocked();
 }
 
-void ofApp::rebuildLines() {
+void ofApp::rebuildLinesLocked() {
 	lines.clear();
 	lines.push_back("ofxGgml text example");
 	lines.push_back(status);
+	lines.push_back(std::string("state: ") + (running ? "running" : "idle"));
+	lines.push_back("keys: R run again, C cancel");
 	lines.push_back("executable: " + (settings.executablePath.empty() ? "(unset)" : settings.executablePath));
 	lines.push_back("model: " + (modelPath.empty() ? "(unset)" : modelPath));
 	lines.push_back("");
@@ -112,6 +209,28 @@ void ofApp::rebuildLines() {
 			lines.push_back("  " + line);
 		}
 	}
+}
+
+std::string ofApp::normalizeEnvPath(const std::string & path) {
+	std::size_t first = 0;
+	while (first < path.size() &&
+		std::isspace(static_cast<unsigned char>(path[first]))) {
+		++first;
+	}
+	std::size_t last = path.size();
+	while (last > first &&
+		std::isspace(static_cast<unsigned char>(path[last - 1]))) {
+		--last;
+	}
+	std::string normalized = path.substr(first, last - first);
+	if (normalized.size() >= 2 && normalized.front() == '"' && normalized.back() == '"') {
+		normalized = normalized.substr(1, normalized.size() - 2);
+	}
+	return normalized;
+}
+
+bool ofApp::fileExists(const std::string & path) {
+	return !path.empty() && ofFile::doesFileExist(path, false);
 }
 
 std::string ofApp::envValue(const char * name) {

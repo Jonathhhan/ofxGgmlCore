@@ -3,7 +3,10 @@
 #include "ofMain.h"
 #include "ofxGgmlText.h"
 
+#include <atomic>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 class ofApp : public ofBaseApp {
@@ -11,11 +14,15 @@ public:
 	void setup() override;
 	void draw() override;
 	void keyPressed(int key) override;
+	void exit() override;
 
 private:
-	void runPrompt();
-	void rebuildLines();
+	void startPrompt();
+	void runPromptWorker();
+	void rebuildLinesLocked();
 	static std::string envValue(const char * name);
+	static std::string normalizeEnvPath(const std::string & path);
+	static bool fileExists(const std::string & path);
 
 	ofxGgmlTextGenerator generator;
 	ofxGgmlTextGenerationSettings settings;
@@ -24,4 +31,8 @@ private:
 	std::string output;
 	std::string status;
 	std::vector<std::string> lines;
+	std::thread worker;
+	std::mutex stateMutex;
+	std::atomic_bool cancelRequested { false };
+	bool running = false;
 };
