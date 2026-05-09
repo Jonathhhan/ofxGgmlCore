@@ -27,7 +27,7 @@ ofxGgmlResult<ofxGgmlModelInfo> ofxGgmlModel::inspect(const std::string & path) 
 	info.path = path;
 	info.tensorCount = static_cast<uint64_t>(gguf_get_n_tensors(ctx));
 	info.metadataCount = static_cast<uint64_t>(gguf_get_n_kv(ctx));
-	const int archKey = gguf_find_key(ctx, "general.architecture");
+	const int64_t archKey = gguf_find_key(ctx, "general.architecture");
 	if (archKey >= 0) {
 		const char * arch = gguf_get_val_str(ctx, archKey);
 		info.architecture = arch ? arch : "";
