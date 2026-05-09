@@ -21,6 +21,8 @@ common:
 	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/build*/%
 	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/ggml/%
 	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/media/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/scripts/%
 	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/tests/%
 	ADDON_INCLUDES_EXCLUDE += build/%
 	ADDON_INCLUDES_EXCLUDE += libs/ggml/.source/%
@@ -31,6 +33,8 @@ common:
 	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/build*/%
 	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/ggml/%
 	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/examples/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/media/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/scripts/%
 	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/tests/%
 
 vs:
