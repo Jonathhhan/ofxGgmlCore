@@ -21,6 +21,7 @@ private:
 	void runPromptWorker();
 	void rebuildLinesLocked();
 	static std::string envValue(const char * name);
+	static void autoConfigureTextBackend(ofxGgmlTextGenerationSettings & settings, std::string & modelPath);
 	static std::string normalizeEnvPath(const std::string & path);
 	static bool fileExists(const std::string & path);
 
