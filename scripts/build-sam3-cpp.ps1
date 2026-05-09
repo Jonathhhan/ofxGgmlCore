@@ -4,6 +4,8 @@ param(
 	[switch]$CpuOnly,
 	[string]$Configuration = "Release",
 	[string]$CudaArchitectures = "",
+	[string]$GgmlSourceDir = "",
+	[switch]$BundledGgml,
 	[int]$Jobs = 0,
 	[switch]$Clean,
 	[switch]$SkipExamples
@@ -136,6 +138,12 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
 $sourceDir = Join-Path $addonRoot "libs\sam3.cpp"
 $installLibDir = Join-Path $addonRoot "libs\sam3\lib"
+if ([string]::IsNullOrWhiteSpace($GgmlSourceDir) -and !$BundledGgml) {
+	$candidateGgmlSource = Join-Path $addonRoot "libs\ggml\.source"
+	if (Test-Path (Join-Path $candidateGgmlSource "CMakeLists.txt")) {
+		$GgmlSourceDir = $candidateGgmlSource
+	}
+}
 
 if (!(Test-Path (Join-Path $sourceDir "sam3.cpp"))) {
 	& (Join-Path $scriptRoot "install-sam3-cpp.ps1")
@@ -163,6 +171,9 @@ $cmakeArgs = @(
 	"-DSAM3_BUILD_TESTS=OFF",
 	"-DSAM3_CUDA=$(if ($enableCuda) { 'ON' } else { 'OFF' })"
 )
+if (![string]::IsNullOrWhiteSpace($GgmlSourceDir)) {
+	$cmakeArgs += "-DSAM3_GGML_SOURCE_DIR=$((Resolve-Path -LiteralPath $GgmlSourceDir).Path)"
+}
 
 if (!$IsLinux -and !$IsMacOS) {
 	$generator = Get-VisualStudioGenerator

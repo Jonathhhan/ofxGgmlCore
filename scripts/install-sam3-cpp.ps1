@@ -22,6 +22,21 @@ function Invoke-CheckedNative {
 	}
 }
 
+function Get-TextFile {
+	param([string]$Path)
+	$encoding = New-Object System.Text.UTF8Encoding $false
+	return [System.IO.File]::ReadAllText($Path, $encoding)
+}
+
+function Set-TextFile {
+	param(
+		[string]$Path,
+		[string]$Content
+	)
+	$encoding = New-Object System.Text.UTF8Encoding $false
+	[System.IO.File]::WriteAllText($Path, $Content, $encoding)
+}
+
 function Patch-Sam3CudaSupport {
 	param([string]$SourceDir)
 
@@ -32,7 +47,7 @@ function Patch-Sam3CudaSupport {
 		throw "sam3.cpp checkout is missing CMakeLists.txt or sam3.cpp"
 	}
 
-	$cmake = Get-Content -Raw -LiteralPath $cmakePath
+	$cmake = Get-TextFile $cmakePath
 	if ($cmake -notmatch "SAM3_CUDA") {
 		$cmake = [regex]::Replace(
 			$cmake,
@@ -49,11 +64,20 @@ function Patch-Sam3CudaSupport {
 			"target_compile_features\(sam3 PUBLIC cxx_std_14\)",
 			"target_compile_features(sam3 PUBLIC cxx_std_14)`nif(SAM3_CUDA)`n    target_compile_definitions(sam3 PUBLIC GGML_USE_CUDA)`nendif()",
 			1)
-		Set-Content -LiteralPath $cmakePath -Value $cmake -Encoding UTF8
+		Set-TextFile $cmakePath $cmake
 		Write-Step "Patched sam3.cpp CMake CUDA option"
 	}
+	if ($cmake -notmatch "SAM3_GGML_SOURCE_DIR") {
+		$cmake = [regex]::Replace(
+			$cmake,
+			"add_subdirectory\(ggml\)",
+			"set(SAM3_GGML_SOURCE_DIR `"`" CACHE PATH `"External ggml source directory`")`nif(SAM3_GGML_SOURCE_DIR)`n    add_subdirectory(`${SAM3_GGML_SOURCE_DIR} `${CMAKE_BINARY_DIR}/ggml)`nelse()`n    add_subdirectory(ggml)`nendif()",
+			1)
+		Set-TextFile $cmakePath $cmake
+		Write-Step "Patched sam3.cpp CMake external ggml option"
+	}
 
-	$cpp = Get-Content -Raw -LiteralPath $cppPath
+	$cpp = Get-TextFile $cppPath
 	if ($cpp -notmatch "ggml-cuda\.h") {
 		$cpp = [regex]::Replace(
 			$cpp,
@@ -87,7 +111,7 @@ function Patch-Sam3CudaSupport {
 			}
 			$cpp = [regex]::Replace($cpp, $backendFallbackPattern, $cudaBlock + '$0', 1)
 		}
-		Set-Content -LiteralPath $cppPath -Value $cpp -Encoding UTF8
+		Set-TextFile $cppPath $cpp
 		Write-Step "Patched sam3.cpp CUDA backend initialization"
 	}
 }

@@ -99,4 +99,6 @@ scripts\build-sam3-cpp.bat -Cuda -SkipExamples
 The install script patches `sam3.cpp` with a `SAM3_CUDA` CMake option and a CUDA
 backend initialization path. The build script exports `libs/sam3/lib/sam3.lib`
 and enables `OFXGGML_ENABLE_SAM3_ADAPTER` in the local `addon_config.mk` SAM3
-marker.
+marker. By default, SAM3 builds against the addon ggml source under
+`libs/ggml/.source` so the addon links a single ggml version; pass
+`-BundledGgml` only when intentionally testing upstream sam3.cpp in isolation.
