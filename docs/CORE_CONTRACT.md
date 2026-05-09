@@ -126,7 +126,7 @@ examples are smoke checks, not the only tests.
 Each example should demonstrate one idea:
 
 - `ofxGgmlSimpleExample`: runtime setup and one tiny graph
-- future `ofxGgmlTextExample`: one local text generation path
+- `ofxGgmlTextExample`: one local llama.cpp CLI text generation path
 
 No all-in-one GUI example belongs in core.
 
@@ -154,4 +154,5 @@ layer.
 6. Done: design the backend-neutral `ofxGgmlText.h` surface.
 7. Done: add the llama.cpp CLI adapter boundary.
 8. Done: add the real platform process runner.
-9. Next: add `ofxGgmlTextExample`.
+9. Done: add `ofxGgmlTextExample`.
+10. Next: add generated-project repair coverage for multiple examples.

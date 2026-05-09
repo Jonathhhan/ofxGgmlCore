@@ -30,3 +30,12 @@ ofxGgmlSimpleExample/*.vcxproj
 ofxGgmlSimpleExample/*.vcxproj.filters
 !ofxGgmlSimpleExample/bin/data/
 !ofxGgmlSimpleExample/bin/data/.gitkeep
+
+ofxGgmlTextExample/bin/
+ofxGgmlTextExample/config.make
+ofxGgmlTextExample/icon.rc
+ofxGgmlTextExample/*.sln
+ofxGgmlTextExample/*.vcxproj
+ofxGgmlTextExample/*.vcxproj.filters
+!ofxGgmlTextExample/bin/data/
+!ofxGgmlTextExample/bin/data/.gitkeep
