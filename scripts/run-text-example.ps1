@@ -94,6 +94,7 @@ if ($Backend -ieq "cli" -and [string]::IsNullOrWhiteSpace($LlamaCli)) {
 		"data",
 		"data\bin",
 		"tools",
+		"libs\llama\bin",
 		"libs\llama.cpp\build\bin",
 		"libs\llama.cpp\build\bin\Release",
 		"libs\llama.cpp\build\bin\Debug"
