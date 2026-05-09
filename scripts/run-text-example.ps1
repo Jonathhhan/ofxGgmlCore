@@ -1,4 +1,7 @@
 param(
+	[string]$Backend = $(if ($env:OFXGGML_TEXT_BACKEND) { $env:OFXGGML_TEXT_BACKEND } else { "server" }),
+	[string]$ServerUrl = $(if ($env:OFXGGML_TEXT_SERVER_URL) { $env:OFXGGML_TEXT_SERVER_URL } else { "http://127.0.0.1:8080" }),
+	[string]$ServerModel = $env:OFXGGML_TEXT_SERVER_MODEL,
 	[string]$LlamaCli = $env:OFXGGML_LLAMA_CLI,
 	[string]$Model = $env:OFXGGML_TEXT_MODEL,
 	[switch]$Build,
@@ -65,6 +68,12 @@ if (!(Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
 
 $LlamaCli = Normalize-PathText $LlamaCli
 $Model = Normalize-PathText $Model
+$Backend = Normalize-PathText $Backend
+$ServerUrl = Normalize-PathText $ServerUrl
+$ServerModel = Normalize-PathText $ServerModel
+if ([string]::IsNullOrWhiteSpace($Backend)) {
+	$Backend = "server"
+}
 
 $searchRoots = @(
 	$addonRoot,
@@ -73,7 +82,7 @@ $searchRoots = @(
 	(Join-Path $exampleRoot "bin\data")
 )
 
-if ([string]::IsNullOrWhiteSpace($LlamaCli)) {
+if ($Backend -ieq "cli" -and [string]::IsNullOrWhiteSpace($LlamaCli)) {
 	$llamaNames = if ($IsWindows -or $env:OS -eq "Windows_NT") {
 		@("llama-cli.exe", "main.exe", "llama.exe")
 	} else {
@@ -99,7 +108,7 @@ if ([string]::IsNullOrWhiteSpace($LlamaCli)) {
 	$LlamaCli = Find-FirstFile $candidates
 }
 
-if ([string]::IsNullOrWhiteSpace($Model)) {
+if ($Backend -ieq "cli" -and [string]::IsNullOrWhiteSpace($Model)) {
 	$modelDirs = @(
 		(Join-Path $exampleRoot "bin\data"),
 		(Join-Path $exampleRoot "bin\data\models"),
@@ -109,17 +118,28 @@ if ([string]::IsNullOrWhiteSpace($Model)) {
 	$Model = Find-FirstModel $modelDirs
 }
 
-if (![string]::IsNullOrWhiteSpace($LlamaCli)) {
+if ($Backend -ieq "server") {
+	$env:OFXGGML_TEXT_BACKEND = "server"
+	$env:OFXGGML_TEXT_SERVER_URL = $ServerUrl
+	if (![string]::IsNullOrWhiteSpace($ServerModel)) {
+		$env:OFXGGML_TEXT_SERVER_MODEL = $ServerModel
+	}
+	Write-Step "Using llama-server: $ServerUrl"
+	if (![string]::IsNullOrWhiteSpace($ServerModel)) {
+		Write-Step "Using server model: $ServerModel"
+	}
+} elseif (![string]::IsNullOrWhiteSpace($LlamaCli)) {
+	$env:OFXGGML_TEXT_BACKEND = "cli"
 	$env:OFXGGML_LLAMA_CLI = $LlamaCli
 	Write-Step "Using llama.cpp CLI: $LlamaCli"
 } else {
 	Write-Warning "No llama.cpp CLI found. The example will show setup instructions."
 }
 
-if (![string]::IsNullOrWhiteSpace($Model)) {
+if ($Backend -ieq "cli" -and ![string]::IsNullOrWhiteSpace($Model)) {
 	$env:OFXGGML_TEXT_MODEL = $Model
 	Write-Step "Using text model: $Model"
-} else {
+} elseif ($Backend -ieq "cli") {
 	Write-Warning "No GGUF model found. The example will show setup instructions."
 }
 

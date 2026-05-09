@@ -14,6 +14,7 @@ add_executable(ofxGgml_rewrite_tests
 	test_model.cpp
 	test_text.cpp
 	test_llama_cli_text.cpp
+	test_llama_server_text.cpp
 	test_segmentation.cpp
 	../src/core/ofxGgmlRuntime.cpp
 	../src/compute/ofxGgmlTensor.cpp
@@ -21,6 +22,7 @@ add_executable(ofxGgml_rewrite_tests
 	../src/model/ofxGgmlModel.cpp
 	../src/inference/ofxGgmlTextGeneration.cpp
 	../src/inference/ofxGgmlLlamaCliTextBackend.cpp
+	../src/inference/ofxGgmlLlamaServerTextBackend.cpp
 	../src/inference/ofxGgmlSegmentationInference.cpp)
 
 target_include_directories(ofxGgml_rewrite_tests PRIVATE

@@ -97,6 +97,107 @@ function Test-GeneratedAddonPath {
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\sam3\.cpp$')
 }
 
+function Get-RelativeProjectPath {
+	param(
+		[string]$ProjectDir,
+		[string]$FilePath
+	)
+	$projectUri = [System.Uri]((Resolve-Path -LiteralPath $ProjectDir).Path.TrimEnd("\") + "\")
+	$fileUri = [System.Uri](Resolve-Path -LiteralPath $FilePath).Path
+	return [System.Uri]::UnescapeDataString(
+		$projectUri.MakeRelativeUri($fileUri).ToString()).Replace("/", "\")
+}
+
+function Get-FirstItemGroup {
+	param(
+		[xml]$Doc,
+		[System.Xml.XmlNamespaceManager]$Namespace,
+		[string]$PreferredTag
+	)
+	$itemGroups = @($Doc.SelectNodes("//msb:ItemGroup", $Namespace))
+	foreach ($group in $itemGroups) {
+		if ($group.SelectSingleNode("msb:$PreferredTag", $Namespace)) {
+			return $group
+		}
+	}
+	if ($itemGroups.Count -gt 0) {
+		return $itemGroups[0]
+	}
+	return $null
+}
+
+function Add-VisualStudioProjectItem {
+	param(
+		[xml]$Doc,
+		[System.Xml.XmlNamespaceManager]$Namespace,
+		[string]$Tag,
+		[string]$Include,
+		[string]$Filter = ""
+	)
+	$existing = $Doc.SelectSingleNode("//msb:$Tag[@Include='$Include']", $Namespace)
+	if ($existing) {
+		return $false
+	}
+	$itemGroup = Get-FirstItemGroup -Doc $Doc -Namespace $Namespace -PreferredTag $Tag
+	if (!$itemGroup) {
+		return $false
+	}
+	$item = $Doc.CreateElement($Tag, $Doc.DocumentElement.NamespaceURI)
+	$item.SetAttribute("Include", $Include)
+	if (![string]::IsNullOrWhiteSpace($Filter)) {
+		$filterNode = $Doc.CreateElement("Filter", $Doc.DocumentElement.NamespaceURI)
+		$filterNode.InnerText = $Filter
+		[void]$item.AppendChild($filterNode)
+	}
+	[void]$itemGroup.AppendChild($item)
+	return $true
+}
+
+function Repair-VisualStudioAddonItems {
+	param(
+		[xml]$Doc,
+		[System.Xml.XmlNamespaceManager]$Namespace,
+		[string]$Path
+	)
+	$changed = $false
+	$projectDir = Split-Path -Parent $Path
+	$isFilters = $Path.EndsWith(".vcxproj.filters", [System.StringComparison]::OrdinalIgnoreCase)
+	if (!$Path.EndsWith(".vcxproj", [System.StringComparison]::OrdinalIgnoreCase) -and !$isFilters) {
+		return $false
+	}
+
+	$sourceRoot = Join-Path $addonRoot "src"
+	if (!(Test-Path -LiteralPath $sourceRoot)) {
+		return $false
+	}
+	$sourceFiles = Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | Where-Object {
+		$_.Extension -in @(".cpp", ".cxx", ".cc")
+	}
+	$headerFiles = Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | Where-Object {
+		$_.Extension -in @(".h", ".hpp")
+	}
+
+	foreach ($file in $sourceFiles) {
+		$relative = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath $file.FullName
+		$filter = if ($isFilters) {
+			("addons\ofxGgml\" + (Split-Path -Parent $relative).TrimStart(".\").Replace("..\", ""))
+		} else { "" }
+		if (Add-VisualStudioProjectItem -Doc $Doc -Namespace $Namespace -Tag "ClCompile" -Include $relative -Filter $filter) {
+			$changed = $true
+		}
+	}
+	foreach ($file in $headerFiles) {
+		$relative = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath $file.FullName
+		$filter = if ($isFilters) {
+			("addons\ofxGgml\" + (Split-Path -Parent $relative).TrimStart(".\").Replace("..\", ""))
+		} else { "" }
+		if (Add-VisualStudioProjectItem -Doc $Doc -Namespace $Namespace -Tag "ClInclude" -Include $relative -Filter $filter) {
+			$changed = $true
+		}
+	}
+	return $changed
+}
+
 function Repair-VisualStudioProjectFile {
 	param(
 		[string]$Path,
@@ -114,7 +215,10 @@ function Repair-VisualStudioProjectFile {
 	foreach ($tag in @("ClCompile", "ClInclude", "None", "CustomBuild", "CudaCompile", "Filter")) {
 		$nodes = @($doc.SelectNodes("//msb:$tag[@Include]", $namespace))
 		foreach ($node in $nodes) {
-			if (Test-GeneratedAddonPath $node.Include) {
+			$extension = [System.IO.Path]::GetExtension(($node.Include -replace "/", "\"))
+			$headerCompiledAsSource =
+				$tag -eq "ClCompile" -and $extension -in @(".h", ".hpp")
+			if ((Test-GeneratedAddonPath $node.Include) -or $headerCompiledAsSource) {
 				[void]$node.ParentNode.RemoveChild($node)
 				$changed = $true
 			}
@@ -156,6 +260,10 @@ function Repair-VisualStudioProjectFile {
 			}
 			$node.InnerText = ($cleanOptions -join " ")
 		}
+	}
+
+	if (Repair-VisualStudioAddonItems -Doc $doc -Namespace $namespace -Path $Path) {
+		$changed = $true
 	}
 
 	if ($changed) {

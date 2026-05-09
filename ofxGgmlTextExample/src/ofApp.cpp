@@ -210,11 +210,23 @@ void ofApp::setup() {
 	ofBackground(12);
 
 	settings.executablePath = normalizeEnvPath(envValue("OFXGGML_LLAMA_CLI"));
+	settings.serverUrl = normalizeEnvPath(envValue("OFXGGML_TEXT_SERVER_URL"));
+	settings.serverModel = normalizeEnvPath(envValue("OFXGGML_TEXT_SERVER_MODEL"));
+	if (settings.serverUrl.empty()) {
+		settings.serverUrl = "http://127.0.0.1:8080";
+	}
+	settings.useServerBackend = true;
 	modelPath = normalizeEnvPath(envValue("OFXGGML_TEXT_MODEL"));
 	autoConfigureTextBackend(settings, modelPath);
 	prompt = "Write one concise sentence about local inference in openFrameworks.";
 
-	generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
+	const std::string backend = normalizeEnvPath(envValue("OFXGGML_TEXT_BACKEND"));
+	if (backend == "cli") {
+		settings.useServerBackend = false;
+		generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
+	} else {
+		generator.setBackend(std::make_shared<ofxGgmlLlamaServerTextBackend>(settings.serverUrl));
+	}
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		status = "starting text request...";
@@ -304,26 +316,35 @@ void ofApp::runPromptWorker() {
 		requestPrompt = prompt;
 	}
 
-	if (requestSettings.executablePath.empty()) {
-		fail("No llama.cpp CLI found. Set OFXGGML_LLAMA_CLI or place llama-cli beside the app.");
-		return;
-	}
-	if (!fileExists(requestSettings.executablePath)) {
-		fail("OFXGGML_LLAMA_CLI was not found: " + requestSettings.executablePath);
-		return;
-	}
-	if (requestModelPath.empty()) {
-		fail("No GGUF model found. Set OFXGGML_TEXT_MODEL or place one under bin/data/models.");
-		return;
-	}
-	if (!fileExists(requestModelPath)) {
-		fail("OFXGGML_TEXT_MODEL was not found: " + requestModelPath);
-		return;
+	if (requestSettings.useServerBackend) {
+		if (requestSettings.serverUrl.empty()) {
+			fail("No llama-server URL configured. Set OFXGGML_TEXT_SERVER_URL.");
+			return;
+		}
+	} else {
+		if (requestSettings.executablePath.empty()) {
+			fail("No llama.cpp CLI found. Set OFXGGML_LLAMA_CLI or use OFXGGML_TEXT_BACKEND=server.");
+			return;
+		}
+		if (!fileExists(requestSettings.executablePath)) {
+			fail("OFXGGML_LLAMA_CLI was not found: " + requestSettings.executablePath);
+			return;
+		}
+		if (requestModelPath.empty()) {
+			fail("No GGUF model found. Set OFXGGML_TEXT_MODEL or place one under bin/data/models.");
+			return;
+		}
+		if (!fileExists(requestModelPath)) {
+			fail("OFXGGML_TEXT_MODEL was not found: " + requestModelPath);
+			return;
+		}
 	}
 
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
-		status = "running llama.cpp CLI...";
+		status = requestSettings.useServerBackend
+			? "requesting llama-server..."
+			: "running llama.cpp CLI...";
 		rebuildLinesLocked();
 	}
 
@@ -369,9 +390,11 @@ void ofApp::rebuildLinesLocked() {
 	lines.push_back(status);
 	lines.push_back(std::string("state: ") + (running ? "running" : "idle"));
 	lines.push_back("keys: R run again, C cancel");
-	lines.push_back("env is optional if llama-cli and a .gguf model are in local search paths");
-	lines.push_back("executable: " + (settings.executablePath.empty() ? "(unset)" : settings.executablePath));
-	lines.push_back("model: " + (modelPath.empty() ? "(unset)" : modelPath));
+	lines.push_back("backend: " + std::string(settings.useServerBackend ? "llama-server" : "llama-cli"));
+	lines.push_back("server: " + (settings.serverUrl.empty() ? "(unset)" : settings.serverUrl));
+	lines.push_back("server model: " + (settings.serverModel.empty() ? "(auto)" : settings.serverModel));
+	lines.push_back("executable: " + (settings.executablePath.empty() ? "(optional)" : settings.executablePath));
+	lines.push_back("model: " + (modelPath.empty() ? "(server-managed)" : modelPath));
 	lines.push_back("");
 	lines.push_back("prompt:");
 	for (const auto & line : wrapText(prompt, 96)) {
