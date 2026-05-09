@@ -221,6 +221,45 @@ function Find-BuiltExecutable {
 	return ""
 }
 
+function Clear-InstallDirectory {
+	if (!(Test-Path -LiteralPath $InstallDir)) {
+		return
+	}
+	Get-ChildItem -LiteralPath $InstallDir -Force -ErrorAction SilentlyContinue |
+		Where-Object { $_.Name -ne ".gitkeep" } |
+		Remove-Item -Recurse -Force
+}
+
+function Get-BuiltRuntimeFiles {
+	$extensions = if ($IsLinux) {
+		@(".so", "")
+	} elseif ($IsMacOS) {
+		@(".dylib", "")
+	} else {
+		@(".dll", ".exe")
+	}
+	$runtimeDirs = @(
+		(Join-Path $BuildDir "bin\Release"),
+		(Join-Path $BuildDir "bin")
+	)
+	$files = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+	$seen = @{}
+	foreach ($runtimeDir in $runtimeDirs) {
+		if (!(Test-Path -LiteralPath $runtimeDir -PathType Container)) {
+			continue
+		}
+		Get-ChildItem -LiteralPath $runtimeDir -File -ErrorAction SilentlyContinue |
+			Where-Object { $extensions -contains $_.Extension -or ($_.Extension -eq "" -and !$_.Name.Contains(".")) } |
+			ForEach-Object {
+				if (!$seen.ContainsKey($_.FullName)) {
+					$seen[$_.FullName] = $true
+					$files.Add($_)
+				}
+			}
+	}
+	return @($files)
+}
+
 if (!(Test-Command "git")) {
 	throw "git was not found in PATH."
 }
@@ -318,14 +357,10 @@ if (!$DryRun) {
 	}
 
 	Write-Step "Installing llama.cpp tools into $InstallDir"
-	foreach ($tool in @("llama-server", "llama-cli", "llama-completion", "llama-embedding")) {
-		$exe = Find-BuiltExecutable $tool
-		if (![string]::IsNullOrWhiteSpace($exe)) {
-			Copy-Item -LiteralPath $exe -Destination $InstallDir -Force
-		}
+	Clear-InstallDirectory
+	foreach ($file in Get-BuiltRuntimeFiles) {
+		Copy-Item -LiteralPath $file.FullName -Destination $InstallDir -Force
 	}
-	Get-ChildItem -LiteralPath $BuildDir -Recurse -File -Include "*.dll","*.so","*.dylib" -ErrorAction SilentlyContinue |
-		ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $InstallDir -Force }
 
 	Write-Step "Source and build cache kept under libs\llama.cpp"
 }

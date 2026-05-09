@@ -114,7 +114,8 @@ if ($Backend -ieq "cli" -and [string]::IsNullOrWhiteSpace($Model)) {
 		(Join-Path $exampleRoot "bin\data"),
 		(Join-Path $exampleRoot "bin\data\models"),
 		(Join-Path $exampleRoot "models"),
-		(Join-Path $addonRoot "models")
+		(Join-Path $addonRoot "models"),
+		(Join-Path (Split-Path -Parent $addonRoot) "models")
 	)
 	$Model = Find-FirstModel $modelDirs
 }

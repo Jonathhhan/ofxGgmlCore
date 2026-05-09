@@ -7,6 +7,7 @@ param(
 	[int]$ContextSize = 4096,
 	[switch]$NoCudaGraphs,
 	[switch]$Detached,
+	[string]$LogDir = "",
 	[switch]$DryRun
 )
 
@@ -42,6 +43,20 @@ function Find-FirstModel {
 	return ""
 }
 
+function Join-ProcessArguments {
+	param([string[]]$Arguments)
+	$quoted = foreach ($argument in $Arguments) {
+		if ($null -eq $argument) {
+			'""'
+		} elseif ($argument -match '[\s"]') {
+			'"' + ($argument.Replace('"', '\"')) + '"'
+		} else {
+			$argument
+		}
+	}
+	return ($quoted -join " ")
+}
+
 if ([string]::IsNullOrWhiteSpace($ServerExe)) {
 	$serverName = if ($IsLinux -or $IsMacOS) { "llama-server" } else { "llama-server.exe" }
 	$ServerExe = Resolve-FirstFile @(
@@ -60,7 +75,8 @@ if ([string]::IsNullOrWhiteSpace($ModelPath)) {
 		(Join-Path $addonRoot "ofxGgmlTextExample\bin\data\models"),
 		(Join-Path $addonRoot "ofxGgmlTextExample\bin\data"),
 		(Join-Path $addonRoot "ofxGgmlTextExample\models"),
-		(Join-Path $addonRoot "models")
+		(Join-Path $addonRoot "models"),
+		(Join-Path (Split-Path -Parent $addonRoot) "models")
 	)
 }
 if ([string]::IsNullOrWhiteSpace($ModelPath)) {
@@ -88,8 +104,11 @@ Write-Host "  url:    http://$HostName`:$Port"
 Write-Host "  ngl:    $GpuLayers"
 Write-Host "  ctx:    $ContextSize"
 Write-Host "  mode:   $(if ($Detached) { 'detached' } else { 'foreground' })"
+if (![string]::IsNullOrWhiteSpace($LogDir)) {
+	Write-Host "  logs:   $LogDir"
+}
 Write-Host ""
-Write-Host ("`"$ServerExe`" " + ($arguments -join " "))
+Write-Host ("`"$ServerExe`" " + (Join-ProcessArguments $arguments))
 
 if ($DryRun) {
 	return
@@ -97,15 +116,26 @@ if ($DryRun) {
 
 $workingDir = Split-Path -Parent $ServerExe
 if ($Detached) {
-	$process = Start-Process `
-		-FilePath $ServerExe `
-		-ArgumentList $arguments `
-		-WorkingDirectory $workingDir `
-		-WindowStyle Hidden `
-		-PassThru
+	$startArgs = @{
+		FilePath = $ServerExe
+		ArgumentList = (Join-ProcessArguments $arguments)
+		WorkingDirectory = $workingDir
+		WindowStyle = "Hidden"
+		PassThru = $true
+	}
+	if (![string]::IsNullOrWhiteSpace($LogDir)) {
+		New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
+		$startArgs.RedirectStandardOutput = Join-Path $LogDir "llama-server.out.log"
+		$startArgs.RedirectStandardError = Join-Path $LogDir "llama-server.err.log"
+	}
+	$process = Start-Process @startArgs
 	Write-Host ""
 	Write-Host "llama-server started in the background (PID $($process.Id))."
 	Write-Host "Use OFXGGML_TEXT_SERVER_URL=http://$HostName`:$Port"
+	if (![string]::IsNullOrWhiteSpace($LogDir)) {
+		Write-Host "Logs are in $LogDir"
+	}
+	Write-Output "OFXGGML_LLAMA_SERVER_PID=$($process.Id)"
 } else {
 	Write-Host ""
 	Write-Host "llama-server is running in this console. Press Ctrl+C to stop it."
