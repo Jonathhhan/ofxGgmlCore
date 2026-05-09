@@ -5,6 +5,7 @@ param(
 	[string]$BuildDir = "",
 	[string]$InstallDir = "",
 	[int]$Jobs = 0,
+	[string]$CudaArchitectures = "",
 	[switch]$Auto,
 	[switch]$CpuOnly,
 	[switch]$Cuda,
@@ -20,6 +21,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
+$jobsSpecified = $PSBoundParameters.ContainsKey("Jobs")
 if ([string]::IsNullOrWhiteSpace($SourceDir)) {
 	$SourceDir = Join-Path $addonRoot "libs\llama.cpp\.source"
 }
@@ -59,6 +61,21 @@ function Invoke-CheckedNative {
 	}
 }
 
+function Invoke-GitProbe {
+	param([string[]]$Arguments)
+	$previousErrorActionPreference = $ErrorActionPreference
+	try {
+		$ErrorActionPreference = "Continue"
+		$output = & git @Arguments 2>$null
+		return @{
+			ExitCode = $LASTEXITCODE
+			Output = (@($output) -join "`n").Trim()
+		}
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
+	}
+}
+
 function Test-SourceRevisionMatches {
 	param(
 		[string]$Path,
@@ -67,16 +84,16 @@ function Test-SourceRevisionMatches {
 	if (!(Test-Path -LiteralPath $Path)) {
 		return $false
 	}
-	$tag = git -C $Path describe --tags --exact-match HEAD 2>$null
-	if ($LASTEXITCODE -eq 0 -and $tag -eq $Revision) {
+	$tag = Invoke-GitProbe @("-C", $Path, "describe", "--tags", "--exact-match", "HEAD")
+	if ($tag.ExitCode -eq 0 -and $tag.Output -eq $Revision) {
 		return $true
 	}
-	$branch = git -C $Path rev-parse --abbrev-ref HEAD 2>$null
-	if ($LASTEXITCODE -eq 0 -and $branch -eq $Revision) {
+	$branch = Invoke-GitProbe @("-C", $Path, "rev-parse", "--abbrev-ref", "HEAD")
+	if ($branch.ExitCode -eq 0 -and $branch.Output -eq $Revision) {
 		return $true
 	}
-	$commit = git -C $Path rev-parse HEAD 2>$null
-	return ($LASTEXITCODE -eq 0 -and $commit.StartsWith($Revision, [System.StringComparison]::OrdinalIgnoreCase))
+	$commit = Invoke-GitProbe @("-C", $Path, "rev-parse", "HEAD")
+	return ($commit.ExitCode -eq 0 -and $commit.Output.StartsWith($Revision, [System.StringComparison]::OrdinalIgnoreCase))
 }
 
 function Test-CudaAvailable {
@@ -84,6 +101,30 @@ function Test-CudaAvailable {
 		return $true
 	}
 	return (Test-Command "nvcc") -or (Test-Command "nvidia-smi")
+}
+
+function Get-DetectedCudaArchitectures {
+	if (!(Test-Command "nvidia-smi")) {
+		return ""
+	}
+	$previousErrorActionPreference = $ErrorActionPreference
+	try {
+		$ErrorActionPreference = "Continue"
+		$computeCaps = & nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>$null
+		if ($LASTEXITCODE -ne 0) {
+			return ""
+		}
+		$architectures = New-Object System.Collections.Generic.List[string]
+		foreach ($computeCap in @($computeCaps)) {
+			$architecture = ($computeCap.Trim() -replace '[^0-9]', '')
+			if (![string]::IsNullOrWhiteSpace($architecture) -and !$architectures.Contains($architecture)) {
+				$architectures.Add($architecture)
+			}
+		}
+		return ($architectures -join ";")
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
+	}
 }
 
 function Test-VulkanAvailable {
@@ -144,6 +185,15 @@ function Get-CMakeConfigureArgs {
 			$args += "-T"
 			$args += "host=x64,cuda=$env:CUDA_PATH"
 			$args += "-DCUDAToolkit_ROOT=$env:CUDA_PATH"
+		}
+	}
+	if ($Cuda) {
+		$architectures = $CudaArchitectures
+		if ([string]::IsNullOrWhiteSpace($architectures)) {
+			$architectures = Get-DetectedCudaArchitectures
+		}
+		if (![string]::IsNullOrWhiteSpace($architectures)) {
+			$args += "-DCMAKE_CUDA_ARCHITECTURES=$architectures"
 		}
 	}
 	return $args
@@ -208,6 +258,9 @@ if ($Metal -and !$IsMacOS) {
 }
 if ($OpenCL -and !(Test-OpenCLAvailable)) {
 	throw "OpenCL was requested, but OpenCL headers/tools were not found."
+}
+if ($Cuda -and !$jobsSpecified -and !$IsLinux -and !$IsMacOS) {
+	$Jobs = 1
 }
 
 if ($Clean) {

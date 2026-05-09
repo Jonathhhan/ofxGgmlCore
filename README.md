@@ -154,9 +154,16 @@ The optional local llama.cpp runtime is explicit:
 ```powershell
 scripts\build-llama-server.bat
 scripts\build-llama-server.bat -Cuda
+scripts\build-llama-server.bat -Cuda -CudaArchitectures 86
 scripts\build-llama-server.bat -CpuOnly
 scripts\start-llama-server.bat -ModelPath C:\path\to\model.gguf
 ```
+
+When CUDA is enabled, the build script asks `nvidia-smi` for compute
+capabilities and passes `CMAKE_CUDA_ARCHITECTURES` explicitly. Use
+`-CudaArchitectures` to override that detection. On Windows CUDA builds default
+to one build job to avoid MSVC/CUDA parallel PDB races; pass `-Jobs` if you want
+to force a wider build.
 
 On macOS/Linux, the matching wrappers call the same PowerShell implementation:
 

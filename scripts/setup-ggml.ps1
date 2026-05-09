@@ -68,6 +68,21 @@ function Invoke-CMake {
 	Invoke-CheckedNative $Step { cmake @Arguments }
 }
 
+function Invoke-GitProbe {
+	param([string[]]$Arguments)
+	$previousErrorActionPreference = $ErrorActionPreference
+	try {
+		$ErrorActionPreference = "Continue"
+		$output = & git @Arguments 2>$null
+		return @{
+			ExitCode = $LASTEXITCODE
+			Output = (@($output) -join "`n").Trim()
+		}
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
+	}
+}
+
 function Clear-DirectoryContents {
 	param([string]$Path)
 	if (!(Test-Path -LiteralPath $Path)) {
@@ -187,13 +202,13 @@ function Test-SourceRevisionMatches {
 		return $false
 	}
 
-	$tag = git -C $Path describe --tags --exact-match HEAD 2>$null
-	if ($LASTEXITCODE -eq 0 -and $tag -eq $Revision) {
+	$tag = Invoke-GitProbe @("-C", $Path, "describe", "--tags", "--exact-match", "HEAD")
+	if ($tag.ExitCode -eq 0 -and $tag.Output -eq $Revision) {
 		return $true
 	}
 
-	$commit = git -C $Path rev-parse HEAD 2>$null
-	if ($LASTEXITCODE -eq 0 -and $commit.StartsWith($Revision, [System.StringComparison]::OrdinalIgnoreCase)) {
+	$commit = Invoke-GitProbe @("-C", $Path, "rev-parse", "HEAD")
+	if ($commit.ExitCode -eq 0 -and $commit.Output.StartsWith($Revision, [System.StringComparison]::OrdinalIgnoreCase)) {
 		return $true
 	}
 
