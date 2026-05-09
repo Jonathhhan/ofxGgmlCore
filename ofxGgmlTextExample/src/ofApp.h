@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxGgmlText.h"
+#include "ofxImGui.h"
 
 #include <atomic>
 #include <mutex>
@@ -18,6 +19,7 @@ public:
 
 private:
 	void startPrompt();
+	void requestCancel();
 	void runPromptWorker();
 	void rebuildLinesLocked();
 	static std::string envValue(const char * name);
@@ -27,6 +29,7 @@ private:
 
 	ofxGgmlTextGenerator generator;
 	ofxGgmlTextGenerationSettings settings;
+	ofxImGui::Gui gui;
 	std::string modelPath;
 	std::string prompt;
 	std::string output;

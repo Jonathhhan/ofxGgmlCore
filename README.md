@@ -128,6 +128,11 @@ scripts\build-simple-example.bat
 scripts\build-simple-example.ps1 -Configuration Release
 ```
 
+The examples use `ofxImGui` for their control/status panels. Keep `ofxImGui`
+installed beside this addon and regenerate the project files if `addons.make`
+changes are not picked up by your IDE. The Windows build helper repairs stale
+generated projects enough for local smoke builds.
+
 The simple example reports the selected runtime backend, enumerates available
 devices, and runs a tiny F32 add graph as a smoke test.
 
@@ -142,8 +147,8 @@ scripts\build-text-example.ps1 -Configuration Release
 `http://127.0.0.1:8080` and runs one OpenAI-compatible chat completion through
 `ofxGgmlTextGenerator`. Set `OFXGGML_TEXT_SERVER_URL` or
 `OFXGGML_TEXT_SERVER_MODEL` to override routing. The request runs on a worker
-thread so the window paints immediately; press `R` to run again or `C` to cancel
-after the next output chunk.
+thread so the window paints immediately; use the ImGui buttons or press `R` to
+run again and `C` to cancel after the next output chunk.
 
 You can launch it without setting global environment variables:
 

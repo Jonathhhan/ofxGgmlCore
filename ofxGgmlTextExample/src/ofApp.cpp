@@ -208,6 +208,7 @@ std::string discoverTextModel() {
 void ofApp::setup() {
 	ofSetWindowTitle("ofxGgml text example");
 	ofBackground(12);
+	gui.setup(nullptr, false);
 
 	settings.executablePath = normalizeEnvPath(envValue("OFXGGML_LLAMA_CLI"));
 	settings.serverUrl = normalizeEnvPath(envValue("OFXGGML_TEXT_SERVER_URL"));
@@ -236,17 +237,86 @@ void ofApp::setup() {
 }
 
 void ofApp::draw() {
-	std::vector<std::string> snapshot;
+	std::string statusSnapshot;
+	std::string backendSnapshot;
+	std::string serverUrlSnapshot;
+	std::string serverModelSnapshot;
+	std::string executableSnapshot;
+	std::string modelPathSnapshot;
+	std::string promptSnapshot;
+	std::string outputSnapshot;
+	bool runningSnapshot = false;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
-		snapshot = lines;
+		statusSnapshot = status;
+		backendSnapshot = settings.useServerBackend ? "llama-server" : "llama-cli";
+		serverUrlSnapshot = settings.serverUrl.empty() ? "(unset)" : settings.serverUrl;
+		serverModelSnapshot = settings.serverModel.empty() ? "(auto)" : settings.serverModel;
+		executableSnapshot = settings.executablePath.empty() ? "(optional)" : settings.executablePath;
+		modelPathSnapshot = modelPath.empty() ? "(server-managed)" : modelPath;
+		promptSnapshot = prompt;
+		outputSnapshot = output;
+		runningSnapshot = running;
 	}
 
-	ofSetColor(240);
-	int y = 36;
-	for (const auto & line : snapshot) {
-		ofDrawBitmapString(line, 32, y);
-		y += 22;
+	bool shouldRun = false;
+	bool shouldCancel = false;
+
+	ofBackground(12);
+	gui.begin();
+	ImGui::SetNextWindowPos(ImVec2(24.0f, 24.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(880.0f, 520.0f), ImGuiCond_Once);
+	if (ImGui::Begin("ofxGgml Text Example")) {
+		if (ImGui::Button("Run")) {
+			shouldRun = true;
+		}
+		ImGui::SameLine();
+		if (!runningSnapshot) {
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.45f);
+		}
+		if (ImGui::Button("Cancel") && runningSnapshot) {
+			shouldCancel = true;
+		}
+		if (!runningSnapshot) {
+			ImGui::PopStyleVar();
+		}
+
+		ImGui::Separator();
+		const ImVec4 statusColor = runningSnapshot
+			? ImVec4(0.45f, 0.75f, 1.0f, 1.0f)
+			: ImVec4(0.70f, 0.92f, 0.70f, 1.0f);
+		ImGui::TextColored(statusColor, "%s", statusSnapshot.c_str());
+		ImGui::Text("State: %s", runningSnapshot ? "running" : "idle");
+		ImGui::Text("Backend: %s", backendSnapshot.c_str());
+		ImGui::TextWrapped("Server: %s", serverUrlSnapshot.c_str());
+		ImGui::TextWrapped("Server model: %s", serverModelSnapshot.c_str());
+		ImGui::TextWrapped("Executable: %s", executableSnapshot.c_str());
+		ImGui::TextWrapped("Model: %s", modelPathSnapshot.c_str());
+
+		ImGui::Spacing();
+		ImGui::TextUnformatted("Prompt");
+		ImGui::Separator();
+		ImGui::TextWrapped("%s", promptSnapshot.c_str());
+
+		ImGui::Spacing();
+		ImGui::TextUnformatted("Output");
+		ImGui::Separator();
+		ImGui::BeginChild("ofxGgmlTextOutput", ImVec2(0.0f, 170.0f), true);
+		if (outputSnapshot.empty()) {
+			ImGui::TextDisabled("(none)");
+		} else {
+			ImGui::TextWrapped("%s", outputSnapshot.c_str());
+		}
+		ImGui::EndChild();
+	}
+	ImGui::End();
+	gui.end();
+
+	if (shouldRun) {
+		startPrompt();
+	}
+	if (shouldCancel) {
+		requestCancel();
 	}
 }
 
@@ -256,12 +326,7 @@ void ofApp::keyPressed(int key) {
 		return;
 	}
 	if (key == 'c' || key == 'C') {
-		cancelRequested = true;
-		std::lock_guard<std::mutex> lock(stateMutex);
-		if (running) {
-			status = "cancelling after the next llama.cpp output chunk...";
-			rebuildLinesLocked();
-		}
+		requestCancel();
 	}
 }
 
@@ -296,6 +361,15 @@ void ofApp::startPrompt() {
 	}
 
 	worker = std::thread(&ofApp::runPromptWorker, this);
+}
+
+void ofApp::requestCancel() {
+	cancelRequested = true;
+	std::lock_guard<std::mutex> lock(stateMutex);
+	if (running) {
+		status = "cancelling after the next output chunk...";
+		rebuildLinesLocked();
+	}
 }
 
 void ofApp::runPromptWorker() {
@@ -364,7 +438,7 @@ void ofApp::runPromptWorker() {
 			}
 			std::lock_guard<std::mutex> lock(stateMutex);
 			output += chunk;
-			status = "receiving llama.cpp output...";
+			status = "receiving text output...";
 			rebuildLinesLocked();
 			return !cancelRequested;
 		});

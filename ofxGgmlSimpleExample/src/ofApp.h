@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxGgml.h"
+#include "ofxImGui.h"
 
 #include <vector>
 
@@ -13,5 +14,6 @@ public:
 private:
 	ofxGgml runtime;
 	ofxGgmlGraph graph;
+	ofxImGui::Gui gui;
 	std::vector<std::string> lines;
 };

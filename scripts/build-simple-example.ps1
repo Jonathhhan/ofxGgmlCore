@@ -16,6 +16,22 @@ function Test-WindowsHost {
 	return !($IsLinux -or $IsMacOS)
 }
 
+function Test-ExampleUsesAddon {
+	param(
+		[string]$ExampleDir,
+		[string]$AddonName
+	)
+	$addonsMake = Join-Path $ExampleDir "addons.make"
+	if (!(Test-Path -LiteralPath $addonsMake)) {
+		return $false
+	}
+	return @(
+		Get-Content -LiteralPath $addonsMake |
+			ForEach-Object { $_.Trim() } |
+			Where-Object { $_ -eq $AddonName }
+	).Count -gt 0
+}
+
 function Invoke-CheckedNative {
 	param(
 		[string]$Step,
@@ -166,33 +182,66 @@ function Repair-VisualStudioAddonItems {
 		return $false
 	}
 
-	$sourceRoot = Join-Path $addonRoot "src"
-	if (!(Test-Path -LiteralPath $sourceRoot)) {
-		return $false
-	}
-	$sourceFiles = Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | Where-Object {
-		$_.Extension -in @(".cpp", ".cxx", ".cc")
-	}
-	$headerFiles = Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | Where-Object {
-		$_.Extension -in @(".h", ".hpp")
-	}
-
-	foreach ($file in $sourceFiles) {
-		$relative = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath $file.FullName
-		$filter = if ($isFilters) {
-			("addons\ofxGgml\" + (Split-Path -Parent $relative).TrimStart(".\").Replace("..\", ""))
-		} else { "" }
-		if (Add-VisualStudioProjectItem -Doc $Doc -Namespace $Namespace -Tag "ClCompile" -Include $relative -Filter $filter) {
-			$changed = $true
+	$addonEntries = @(
+		@{
+			Name = "ofxGgml"
+			Root = $addonRoot.Path
+			SourceRoots = @("src")
+			Excludes = @()
+		}
+	)
+	$imguiRoot = Join-Path (Split-Path -Parent $addonRoot.Path) "ofxImGui"
+	if ((Test-ExampleUsesAddon -ExampleDir $exampleDir -AddonName "ofxImGui") -and
+		(Test-Path -LiteralPath $imguiRoot)) {
+		$addonEntries += @{
+			Name = "ofxImGui"
+			Root = $imguiRoot
+			SourceRoots = @(
+				"src",
+				"libs\imgui\src",
+				"libs\imgui\backends",
+				"libs\imgui\extras"
+			)
+			Excludes = @("src\EngineVk.cpp")
 		}
 	}
-	foreach ($file in $headerFiles) {
-		$relative = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath $file.FullName
-		$filter = if ($isFilters) {
-			("addons\ofxGgml\" + (Split-Path -Parent $relative).TrimStart(".\").Replace("..\", ""))
-		} else { "" }
-		if (Add-VisualStudioProjectItem -Doc $Doc -Namespace $Namespace -Tag "ClInclude" -Include $relative -Filter $filter) {
-			$changed = $true
+
+	foreach ($entry in $addonEntries) {
+		$sourceFiles = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+		$headerFiles = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+		foreach ($sourceRootName in $entry.SourceRoots) {
+			$sourceRoot = Join-Path $entry.Root $sourceRootName
+			if (!(Test-Path -LiteralPath $sourceRoot)) {
+				continue
+			}
+			Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | ForEach-Object {
+				$relativeToAddon = Get-RelativeProjectPath -ProjectDir $entry.Root -FilePath $_.FullName
+				if ($entry.Excludes -notcontains $relativeToAddon) {
+					if ($_.Extension -in @(".cpp", ".cxx", ".cc")) {
+						$sourceFiles.Add($_)
+					} elseif ($_.Extension -in @(".h", ".hpp")) {
+						$headerFiles.Add($_)
+					}
+				}
+			}
+		}
+		foreach ($file in $sourceFiles) {
+			$relative = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath $file.FullName
+			$filter = if ($isFilters) {
+				("addons\" + $entry.Name + "\" + (Split-Path -Parent $relative).TrimStart(".\").Replace("..\", ""))
+			} else { "" }
+			if (Add-VisualStudioProjectItem -Doc $Doc -Namespace $Namespace -Tag "ClCompile" -Include $relative -Filter $filter) {
+				$changed = $true
+			}
+		}
+		foreach ($file in $headerFiles) {
+			$relative = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath $file.FullName
+			$filter = if ($isFilters) {
+				("addons\" + $entry.Name + "\" + (Split-Path -Parent $relative).TrimStart(".\").Replace("..\", ""))
+			} else { "" }
+			if (Add-VisualStudioProjectItem -Doc $Doc -Namespace $Namespace -Tag "ClInclude" -Include $relative -Filter $filter) {
+				$changed = $true
+			}
 		}
 	}
 	return $changed
@@ -201,7 +250,8 @@ function Repair-VisualStudioAddonItems {
 function Repair-VisualStudioProjectFile {
 	param(
 		[string]$Path,
-		[string[]]$AddonDefines = @()
+		[string[]]$AddonDefines = @(),
+		[string[]]$AddonIncludeDirs = @()
 	)
 	if (!(Test-Path -LiteralPath $Path)) {
 		return
@@ -228,6 +278,14 @@ function Repair-VisualStudioProjectFile {
 	$includeNodes = @($doc.SelectNodes("//msb:AdditionalIncludeDirectories", $namespace))
 	foreach ($node in $includeNodes) {
 		$parts = @($node.InnerText -split ";" | Where-Object { $_ -and !(Test-GeneratedAddonPath $_) })
+		if ($Path.EndsWith(".vcxproj", [System.StringComparison]::OrdinalIgnoreCase)) {
+			foreach ($includeDir in $AddonIncludeDirs) {
+				if ($parts -notcontains $includeDir) {
+					$parts += $includeDir
+					$changed = $true
+				}
+			}
+		}
 		$updated = $parts -join ";"
 		if ($updated -ne $node.InnerText) {
 			$node.InnerText = $updated
@@ -255,6 +313,17 @@ function Repair-VisualStudioProjectFile {
 			$cleanOptions = @($options | Where-Object {
 				!($_ -match '^-D([^=\s]+)$' -and $valuedDefines.ContainsKey($matches[1]))
 			})
+			$staleOptions = @(
+				"OFXIMGUI_DEBUG",
+				"IMGUI_IMPL_OPENGL_ES2",
+				"IMGUI_IMPL_OPENGL_ES3",
+				"USE_PI_LEGACY"
+			)
+			$cleanOptions = @($cleanOptions | Where-Object {
+				!($_ -match '^-D([^=\s]+)(?:=.*)?$' -and
+					$staleOptions -contains $matches[1] -and
+					$AddonDefines -notcontains $matches[1])
+			})
 			if ($cleanOptions.Count -ne $options.Count) {
 				$changed = $true
 			}
@@ -273,19 +342,48 @@ function Repair-VisualStudioProjectFile {
 }
 
 function Get-AddonDefines {
-	$configPath = Join-Path $addonRoot "addon_config.mk"
-	if (!(Test-Path -LiteralPath $configPath)) {
-		return @()
-	}
 	$defines = New-Object System.Collections.Generic.List[string]
-	Get-Content -LiteralPath $configPath | ForEach-Object {
-		if ($_ -match 'ADDON_CFLAGS\s*\+=\s*-D([A-Za-z0-9_]+(?:=[^\s]+)?)') {
-			if (!$defines.Contains($matches[1])) {
-				$defines.Add($matches[1])
+	$configPaths = New-Object System.Collections.Generic.List[string]
+	$configPaths.Add((Join-Path $addonRoot "addon_config.mk"))
+	$imguiRoot = Join-Path (Split-Path -Parent $addonRoot.Path) "ofxImGui"
+	if ((Test-ExampleUsesAddon -ExampleDir $exampleDir -AddonName "ofxImGui") -and
+		(Test-Path -LiteralPath $imguiRoot)) {
+		$configPaths.Add((Join-Path $imguiRoot "addon_config.mk"))
+	}
+	foreach ($configPath in $configPaths) {
+		if (!(Test-Path -LiteralPath $configPath)) {
+			continue
+		}
+		$section = ""
+		Get-Content -LiteralPath $configPath | ForEach-Object {
+			if ($_ -match '^([A-Za-z0-9_/]+):\s*$') {
+				$section = $matches[1]
+			}
+			if (($section -eq "common" -or $section -eq "vs") -and
+				$_ -match 'ADDON_CFLAGS\s*(?:\+)?=\s*-D([A-Za-z0-9_]+(?:=[^\s]+)?)') {
+				if (!$defines.Contains($matches[1])) {
+					$defines.Add($matches[1])
+				}
 			}
 		}
 	}
 	return @($defines)
+}
+
+function Get-AddonIncludeDirectories {
+	$includeDirs = New-Object System.Collections.Generic.List[string]
+	if (Test-ExampleUsesAddon -ExampleDir $exampleDir -AddonName "ofxImGui") {
+		foreach ($path in @(
+			"..\..\ofxImGui\src",
+			"..\..\ofxImGui\libs\imgui",
+			"..\..\ofxImGui\libs\imgui\src",
+			"..\..\ofxImGui\libs\imgui\backends",
+			"..\..\ofxImGui\libs\imgui\extras"
+		)) {
+			$includeDirs.Add($path)
+		}
+	}
+	return @($includeDirs)
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -301,7 +399,8 @@ if (Test-WindowsHost) {
 		throw "Visual Studio project not found: $project. Generate it with the openFrameworks projectGenerator first."
 	}
 	$addonDefines = Get-AddonDefines
-	Repair-VisualStudioProjectFile -Path $project -AddonDefines $addonDefines
+	$addonIncludeDirs = Get-AddonIncludeDirectories
+	Repair-VisualStudioProjectFile -Path $project -AddonDefines $addonDefines -AddonIncludeDirs $addonIncludeDirs
 	Repair-VisualStudioProjectFile -Path "$project.filters"
 	$msbuild = Get-MsBuild
 	if ([string]::IsNullOrWhiteSpace($msbuild)) {

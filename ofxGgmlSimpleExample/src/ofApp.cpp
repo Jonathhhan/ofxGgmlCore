@@ -39,6 +39,7 @@ std::string formatVector(const std::array<float, 4> & values) {
 void ofApp::setup() {
 	ofSetWindowTitle("ofxGgml rewrite");
 	ofBackground(12);
+	gui.setup(nullptr, false);
 
 	auto result = runtime.setup();
 	lines.clear();
@@ -92,10 +93,22 @@ void ofApp::setup() {
 }
 
 void ofApp::draw() {
-	ofSetColor(240);
-	int y = 40;
-	for (const auto & line : lines) {
-		ofDrawBitmapString(line, 32, y);
-		y += 24;
+	ofBackground(12);
+
+	gui.begin();
+	ImGui::SetNextWindowPos(ImVec2(24.0f, 24.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(760.0f, 420.0f), ImGuiCond_Once);
+	if (ImGui::Begin("ofxGgml Simple Example")) {
+		ImGui::TextUnformatted("Runtime");
+		ImGui::Separator();
+		for (const auto & line : lines) {
+			if (line.rfind("runtime error:", 0) == 0 || line.rfind("graph error:", 0) == 0) {
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.25f, 1.0f), "%s", line.c_str());
+			} else {
+				ImGui::TextWrapped("%s", line.c_str());
+			}
+		}
 	}
+	ImGui::End();
+	gui.end();
 }
