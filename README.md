@@ -30,6 +30,11 @@ Everything else should become a companion addon or an optional layer.
 | Text | `ofxGgmlText.h` | small text request/result API with pluggable llama.cpp / server adapters |
 | Optional companions | separate addons | vision, speech, SAM, assistants, workflows |
 
+The first text adapter is `ofxGgmlLlamaCliTextBackend`. It builds a llama.cpp
+CLI command from `ofxGgmlTextRequest` and runs through an injected command
+runner, so apps can choose their own process policy while the addon keeps the
+text API stable.
+
 ## Status
 
 This is the first rewrite commit. It intentionally favors a clear skeleton over
