@@ -9,14 +9,16 @@ $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $buildScript = Join-Path $scriptRoot "build-simple-example.ps1"
 
-$buildArgs = @(
-	"-Configuration", $Configuration,
-	"-Platform", $Platform,
-	"-Example", "ofxGgmlTextExample"
-)
 if ($Clean) {
-	$buildArgs += "-Clean"
+	& $buildScript `
+		-Configuration $Configuration `
+		-Platform $Platform `
+		-Example "ofxGgmlTextExample" `
+		-Clean
+} else {
+	& $buildScript `
+		-Configuration $Configuration `
+		-Platform $Platform `
+		-Example "ofxGgmlTextExample"
 }
-
-& $buildScript @buildArgs
 exit $LASTEXITCODE

@@ -57,8 +57,10 @@ function Test-GeneratedAddonPath {
 	}
 
 	$normalized = $Path -replace "/", "\"
-	return ($normalized -match '(^|\\)libs\\ggml\\(\.source|build)') -or
-		($normalized -match '(^|\\)libs\\sam3\.cpp\\(build|ggml|examples|media|scripts|tests)') -or
+	return ($normalized -match '(^|\\)libs\\ggml\\\.source(\\|$)') -or
+		($normalized -match '(^|\\)libs\\ggml\\build[^\\]*(\\|$)') -or
+		($normalized -match '(^|\\)libs\\sam3\.cpp\\build[^\\]*(\\|$)') -or
+		($normalized -match '(^|\\)libs\\sam3\.cpp\\(ggml|examples|media|scripts|tests)(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\sam3\.cpp$')
 }
 
@@ -167,10 +169,18 @@ if (Test-WindowsHost) {
 
 	$target = if ($Clean) { "Rebuild" } else { "Build" }
 	Write-Step "Building $Example $Configuration $Platform with MSBuild"
-	Invoke-CheckedNative "MSBuild $Example" {
-		& $msbuild $project /t:$target /p:Configuration=$Configuration /p:Platform=$Platform /m
+	$exitCode = 0
+	for ($attempt = 1; $attempt -le 2; $attempt++) {
+		& $msbuild $project /t:$target /p:Configuration=$Configuration /p:Platform=$Platform /p:TrackFileAccess=false /p:MultiProcessorCompilation=false /m:1 /nr:false
+		$exitCode = $LASTEXITCODE
+		if ($exitCode -eq 0) {
+			return
+		}
+		if ($attempt -lt 2) {
+			Write-Step "MSBuild failed with exit code $exitCode; retrying once"
+		}
 	}
-	return
+	throw "MSBuild $Example failed with exit code $exitCode"
 }
 
 $makefile = Join-Path $exampleDir "Makefile"

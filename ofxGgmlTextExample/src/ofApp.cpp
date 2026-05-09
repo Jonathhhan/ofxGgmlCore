@@ -115,6 +115,17 @@ void ofApp::rebuildLines() {
 }
 
 std::string ofApp::envValue(const char * name) {
+#if defined(_WIN32)
+	char * value = nullptr;
+	std::size_t length = 0;
+	if (_dupenv_s(&value, &length, name) != 0 || !value) {
+		return {};
+	}
+	std::string result(value, length > 0 ? length - 1 : 0);
+	free(value);
+	return result;
+#else
 	const char * value = std::getenv(name);
 	return value ? std::string(value) : std::string();
+#endif
 }
