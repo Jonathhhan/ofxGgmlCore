@@ -8,11 +8,26 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml-cpu.h"
+#if defined(OFXGGML_WITH_CUDA) && __has_include("ggml-cuda.h")
+#include "ggml-cuda.h"
+#define OFXGGML_HAS_CUDA_BACKEND 1
+#else
+#define OFXGGML_HAS_CUDA_BACKEND 0
+#endif
+#if defined(OFXGGML_WITH_VULKAN) && __has_include("ggml-vulkan.h")
+#include "ggml-vulkan.h"
+#define OFXGGML_HAS_VULKAN_BACKEND 1
+#else
+#define OFXGGML_HAS_VULKAN_BACKEND 0
+#endif
 #define OFXGGML_HAS_GGML 1
 #else
 #define OFXGGML_HAS_GGML 0
+#define OFXGGML_HAS_CUDA_BACKEND 0
+#define OFXGGML_HAS_VULKAN_BACKEND 0
 #endif
 
+#include <array>
 #include <chrono>
 #include <utility>
 
@@ -24,6 +39,53 @@ struct ofxGgmlRuntime::Impl {
 	ggml_backend_buffer_t buffer = nullptr;
 #endif
 };
+
+namespace {
+
+#if OFXGGML_HAS_GGML
+ggml_backend_t createCpuBackend() {
+	return ggml_backend_cpu_init();
+}
+
+ggml_backend_t createCudaBackend(int deviceIndex) {
+#if OFXGGML_HAS_CUDA_BACKEND
+	const int deviceCount = ggml_backend_cuda_get_device_count();
+	if (deviceCount <= 0 || deviceIndex < 0 || deviceIndex >= deviceCount) {
+		return nullptr;
+	}
+	return ggml_backend_cuda_init(deviceIndex);
+#else
+	(void) deviceIndex;
+	return nullptr;
+#endif
+}
+
+ggml_backend_t createVulkanBackend(int deviceIndex) {
+#if OFXGGML_HAS_VULKAN_BACKEND
+	const int deviceCount = ggml_backend_vk_get_device_count();
+	if (deviceCount <= 0 || deviceIndex < 0 || deviceIndex >= deviceCount) {
+		return nullptr;
+	}
+	return ggml_backend_vk_init(static_cast<size_t>(deviceIndex));
+#else
+	(void) deviceIndex;
+	return nullptr;
+#endif
+}
+
+std::string backendLabel(ofxGgmlBackend backend) {
+	switch (backend) {
+	case ofxGgmlBackend::Auto: return "Auto";
+	case ofxGgmlBackend::Cpu: return "CPU";
+	case ofxGgmlBackend::Cuda: return "CUDA";
+	case ofxGgmlBackend::Vulkan: return "Vulkan";
+	case ofxGgmlBackend::Metal: return "Metal";
+	}
+	return "unknown";
+}
+#endif
+
+} // namespace
 
 ofxGgmlRuntime::ofxGgmlRuntime()
 	: impl(std::make_unique<Impl>()) {}
@@ -39,10 +101,43 @@ ofxGgmlResult<void> ofxGgmlRuntime::setup(const ofxGgmlRuntimeSettings & setting
 	close();
 	impl->settings = settings;
 #if OFXGGML_HAS_GGML
-	impl->backend = ggml_backend_cpu_init();
+	auto tryBackend = [&](ofxGgmlBackend backend) -> ggml_backend_t {
+		switch (backend) {
+		case ofxGgmlBackend::Auto:
+			return nullptr;
+		case ofxGgmlBackend::Cpu:
+			return createCpuBackend();
+		case ofxGgmlBackend::Cuda:
+			return createCudaBackend(settings.deviceIndex);
+		case ofxGgmlBackend::Vulkan:
+			return createVulkanBackend(settings.deviceIndex);
+		case ofxGgmlBackend::Metal:
+			return nullptr;
+		}
+		return nullptr;
+	};
+
+	if (settings.preferredBackend == ofxGgmlBackend::Auto) {
+		for (const ofxGgmlBackend candidate : std::array<ofxGgmlBackend, 3> {
+			ofxGgmlBackend::Cuda,
+			ofxGgmlBackend::Vulkan,
+			ofxGgmlBackend::Cpu
+		}) {
+			impl->backend = tryBackend(candidate);
+			if (impl->backend) {
+				break;
+			}
+		}
+	} else {
+		impl->backend = tryBackend(settings.preferredBackend);
+		if (!impl->backend && settings.allowCpuFallback && settings.preferredBackend != ofxGgmlBackend::Cpu) {
+			impl->backend = createCpuBackend();
+		}
+	}
+
 	if (!impl->backend) {
 		impl->state = ofxGgmlRuntimeState::Error;
-		return ofxGgmlResult<void>::failure("failed to initialize ggml CPU backend");
+		return ofxGgmlResult<void>::failure("failed to initialize ggml " + backendLabel(settings.preferredBackend) + " backend");
 	}
 	impl->state = ofxGgmlRuntimeState::Ready;
 	return ofxGgmlResult<void>::success();
@@ -91,7 +186,43 @@ std::string ofxGgmlRuntime::backendName() const {
 }
 
 std::vector<ofxGgmlDeviceInfo> ofxGgmlRuntime::listDevices() const {
-	return { { "CPU", ofxGgmlBackend::Cpu, 0, true } };
+	std::vector<ofxGgmlDeviceInfo> devices;
+#if OFXGGML_HAS_GGML
+#if OFXGGML_HAS_CUDA_BACKEND
+	const int cudaDeviceCount = ggml_backend_cuda_get_device_count();
+	for (int i = 0; i < cudaDeviceCount; ++i) {
+		char description[256] = {};
+		size_t freeMemory = 0;
+		size_t totalMemory = 0;
+		ggml_backend_cuda_get_device_description(i, description, sizeof(description));
+		ggml_backend_cuda_get_device_memory(i, &freeMemory, &totalMemory);
+		devices.push_back({
+			description[0] ? description : "CUDA",
+			ofxGgmlBackend::Cuda,
+			totalMemory,
+			true
+		});
+	}
+#endif
+#if OFXGGML_HAS_VULKAN_BACKEND
+	const int vulkanDeviceCount = ggml_backend_vk_get_device_count();
+	for (int i = 0; i < vulkanDeviceCount; ++i) {
+		char description[256] = {};
+		size_t freeMemory = 0;
+		size_t totalMemory = 0;
+		ggml_backend_vk_get_device_description(i, description, sizeof(description));
+		ggml_backend_vk_get_device_memory(i, &freeMemory, &totalMemory);
+		devices.push_back({
+			description[0] ? description : "Vulkan",
+			ofxGgmlBackend::Vulkan,
+			totalMemory,
+			true
+		});
+	}
+#endif
+#endif
+	devices.push_back({ "CPU", ofxGgmlBackend::Cpu, 0, true });
+	return devices;
 }
 
 ofxGgmlResult<void> ofxGgmlRuntime::allocate(ofxGgmlGraph & graph) {

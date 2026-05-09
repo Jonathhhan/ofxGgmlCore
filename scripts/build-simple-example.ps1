@@ -63,7 +63,10 @@ function Test-GeneratedAddonPath {
 }
 
 function Repair-VisualStudioProjectFile {
-	param([string]$Path)
+	param(
+		[string]$Path,
+		[string[]]$AddonDefines = @()
+	)
 	if (!(Test-Path -LiteralPath $Path)) {
 		return
 	}
@@ -93,10 +96,53 @@ function Repair-VisualStudioProjectFile {
 		}
 	}
 
+	if ($AddonDefines.Count -gt 0 -and $Path.EndsWith(".vcxproj", [System.StringComparison]::OrdinalIgnoreCase)) {
+		$optionNodes = @($doc.SelectNodes("//msb:ClCompile/msb:AdditionalOptions", $namespace))
+		foreach ($node in $optionNodes) {
+			$options = @($node.InnerText -split "\s+" | Where-Object { $_ })
+			foreach ($define in $AddonDefines) {
+				$option = "-D$define"
+				if ($options -notcontains $option) {
+					$options += $option
+					$changed = $true
+				}
+			}
+			$valuedDefines = @{}
+			foreach ($option in $options) {
+				if ($option -match '^-D([^=\s]+)=') {
+					$valuedDefines[$matches[1]] = $true
+				}
+			}
+			$cleanOptions = @($options | Where-Object {
+				!($_ -match '^-D([^=\s]+)$' -and $valuedDefines.ContainsKey($matches[1]))
+			})
+			if ($cleanOptions.Count -ne $options.Count) {
+				$changed = $true
+			}
+			$node.InnerText = ($cleanOptions -join " ")
+		}
+	}
+
 	if ($changed) {
 		$doc.Save($Path)
-		Write-Step "Removed generated dependency paths from $(Split-Path -Leaf $Path)"
+		Write-Step "Updated generated project metadata in $(Split-Path -Leaf $Path)"
 	}
+}
+
+function Get-AddonDefines {
+	$configPath = Join-Path $addonRoot "addon_config.mk"
+	if (!(Test-Path -LiteralPath $configPath)) {
+		return @()
+	}
+	$defines = New-Object System.Collections.Generic.List[string]
+	Get-Content -LiteralPath $configPath | ForEach-Object {
+		if ($_ -match 'ADDON_CFLAGS\s*\+=\s*-D([A-Za-z0-9_]+(?:=[^\s]+)?)') {
+			if (!$defines.Contains($matches[1])) {
+				$defines.Add($matches[1])
+			}
+		}
+	}
+	return @($defines)
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -111,8 +157,9 @@ if (Test-WindowsHost) {
 	if (!(Test-Path -LiteralPath $project)) {
 		throw "Visual Studio project not found: $project. Generate it with the openFrameworks projectGenerator first."
 	}
-	Repair-VisualStudioProjectFile $project
-	Repair-VisualStudioProjectFile "$project.filters"
+	$addonDefines = Get-AddonDefines
+	Repair-VisualStudioProjectFile -Path $project -AddonDefines $addonDefines
+	Repair-VisualStudioProjectFile -Path "$project.filters"
 	$msbuild = Get-MsBuild
 	if ([string]::IsNullOrWhiteSpace($msbuild)) {
 		throw "MSBuild.exe was not found."

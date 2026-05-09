@@ -370,8 +370,26 @@ function Update-AddonConfig {
 		$orderedPaths.Add($found[$name])
 	}
 
+	$builtLibraryNames = $orderedPaths | ForEach-Object { Split-Path $_ -Leaf }
+	$hasCuda = $builtLibraryNames -contains "ggml-cuda$extension" -or $builtLibraryNames -contains "libggml-cuda$extension"
+	$hasVulkan = $builtLibraryNames -contains "ggml-vulkan$extension" -or $builtLibraryNames -contains "libggml-vulkan$extension"
+	$hasMetal = $builtLibraryNames -contains "ggml-metal$extension" -or $builtLibraryNames -contains "libggml-metal$extension"
+	$hasOpenCL = $builtLibraryNames -contains "ggml-opencl$extension" -or $builtLibraryNames -contains "libggml-opencl$extension"
+
 	$lines = New-Object System.Collections.Generic.List[string]
 	$lines.Add("`t$startMarker")
+	if ($hasCuda) {
+		$lines.Add("`tADDON_CFLAGS += -DOFXGGML_WITH_CUDA")
+	}
+	if ($hasVulkan) {
+		$lines.Add("`tADDON_CFLAGS += -DOFXGGML_WITH_VULKAN")
+	}
+	if ($hasMetal) {
+		$lines.Add("`tADDON_CFLAGS += -DOFXGGML_WITH_METAL")
+	}
+	if ($hasOpenCL) {
+		$lines.Add("`tADDON_CFLAGS += -DOFXGGML_WITH_OPENCL")
+	}
 	foreach ($path in $orderedPaths) {
 		$lines.Add("`tADDON_LIBS += $(Convert-ToAddonPath $path)")
 	}

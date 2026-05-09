@@ -5,6 +5,7 @@
 #include <string>
 
 enum class ofxGgmlBackend {
+	Auto,
 	Cpu,
 	Cuda,
 	Vulkan,
@@ -26,8 +27,9 @@ enum class ofxGgmlRuntimeState {
 };
 
 struct ofxGgmlRuntimeSettings {
-	ofxGgmlBackend preferredBackend = ofxGgmlBackend::Cpu;
+	ofxGgmlBackend preferredBackend = ofxGgmlBackend::Auto;
 	bool allowCpuFallback = true;
+	int deviceIndex = 0;
 	int threads = 0;
 };
 

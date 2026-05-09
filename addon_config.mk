@@ -35,6 +35,8 @@ common:
 
 vs:
 	# @OFXGGML_LIBS_START vs
+	ADDON_CFLAGS += -DOFXGGML_WITH_CUDA
+	ADDON_CFLAGS += -DOFXGGML_WITH_VULKAN
 	ADDON_LIBS += libs/ggml/lib/ggml.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-base.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-cpu.lib
