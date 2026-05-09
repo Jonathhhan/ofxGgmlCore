@@ -25,8 +25,8 @@ These should live in companion addons or optional layers:
 ## Public Header Plan
 
 - `ofxGgmlCore.h`: low-level stable foundation
-- `ofxGgml.h`: default umbrella for core plus stable text layer once ready
-- future `ofxGgmlText.h`: llama.cpp / llama-server text inference
+- `ofxGgmlText.h`: small text request/result API with pluggable backends
+- `ofxGgml.h`: default umbrella for core, text, and stable optional bridge APIs
 
 ## Compatibility
 

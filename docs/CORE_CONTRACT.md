@@ -36,11 +36,14 @@ The core public surface is:
 - `ofxGgmlTensor`
 - `ofxGgmlGraph`
 - `ofxGgmlModel` and `ofxGgmlModelInfo`
+- `ofxGgmlTextGenerator` and text request/result types
 - `ofxGgmlCore.h`
+- `ofxGgmlText.h`
 - `ofxGgml.h`
 
-`ofxGgml.h` should remain a boring umbrella. It may include the stable text
-layer later, but only after that layer has its own tests and examples.
+`ofxGgml.h` should remain a boring umbrella. Text belongs there only as a small
+backend-neutral API; concrete llama.cpp CLI/server adapters must stay optional
+until each adapter has focused tests and examples.
 
 ## Runtime Contract
 
@@ -146,4 +149,5 @@ layer.
 3. Done: make `ofxGgmlRuntime` execute a CPU graph end to end.
 4. Done: add GGUF metadata tests with a tiny fixture or generated test file.
 5. Done: build `ofxGgmlSimpleExample` through openFrameworks and run a tiny graph.
-6. Next: design `ofxGgmlText.h`.
+6. Done: design the backend-neutral `ofxGgmlText.h` surface.
+7. Next: add one concrete llama.cpp text adapter and `ofxGgmlTextExample`.
