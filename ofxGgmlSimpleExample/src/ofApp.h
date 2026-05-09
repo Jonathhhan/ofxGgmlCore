@@ -12,5 +12,6 @@ public:
 
 private:
 	ofxGgml runtime;
+	ofxGgmlGraph graph;
 	std::vector<std::string> lines;
 };

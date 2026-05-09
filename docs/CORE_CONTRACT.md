@@ -49,12 +49,13 @@ layer later, but only after that layer has its own tests and examples.
 - be movable but not copyable
 - release all backend resources in `close()` and the destructor
 - make `setup()` idempotent by closing previous state first
-- default to CPU
+- default to `Auto`, trying built GPU backends before CPU fallback
 - report backend setup failures through `ofxGgmlResult<void>`
 - avoid process aborts where recovery is practical
 - keep async execution out of the first stable core release
 
-CPU support is required. GPU support is optional until CPU behavior is solid.
+CPU support is required. GPU support is optional and must be detected or
+explicitly requested by setup scripts.
 
 ## Tensor And Graph Contract
 
@@ -144,5 +145,5 @@ layer.
 2. Done: add headless tests for `ofxGgmlGraph` and `ofxGgmlTensor`.
 3. Done: make `ofxGgmlRuntime` execute a CPU graph end to end.
 4. Done: add GGUF metadata tests with a tiny fixture or generated test file.
-5. Next: build `ofxGgmlSimpleExample` through openFrameworks.
-6. Only then design `ofxGgmlText.h`.
+5. Done: build `ofxGgmlSimpleExample` through openFrameworks and run a tiny graph.
+6. Next: design `ofxGgmlText.h`.
