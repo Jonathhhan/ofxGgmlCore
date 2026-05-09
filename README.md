@@ -156,6 +156,7 @@ scripts\build-llama-server.bat
 scripts\build-llama-server.bat -Cuda
 scripts\build-llama-server.bat -Cuda -CudaArchitectures 86
 scripts\build-llama-server.bat -CpuOnly
+scripts\build-llama-server.bat -WithCompletionTool
 scripts\start-llama-server.bat -ModelPath C:\path\to\model.gguf
 scripts\start-llama-server.bat -Detached -LogDir logs\llama-server
 ```
@@ -177,6 +178,8 @@ Those scripts clone/build upstream `llama.cpp` under `libs/llama.cpp` and
 install `llama-server`, `llama-cli`, and `llama-embedding` into
 `libs/llama/bin`. The text example tries the server first; if it is unavailable
 and a local CLI/model are found, it falls back to `llama-cli`.
+`llama-completion` is intentionally excluded from the default runtime bundle;
+pass `-WithCompletionTool` only when you need that upstream helper executable.
 
 If `-ModelPath` is omitted, the server launcher searches the text example data
 folders, this addon's `models` folder, and the sibling shared `addons/models`

@@ -12,6 +12,7 @@ param(
 	[switch]$Vulkan,
 	[switch]$Metal,
 	[switch]$OpenCL,
+	[switch]$WithCompletionTool,
 	[switch]$Clean,
 	[switch]$Refetch,
 	[switch]$DryRun
@@ -266,12 +267,13 @@ function Clear-InstallDirectory {
 }
 
 function Get-BuiltRuntimeFiles {
-	$extensions = if ($IsLinux) {
-		@(".so", "")
-	} elseif ($IsMacOS) {
-		@(".dylib", "")
-	} else {
-		@(".dll", ".exe")
+	$libraryExtensions = if ($IsLinux) { @(".so") } elseif ($IsMacOS) { @(".dylib") } else { @(".dll") }
+	$executableNames = @("llama-server", "llama-cli", "llama-embedding")
+	if ($WithCompletionTool) {
+		$executableNames += "llama-completion"
+	}
+	if (!$IsLinux -and !$IsMacOS) {
+		$executableNames = $executableNames | ForEach-Object { "$_.exe" }
 	}
 	$runtimeDirs = @(
 		(Join-Path $BuildDir "bin\Release"),
@@ -284,7 +286,7 @@ function Get-BuiltRuntimeFiles {
 			continue
 		}
 		Get-ChildItem -LiteralPath $runtimeDir -File -ErrorAction SilentlyContinue |
-			Where-Object { $extensions -contains $_.Extension -or ($_.Extension -eq "" -and !$_.Name.Contains(".")) } |
+			Where-Object { ($libraryExtensions -contains $_.Extension) -or ($executableNames -contains $_.Name) } |
 			ForEach-Object {
 				if (!$seen.ContainsKey($_.FullName)) {
 					$seen[$_.FullName] = $true
@@ -374,23 +376,23 @@ foreach ($target in @("llama-server", "llama-cli", "llama-embedding")) {
 	Write-Step "Building required target $target"
 	Invoke-CheckedNative "cmake build $target" "cmake" @("--build", $BuildDir, "--config", "Release", "--target", $target, "--parallel", $Jobs.ToString())
 }
-foreach ($target in @("llama-completion")) {
-	Write-Step "Building optional target $target"
-	try {
-		Invoke-CheckedNative "cmake build $target" "cmake" @("--build", $BuildDir, "--config", "Release", "--target", $target, "--parallel", $Jobs.ToString())
-	} catch {
-		Write-Warning "$target is not available in this llama.cpp checkout; continuing."
-	}
+if ($WithCompletionTool) {
+	Write-Step "Building optional target llama-completion"
+	Invoke-CheckedNative "cmake build llama-completion" "cmake" @("--build", $BuildDir, "--config", "Release", "--target", "llama-completion", "--parallel", $Jobs.ToString())
 }
 
 if (!$DryRun) {
 	$server = Find-BuiltExecutable "llama-server"
 	$cli = Find-BuiltExecutable "llama-cli"
+	$embedding = Find-BuiltExecutable "llama-embedding"
 	if ([string]::IsNullOrWhiteSpace($server)) {
 		throw "Build finished, but llama-server was not found under $BuildDir."
 	}
 	if ([string]::IsNullOrWhiteSpace($cli)) {
 		throw "Build finished, but llama-cli was not found under $BuildDir."
+	}
+	if ([string]::IsNullOrWhiteSpace($embedding)) {
+		throw "Build finished, but llama-embedding was not found under $BuildDir."
 	}
 
 	Write-Step "Installing llama.cpp tools into $InstallDir"
