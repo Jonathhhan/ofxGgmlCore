@@ -35,11 +35,12 @@ common:
 
 vs:
 	# @OFXGGML_LIBS_START vs
-	ADDON_LIBS += Desktop/of_v20260406_vs_64_release/addons/ofxGgml/libs/ggml/lib/ggml.lib
-	ADDON_LIBS += Desktop/of_v20260406_vs_64_release/addons/ofxGgml/libs/ggml/lib/ggml-base.lib
-	ADDON_LIBS += Desktop/of_v20260406_vs_64_release/addons/ofxGgml/libs/ggml/lib/ggml-cpu.lib
-	ADDON_LIBS += Desktop/of_v20260406_vs_64_release/addons/ofxGgml/libs/ggml/lib/ggml-cuda.lib
-	ADDON_LIBS += Desktop/of_v20260406_vs_64_release/addons/ofxGgml/libs/ggml/lib/ggml-vulkan.lib
+	ADDON_LIBS += libs/ggml/lib/ggml.lib
+	ADDON_LIBS += libs/ggml/lib/ggml-base.lib
+	ADDON_LIBS += libs/ggml/lib/ggml-cpu.lib
+	ADDON_LIBS += libs/ggml/lib/ggml-cuda.lib
+	ADDON_LIBS += libs/ggml/lib/ggml-vulkan.lib
+	ADDON_LIBS += Advapi32.lib
 	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cublas.lib
 	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cudart.lib
 	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cuda.lib

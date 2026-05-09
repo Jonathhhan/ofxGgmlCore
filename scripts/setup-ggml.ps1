@@ -309,11 +309,13 @@ function Get-PlatformSection {
 
 function Convert-ToAddonPath {
 	param([string]$Path)
-	$relative = Resolve-Path -LiteralPath $Path -Relative
-	if ($relative.StartsWith(".\")) {
-		$relative = $relative.Substring(2)
+	$resolved = (Resolve-Path -LiteralPath $Path).Path
+	$rootPath = (Resolve-Path -LiteralPath $Root).Path
+	if ($resolved.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+		$relative = $resolved.Substring($rootPath.Length).TrimStart("\", "/")
+		return ($relative -replace "\\", "/")
 	}
-	return ($relative -replace "\\", "/")
+	return ($resolved -replace "\\", "/")
 }
 
 function Update-AddonConfig {
@@ -375,6 +377,9 @@ function Update-AddonConfig {
 	}
 
 	if ($section -eq "vs") {
+		if (($orderedPaths | Where-Object { (Split-Path $_ -Leaf) -eq "ggml-cpu.lib" })) {
+			$lines.Add("`tADDON_LIBS += Advapi32.lib")
+		}
 		if (($orderedPaths | Where-Object { (Split-Path $_ -Leaf) -eq "ggml-cuda.lib" }) -and $env:CUDA_PATH) {
 			$lines.Add("`tADDON_LIBS += `$`(CUDA_PATH`)/lib/x64/cublas.lib")
 			$lines.Add("`tADDON_LIBS += `$`(CUDA_PATH`)/lib/x64/cudart.lib")

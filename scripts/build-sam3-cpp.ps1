@@ -70,11 +70,13 @@ function Get-PlatformSection {
 
 function Convert-ToAddonPath {
 	param([string]$Path)
-	$relative = Resolve-Path -LiteralPath $Path -Relative
-	if ($relative.StartsWith(".\")) {
-		$relative = $relative.Substring(2)
+	$resolved = (Resolve-Path -LiteralPath $Path).Path
+	$rootPath = (Resolve-Path -LiteralPath $addonRoot).Path
+	if ($resolved.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+		$relative = $resolved.Substring($rootPath.Length).TrimStart("\", "/")
+		return ($relative -replace "\\", "/")
 	}
-	return ($relative -replace "\\", "/")
+	return ($resolved -replace "\\", "/")
 }
 
 function Update-AddonConfig {
