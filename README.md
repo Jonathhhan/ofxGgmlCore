@@ -88,6 +88,10 @@ the CUDA toolset.
 
 Backend binaries remain generated local artifacts. `addon_config.mk` is updated
 by the setup script to reference the ggml libraries that were actually built.
+The runtime default is `ofxGgmlBackend::Auto`, which tries built GPU backends in
+priority order (`CUDA`, then `Vulkan`) before falling back to CPU. Use
+`ofxGgmlRuntimeSettings::preferredBackend` when an app needs to force CPU or a
+specific GPU backend.
 
 SAM3 support is optional and generated locally:
 

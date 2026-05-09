@@ -12,7 +12,7 @@ OFXGGML_TEST(runtime_starts_uninitialized) {
 	OFXGGML_REQUIRE(runtime.backendName().empty());
 }
 
-OFXGGML_TEST(runtime_setup_cpu_backend) {
+OFXGGML_TEST(runtime_setup_auto_falls_back_to_cpu_backend) {
 	ofxGgmlRuntime runtime;
 	auto result = runtime.setup();
 
@@ -25,6 +25,35 @@ OFXGGML_TEST(runtime_setup_cpu_backend) {
 	OFXGGML_REQUIRE(devices.size() == 1);
 	OFXGGML_REQUIRE(devices[0].backend == ofxGgmlBackend::Cpu);
 	OFXGGML_REQUIRE(devices[0].available);
+}
+
+OFXGGML_TEST(runtime_setup_explicit_cpu_backend) {
+	ofxGgmlRuntime runtime;
+	ofxGgmlRuntimeSettings settings;
+	settings.preferredBackend = ofxGgmlBackend::Cpu;
+
+	auto result = runtime.setup(settings);
+
+	OFXGGML_REQUIRE(result.isOk());
+	OFXGGML_REQUIRE(runtime.backendName() == "CPU");
+}
+
+OFXGGML_TEST(runtime_requested_gpu_falls_back_or_errors) {
+	ofxGgmlRuntime fallbackRuntime;
+	ofxGgmlRuntimeSettings fallbackSettings;
+	fallbackSettings.preferredBackend = ofxGgmlBackend::Cuda;
+	fallbackSettings.allowCpuFallback = true;
+
+	OFXGGML_REQUIRE(fallbackRuntime.setup(fallbackSettings).isOk());
+	OFXGGML_REQUIRE(fallbackRuntime.backendName() == "CPU");
+
+	ofxGgmlRuntime strictRuntime;
+	ofxGgmlRuntimeSettings strictSettings;
+	strictSettings.preferredBackend = ofxGgmlBackend::Cuda;
+	strictSettings.allowCpuFallback = false;
+
+	OFXGGML_REQUIRE(strictRuntime.setup(strictSettings).isError());
+	OFXGGML_REQUIRE(strictRuntime.state() == ofxGgmlRuntimeState::Error);
 }
 
 OFXGGML_TEST(runtime_allocate_requires_ready_built_graph) {
