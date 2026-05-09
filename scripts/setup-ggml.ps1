@@ -44,6 +44,30 @@ function Invoke-CheckedNative {
 	}
 }
 
+function Convert-ToCmdArgument {
+	param([string]$Value)
+	return '"' + ($Value -replace '"', '""') + '"'
+}
+
+function Invoke-CMake {
+	param(
+		[string]$Step,
+		[string[]]$Arguments
+	)
+
+	if ($script:VsDevCmd) {
+		$quotedArgs = $Arguments | ForEach-Object { Convert-ToCmdArgument $_ }
+		$command = "call $(Convert-ToCmdArgument $script:VsDevCmd) -arch=x64 -host_arch=x64 >nul && cmake $($quotedArgs -join ' ')"
+		& cmd.exe /d /s /c $command
+		if ($LASTEXITCODE -ne 0) {
+			throw "$Step failed with exit code $LASTEXITCODE"
+		}
+		return
+	}
+
+	Invoke-CheckedNative $Step { cmake @Arguments }
+}
+
 function Clear-DirectoryContents {
 	param([string]$Path)
 	if (!(Test-Path -LiteralPath $Path)) {
@@ -54,10 +78,47 @@ function Clear-DirectoryContents {
 		Remove-Item -Recurse -Force
 }
 
+function Ensure-GitKeep {
+	param([string]$Path)
+	if (!(Test-Path -LiteralPath $Path)) {
+		Set-Content -LiteralPath $Path -Value ""
+	}
+}
+
 function Test-CMakeGenerator {
 	param([string]$Generator)
 	$help = & cmake --help 2>$null
 	return ($help -join "`n") -match [regex]::Escape($Generator)
+}
+
+function Get-VisualStudioDevCmd {
+	$candidates = New-Object System.Collections.Generic.List[string]
+	$vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+	if (Test-Path -LiteralPath $vswhere) {
+		$installPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
+		if ($installPath) {
+			$candidates.Add((Join-Path $installPath "Common7\Tools\VsDevCmd.bat"))
+		}
+	}
+
+	$editions = @("Community", "Professional", "Enterprise", "BuildTools")
+	foreach ($version in @("18", "17", "16")) {
+		foreach ($edition in $editions) {
+			$candidates.Add("C:\Program Files\Microsoft Visual Studio\$version\$edition\Common7\Tools\VsDevCmd.bat")
+			$candidates.Add("C:\Program Files (x86)\Microsoft Visual Studio\$version\$edition\Common7\Tools\VsDevCmd.bat")
+		}
+	}
+
+	foreach ($candidate in $candidates) {
+		if (Test-Path -LiteralPath $candidate) {
+			return $candidate
+		}
+	}
+	return $null
+}
+
+function Test-NinjaGenerator {
+	return (Test-Command "ninja") -and (Test-CMakeGenerator "Ninja")
 }
 
 function Get-VisualStudioGenerator {
@@ -73,6 +134,77 @@ function Get-VisualStudioGenerator {
 	}
 	return $null
 }
+
+function Get-WindowsNativeCMakeGenerator {
+	param([string]$VsDevCmd)
+	if (!$VsDevCmd) {
+		return $null
+	}
+	if (Test-NinjaGenerator) {
+		return "Ninja"
+	}
+	if (Test-CMakeGenerator "NMake Makefiles") {
+		return "NMake Makefiles"
+	}
+	return $null
+}
+
+function Initialize-WindowsBuildEnvironment {
+	if ($IsLinux -or $IsMacOS) {
+		return
+	}
+
+	$script:VsDevCmd = Get-VisualStudioDevCmd
+	if (!$script:VsDevCmd) {
+		throw "Visual Studio C++ build tools were not found. Install Visual Studio with Desktop development with C++."
+	}
+
+	$script:WindowsVisualStudioGenerator = Get-VisualStudioGenerator
+	$script:WindowsNativeCMakeGenerator = Get-WindowsNativeCMakeGenerator $script:VsDevCmd
+	if (!$script:WindowsVisualStudioGenerator -and !$script:WindowsNativeCMakeGenerator) {
+		throw "No supported Windows CMake generator was found."
+	}
+}
+
+function Test-WindowsNativeCompilerAvailable {
+	if ($IsLinux -or $IsMacOS) {
+		return $true
+	}
+	if (!$script:VsDevCmd) {
+		return $false
+	}
+	$command = "call $(Convert-ToCmdArgument $script:VsDevCmd) -arch=x64 -host_arch=x64 >nul && where cl >nul"
+	& cmd.exe /d /s /c $command
+	return ($LASTEXITCODE -eq 0)
+}
+
+function Test-SourceRevisionMatches {
+	param(
+		[string]$Path,
+		[string]$Revision
+	)
+	if (!(Test-Path -LiteralPath $Path)) {
+		return $false
+	}
+
+	$tag = git -C $Path describe --tags --exact-match HEAD 2>$null
+	if ($LASTEXITCODE -eq 0 -and $tag -eq $Revision) {
+		return $true
+	}
+
+	$commit = git -C $Path rev-parse HEAD 2>$null
+	if ($LASTEXITCODE -eq 0 -and $commit.StartsWith($Revision, [System.StringComparison]::OrdinalIgnoreCase)) {
+		return $true
+	}
+
+	return $false
+}
+
+$script:VsDevCmd = $null
+$script:WindowsVisualStudioGenerator = $null
+$script:WindowsNativeCMakeGenerator = $null
+
+Initialize-WindowsBuildEnvironment
 
 function Test-CudaAvailable {
 	if ($env:CUDA_PATH -and (Test-Path (Join-Path $env:CUDA_PATH "bin\nvcc.exe"))) {
@@ -147,6 +279,9 @@ function Assert-RequestedBackendsAvailable {
 
 	if ($RequireCuda -and !(Test-CudaAvailable)) {
 		throw "CUDA was requested, but CUDA was not found. Install the NVIDIA CUDA Toolkit or use -Auto/-CpuOnly."
+	}
+	if (($RequireCuda -or $RequireVulkan -or $RequireOpenCL) -and !(Test-WindowsNativeCompilerAvailable)) {
+		throw "A native Visual Studio compiler environment is required for requested Windows backends."
 	}
 	if ($RequireCuda -and !$IsLinux -and !$IsMacOS -and !(Test-CudaLinkLibrariesAvailable)) {
 		throw "CUDA was requested, but CUDA link libraries were not found under CUDA_PATH. Install the NVIDIA CUDA Toolkit or use -Auto/-CpuOnly."
@@ -291,6 +426,10 @@ if ($CpuOnly -and ($Cuda -or $Vulkan -or $Metal -or $OpenCL -or $AllBackends)) {
 	throw "-CpuOnly cannot be combined with backend switches"
 }
 
+if ($WithDebug -and !$IsLinux -and !$IsMacOS) {
+	throw "-WithDebug is not supported by the Windows single-config setup path yet"
+}
+
 $explicitBackendRequested = $CpuOnly -or $Cuda -or $Vulkan -or $Metal -or $OpenCL -or $AllBackends
 $autoRequested = $Auto -or !$explicitBackendRequested
 $requireCuda = $Cuda -or $AllBackends
@@ -337,6 +476,8 @@ if ($Clean) {
 if (!(Test-Path -LiteralPath $Source)) {
 	Write-Step "Cloning ggml $Revision"
 	Invoke-CheckedNative "git clone ggml" { git clone --depth 1 --branch $Revision $Repo $Source }
+} elseif (Test-SourceRevisionMatches $Source $Revision) {
+	Write-Step "ggml source already at $Revision; skipping fetch"
 } else {
 	Write-Step "Fetching ggml $Revision"
 	Invoke-CheckedNative "git fetch ggml" { git -C $Source fetch --depth 1 origin $Revision }
@@ -349,48 +490,155 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Step "Using ggml commit $commit"
 
-if (Test-Path -LiteralPath $Build) {
-	Remove-Item -LiteralPath $Build -Recurse -Force
+function Get-WindowsNativeGeneratorArgs {
+	if ($script:WindowsNativeCMakeGenerator) {
+		return @("-G", $script:WindowsNativeCMakeGenerator)
+	}
+	if ($script:WindowsVisualStudioGenerator) {
+		return @("-G", $script:WindowsVisualStudioGenerator, "-A", "x64")
+	}
+	throw "No Windows CMake generator is available."
 }
 
-$configureArgs = @(
-	"-S", $Source,
-	"-B", $Build,
-	"-DBUILD_SHARED_LIBS=OFF",
-	"-DGGML_BUILD_TESTS=OFF",
-	"-DGGML_BUILD_EXAMPLES=OFF",
-	"-DGGML_NATIVE=ON",
-	"-DGGML_STATIC=ON",
-	"-DGGML_BACKEND_DL=OFF",
-	"-DCMAKE_C_FLAGS=-DGGML_MAX_NAME=128",
-	"-DCMAKE_CXX_FLAGS=-DGGML_MAX_NAME=128",
-	"-DCMAKE_CUDA_FLAGS=-DGGML_MAX_NAME=128",
-	"-DGGML_CUDA=$(if ($Cuda) { 'ON' } else { 'OFF' })",
-	"-DGGML_VULKAN=$(if ($Vulkan) { 'ON' } else { 'OFF' })",
-	"-DGGML_METAL=$(if ($Metal) { 'ON' } else { 'OFF' })",
-	"-DGGML_OPENCL=$(if ($OpenCL) { 'ON' } else { 'OFF' })"
-)
+function Get-WindowsCudaGeneratorArgs {
+	if (!$script:WindowsVisualStudioGenerator) {
+		throw "CUDA builds on Windows require a Visual Studio CMake generator."
+	}
+	if (!$env:CUDA_PATH) {
+		throw "CUDA builds on Windows require CUDA_PATH."
+	}
+	return @("-G", $script:WindowsVisualStudioGenerator, "-A", "x64", "-T", "host=x64,cuda=$env:CUDA_PATH")
+}
 
-if (!$IsLinux -and !$IsMacOS) {
-	$generator = Get-VisualStudioGenerator
-	if ($generator) {
-		$configureArgs = @("-G", $generator) + $configureArgs
-		if ($Cuda -and $env:CUDA_PATH) {
-			$configureArgs = @("-T", "host=x64,cuda=$env:CUDA_PATH") + $configureArgs
-		}
-		Write-Step "Using CMake generator: $generator"
+function Get-PreparedBuildDirectory {
+	param([string]$PreferredPath)
+
+	if (!(Test-Path -LiteralPath $PreferredPath)) {
+		return $PreferredPath
+	}
+
+	try {
+		Remove-Item -LiteralPath $PreferredPath -Recurse -Force -ErrorAction Stop
+		return $PreferredPath
+	} catch {
+		$fallback = "$PreferredPath-$(Get-Date -Format 'yyyyMMddHHmmss')"
+		Write-Step "Build directory is locked; using fresh build directory $fallback"
+		return $fallback
 	}
 }
 
-Write-Step "Configuring ggml backends: CPU=ON CUDA=$(if ($Cuda) { 'ON' } else { 'OFF' }) Vulkan=$(if ($Vulkan) { 'ON' } else { 'OFF' }) Metal=$(if ($Metal) { 'ON' } else { 'OFF' }) OpenCL=$(if ($OpenCL) { 'ON' } else { 'OFF' })"
-Invoke-CheckedNative "cmake configure ggml" { cmake @configureArgs }
+function New-GgmlConfigureArgs {
+	param(
+		[string]$BuildDir,
+		[bool]$EnableCuda,
+		[bool]$EnableVulkan,
+		[bool]$EnableMetal,
+		[bool]$EnableOpenCL
+	)
 
-Write-Step "Building ggml Release with $Jobs jobs"
-Invoke-CheckedNative "cmake build ggml Release" { cmake --build $Build --config Release -j $Jobs }
+	$args = @(
+		"-S", $Source,
+		"-B", $BuildDir,
+		"-DBUILD_SHARED_LIBS=OFF",
+		"-DGGML_BUILD_TESTS=OFF",
+		"-DGGML_BUILD_EXAMPLES=OFF",
+		"-DGGML_NATIVE=ON",
+		"-DGGML_STATIC=ON",
+		"-DGGML_BACKEND_DL=OFF",
+		"-DCMAKE_BUILD_TYPE=Release",
+		"-DCMAKE_C_FLAGS=-DGGML_MAX_NAME=128",
+		"-DCMAKE_CXX_FLAGS=-DGGML_MAX_NAME=128",
+		"-DCMAKE_CUDA_FLAGS=-DGGML_MAX_NAME=128",
+		"-DGGML_CUDA=$(if ($EnableCuda) { 'ON' } else { 'OFF' })",
+		"-DGGML_CUDA_NCCL=OFF",
+		"-DGGML_VULKAN=$(if ($EnableVulkan) { 'ON' } else { 'OFF' })",
+		"-DGGML_METAL=$(if ($EnableMetal) { 'ON' } else { 'OFF' })",
+		"-DGGML_OPENCL=$(if ($EnableOpenCL) { 'ON' } else { 'OFF' })"
+	)
+	if ($EnableCuda -and $env:CUDA_PATH) {
+		$args += "-DCUDAToolkit_ROOT=$env:CUDA_PATH"
+	}
+	return $args
+}
 
-if ($WithDebug) {
-	Write-Step "Building ggml Debug with $Jobs jobs"
-	Invoke-CheckedNative "cmake build ggml Debug" { cmake --build $Build --config Debug -j $Jobs }
+function Invoke-GgmlCMakeBuild {
+	param(
+		[string]$BuildDir,
+		[string]$Label,
+		[bool]$EnableCuda,
+		[bool]$EnableVulkan,
+		[bool]$EnableMetal,
+		[bool]$EnableOpenCL,
+		[string[]]$GeneratorArgs
+	)
+
+	$configureArgs = $GeneratorArgs + (New-GgmlConfigureArgs `
+		-BuildDir $BuildDir `
+		-EnableCuda $EnableCuda `
+		-EnableVulkan $EnableVulkan `
+		-EnableMetal $EnableMetal `
+		-EnableOpenCL $EnableOpenCL)
+
+	if ($GeneratorArgs.Count -gt 0) {
+		Write-Step "Using CMake generator args for $($Label): $($GeneratorArgs -join ' ')"
+	}
+	Write-Step "Configuring $($Label): CPU=ON CUDA=$(if ($EnableCuda) { 'ON' } else { 'OFF' }) Vulkan=$(if ($EnableVulkan) { 'ON' } else { 'OFF' }) Metal=$(if ($EnableMetal) { 'ON' } else { 'OFF' }) OpenCL=$(if ($EnableOpenCL) { 'ON' } else { 'OFF' })"
+	Invoke-CMake "cmake configure $Label" $configureArgs
+
+	Write-Step "Building $Label Release with $Jobs jobs"
+	$releaseBuildArgs = @("--build", $BuildDir, "--config", "Release", "--parallel", $Jobs.ToString())
+	Invoke-CMake "cmake build $Label Release" $releaseBuildArgs
+
+	if ($WithDebug) {
+		Write-Step "Building $Label Debug with $Jobs jobs"
+		$debugBuildArgs = @("--build", $BuildDir, "--config", "Debug", "--parallel", $Jobs.ToString())
+		Invoke-CMake "cmake build $Label Debug" $debugBuildArgs
+	}
+}
+
+$buildOutputDirs = New-Object System.Collections.Generic.List[string]
+
+if (!$IsLinux -and !$IsMacOS -and $Cuda -and ($Vulkan -or $OpenCL)) {
+	$cudaBuild = Get-PreparedBuildDirectory (Join-Path $GgmlRoot "build-cuda")
+	$buildOutputDirs.Add($cudaBuild)
+	Invoke-GgmlCMakeBuild `
+		-BuildDir $cudaBuild `
+		-Label "ggml CUDA" `
+		-EnableCuda $true `
+		-EnableVulkan $false `
+		-EnableMetal $false `
+		-EnableOpenCL $false `
+		-GeneratorArgs (Get-WindowsCudaGeneratorArgs)
+
+	$nativeBuild = Get-PreparedBuildDirectory (Join-Path $GgmlRoot "build-native")
+	$buildOutputDirs.Add($nativeBuild)
+	Invoke-GgmlCMakeBuild `
+		-BuildDir $nativeBuild `
+		-Label "ggml native backends" `
+		-EnableCuda $false `
+		-EnableVulkan $Vulkan `
+		-EnableMetal $false `
+		-EnableOpenCL $OpenCL `
+		-GeneratorArgs (Get-WindowsNativeGeneratorArgs)
+} else {
+	$generatorArgs = @()
+	if (!$IsLinux -and !$IsMacOS) {
+		if ($Cuda) {
+			$generatorArgs = Get-WindowsCudaGeneratorArgs
+		} else {
+			$generatorArgs = Get-WindowsNativeGeneratorArgs
+		}
+	}
+	$singleBuild = Get-PreparedBuildDirectory $Build
+	$buildOutputDirs.Add($singleBuild)
+	Invoke-GgmlCMakeBuild `
+		-BuildDir $singleBuild `
+		-Label "ggml" `
+		-EnableCuda $Cuda `
+		-EnableVulkan $Vulkan `
+		-EnableMetal $Metal `
+		-EnableOpenCL $OpenCL `
+		-GeneratorArgs $generatorArgs
 }
 
 Write-Step "Exporting headers and libraries"
@@ -398,16 +646,21 @@ Clear-DirectoryContents $Include
 Clear-DirectoryContents $Lib
 
 Copy-Item -Path (Join-Path $Source "include\*") -Destination $Include -Recurse -Force
-New-Item -ItemType File -Path (Join-Path $Include ".gitkeep") -Force | Out-Null
+Ensure-GitKeep (Join-Path $Include ".gitkeep")
 
 $libraryPatterns = @("ggml*.lib", "libggml*.a", "libggml*.dylib")
 foreach ($pattern in $libraryPatterns) {
-	Get-ChildItem -LiteralPath $Build -Recurse -File -Filter $pattern -ErrorAction SilentlyContinue |
-		Where-Object { $_.FullName -notmatch "\\Debug\\" } |
-		Sort-Object Name |
-		ForEach-Object {
-			Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $Lib $_.Name) -Force
-		}
+	foreach ($buildDir in $buildOutputDirs) {
+		Get-ChildItem -LiteralPath $buildDir -Recurse -File -Filter $pattern -ErrorAction SilentlyContinue |
+			Where-Object { $_.FullName -notmatch "\\Debug\\" } |
+			Sort-Object Name |
+			ForEach-Object {
+				$destination = Join-Path $Lib $_.Name
+				if (!(Test-Path -LiteralPath $destination)) {
+					Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
+				}
+			}
+	}
 }
 
 if ($WithDebug) {
@@ -418,14 +671,16 @@ if ($WithDebug) {
 		Where-Object { $_.Name -like "ggml*.lib" -or $_.Name -like "libggml*.a" } |
 		ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $releaseDir $_.Name) -Force }
 	foreach ($pattern in $libraryPatterns) {
-		Get-ChildItem -LiteralPath $Build -Recurse -File -Filter $pattern -ErrorAction SilentlyContinue |
-			Where-Object { $_.FullName -match "\\Debug\\" } |
-			Sort-Object Name |
-			ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $debugDir $_.Name) -Force }
+		foreach ($buildDir in $buildOutputDirs) {
+			Get-ChildItem -LiteralPath $buildDir -Recurse -File -Filter $pattern -ErrorAction SilentlyContinue |
+				Where-Object { $_.FullName -match "\\Debug\\" } |
+				Sort-Object Name |
+				ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $debugDir $_.Name) -Force }
+		}
 	}
 }
 
-New-Item -ItemType File -Path (Join-Path $Lib ".gitkeep") -Force | Out-Null
+Ensure-GitKeep (Join-Path $Lib ".gitkeep")
 
 Update-AddonConfig
 

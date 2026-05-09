@@ -80,5 +80,11 @@ Explicit backend switches are requirements. For example, `-Cuda` fails before
 configuration if the CUDA Toolkit cannot be found. Use default `-Auto` when you
 want the script to skip unavailable GPU backends.
 
+On Windows, the setup script locates Visual Studio C++ build tools and runs
+CMake through `VsDevCmd.bat`. CUDA builds use the Visual Studio CUDA toolset;
+when CUDA is combined with Vulkan or OpenCL, the script builds CUDA separately
+from the native backends so ggml's nested Vulkan shader build does not inherit
+the CUDA toolset.
+
 Backend binaries remain generated local artifacts. `addon_config.mk` is updated
 by the setup script to reference the ggml libraries that were actually built.

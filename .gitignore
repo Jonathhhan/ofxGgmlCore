@@ -1,4 +1,8 @@
 build/
+.vs/
+obj/
+*/.vs/
+*/obj/
 *.user
 *.suo
 *.VC.db
@@ -8,11 +12,17 @@ build/
 
 libs/ggml/.source/
 libs/ggml/build/
+libs/ggml/build*/
 libs/ggml/include/*
 libs/ggml/lib/*
 !libs/ggml/include/.gitkeep
 !libs/ggml/lib/.gitkeep
 
 ofxGgmlSimpleExample/bin/
+ofxGgmlSimpleExample/config.make
+ofxGgmlSimpleExample/icon.rc
+ofxGgmlSimpleExample/*.sln
+ofxGgmlSimpleExample/*.vcxproj
+ofxGgmlSimpleExample/*.vcxproj.filters
 !ofxGgmlSimpleExample/bin/data/
 !ofxGgmlSimpleExample/bin/data/.gitkeep

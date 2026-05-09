@@ -93,6 +93,7 @@ Core dependency setup must be reproducible:
 - use auto-detection by default when no backend switch is supplied
 - fail before CMake when an explicitly requested backend SDK is unavailable
 - provide Windows batch and POSIX shell wrappers for setup
+- run Windows CMake builds through Visual Studio's native compiler environment
 
 The setup script should be safe to rerun and should not delete files outside the
 addon.

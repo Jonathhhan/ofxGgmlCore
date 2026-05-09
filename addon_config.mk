@@ -12,15 +12,23 @@ common:
 	ADDON_SOURCES_EXCLUDE += build/%
 	ADDON_SOURCES_EXCLUDE += libs/ggml/.source/%
 	ADDON_SOURCES_EXCLUDE += libs/ggml/build/%
+	ADDON_SOURCES_EXCLUDE += libs/ggml/build*/%
 	ADDON_INCLUDES_EXCLUDE += build/%
 	ADDON_INCLUDES_EXCLUDE += libs/ggml/.source/%
 	ADDON_INCLUDES_EXCLUDE += libs/ggml/build/%
+	ADDON_INCLUDES_EXCLUDE += libs/ggml/build*/%
 
 vs:
 	# @OFXGGML_LIBS_START vs
 	ADDON_LIBS += libs/ggml/lib/ggml.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-base.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-cpu.lib
+	ADDON_LIBS += libs/ggml/lib/ggml-cuda.lib
+	ADDON_LIBS += libs/ggml/lib/ggml-vulkan.lib
+	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cublas.lib
+	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cudart.lib
+	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cuda.lib
+	ADDON_LIBS += $(VULKAN_SDK)/Lib/vulkan-1.lib
 	# @OFXGGML_LIBS_END vs
 
 linux64:
