@@ -40,7 +40,7 @@ void ofApp::setup() {
 	lines.push_back(result ? "runtime ready: " + runtime.getBackendName() : "runtime error: " + result.error().message);
 	lines.push_back("preferred backend: Auto");
 	lines.push_back("devices:");
-	for (const auto & device : runtime.listDevices()) {
+	for (const auto & device : runtime.getDevices()) {
 		lines.push_back("  " + backendLabel(device.backend) + ": " + device.name + formatBytes(device.memoryBytes));
 	}
 	if (result) {

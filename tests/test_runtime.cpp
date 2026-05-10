@@ -22,7 +22,7 @@ OFXGGML_TEST(runtime_setup_auto_falls_back_to_cpu_backend) {
 	OFXGGML_REQUIRE(runtime.getState() == ofxGgmlRuntimeState::Ready);
 	OFXGGML_REQUIRE(runtime.getBackendName() == "CPU");
 
-	auto devices = runtime.listDevices();
+	auto devices = runtime.getDevices();
 	OFXGGML_REQUIRE(devices.size() == 1);
 	OFXGGML_REQUIRE(devices[0].backend == ofxGgmlBackend::CPU);
 	OFXGGML_REQUIRE(devices[0].available);

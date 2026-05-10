@@ -223,7 +223,7 @@ std::string ofxGgmlRuntime::getBackendName() const {
 #endif
 }
 
-std::vector<ofxGgmlDeviceInfo> ofxGgmlRuntime::listDevices() const {
+std::vector<ofxGgmlDeviceInfo> ofxGgmlRuntime::getDevices() const {
 	std::vector<ofxGgmlDeviceInfo> devices;
 #if OFXGGML_HAS_GGML
 #if OFXGGML_HAS_CUDA_BACKEND

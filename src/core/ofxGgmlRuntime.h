@@ -26,7 +26,7 @@ public:
 	bool isReady() const;
 	ofxGgmlRuntimeState getState() const;
 	std::string getBackendName() const;
-	std::vector<ofxGgmlDeviceInfo> listDevices() const;
+	std::vector<ofxGgmlDeviceInfo> getDevices() const;
 
 	ofxGgmlResult<void> allocate(ofxGgmlGraph & graph);
 	ofxGgmlComputeResult compute(ofxGgmlGraph & graph);
