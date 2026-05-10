@@ -58,6 +58,15 @@ std::string trimText(const std::string & text) {
 	return text.substr(first, last - first);
 }
 
+ImVec2 fitWindowSize(float preferredWidth, float preferredHeight) {
+	const ImVec2 display = ImGui::GetIO().DisplaySize;
+	const float availableWidth = std::max(360.0f, display.x - 32.0f);
+	const float availableHeight = std::max(320.0f, display.y - 32.0f);
+	return ImVec2(
+		std::min(preferredWidth, availableWidth),
+		std::min(preferredHeight, availableHeight));
+}
+
 std::string toString(const std::filesystem::path & path) {
 	return path.lexically_normal().string();
 }
@@ -263,7 +272,6 @@ void ofApp::draw() {
 	std::string serverModelSnapshot;
 	std::string executableSnapshot;
 	std::string modelPathSnapshot;
-	std::string promptSnapshot;
 	std::string outputSnapshot;
 	bool runningSnapshot = false;
 	{
@@ -274,7 +282,6 @@ void ofApp::draw() {
 		serverModelSnapshot = settings.serverModel.empty() ? "(auto)" : settings.serverModel;
 		executableSnapshot = settings.executablePath.empty() ? "(optional)" : settings.executablePath;
 		modelPathSnapshot = modelPath.empty() ? "(server-managed)" : modelPath;
-		promptSnapshot = prompt;
 		outputSnapshot = output;
 		runningSnapshot = running;
 	}
@@ -284,17 +291,17 @@ void ofApp::draw() {
 
 	ofBackground(12);
 	gui.begin();
-	ImGui::SetNextWindowPos(ImVec2(24.0f, 24.0f), ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(880.0f, 520.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(16.0f, 16.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(fitWindowSize(920.0f, 500.0f), ImGuiCond_Once);
 	if (ImGui::Begin("ofxGgml Text Example")) {
-		if (ImGui::Button("Run")) {
+		if (ImGui::Button("Run", ImVec2(72.0f, 0.0f))) {
 			shouldRun = true;
 		}
 		ImGui::SameLine();
 		if (!runningSnapshot) {
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.45f);
 		}
-		if (ImGui::Button("Cancel") && runningSnapshot) {
+		if (ImGui::Button("Cancel", ImVec2(72.0f, 0.0f)) && runningSnapshot) {
 			shouldCancel = true;
 		}
 		if (!runningSnapshot) {
@@ -316,14 +323,11 @@ void ofApp::draw() {
 		ImGui::Spacing();
 		ImGui::TextUnformatted("Prompt");
 		ImGui::Separator();
-		if (!runningSnapshot) {
-			ImGui::InputTextMultiline(
-				"##prompt",
-				&promptEdit,
-				ImVec2(0.0f, 70.0f));
-		} else {
-			ImGui::TextWrapped("%s", promptSnapshot.c_str());
-		}
+		ImGui::InputTextMultiline(
+			"##prompt",
+			&promptEdit,
+			ImVec2(0.0f, 70.0f),
+			runningSnapshot ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 
 		ImGui::Spacing();
 		ImGui::TextUnformatted("Output");

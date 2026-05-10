@@ -26,6 +26,15 @@ std::string toString(const std::filesystem::path & path) {
 	return path.lexically_normal().string();
 }
 
+ImVec2 fitWindowSize(float preferredWidth, float preferredHeight) {
+	const ImVec2 display = ImGui::GetIO().DisplaySize;
+	const float availableWidth = std::max(360.0f, display.x - 32.0f);
+	const float availableHeight = std::max(320.0f, display.y - 32.0f);
+	return ImVec2(
+		std::min(preferredWidth, availableWidth),
+		std::min(preferredHeight, availableHeight));
+}
+
 bool pathExists(const std::filesystem::path & path) {
 	std::error_code error;
 	return std::filesystem::is_regular_file(path, error);
@@ -259,8 +268,8 @@ void ofApp::draw() {
 
 	ofBackground(12);
 	gui.begin();
-	ImGui::SetNextWindowPos(ImVec2(18.0f, 18.0f), ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(1080.0f, 680.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(16.0f, 16.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(fitWindowSize(1040.0f, 640.0f), ImGuiCond_Once);
 	if (ImGui::Begin("ofxGgml Chat Example")) {
 		ImGui::TextColored(
 			runningSnapshot ? ImVec4(0.45f, 0.75f, 1.0f, 1.0f) : ImVec4(0.70f, 0.92f, 0.70f, 1.0f),
@@ -270,6 +279,9 @@ void ofApp::draw() {
 		ImGui::TextDisabled("Backend: %s", backendSnapshot.c_str());
 
 		ImGui::Separator();
+		if (runningSnapshot) {
+			ImGui::BeginDisabled();
+		}
 		if (ImGui::Checkbox("Use llama-server", &useServer)) {
 			std::lock_guard<std::mutex> lock(stateMutex);
 			if (!running) {
@@ -295,6 +307,9 @@ void ofApp::draw() {
 			std::lock_guard<std::mutex> lock(stateMutex);
 			settings.topP = topP;
 		}
+		if (runningSnapshot) {
+			ImGui::EndDisabled();
+		}
 
 		if (ImGui::CollapsingHeader("Runtime", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::TextWrapped("Server: %s", serverUrlSnapshot.c_str());
@@ -304,11 +319,17 @@ void ofApp::draw() {
 		}
 
 		ImGui::TextUnformatted("System");
+		if (runningSnapshot) {
+			ImGui::BeginDisabled();
+		}
 		ImGui::InputTextMultiline(
 			"##system",
 			systemBuffer.data(),
 			systemBuffer.size(),
 			ImVec2(-1.0f, 54.0f));
+		if (runningSnapshot) {
+			ImGui::EndDisabled();
+		}
 
 		ImGui::BeginChild("chat-history", ImVec2(0.0f, -148.0f), true);
 		if (chatSnapshot.empty()) {
@@ -338,21 +359,21 @@ void ofApp::draw() {
 			ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
 			ImGui::GetIO().KeyCtrl &&
 			ImGui::IsKeyPressed(ImGuiKey_Enter);
-		if (ImGui::Button("Send") || ctrlEnter) {
+		if (ImGui::Button("Send", ImVec2(72.0f, 0.0f)) || ctrlEnter) {
 			shouldSend = true;
 		}
 		ImGui::SameLine();
 		if (!runningSnapshot) {
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.45f);
 		}
-		if (ImGui::Button("Cancel") && runningSnapshot) {
+		if (ImGui::Button("Cancel", ImVec2(72.0f, 0.0f)) && runningSnapshot) {
 			shouldCancel = true;
 		}
 		if (!runningSnapshot) {
 			ImGui::PopStyleVar();
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Clear")) {
+		if (ImGui::Button("Clear", ImVec2(72.0f, 0.0f))) {
 			shouldClear = true;
 		}
 	}
