@@ -39,16 +39,19 @@ The core public surface is:
 - `ofxGgmlTextGenerator` and text request/result types
 - `ofxGgmlLlamaCliTextBackend` and `ofxGgmlLlamaServerTextBackend`
 - `ofxGgmlEmbeddingGenerator`, embedding request/result types, and vector helpers
+- `ofxGgmlSegmentationInference`, segmentation request/result types, and SAM3 adapter hooks
 - `ofxGgmlCore.h`
 - `ofxGgmlText.h`
 - `ofxGgmlEmbedding.h`
+- `ofxGgmlSegmentation.h`
 - `ofxGgml.h`
 
 `ofxGgml.h` should remain a boring umbrella. Text belongs there only as a small
 backend-neutral API. Embeddings belong there only as a small request/result API
-and math helpers. Concrete llama.cpp CLI/server adapters must keep process
-execution or HTTP transport behind a replaceable boundary, provide a default
-runner only when it is small and testable, and carry focused tests.
+and math helpers. Segmentation belongs there only as a small prompt/result API;
+SAM3 remains an optional adapter. Concrete llama.cpp CLI/server adapters must
+keep process execution or HTTP transport behind a replaceable boundary, provide
+a default runner only when it is small and testable, and carry focused tests.
 
 ## Runtime Contract
 
@@ -167,4 +170,5 @@ layer.
 14. Done: tighten example launch scripts and model/server discovery consistency.
 15. Done: add focused smoke coverage for launch-script dry-run behavior.
 16. Done: make launch-script smoke checks part of a single local validation entrypoint.
-17. Next: decide the next optional layer boundary before adding more runtime surface.
+17. Done: decide the next optional layer boundary before adding more runtime surface.
+18. Next: add a focused segmentation example or documented SAM3 smoke path.

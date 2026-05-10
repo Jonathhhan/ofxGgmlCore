@@ -1,6 +1,5 @@
 #include "test_harness.h"
-#include "../src/inference/ofxGgmlSam3Adapters.h"
-#include "../src/inference/ofxGgmlSegmentationInference.h"
+#include "../src/ofxGgmlSegmentation.h"
 
 #include <memory>
 #include <string>

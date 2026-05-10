@@ -2,6 +2,5 @@
 
 #include "ofxGgmlCore.h"
 #include "ofxGgmlEmbedding.h"
+#include "ofxGgmlSegmentation.h"
 #include "ofxGgmlText.h"
-#include "inference/ofxGgmlSegmentationInference.h"
-#include "inference/ofxGgmlSam3Adapters.h"
