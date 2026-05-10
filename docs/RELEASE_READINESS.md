@@ -64,6 +64,34 @@ Before creating the first rewrite tag:
 - any new public type has a focused headless test.
 - any new example has a build script and a dry-run or repair smoke path.
 
+## Gap Review
+
+These items are intentionally not blockers for the first rewrite tag:
+
+- Real SAM3 model/image UX: deferred until a known-compatible model and sample
+  image workflow are available. See `docs/SEGMENTATION.md`.
+- Model downloads: deferred. The addon should document paths and environment
+  variables, not ship or download large model files by default.
+- Full example builds in `validate-local`: deferred. `validate-local` stays
+  fast and non-interactive; full openFrameworks example builds remain explicit
+  confidence checks.
+- All-backend build verification: deferred from the core tag gate. CPU is the
+  required baseline; CUDA, Vulkan, Metal, and OpenCL are validated through their
+  setup switches on machines that have the relevant SDKs.
+- POSIX generated project builds: deferred. Shell wrappers are included, but
+  platform projects still depend on local openFrameworks project generation.
+- Exact release version string: defer until the tag is created. Keep
+  `2.0.0-rewrite` while the API is still allowed to break.
+
+These items should be closed before the first rewrite tag:
+
+- Run `scripts\validate-local.bat` from a clean `main`.
+- Build all generated examples once on the release machine.
+- Confirm README commands for setup, validation, llama-server, embeddings, and
+  SAM3 smoke match the scripts.
+- Confirm no generated project files, binaries, caches, or model files are
+  staged.
+
 ## Versioning
 
 The current rewritten API is allowed to break before the first rewrite tag. After

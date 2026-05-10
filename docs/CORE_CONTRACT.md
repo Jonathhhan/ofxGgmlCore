@@ -177,4 +177,5 @@ layer.
 18. Done: add a focused segmentation example or documented SAM3 smoke path.
 19. Done: decide whether segmentation needs an openFrameworks example or should remain script-tested until a real SAM3 model workflow is available.
 20. Done: tighten release/readiness docs around what belongs in `main` before the first rewrite tag.
-21. Next: review release readiness gaps and either close them or intentionally defer them.
+21. Done: review release readiness gaps and either close them or intentionally defer them.
+22. Next: run a full generated-example build confidence pass before considering a rewrite tag.
