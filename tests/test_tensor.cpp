@@ -7,10 +7,10 @@ OFXGGML_TEST(default_tensor_is_invalid) {
 	OFXGGML_REQUIRE(!tensor);
 	OFXGGML_REQUIRE(!tensor.isValid());
 	OFXGGML_REQUIRE(tensor.raw() == nullptr);
-	OFXGGML_REQUIRE(tensor.dims() == 0);
-	OFXGGML_REQUIRE(tensor.extent(0) == 0);
-	OFXGGML_REQUIRE(tensor.bytes() == 0);
-	OFXGGML_REQUIRE(tensor.elementCount() == 0);
+	OFXGGML_REQUIRE(tensor.getNumDims() == 0);
+	OFXGGML_REQUIRE(tensor.getExtent(0) == 0);
+	OFXGGML_REQUIRE(tensor.getByteSize() == 0);
+	OFXGGML_REQUIRE(tensor.getElementCount() == 0);
 }
 
 OFXGGML_TEST(tensor_reports_shape_and_storage) {
@@ -18,13 +18,13 @@ OFXGGML_TEST(tensor_reports_shape_and_storage) {
 	ofxGgmlTensor tensor = graph.tensor2d(ofxGgmlType::F32, 4, 3);
 
 	OFXGGML_REQUIRE(tensor);
-	OFXGGML_REQUIRE(tensor.type() == ofxGgmlType::F32);
-	OFXGGML_REQUIRE(tensor.dims() == 2);
-	OFXGGML_REQUIRE(tensor.extent(0) == 4);
-	OFXGGML_REQUIRE(tensor.extent(1) == 3);
-	OFXGGML_REQUIRE(tensor.extent(4) == 0);
-	OFXGGML_REQUIRE(tensor.elementCount() == 12);
-	OFXGGML_REQUIRE(tensor.bytes() == 48);
+	OFXGGML_REQUIRE(tensor.getType() == ofxGgmlType::F32);
+	OFXGGML_REQUIRE(tensor.getNumDims() == 2);
+	OFXGGML_REQUIRE(tensor.getExtent(0) == 4);
+	OFXGGML_REQUIRE(tensor.getExtent(1) == 3);
+	OFXGGML_REQUIRE(tensor.getExtent(4) == 0);
+	OFXGGML_REQUIRE(tensor.getElementCount() == 12);
+	OFXGGML_REQUIRE(tensor.getByteSize() == 48);
 }
 
 OFXGGML_TEST(tensor_maps_public_type_to_ggml_type) {
@@ -32,9 +32,9 @@ OFXGGML_TEST(tensor_maps_public_type_to_ggml_type) {
 	ofxGgmlTensor tensor = graph.tensor1d(ofxGgmlType::I32, 5);
 
 	OFXGGML_REQUIRE(tensor);
-	OFXGGML_REQUIRE(tensor.type() == ofxGgmlType::I32);
-	OFXGGML_REQUIRE(tensor.elementCount() == 5);
-	OFXGGML_REQUIRE(tensor.bytes() == 20);
+	OFXGGML_REQUIRE(tensor.getType() == ofxGgmlType::I32);
+	OFXGGML_REQUIRE(tensor.getElementCount() == 5);
+	OFXGGML_REQUIRE(tensor.getByteSize() == 20);
 }
 
 OFXGGML_TEST(tensor_rejects_invalid_dimensions) {

@@ -43,7 +43,7 @@ ggml_tensor * ofxGgmlTensor::raw() const {
 	return tensor;
 }
 
-ofxGgmlType ofxGgmlTensor::type() const {
+ofxGgmlType ofxGgmlTensor::getType() const {
 #if OFXGGML_HAS_GGML
 	return tensor ? fromGgmlType(tensor->type) : ofxGgmlType::F32;
 #else
@@ -51,7 +51,7 @@ ofxGgmlType ofxGgmlTensor::type() const {
 #endif
 }
 
-int ofxGgmlTensor::dims() const {
+int ofxGgmlTensor::getNumDims() const {
 #if OFXGGML_HAS_GGML
 	return tensor ? ggml_n_dims(tensor) : 0;
 #else
@@ -59,7 +59,7 @@ int ofxGgmlTensor::dims() const {
 #endif
 }
 
-int64_t ofxGgmlTensor::extent(int dim) const {
+int64_t ofxGgmlTensor::getExtent(int dim) const {
 #if OFXGGML_HAS_GGML
 	if (!tensor || dim < 0 || dim >= GGML_MAX_DIMS) return 0;
 	return tensor->ne[dim];
@@ -69,7 +69,7 @@ int64_t ofxGgmlTensor::extent(int dim) const {
 #endif
 }
 
-std::size_t ofxGgmlTensor::bytes() const {
+std::size_t ofxGgmlTensor::getByteSize() const {
 #if OFXGGML_HAS_GGML
 	return tensor ? ggml_nbytes(tensor) : 0;
 #else
@@ -77,7 +77,7 @@ std::size_t ofxGgmlTensor::bytes() const {
 #endif
 }
 
-std::size_t ofxGgmlTensor::elementCount() const {
+std::size_t ofxGgmlTensor::getElementCount() const {
 #if OFXGGML_HAS_GGML
 	return tensor ? static_cast<std::size_t>(ggml_nelements(tensor)) : 0;
 #else

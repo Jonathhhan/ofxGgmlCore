@@ -315,7 +315,7 @@ ofxGgmlResult<void> ofxGgmlRuntime::setData(ofxGgmlTensor tensor, const void * d
 	if (!isReady()) return ofxGgmlResult<void>::failure("runtime is not ready");
 	if (!impl->buffer) return ofxGgmlResult<void>::failure("graph tensors are not allocated");
 	if (!tensor || !data) return ofxGgmlResult<void>::failure("invalid tensor data");
-	if (bytes != tensor.bytes()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
+	if (bytes != tensor.getByteSize()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
 	ggml_backend_tensor_set(tensor.raw(), data, 0, bytes);
 	return ofxGgmlResult<void>::success();
 #else
@@ -331,7 +331,7 @@ ofxGgmlResult<void> ofxGgmlRuntime::getData(ofxGgmlTensor tensor, void * data, s
 	if (!isReady()) return ofxGgmlResult<void>::failure("runtime is not ready");
 	if (!impl->buffer) return ofxGgmlResult<void>::failure("graph tensors are not allocated");
 	if (!tensor || !data) return ofxGgmlResult<void>::failure("invalid tensor data");
-	if (bytes != tensor.bytes()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
+	if (bytes != tensor.getByteSize()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
 	ggml_backend_tensor_get(tensor.raw(), data, 0, bytes);
 	return ofxGgmlResult<void>::success();
 #else

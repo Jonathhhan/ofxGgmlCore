@@ -43,6 +43,8 @@ without widening the core surface.
   notes to describe the current OF-style public backend naming.
 - Done after `v2.0.0-rewrite.0`: rename CPU/CUDA backend enum values to keep
   acronym spelling consistent with OpenCL.
+- Done after `v2.0.0-rewrite.0`: rename tensor shape/storage accessors to
+  explicit openFrameworks-style getter names.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

@@ -17,11 +17,11 @@ public:
 	bool isValid() const;
 
 	ggml_tensor * raw() const;
-	ofxGgmlType type() const;
-	int dims() const;
-	int64_t extent(int dim) const;
-	std::size_t bytes() const;
-	std::size_t elementCount() const;
+	ofxGgmlType getType() const;
+	int getNumDims() const;
+	int64_t getExtent(int dim) const;
+	std::size_t getByteSize() const;
+	std::size_t getElementCount() const;
 
 private:
 	ggml_tensor * tensor = nullptr;

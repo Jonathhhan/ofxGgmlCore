@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Breaking: renamed tensor accessors to explicit getter names: `getType()`,
+  `getNumDims()`, `getExtent()`, `getByteSize()`, and `getElementCount()`.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.
