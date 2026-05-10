@@ -7,6 +7,9 @@ param(
 	[int]$ContextSize = 4096,
 	[switch]$NoCudaGraphs,
 	[switch]$Detached,
+	[switch]$ForceNew,
+	[switch]$NoHealthCheck,
+	[int]$StartupTimeoutSeconds = 30,
 	[string]$LogDir = "",
 	[switch]$DryRun
 )
@@ -41,6 +44,59 @@ function Find-FirstModel {
 		}
 	}
 	return ""
+}
+
+function Get-ServerUrl {
+	param([string]$HostValue, [int]$PortValue)
+	return "http://$HostValue`:$PortValue"
+}
+
+function Get-HealthUrl {
+	param([string]$ServerUrl)
+	return "$ServerUrl/health"
+}
+
+function Test-LlamaServer {
+	param([string]$ServerUrl)
+	$result = [ordered]@{
+		Reachable = $false
+		Ready = $false
+		StatusCode = 0
+		Message = ""
+	}
+	try {
+		$response = Invoke-WebRequest `
+			-Uri (Get-HealthUrl $ServerUrl) `
+			-UseBasicParsing `
+			-TimeoutSec 2 `
+			-ErrorAction Stop
+		$result.Reachable = $true
+		$result.Ready = ($response.StatusCode -ge 200 -and $response.StatusCode -lt 300)
+		$result.StatusCode = [int]$response.StatusCode
+		$result.Message = ($response.Content | Out-String).Trim()
+	} catch {
+		if ($_.Exception.Response) {
+			$result.Reachable = $true
+			$result.StatusCode = [int]$_.Exception.Response.StatusCode
+			$result.Message = $_.Exception.Message
+		} else {
+			$result.Message = $_.Exception.Message
+		}
+	}
+	return [pscustomobject]$result
+}
+
+function Wait-LlamaServer {
+	param([string]$ServerUrl, [int]$TimeoutSeconds)
+	$deadline = (Get-Date).AddSeconds([Math]::Max(1, $TimeoutSeconds))
+	do {
+		$health = Test-LlamaServer $ServerUrl
+		if ($health.Ready) {
+			return $health
+		}
+		Start-Sleep -Milliseconds 500
+	} while ((Get-Date) -lt $deadline)
+	return Test-LlamaServer $ServerUrl
 }
 
 function Join-ProcessArguments {
@@ -85,6 +141,25 @@ if ([string]::IsNullOrWhiteSpace($ModelPath)) {
 if (!(Test-Path -LiteralPath $ModelPath -PathType Leaf)) {
 	throw "Model file was not found: $ModelPath"
 }
+$ModelPath = (Resolve-Path -LiteralPath $ModelPath).Path
+$ServerExe = (Resolve-Path -LiteralPath $ServerExe).Path
+
+$serverUrl = Get-ServerUrl $HostName $Port
+if (!$NoHealthCheck -and !$DryRun) {
+	$existing = Test-LlamaServer $serverUrl
+	if ($existing.Reachable -and !$ForceNew) {
+		Write-Host "llama-server is already reachable."
+		Write-Host "  url:       $serverUrl"
+		Write-Host "  health:    HTTP $($existing.StatusCode) $(if ($existing.Ready) { '(ready)' } else { '(starting/busy)' })"
+		if (![string]::IsNullOrWhiteSpace($existing.Message)) {
+			Write-Host "  response:  $($existing.Message)"
+		}
+		Write-Host ""
+		Write-Host "Reusing the existing server. Pass -ForceNew to start another process anyway."
+		Write-Host "Use OFXGGML_TEXT_SERVER_URL=$serverUrl"
+		return
+	}
+}
 
 $arguments = @(
 	"-m", $ModelPath,
@@ -98,14 +173,16 @@ if ($NoCudaGraphs) {
 }
 
 Write-Host "Starting llama-server"
-Write-Host "  exe:    $ServerExe"
-Write-Host "  model:  $ModelPath"
-Write-Host "  url:    http://$HostName`:$Port"
-Write-Host "  ngl:    $GpuLayers"
-Write-Host "  ctx:    $ContextSize"
-Write-Host "  mode:   $(if ($Detached) { 'detached' } else { 'foreground' })"
+Write-Host "  exe:       $ServerExe"
+Write-Host "  model:     $ModelPath"
+Write-Host "  url:       $serverUrl"
+Write-Host "  backend:   llama.cpp auto"
+Write-Host "  ngl:       $GpuLayers"
+Write-Host "  ctx:       $ContextSize"
+Write-Host "  cudaGraph: $(if ($NoCudaGraphs) { 'off' } else { 'on' })"
+Write-Host "  mode:      $(if ($Detached) { 'detached' } else { 'foreground' })"
 if (![string]::IsNullOrWhiteSpace($LogDir)) {
-	Write-Host "  logs:   $LogDir"
+	Write-Host "  logs:      $LogDir"
 }
 Write-Host ""
 Write-Host ("`"$ServerExe`" " + (Join-ProcessArguments $arguments))
@@ -131,13 +208,25 @@ if ($Detached) {
 	$process = Start-Process @startArgs
 	Write-Host ""
 	Write-Host "llama-server started in the background (PID $($process.Id))."
-	Write-Host "Use OFXGGML_TEXT_SERVER_URL=http://$HostName`:$Port"
+	Write-Host "Use OFXGGML_TEXT_SERVER_URL=$serverUrl"
 	if (![string]::IsNullOrWhiteSpace($LogDir)) {
 		Write-Host "Logs are in $LogDir"
+	}
+	if (!$NoHealthCheck) {
+		Write-Host "Waiting for llama-server health..."
+		$health = Wait-LlamaServer $serverUrl $StartupTimeoutSeconds
+		if ($health.Ready) {
+			Write-Host "llama-server is ready at $serverUrl"
+		} elseif ($health.Reachable) {
+			Write-Warning "llama-server is reachable but not ready yet (HTTP $($health.StatusCode))."
+		} else {
+			Write-Warning "llama-server did not become reachable within $StartupTimeoutSeconds seconds."
+		}
 	}
 	Write-Output "OFXGGML_LLAMA_SERVER_PID=$($process.Id)"
 } else {
 	Write-Host ""
 	Write-Host "llama-server is running in this console. Press Ctrl+C to stop it."
+	Write-Host "Use OFXGGML_TEXT_SERVER_URL=$serverUrl"
 	& $ServerExe @arguments
 }
