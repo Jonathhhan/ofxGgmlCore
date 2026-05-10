@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <filesystem>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -539,7 +540,20 @@ void ofApp::runChatWorker() {
 		onTextChunk = cancelOnlyChunk;
 	}
 
+	std::string consolePrompt;
+	for (auto it = request.messages.rbegin(); it != request.messages.rend(); ++it) {
+		if (it->role == ofxGgmlTextRole::User) {
+			consolePrompt = it->content;
+			break;
+		}
+	}
+	std::cout << "\n[ofxGgmlChatExample] prompt\n"
+		<< consolePrompt
+		<< "\n" << std::flush;
 	auto result = generator.generate(request, onTextChunk);
+	std::cout << "\n[ofxGgmlChatExample] output\n"
+		<< (result.success ? result.text : std::string("ERROR: ") + result.error)
+		<< "\n" << std::flush;
 
 	std::lock_guard<std::mutex> lock(stateMutex);
 	if (pendingAssistantIndex < chat.size()) {
