@@ -48,6 +48,28 @@ See `docs/RELEASE_NOTES.md` for release notes, `docs/ROADMAP.md` for future
 work, and `docs/RELEASE_READINESS.md` before tagging again or widening the
 public surface.
 
+## First Run
+
+For the shortest path from a fresh clone to a working local model example, use
+`docs/QUICKSTART.md`.
+
+On Windows, from the openFrameworks `addons` folder:
+
+```powershell
+git clone https://github.com/Jonathhhan/ofxGgml.git
+cd ofxGgml
+.\scripts\setup-ggml.bat
+.\scripts\build-llama-server.bat
+.\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
+.\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
+.\scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
+```
+
+Plain `.\scripts\build-llama-server.bat` auto-enables available local backends,
+including CUDA when it is installed. Use `-CpuOnly` or explicit switches such as
+`-Cuda` when you want to force the build plan. Put models in `addons\models`,
+`ofxGgml\models`, or pass `-Model` explicitly as shown above.
+
 ## Setup Direction
 
 The addon does not vendor large generated binaries by default. Build scripts

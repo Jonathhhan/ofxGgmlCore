@@ -38,7 +38,7 @@ if ((Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
 	$exampleExeExists = $false
 	Write-Warning "Chat example executable was not found: $exampleExe"
 } else {
-	throw "Chat example executable was not found: $exampleExe. Build it first with scripts\build-chat-example.bat."
+	throw "Chat example executable was not found: $exampleExe. Run scripts\run-chat-example.bat -Build or scripts\build-chat-example.bat first."
 }
 
 $LlamaCli = Normalize-OfxGgmlPathText $LlamaCli
@@ -77,7 +77,7 @@ if ($Backend -ieq "server") {
 			-ServerUrl $ServerUrl `
 			-Model $Model `
 			-LogDir (Join-Path $addonRoot "build\llama-server") `
-			-MissingModelWarning "No GGUF model found. Start llama-server manually or pass -Model." `
+			-MissingModelWarning "No GGUF model found. Put one under addons\models or pass -Model C:\path\to\model.gguf." `
 			-StartMessage "llama-server is not responding; starting bundled server" `
 			-NoAutoServer:$NoAutoServer
 	}

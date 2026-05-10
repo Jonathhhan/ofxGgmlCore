@@ -7,6 +7,11 @@
 ## v1.0.1
 
 - Patch release metadata to make `1.0.1` the active release target.
+- Added `docs/QUICKSTART.md` with a direct clone/setup/run path for text, chat,
+  and embedding examples.
+- Added a short first-run command sequence to the README.
+- Clarified run-script errors and model hints so missing example builds or GGUF
+  files point to the next useful command.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 

@@ -36,7 +36,7 @@ if ((Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
 	$exampleExeExists = $false
 	Write-Warning "Embedding example executable was not found: $exampleExe"
 } else {
-	throw "Embedding example executable was not found: $exampleExe. Build it first with scripts\build-embedding-example.bat."
+	throw "Embedding example executable was not found: $exampleExe. Run scripts\run-embedding-example.bat -Build or scripts\build-embedding-example.bat first."
 }
 
 $Model = Normalize-OfxGgmlPathText $Model
@@ -79,7 +79,7 @@ Start-OfxGgmlBundledLlamaServerIfNeeded `
 	-ServerUrl $ServerUrl `
 	-Model $Model `
 	-LogDir (Join-Path $addonRoot "build\llama-embedding-server") `
-	-MissingModelWarning "No GGUF model found. Start an embedding llama-server manually or pass -Model." `
+	-MissingModelWarning "No GGUF model found. Put an embedding GGUF under addons\models or pass -Model C:\path\to\embedding-model.gguf." `
 	-StartMessage "embedding llama-server is not responding; starting bundled server" `
 	-NoAutoServer:$NoAutoServer `
 	-Embeddings
