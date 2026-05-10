@@ -15,6 +15,8 @@ copyable starting points, not as one big application.
 Run `scripts\doctor.bat` first when something feels unclear. It reports missing
 tools, addon neighbors, runtime files, models, built examples, and reachable
 servers.
+For a fresh checkout, `scripts\first-run.bat` runs setup, builds llama.cpp
+tools, and then runs doctor.
 
 ## Build And Run
 

@@ -59,8 +59,7 @@ On Windows, from the openFrameworks `addons` folder:
 ```powershell
 git clone https://github.com/Jonathhhan/ofxGgml.git
 cd ofxGgml
-.\scripts\setup-ggml.bat
-.\scripts\build-llama-server.bat
+.\scripts\first-run.bat
 .\scripts\doctor.bat
 .\scripts\run-simple-example.bat -Build
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
@@ -68,10 +67,11 @@ cd ofxGgml
 .\scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
 ```
 
-Plain `.\scripts\build-llama-server.bat` auto-enables available local backends,
-including CUDA when it is installed. Use `-CpuOnly` or explicit switches such as
-`-Cuda` when you want to force the build plan. Put models in `addons\models`,
-`ofxGgml\models`, or pass `-Model` explicitly as shown above.
+Plain `.\scripts\first-run.bat` runs ggml setup, builds the llama.cpp tools, and
+then runs doctor. It auto-enables available local backends, including CUDA when
+it is installed. Use `-CpuOnly` or explicit switches such as `-Cuda` when you
+want to force the build plan. Put models in `addons\models`, `ofxGgml\models`,
+or pass `-Model` explicitly as shown above.
 Run `.\scripts\doctor.bat` any time to check local tools, addon neighbors,
 runtime files, models, and server reachability.
 
@@ -88,6 +88,9 @@ libs/ggml/lib
 from the pinned upstream ggml `v0.11.0` revision.
 
 ```powershell
+.\scripts\first-run.bat
+.\scripts\first-run.bat -DryRun
+.\scripts\first-run.bat -Cuda -StopRunningRuntime
 .\scripts\setup-ggml.ps1
 .\scripts\setup-ggml.bat
 .\scripts\setup-ggml.ps1 -CpuOnly

@@ -5,6 +5,7 @@ param(
 	[switch]$SkipSetupDryRun,
 	[switch]$SkipProjectRepair,
 	[switch]$SkipLaunchDryRun,
+	[switch]$SkipFirstRunDryRun,
 	[switch]$SkipDoctor,
 	[switch]$SkipArtifactHygiene
 )
@@ -67,6 +68,17 @@ if (!$SkipLaunchDryRun) {
 		-Parameters @{
 			Configuration = $Configuration
 			Platform = $Platform
+		}
+}
+
+if (!$SkipFirstRunDryRun) {
+	Invoke-CheckedScript `
+		-Label "Checking first-run dry-run" `
+		-ScriptPath (Join-Path $scriptRoot "first-run.ps1") `
+		-Parameters @{
+			DryRun = $true
+			CpuOnly = $true
+			SkipDoctor = $true
 		}
 }
 

@@ -35,7 +35,36 @@ git clone https://github.com/Jonathhhan/ofxGgml.git
 cd ofxGgml
 ```
 
-## 3. Build ggml
+## 3. Run First-Run Setup
+
+The shortest setup command builds ggml, builds llama.cpp tools, and runs the
+doctor report:
+
+```powershell
+.\scripts\first-run.bat
+```
+
+Preview the plan without cloning, cleaning, configuring, or compiling:
+
+```powershell
+.\scripts\first-run.bat -DryRun
+```
+
+Use backend switches when you want to force a specific plan:
+
+```powershell
+.\scripts\first-run.bat -Cuda
+.\scripts\first-run.bat -CpuOnly
+.\scripts\first-run.bat -Cuda -StopRunningRuntime
+```
+
+On macOS/Linux:
+
+```sh
+./scripts/first-run.sh
+```
+
+## 4. Build ggml Manually
 
 Default setup uses `-Auto`, which enables only locally available backends and
 falls back to CPU when GPU SDKs are missing.
@@ -58,7 +87,7 @@ On macOS/Linux:
 ./scripts/setup-ggml.sh
 ```
 
-## 4. Build llama.cpp Tools
+## 5. Build llama.cpp Tools Manually
 
 The text, chat, and embedding examples use a warm `llama-server` by default.
 Build it once:
@@ -89,7 +118,7 @@ Warnings are meant to be actionable. For example, a missing model warning means
 you can either place a GGUF in `addons/models` or pass `-Model` to the run
 script.
 
-## 5. Run Simple
+## 6. Run Simple
 
 ```powershell
 .\scripts\run-simple-example.bat -Build
@@ -98,7 +127,7 @@ script.
 The simple example verifies runtime setup, backend selection, device reporting,
 and a tiny graph without requiring a model or server.
 
-## 6. Run Text
+## 7. Run Text
 
 ```powershell
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
@@ -108,7 +137,7 @@ The launcher builds the example, starts `llama-server` on `127.0.0.1:8080` if
 needed, and opens the openFrameworks example. Use the editable prompt field in
 the UI, or press `R` to run again.
 
-## 7. Run Chat
+## 8. Run Chat
 
 ```powershell
 .\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
@@ -117,7 +146,7 @@ the UI, or press `R` to run again.
 Chat uses the same text server on port `8080`. If the server is already healthy,
 the launcher reuses it instead of starting a duplicate.
 
-## 8. Run Embeddings
+## 9. Run Embeddings
 
 Use an embedding-tuned GGUF model for meaningful vectors:
 
@@ -128,7 +157,7 @@ Use an embedding-tuned GGUF model for meaningful vectors:
 The embedding launcher starts a dedicated `llama-server --embeddings` process on
 port `8081`, because embedding mode and chat mode should be separate.
 
-## 9. Sanity Checks
+## 10. Sanity Checks
 
 Fast validation:
 
