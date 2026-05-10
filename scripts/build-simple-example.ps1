@@ -2,7 +2,8 @@ param(
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
 	[string]$Example = "ofxGgmlSimpleExample",
-	[switch]$Clean
+	[switch]$Clean,
+	[switch]$RepairOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -440,6 +441,10 @@ if (Test-WindowsHost) {
 	$addonIncludeDirs = Get-AddonIncludeDirectories
 	Repair-VisualStudioProjectFile -Path $project -AddonDefines $addonDefines -AddonIncludeDirs $addonIncludeDirs
 	Repair-VisualStudioProjectFile -Path "$project.filters"
+	if ($RepairOnly) {
+		Write-Step "Repair-only project metadata check completed for $Example"
+		return
+	}
 	$msbuild = Get-MsBuild
 	if ([string]::IsNullOrWhiteSpace($msbuild)) {
 		throw "MSBuild.exe was not found."

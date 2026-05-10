@@ -163,4 +163,5 @@ layer.
 10. Done: add llama-server text transport with true streaming/cancel support.
 11. Done: add an interactive chat example.
 12. Done: add embedding runner, server API, and embedding similarity example.
-13. Next: add generated-project repair coverage for multiple examples.
+13. Done: add generated-project repair coverage for multiple examples.
+14. Next: tighten example launch scripts and model/server discovery consistency.

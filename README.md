@@ -133,6 +133,16 @@ installed beside this addon and regenerate the project files if `addons.make`
 changes are not picked up by your IDE. The Windows build helper repairs stale
 generated projects enough for local smoke builds.
 
+Check generated Visual Studio project repair without running a full build:
+
+```bat
+scripts\test-example-project-repair.bat
+```
+
+This runs the repair pass for Simple, Text, Chat, and Embedding examples, then
+verifies that stale generated dependency sources are absent and required addon
+sources/includes are present.
+
 The simple example reports the selected runtime backend, enumerates available
 devices, and runs a tiny F32 add graph as a smoke test.
 
