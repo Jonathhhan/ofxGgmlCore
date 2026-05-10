@@ -21,6 +21,8 @@
   fallback path.
 - Added launch dry-run coverage for the standalone `llama-embedding` runner.
 - Added generated-artifact hygiene checks to local validation.
+- Updated the roadmap and core contract to make `v2.0.0-rewrite.1` a final
+  confidence-pass checkpoint rather than an open-ended refactor bucket.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.

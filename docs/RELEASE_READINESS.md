@@ -91,7 +91,7 @@ Visual Studio project integration, not addon compile errors.
 
 ## Tag Gate
 
-Before creating the first rewrite tag:
+Before creating a rewrite checkpoint tag:
 
 - `main` is clean after validation.
 - README setup and validation commands match the actual scripts.

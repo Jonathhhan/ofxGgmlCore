@@ -11,6 +11,9 @@ Target: `v2.0.0-rewrite.1`
 Purpose: stabilize the tagged rewrite by improving confidence and ergonomics
 without widening the core surface.
 
+Status: ready for a final release confidence pass. Do not widen the public API
+before this checkpoint unless a blocking validation issue requires it.
+
 ## Workstreams
 
 ### 1. Public API Stability
@@ -53,13 +56,15 @@ without widening the core surface.
   `getDevices()` for openFrameworks-style getter naming.
 - Done after `v2.0.0-rewrite.0`: review every public header for naming
   consistency and avoidable churn.
-- Add focused tests before changing any public type.
-- Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.
-- Document every intentional breaking change in `docs/RELEASE_NOTES.md`.
+- Ongoing rule: add focused tests before changing any public type.
+- Ongoing rule: keep `ofxGgml.h` as a small umbrella; avoid workflow-specific
+  includes.
+- Ongoing rule: document every intentional breaking change in
+  `docs/RELEASE_NOTES.md`.
 
 ### 2. Build And Backend Confidence
 
-- Keep CPU as the required baseline.
+- Ongoing rule: keep CPU as the required baseline.
 - Done after `v2.0.0-rewrite.0`: add `setup-ggml -DryRun` and smoke coverage
   for setup plan reporting.
 - Done after `v2.0.0-rewrite.0`: add explicit setup dry-run smoke commands and
@@ -71,21 +76,22 @@ without widening the core surface.
 
 ### 3. Examples
 
-- Keep examples focused: simple runtime, text, chat, embeddings.
+- Ongoing rule: keep examples focused: simple runtime, text, chat, embeddings.
 - Done after `v2.0.0-rewrite.0`: add launch dry-run coverage for the explicit
   text/chat llama.cpp CLI fallback path.
 - Done after `v2.0.0-rewrite.0`: add launch dry-run coverage for the standalone
   `llama-embedding` runner.
-- Improve example UX only when it clarifies the focused workflow.
-- Do not add an all-in-one example to core.
-- Keep `ofxImGui` usage optional to examples, not to the public addon API.
+- Ongoing rule: improve example UX only when it clarifies the focused workflow.
+- Ongoing rule: do not add an all-in-one example to core.
+- Ongoing rule: keep `ofxImGui` usage optional to examples, not to the public
+  addon API.
 
 ### 4. Segmentation Boundary
 
-- Keep SAM3 behind optional scripts and adapter hooks.
-- Add a real openFrameworks segmentation example only after there is a known
-  compatible model and repeatable sample image workflow.
-- Keep `scripts\test-sam3-smoke.*` as the gate until then.
+- Ongoing rule: keep SAM3 behind optional scripts and adapter hooks.
+- Deferred: add a real openFrameworks segmentation example only after there is
+  a known compatible model and repeatable sample image workflow.
+- Ongoing rule: keep `scripts\test-sam3-smoke.*` as the gate until then.
 
 ### 5. Companion Addons
 

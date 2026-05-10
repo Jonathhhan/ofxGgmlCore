@@ -200,4 +200,8 @@ layer.
 27. Done: add standalone public umbrella header compile coverage.
 28. Done: align backend label APIs with openFrameworks-style getter naming.
 29. Done: align public runtime, graph, and tensor getter names with openFrameworks-style naming.
-30. Next: follow `docs/ROADMAP.md` toward `v2.0.0-rewrite.1` without widening core by accident.
+30. Done: add `v2.0.0-rewrite.1` stabilization checks for setup dry-runs,
+    backend setup plans, launch dry-runs, and generated-artifact hygiene without
+    widening core.
+31. Next: run a final release confidence pass, then bump/tag
+    `v2.0.0-rewrite.1` only when the repository is clean.
