@@ -8,7 +8,7 @@ OFXGGML_TEST(text_default_backend_exists) {
 	ofxGgmlTextGenerator generator;
 
 	OFXGGML_REQUIRE(generator.getBackend() != nullptr);
-	OFXGGML_REQUIRE(!generator.getBackend()->backendName().empty());
+	OFXGGML_REQUIRE(!generator.getBackend()->getBackendName().empty());
 }
 
 OFXGGML_TEST(text_unconfigured_backend_reports_error) {
@@ -70,5 +70,5 @@ OFXGGML_TEST(text_set_null_backend_resets_to_bridge) {
 	generator.setBackend(nullptr);
 
 	OFXGGML_REQUIRE(generator.getBackend() != nullptr);
-	OFXGGML_REQUIRE(generator.getBackend()->backendName() == "TextBridge");
+	OFXGGML_REQUIRE(generator.getBackend()->getBackendName() == "TextBridge");
 }

@@ -108,14 +108,14 @@ bool ofxGgmlEmbeddingBridgeBackend::isConfigured() const {
 	return static_cast<bool>(embedCallback);
 }
 
-std::string ofxGgmlEmbeddingBridgeBackend::backendName() const {
+std::string ofxGgmlEmbeddingBridgeBackend::getBackendName() const {
 	return displayName.empty() ? "EmbeddingBridge" : displayName;
 }
 
 ofxGgmlEmbeddingResult ofxGgmlEmbeddingBridgeBackend::embed(
 	const ofxGgmlEmbeddingRequest & request) const {
 	ofxGgmlEmbeddingResult result;
-	result.backendName = backendName();
+	result.backendName = getBackendName();
 	if (!embedCallback) {
 		result.error =
 			"embedding bridge backend is not configured. Attach an embedding "
@@ -126,7 +126,7 @@ ofxGgmlEmbeddingResult ofxGgmlEmbeddingBridgeBackend::embed(
 	const auto started = std::chrono::steady_clock::now();
 	result = embedCallback(request);
 	if (result.backendName.empty()) {
-		result.backendName = backendName();
+		result.backendName = getBackendName();
 	}
 	if (result.elapsedMs <= 0.0f) {
 		result.elapsedMs = std::chrono::duration<float, std::milli>(
@@ -161,14 +161,14 @@ bool ofxGgmlLlamaServerEmbeddingBackend::hasRequestRunner() const {
 	return static_cast<bool>(requestRunner);
 }
 
-std::string ofxGgmlLlamaServerEmbeddingBackend::backendName() const {
+std::string ofxGgmlLlamaServerEmbeddingBackend::getBackendName() const {
 	return displayName.empty() ? "llama-server-embedding" : displayName;
 }
 
 ofxGgmlEmbeddingResult ofxGgmlLlamaServerEmbeddingBackend::embed(
 	const ofxGgmlEmbeddingRequest & request) const {
 	ofxGgmlEmbeddingResult result;
-	result.backendName = backendName();
+	result.backendName = getBackendName();
 
 	if (request.input.empty() && request.inputs.empty()) {
 		result.error = "embedding input is empty";

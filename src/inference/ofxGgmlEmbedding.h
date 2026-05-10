@@ -46,7 +46,7 @@ struct ofxGgmlEmbeddingResult {
 class ofxGgmlEmbeddingBackend {
 public:
 	virtual ~ofxGgmlEmbeddingBackend() = default;
-	virtual std::string backendName() const = 0;
+	virtual std::string getBackendName() const = 0;
 	virtual ofxGgmlEmbeddingResult embed(
 		const ofxGgmlEmbeddingRequest & request) const = 0;
 };
@@ -63,7 +63,7 @@ public:
 	void setEmbedFunction(EmbedFunction embedFunction);
 	bool isConfigured() const;
 
-	std::string backendName() const override;
+	std::string getBackendName() const override;
 	ofxGgmlEmbeddingResult embed(
 		const ofxGgmlEmbeddingRequest & request) const override;
 
@@ -85,7 +85,7 @@ public:
 	void setRequestRunner(ofxGgmlTextServerRunner runner);
 	bool hasRequestRunner() const;
 
-	std::string backendName() const override;
+	std::string getBackendName() const override;
 	ofxGgmlEmbeddingResult embed(
 		const ofxGgmlEmbeddingRequest & request) const override;
 

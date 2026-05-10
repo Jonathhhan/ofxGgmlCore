@@ -52,7 +52,7 @@ public:
 	void setRequestRunner(ofxGgmlTextServerRunner runner);
 	bool hasRequestRunner() const;
 
-	std::string backendName() const override;
+	std::string getBackendName() const override;
 	ofxGgmlTextResult generate(
 		const ofxGgmlTextRequest & request,
 		ofxGgmlTextChunkCallback onChunk = nullptr) const override;

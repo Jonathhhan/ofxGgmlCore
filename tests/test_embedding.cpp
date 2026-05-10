@@ -8,7 +8,7 @@ OFXGGML_TEST(embedding_default_backend_exists) {
 	ofxGgmlEmbeddingGenerator generator;
 
 	OFXGGML_REQUIRE(generator.getBackend() != nullptr);
-	OFXGGML_REQUIRE(!generator.getBackend()->backendName().empty());
+	OFXGGML_REQUIRE(!generator.getBackend()->getBackendName().empty());
 }
 
 OFXGGML_TEST(embedding_unconfigured_backend_reports_error) {

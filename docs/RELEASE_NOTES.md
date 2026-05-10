@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Breaking: renamed public backend label accessors from `backendName()` to
+  `getBackendName()` to better match openFrameworks getter style.
 - Added standalone compile coverage for each public umbrella header so hidden
   include dependencies are caught before API refactors.
 - Renamed private inference-layer members away from `m_` prefixes to better

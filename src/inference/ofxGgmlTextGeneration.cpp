@@ -19,7 +19,7 @@ bool ofxGgmlTextBridgeBackend::isConfigured() const {
 	return static_cast<bool>(generateCallback);
 }
 
-std::string ofxGgmlTextBridgeBackend::backendName() const {
+std::string ofxGgmlTextBridgeBackend::getBackendName() const {
 	return displayName.empty() ? "TextBridge" : displayName;
 }
 
@@ -27,7 +27,7 @@ ofxGgmlTextResult ofxGgmlTextBridgeBackend::generate(
 	const ofxGgmlTextRequest & request,
 	ofxGgmlTextChunkCallback onChunk) const {
 	ofxGgmlTextResult result;
-	result.backendName = backendName();
+	result.backendName = getBackendName();
 	if (!generateCallback) {
 		result.error =
 			"text bridge backend is not configured. Attach a text generation "
@@ -38,7 +38,7 @@ ofxGgmlTextResult ofxGgmlTextBridgeBackend::generate(
 	const auto started = std::chrono::steady_clock::now();
 	result = generateCallback(request, onChunk);
 	if (result.backendName.empty()) {
-		result.backendName = backendName();
+		result.backendName = getBackendName();
 	}
 	if (result.elapsedMs <= 0.0f) {
 		result.elapsedMs = std::chrono::duration<float, std::milli>(

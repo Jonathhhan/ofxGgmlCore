@@ -10,7 +10,7 @@ OFXGGML_TEST(segmentation_default_backend_exists) {
 	ofxGgmlSegmentationInference segmentation;
 
 	OFXGGML_REQUIRE(segmentation.getBackend() != nullptr);
-	OFXGGML_REQUIRE(!segmentation.getBackend()->backendName().empty());
+	OFXGGML_REQUIRE(!segmentation.getBackend()->getBackendName().empty());
 }
 
 OFXGGML_TEST(segmentation_unconfigured_backend_reports_error) {

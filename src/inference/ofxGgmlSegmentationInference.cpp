@@ -19,14 +19,14 @@ bool ofxGgmlSegmentationBridgeBackend::isConfigured() const {
 	return static_cast<bool>(segmentCallback);
 }
 
-std::string ofxGgmlSegmentationBridgeBackend::backendName() const {
+std::string ofxGgmlSegmentationBridgeBackend::getBackendName() const {
 	return displayName.empty() ? "SegmentationBridge" : displayName;
 }
 
 ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 	const ofxGgmlSegmentationRequest & request) const {
 	ofxGgmlSegmentationResult result;
-	result.backendName = backendName();
+	result.backendName = getBackendName();
 	result.imagePath = request.imagePath;
 	if (!segmentCallback) {
 		result.error =
@@ -38,7 +38,7 @@ ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 	const auto started = std::chrono::steady_clock::now();
 	result = segmentCallback(request);
 	if (result.backendName.empty()) {
-		result.backendName = backendName();
+		result.backendName = getBackendName();
 	}
 	if (result.imagePath.empty()) {
 		result.imagePath = request.imagePath;

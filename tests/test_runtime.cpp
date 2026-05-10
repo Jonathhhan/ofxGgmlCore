@@ -10,7 +10,7 @@ OFXGGML_TEST(runtime_starts_uninitialized) {
 
 	OFXGGML_REQUIRE(!runtime.isReady());
 	OFXGGML_REQUIRE(runtime.state() == ofxGgmlRuntimeState::Uninitialized);
-	OFXGGML_REQUIRE(runtime.backendName().empty());
+	OFXGGML_REQUIRE(runtime.getBackendName().empty());
 }
 
 OFXGGML_TEST(runtime_setup_auto_falls_back_to_cpu_backend) {
@@ -20,7 +20,7 @@ OFXGGML_TEST(runtime_setup_auto_falls_back_to_cpu_backend) {
 	OFXGGML_REQUIRE(result.isOk());
 	OFXGGML_REQUIRE(runtime.isReady());
 	OFXGGML_REQUIRE(runtime.state() == ofxGgmlRuntimeState::Ready);
-	OFXGGML_REQUIRE(runtime.backendName() == "CPU");
+	OFXGGML_REQUIRE(runtime.getBackendName() == "CPU");
 
 	auto devices = runtime.listDevices();
 	OFXGGML_REQUIRE(devices.size() == 1);
@@ -36,7 +36,7 @@ OFXGGML_TEST(runtime_setup_explicit_cpu_backend) {
 	auto result = runtime.setup(settings);
 
 	OFXGGML_REQUIRE(result.isOk());
-	OFXGGML_REQUIRE(runtime.backendName() == "CPU");
+	OFXGGML_REQUIRE(runtime.getBackendName() == "CPU");
 }
 
 OFXGGML_TEST(runtime_requested_gpu_falls_back_or_errors) {
@@ -52,7 +52,7 @@ OFXGGML_TEST(runtime_requested_gpu_falls_back_or_errors) {
 		fallbackSettings.allowCpuFallback = true;
 
 		OFXGGML_REQUIRE(fallbackRuntime.setup(fallbackSettings).isOk());
-		OFXGGML_REQUIRE(fallbackRuntime.backendName() == "CPU");
+		OFXGGML_REQUIRE(fallbackRuntime.getBackendName() == "CPU");
 
 		ofxGgmlRuntime strictRuntime;
 		ofxGgmlRuntimeSettings strictSettings;
@@ -141,7 +141,7 @@ OFXGGML_TEST(runtime_close_resets_state) {
 
 	OFXGGML_REQUIRE(!runtime.isReady());
 	OFXGGML_REQUIRE(runtime.state() == ofxGgmlRuntimeState::Uninitialized);
-	OFXGGML_REQUIRE(runtime.backendName().empty());
+	OFXGGML_REQUIRE(runtime.getBackendName().empty());
 }
 
 OFXGGML_TEST(runtime_move_assignment_releases_replaced_handles) {

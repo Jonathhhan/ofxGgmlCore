@@ -73,7 +73,7 @@ using ofxGgmlTextChunkCallback = std::function<bool(const std::string &)>;
 class ofxGgmlTextBackend {
 public:
 	virtual ~ofxGgmlTextBackend() = default;
-	virtual std::string backendName() const = 0;
+	virtual std::string getBackendName() const = 0;
 	virtual ofxGgmlTextResult generate(
 		const ofxGgmlTextRequest & request,
 		ofxGgmlTextChunkCallback onChunk = nullptr) const = 0;
@@ -92,7 +92,7 @@ public:
 	void setGenerateFunction(GenerateFunction generateFunction);
 	bool isConfigured() const;
 
-	std::string backendName() const override;
+	std::string getBackendName() const override;
 	ofxGgmlTextResult generate(
 		const ofxGgmlTextRequest & request,
 		ofxGgmlTextChunkCallback onChunk = nullptr) const override;

@@ -64,7 +64,7 @@ struct ofxGgmlSegmentationResult {
 class ofxGgmlSegmentationBackend {
 public:
 	virtual ~ofxGgmlSegmentationBackend() = default;
-	virtual std::string backendName() const = 0;
+	virtual std::string getBackendName() const = 0;
 	virtual ofxGgmlSegmentationResult segment(
 		const ofxGgmlSegmentationRequest & request) const = 0;
 };
@@ -81,7 +81,7 @@ public:
 	void setSegmentFunction(SegmentFunction segmentFunction);
 	bool isConfigured() const;
 
-	std::string backendName() const override;
+	std::string getBackendName() const override;
 	ofxGgmlSegmentationResult segment(
 		const ofxGgmlSegmentationRequest & request) const override;
 

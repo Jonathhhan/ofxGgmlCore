@@ -213,7 +213,7 @@ ofxGgmlRuntimeState ofxGgmlRuntime::state() const {
 	return impl ? impl->state : ofxGgmlRuntimeState::Uninitialized;
 }
 
-std::string ofxGgmlRuntime::backendName() const {
+std::string ofxGgmlRuntime::getBackendName() const {
 #if OFXGGML_HAS_GGML
 	if (!impl || !impl->backend) return {};
 	const char * name = ggml_backend_name(impl->backend);

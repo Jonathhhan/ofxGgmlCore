@@ -37,7 +37,7 @@ void ofApp::setup() {
 	auto result = runtime.setup();
 	lines.clear();
 	lines.push_back("ofxGgml rewrite main");
-	lines.push_back(result ? "runtime ready: " + runtime.backendName() : "runtime error: " + result.error().message);
+	lines.push_back(result ? "runtime ready: " + runtime.getBackendName() : "runtime error: " + result.error().message);
 	lines.push_back("preferred backend: Auto");
 	lines.push_back("devices:");
 	for (const auto & device : runtime.listDevices()) {

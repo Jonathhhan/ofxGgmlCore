@@ -44,7 +44,7 @@ public:
 	void setCommandRunner(ofxGgmlTextCommandRunner runner);
 	bool hasCommandRunner() const;
 
-	std::string backendName() const override;
+	std::string getBackendName() const override;
 	ofxGgmlTextResult generate(
 		const ofxGgmlTextRequest & request,
 		ofxGgmlTextChunkCallback onChunk = nullptr) const override;

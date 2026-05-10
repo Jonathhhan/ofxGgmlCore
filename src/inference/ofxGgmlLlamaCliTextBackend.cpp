@@ -463,7 +463,7 @@ bool ofxGgmlLlamaCliTextBackend::hasCommandRunner() const {
 	return static_cast<bool>(commandRunner);
 }
 
-std::string ofxGgmlLlamaCliTextBackend::backendName() const {
+std::string ofxGgmlLlamaCliTextBackend::getBackendName() const {
 	return displayName.empty() ? "llama.cpp CLI" : displayName;
 }
 
@@ -471,7 +471,7 @@ ofxGgmlTextResult ofxGgmlLlamaCliTextBackend::generate(
 	const ofxGgmlTextRequest & request,
 	ofxGgmlTextChunkCallback onChunk) const {
 	ofxGgmlTextResult result;
-	result.backendName = backendName();
+	result.backendName = getBackendName();
 
 	const std::string prompt = composePrompt(request);
 	if (request.settings.executablePath.empty()) {

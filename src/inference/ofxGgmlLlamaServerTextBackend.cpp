@@ -332,7 +332,7 @@ bool ofxGgmlLlamaServerTextBackend::hasRequestRunner() const {
 	return static_cast<bool>(requestRunner);
 }
 
-std::string ofxGgmlLlamaServerTextBackend::backendName() const {
+std::string ofxGgmlLlamaServerTextBackend::getBackendName() const {
 	return displayName.empty() ? "llama-server" : displayName;
 }
 
@@ -340,7 +340,7 @@ ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
 	const ofxGgmlTextRequest & request,
 	ofxGgmlTextChunkCallback onChunk) const {
 	ofxGgmlTextResult result;
-	result.backendName = backendName();
+	result.backendName = getBackendName();
 
 	const std::string prompt = composePrompt(request);
 	if (prompt.empty()) {
