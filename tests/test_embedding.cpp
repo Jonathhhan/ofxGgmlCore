@@ -1,5 +1,5 @@
 #include "test_harness.h"
-#include "../src/ofxGgmlText.h"
+#include "../src/ofxGgmlEmbedding.h"
 
 #include <memory>
 #include <string>

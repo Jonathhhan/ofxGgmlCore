@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxGgmlText.h"
+#include "ofxGgmlEmbedding.h"
 #include "ofxImGui.h"
 
 #include <mutex>

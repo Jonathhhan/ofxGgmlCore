@@ -28,6 +28,7 @@ Everything else should become a companion addon or an optional layer.
 | --- | --- | --- |
 | Core | `ofxGgmlCore.h` | runtime, tensors, graphs, models, results |
 | Text | `ofxGgmlText.h` | small text request/result API with pluggable llama.cpp / server adapters |
+| Embeddings | `ofxGgmlEmbedding.h` | embedding requests, llama-server adapter, vector helpers |
 | Optional companions | separate addons | vision, speech, SAM, assistants, workflows |
 
 The text layer has explicit llama.cpp adapters for a warm `llama-server` and a
