@@ -16,6 +16,8 @@
   server/example processes.
 - Added `build-llama-server -StopRunningRuntime` for explicitly stopping local
   addon llama/example processes before reinstalling runtime DLLs.
+- Added `scripts/doctor.*` to report first-run readiness for tools,
+  dependencies, models, examples, and local llama-server endpoints.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 

@@ -77,6 +77,16 @@ This installs `llama-server`, `llama-cli`, and `llama-embedding` under:
 libs/llama/bin
 ```
 
+Check the local install before opening examples:
+
+```powershell
+.\scripts\doctor.bat
+```
+
+Warnings are meant to be actionable. For example, a missing model warning means
+you can either place a GGUF in `addons/models` or pass `-Model` to the run
+script.
+
 ## 5. Run Text
 
 ```powershell

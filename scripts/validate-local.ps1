@@ -5,6 +5,7 @@ param(
 	[switch]$SkipSetupDryRun,
 	[switch]$SkipProjectRepair,
 	[switch]$SkipLaunchDryRun,
+	[switch]$SkipDoctor,
 	[switch]$SkipArtifactHygiene
 )
 
@@ -66,6 +67,15 @@ if (!$SkipLaunchDryRun) {
 		-Parameters @{
 			Configuration = $Configuration
 			Platform = $Platform
+		}
+}
+
+if (!$SkipDoctor) {
+	Invoke-CheckedScript `
+		-Label "Checking local doctor" `
+		-ScriptPath (Join-Path $scriptRoot "doctor.ps1") `
+		-Parameters @{
+			NoServerProbe = $true
 		}
 }
 

@@ -60,6 +60,7 @@ git clone https://github.com/Jonathhhan/ofxGgml.git
 cd ofxGgml
 .\scripts\setup-ggml.bat
 .\scripts\build-llama-server.bat
+.\scripts\doctor.bat
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
@@ -69,6 +70,8 @@ Plain `.\scripts\build-llama-server.bat` auto-enables available local backends,
 including CUDA when it is installed. Use `-CpuOnly` or explicit switches such as
 `-Cuda` when you want to force the build plan. Put models in `addons\models`,
 `ofxGgml\models`, or pass `-Model` explicitly as shown above.
+Run `.\scripts\doctor.bat` any time to check local tools, addon neighbors,
+runtime files, models, and server reachability.
 
 ## Setup Direction
 
