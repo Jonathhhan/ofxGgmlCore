@@ -95,28 +95,28 @@ std::vector<float> parseNumberArray(
 ofxGgmlEmbeddingBridgeBackend::ofxGgmlEmbeddingBridgeBackend(
 	EmbedFunction embedFunction,
 	std::string displayName)
-	: m_embedFunction(std::move(embedFunction))
-	, m_displayName(std::move(displayName)) {
+	: embedCallback(std::move(embedFunction))
+	, displayName(std::move(displayName)) {
 }
 
 void ofxGgmlEmbeddingBridgeBackend::setEmbedFunction(
 	EmbedFunction embedFunction) {
-	m_embedFunction = std::move(embedFunction);
+	embedCallback = std::move(embedFunction);
 }
 
 bool ofxGgmlEmbeddingBridgeBackend::isConfigured() const {
-	return static_cast<bool>(m_embedFunction);
+	return static_cast<bool>(embedCallback);
 }
 
 std::string ofxGgmlEmbeddingBridgeBackend::backendName() const {
-	return m_displayName.empty() ? "EmbeddingBridge" : m_displayName;
+	return displayName.empty() ? "EmbeddingBridge" : displayName;
 }
 
 ofxGgmlEmbeddingResult ofxGgmlEmbeddingBridgeBackend::embed(
 	const ofxGgmlEmbeddingRequest & request) const {
 	ofxGgmlEmbeddingResult result;
 	result.backendName = backendName();
-	if (!m_embedFunction) {
+	if (!embedCallback) {
 		result.error =
 			"embedding bridge backend is not configured. Attach an embedding "
 			"adapter callback before calling embed().";
@@ -124,7 +124,7 @@ ofxGgmlEmbeddingResult ofxGgmlEmbeddingBridgeBackend::embed(
 	}
 
 	const auto started = std::chrono::steady_clock::now();
-	result = m_embedFunction(request);
+	result = embedCallback(request);
 	if (result.backendName.empty()) {
 		result.backendName = backendName();
 	}
@@ -139,30 +139,30 @@ ofxGgmlLlamaServerEmbeddingBackend::ofxGgmlLlamaServerEmbeddingBackend(
 	std::string serverUrl,
 	ofxGgmlTextServerRunner runner,
 	std::string displayName)
-	: m_serverUrl(std::move(serverUrl))
-	, m_runner(runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest)
-	, m_displayName(std::move(displayName)) {
+	: serverUrl(std::move(serverUrl))
+	, requestRunner(runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest)
+	, displayName(std::move(displayName)) {
 }
 
 void ofxGgmlLlamaServerEmbeddingBackend::setServerUrl(std::string serverUrl) {
-	m_serverUrl = std::move(serverUrl);
+	this->serverUrl = std::move(serverUrl);
 }
 
 const std::string & ofxGgmlLlamaServerEmbeddingBackend::getServerUrl() const {
-	return m_serverUrl;
+	return serverUrl;
 }
 
 void ofxGgmlLlamaServerEmbeddingBackend::setRequestRunner(
 	ofxGgmlTextServerRunner runner) {
-	m_runner = runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest;
+	requestRunner = runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest;
 }
 
 bool ofxGgmlLlamaServerEmbeddingBackend::hasRequestRunner() const {
-	return static_cast<bool>(m_runner);
+	return static_cast<bool>(requestRunner);
 }
 
 std::string ofxGgmlLlamaServerEmbeddingBackend::backendName() const {
-	return m_displayName.empty() ? "llama-server-embedding" : m_displayName;
+	return displayName.empty() ? "llama-server-embedding" : displayName;
 }
 
 ofxGgmlEmbeddingResult ofxGgmlLlamaServerEmbeddingBackend::embed(
@@ -176,7 +176,7 @@ ofxGgmlEmbeddingResult ofxGgmlLlamaServerEmbeddingBackend::embed(
 	}
 
 	const std::string configuredUrl = request.settings.serverUrl.empty()
-		? m_serverUrl
+		? serverUrl
 		: request.settings.serverUrl;
 	const std::string requestUrl = normalizeServerUrl(configuredUrl);
 	if (requestUrl.empty()) {
@@ -191,7 +191,7 @@ ofxGgmlEmbeddingResult ofxGgmlLlamaServerEmbeddingBackend::embed(
 		request,
 		request.settings.serverModel);
 	serverRequest.timeoutSeconds = request.settings.timeoutSeconds;
-	const ofxGgmlTextServerResponse response = m_runner(serverRequest);
+	const ofxGgmlTextServerResponse response = requestRunner(serverRequest);
 	result.elapsedMs = std::chrono::duration<float, std::milli>(
 		std::chrono::steady_clock::now() - started).count();
 	result.rawOutput = response.body;
@@ -305,7 +305,7 @@ ofxGgmlLlamaServerEmbeddingBackend::extractEmbeddingsFromResponse(
 }
 
 ofxGgmlEmbeddingGenerator::ofxGgmlEmbeddingGenerator()
-	: m_backend(createEmbeddingBridgeBackend()) {
+	: backendPtr(createEmbeddingBridgeBackend()) {
 }
 
 std::shared_ptr<ofxGgmlEmbeddingBackend>
@@ -319,20 +319,20 @@ ofxGgmlEmbeddingGenerator::createEmbeddingBridgeBackend(
 
 void ofxGgmlEmbeddingGenerator::setBackend(
 	std::shared_ptr<ofxGgmlEmbeddingBackend> backend) {
-	m_backend = backend
+	backendPtr = backend
 		? std::move(backend)
 		: createEmbeddingBridgeBackend();
 }
 
 std::shared_ptr<ofxGgmlEmbeddingBackend>
 ofxGgmlEmbeddingGenerator::getBackend() const {
-	return m_backend;
+	return backendPtr;
 }
 
 ofxGgmlEmbeddingResult ofxGgmlEmbeddingGenerator::embed(
 	const ofxGgmlEmbeddingRequest & request) const {
-	const auto backend = m_backend
-		? m_backend
+	const auto backend = backendPtr
+		? backendPtr
 		: createEmbeddingBridgeBackend();
 	return backend->embed(request);
 }

@@ -68,8 +68,8 @@ public:
 		const ofxGgmlEmbeddingRequest & request) const override;
 
 private:
-	EmbedFunction m_embedFunction;
-	std::string m_displayName;
+	EmbedFunction embedCallback;
+	std::string displayName;
 };
 
 class ofxGgmlLlamaServerEmbeddingBackend : public ofxGgmlEmbeddingBackend {
@@ -97,9 +97,9 @@ public:
 		const std::string & responseBody);
 
 private:
-	std::string m_serverUrl;
-	ofxGgmlTextServerRunner m_runner;
-	std::string m_displayName;
+	std::string serverUrl;
+	ofxGgmlTextServerRunner requestRunner;
+	std::string displayName;
 };
 
 class ofxGgmlEmbeddingGenerator {
@@ -120,7 +120,7 @@ public:
 		const ofxGgmlEmbeddingSettings & settings = {}) const;
 
 private:
-	std::shared_ptr<ofxGgmlEmbeddingBackend> m_backend;
+	std::shared_ptr<ofxGgmlEmbeddingBackend> backendPtr;
 };
 
 namespace ofxGgmlEmbeddingUtils {

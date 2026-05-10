@@ -68,7 +68,7 @@ public:
 		const ofxGgmlTextServerRequest & request);
 
 private:
-	std::string m_serverUrl;
-	ofxGgmlTextServerRunner m_runner;
-	std::string m_displayName;
+	std::string serverUrl;
+	ofxGgmlTextServerRunner requestRunner;
+	std::string displayName;
 };

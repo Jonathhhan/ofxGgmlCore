@@ -6,21 +6,21 @@
 ofxGgmlSegmentationBridgeBackend::ofxGgmlSegmentationBridgeBackend(
 	SegmentFunction segmentFunction,
 	std::string displayName)
-	: m_segmentFunction(std::move(segmentFunction))
-	, m_displayName(std::move(displayName)) {
+	: segmentCallback(std::move(segmentFunction))
+	, displayName(std::move(displayName)) {
 }
 
 void ofxGgmlSegmentationBridgeBackend::setSegmentFunction(
 	SegmentFunction segmentFunction) {
-	m_segmentFunction = std::move(segmentFunction);
+	segmentCallback = std::move(segmentFunction);
 }
 
 bool ofxGgmlSegmentationBridgeBackend::isConfigured() const {
-	return static_cast<bool>(m_segmentFunction);
+	return static_cast<bool>(segmentCallback);
 }
 
 std::string ofxGgmlSegmentationBridgeBackend::backendName() const {
-	return m_displayName.empty() ? "SegmentationBridge" : m_displayName;
+	return displayName.empty() ? "SegmentationBridge" : displayName;
 }
 
 ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
@@ -28,7 +28,7 @@ ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 	ofxGgmlSegmentationResult result;
 	result.backendName = backendName();
 	result.imagePath = request.imagePath;
-	if (!m_segmentFunction) {
+	if (!segmentCallback) {
 		result.error =
 			"segmentation bridge backend is not configured. Attach a "
 			"segmentation adapter callback before calling segment().";
@@ -36,7 +36,7 @@ ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 	}
 
 	const auto started = std::chrono::steady_clock::now();
-	result = m_segmentFunction(request);
+	result = segmentCallback(request);
 	if (result.backendName.empty()) {
 		result.backendName = backendName();
 	}
@@ -51,7 +51,7 @@ ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 }
 
 ofxGgmlSegmentationInference::ofxGgmlSegmentationInference()
-	: m_backend(createSegmentationBridgeBackend()) {
+	: backendPtr(createSegmentationBridgeBackend()) {
 }
 
 std::shared_ptr<ofxGgmlSegmentationBackend>
@@ -65,20 +65,20 @@ ofxGgmlSegmentationInference::createSegmentationBridgeBackend(
 
 void ofxGgmlSegmentationInference::setBackend(
 	std::shared_ptr<ofxGgmlSegmentationBackend> backend) {
-	m_backend = backend
+	backendPtr = backend
 		? std::move(backend)
 		: createSegmentationBridgeBackend();
 }
 
 std::shared_ptr<ofxGgmlSegmentationBackend>
 ofxGgmlSegmentationInference::getBackend() const {
-	return m_backend;
+	return backendPtr;
 }
 
 ofxGgmlSegmentationResult ofxGgmlSegmentationInference::segment(
 	const ofxGgmlSegmentationRequest & request) const {
-	const auto backend = m_backend
-		? m_backend
+	const auto backend = backendPtr
+		? backendPtr
 		: createSegmentationBridgeBackend();
 	return backend->segment(request);
 }

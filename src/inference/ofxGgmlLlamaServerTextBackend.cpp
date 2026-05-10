@@ -310,30 +310,30 @@ ofxGgmlLlamaServerTextBackend::ofxGgmlLlamaServerTextBackend(
 	std::string serverUrl,
 	ofxGgmlTextServerRunner runner,
 	std::string displayName)
-	: m_serverUrl(std::move(serverUrl))
-	, m_runner(runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest)
-	, m_displayName(std::move(displayName)) {
+	: serverUrl(std::move(serverUrl))
+	, requestRunner(runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest)
+	, displayName(std::move(displayName)) {
 }
 
 void ofxGgmlLlamaServerTextBackend::setServerUrl(std::string serverUrl) {
-	m_serverUrl = std::move(serverUrl);
+	this->serverUrl = std::move(serverUrl);
 }
 
 const std::string & ofxGgmlLlamaServerTextBackend::getServerUrl() const {
-	return m_serverUrl;
+	return serverUrl;
 }
 
 void ofxGgmlLlamaServerTextBackend::setRequestRunner(
 	ofxGgmlTextServerRunner runner) {
-	m_runner = runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest;
+	requestRunner = runner ? std::move(runner) : ofxGgmlLlamaServerTextBackend::runRequest;
 }
 
 bool ofxGgmlLlamaServerTextBackend::hasRequestRunner() const {
-	return static_cast<bool>(m_runner);
+	return static_cast<bool>(requestRunner);
 }
 
 std::string ofxGgmlLlamaServerTextBackend::backendName() const {
-	return m_displayName.empty() ? "llama-server" : m_displayName;
+	return displayName.empty() ? "llama-server" : displayName;
 }
 
 ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
@@ -349,7 +349,7 @@ ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
 	}
 
 	const std::string configuredUrl = request.settings.serverUrl.empty()
-		? m_serverUrl
+		? serverUrl
 		: request.settings.serverUrl;
 	const std::string requestUrl = normalizeServerUrl(configuredUrl);
 	if (requestUrl.empty()) {
@@ -371,7 +371,7 @@ ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
 			return !onChunk(std::string());
 		};
 	}
-	const ofxGgmlTextServerResponse response = m_runner(serverRequest);
+	const ofxGgmlTextServerResponse response = requestRunner(serverRequest);
 	result.elapsedMs = std::chrono::duration<float, std::milli>(
 		std::chrono::steady_clock::now() - started).count();
 	result.rawOutput = response.body;

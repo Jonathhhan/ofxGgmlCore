@@ -31,6 +31,8 @@ without widening the core surface.
   and model result checks with the bool-style helpers.
 - Done after `v2.0.0-rewrite.0`: add standalone compile coverage for every
   public umbrella header.
+- Done after `v2.0.0-rewrite.0`: remove `m_` private member prefixes from the
+  inference layer to better match openFrameworks implementation style.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

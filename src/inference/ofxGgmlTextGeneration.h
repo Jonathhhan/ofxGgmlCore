@@ -98,8 +98,8 @@ public:
 		ofxGgmlTextChunkCallback onChunk = nullptr) const override;
 
 private:
-	GenerateFunction m_generateFunction;
-	std::string m_displayName;
+	GenerateFunction generateCallback;
+	std::string displayName;
 };
 
 class ofxGgmlTextGenerator {
@@ -123,5 +123,5 @@ public:
 		ofxGgmlTextChunkCallback onChunk = nullptr) const;
 
 private:
-	std::shared_ptr<ofxGgmlTextBackend> m_backend;
+	std::shared_ptr<ofxGgmlTextBackend> backendPtr;
 };

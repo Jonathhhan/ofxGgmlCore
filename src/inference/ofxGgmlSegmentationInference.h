@@ -86,8 +86,8 @@ public:
 		const ofxGgmlSegmentationRequest & request) const override;
 
 private:
-	SegmentFunction m_segmentFunction;
-	std::string m_displayName;
+	SegmentFunction segmentCallback;
+	std::string displayName;
 };
 
 class ofxGgmlSegmentationInference {
@@ -112,5 +112,5 @@ public:
 		int threads = -1) const;
 
 private:
-	std::shared_ptr<ofxGgmlSegmentationBackend> m_backend;
+	std::shared_ptr<ofxGgmlSegmentationBackend> backendPtr;
 };

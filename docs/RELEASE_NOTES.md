@@ -4,6 +4,8 @@
 
 - Added standalone compile coverage for each public umbrella header so hidden
   include dependencies are caught before API refactors.
+- Renamed private inference-layer members away from `m_` prefixes to better
+  match openFrameworks-style implementation code.
 - Switched example prompt/output console prints to the openFrameworks `ofLog`
   system and updated examples to use the result-style bool helpers.
 - Added result-style status helpers to the llama CLI command result and

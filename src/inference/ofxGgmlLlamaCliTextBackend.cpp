@@ -450,21 +450,21 @@ ofxGgmlTextCommandResult runCommandPosix(
 ofxGgmlLlamaCliTextBackend::ofxGgmlLlamaCliTextBackend(
 	ofxGgmlTextCommandRunner runner,
 	std::string displayName)
-	: m_runner(runner ? std::move(runner) : ofxGgmlLlamaCliTextBackend::runCommand)
-	, m_displayName(std::move(displayName)) {
+	: commandRunner(runner ? std::move(runner) : ofxGgmlLlamaCliTextBackend::runCommand)
+	, displayName(std::move(displayName)) {
 }
 
 void ofxGgmlLlamaCliTextBackend::setCommandRunner(
 	ofxGgmlTextCommandRunner runner) {
-	m_runner = runner ? std::move(runner) : ofxGgmlLlamaCliTextBackend::runCommand;
+	commandRunner = runner ? std::move(runner) : ofxGgmlLlamaCliTextBackend::runCommand;
 }
 
 bool ofxGgmlLlamaCliTextBackend::hasCommandRunner() const {
-	return static_cast<bool>(m_runner);
+	return static_cast<bool>(commandRunner);
 }
 
 std::string ofxGgmlLlamaCliTextBackend::backendName() const {
-	return m_displayName.empty() ? "llama.cpp CLI" : m_displayName;
+	return displayName.empty() ? "llama.cpp CLI" : displayName;
 }
 
 ofxGgmlTextResult ofxGgmlLlamaCliTextBackend::generate(
@@ -488,7 +488,7 @@ ofxGgmlTextResult ofxGgmlLlamaCliTextBackend::generate(
 	}
 	const auto started = std::chrono::steady_clock::now();
 	const ofxGgmlTextCommand command = buildCommand(request, prompt);
-	const ofxGgmlTextCommandResult commandResult = m_runner(command, onChunk);
+	const ofxGgmlTextCommandResult commandResult = commandRunner(command, onChunk);
 	result.elapsedMs = std::chrono::duration<float, std::milli>(
 		std::chrono::steady_clock::now() - started).count();
 	result.rawOutput = commandResult.output;

@@ -58,6 +58,6 @@ public:
 		const ofxGgmlTextChunkCallback & onChunk = nullptr);
 
 private:
-	ofxGgmlTextCommandRunner m_runner;
-	std::string m_displayName;
+	ofxGgmlTextCommandRunner commandRunner;
+	std::string displayName;
 };
