@@ -145,8 +145,8 @@ scripts\validate-local.bat
 ```
 
 This runs the headless addon tests, setup dry-run checks, generated-project
-repair checks, and launch dry-run smoke checks. It does not open example
-windows or start long-running servers.
+repair checks, launch dry-run smoke checks, and generated-artifact hygiene
+checks. It does not open example windows or start long-running servers.
 
 Build the generated openFrameworks simple example:
 
@@ -283,6 +283,12 @@ Run the setup dry-run smoke checks:
 
 ```bat
 scripts\test-setup-dry-run.bat
+```
+
+Run generated-artifact hygiene checks:
+
+```bat
+scripts\test-artifact-hygiene.bat
 ```
 
 On machines with explicit backend SDKs installed, run backend setup dry-run

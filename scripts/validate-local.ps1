@@ -4,7 +4,8 @@ param(
 	[switch]$SkipAddonTests,
 	[switch]$SkipSetupDryRun,
 	[switch]$SkipProjectRepair,
-	[switch]$SkipLaunchDryRun
+	[switch]$SkipLaunchDryRun,
+	[switch]$SkipArtifactHygiene
 )
 
 $ErrorActionPreference = "Stop"
@@ -62,6 +63,16 @@ if (!$SkipLaunchDryRun) {
 	Invoke-CheckedScript `
 		-Label "Checking launch dry-runs" `
 		-ScriptPath (Join-Path $scriptRoot "test-launch-dry-run.ps1") `
+		-Parameters @{
+			Configuration = $Configuration
+			Platform = $Platform
+		}
+}
+
+if (!$SkipArtifactHygiene) {
+	Invoke-CheckedScript `
+		-Label "Checking generated artifact hygiene" `
+		-ScriptPath (Join-Path $scriptRoot "test-artifact-hygiene.ps1") `
 		-Parameters @{
 			Configuration = $Configuration
 			Platform = $Platform

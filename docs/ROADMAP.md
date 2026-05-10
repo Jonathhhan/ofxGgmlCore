@@ -66,7 +66,8 @@ without widening the core surface.
   notes for CUDA and Vulkan machines.
 - Done after `v2.0.0-rewrite.0`: keep `-Auto` as the default setup behavior
   and add dry-run smoke coverage for early setup option failures.
-- Avoid committing generated ggml, llama.cpp, SAM3, model, or project artifacts.
+- Done after `v2.0.0-rewrite.0`: add generated-artifact hygiene checks to keep
+  ggml, llama.cpp, SAM3, model, and generated project outputs out of commits.
 
 ### 3. Examples
 

@@ -34,6 +34,7 @@ servers. It covers:
 - setup dry-run smoke checks
 - generated Visual Studio project repair checks
 - launch dry-run smoke checks
+- generated-artifact hygiene checks
 
 When validating optional local runtimes, also run the relevant smoke scripts:
 
@@ -66,6 +67,7 @@ Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
 - `scripts\test-launch-dry-run.ps1` passed as part of local validation,
   including server-mode, explicit CLI fallback, and standalone
   `llama-embedding` runner dry-runs.
+- `scripts\test-artifact-hygiene.ps1` passed as part of local validation.
 - `scripts\test-backend-setup-dry-run.ps1 -Cuda -Vulkan -CudaVulkan` passed
   setup-plan checks on a machine with CUDA and Vulkan SDKs installed.
 - `scripts\build-simple-example.ps1 -Configuration Release -Platform x64`
@@ -81,8 +83,8 @@ Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
 - README commands for setup, validation, llama-server, embedding, and SAM3 smoke
   were checked against the script parameters.
 - Generated project files, binaries, build caches, local dependency builds, and
-  model artifacts were checked against `.gitignore`; no untracked non-ignored
-  files remain.
+  model artifacts were checked against `.gitignore` by
+  `scripts\test-artifact-hygiene.ps1`.
 
 The remaining warnings are from openFrameworks/ofxImGui headers and generated
 Visual Studio project integration, not addon compile errors.
