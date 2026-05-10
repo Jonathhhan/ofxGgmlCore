@@ -261,9 +261,35 @@ function Clear-InstallDirectory {
 	if (!(Test-Path -LiteralPath $InstallDir)) {
 		return
 	}
-	Get-ChildItem -LiteralPath $InstallDir -Force -ErrorAction SilentlyContinue |
-		Where-Object { $_.Name -ne ".gitkeep" } |
-		Remove-Item -Recurse -Force
+	foreach ($entry in Get-ChildItem -LiteralPath $InstallDir -Force -ErrorAction SilentlyContinue) {
+		if ($entry.Name -eq ".gitkeep") {
+			continue
+		}
+		try {
+			Remove-Item -LiteralPath $entry.FullName -Recurse -Force -ErrorAction Stop
+		} catch {
+			$hint = Get-RuntimeProcessHint
+			throw "Could not update llama.cpp runtime install because '$($entry.FullName)' is locked or access was denied. $hint"
+		}
+	}
+}
+
+function Get-RuntimeProcessHint {
+	$processNames = @(
+		"llama-server",
+		"llama-cli",
+		"llama-embedding",
+		"ofxGgmlTextExample",
+		"ofxGgmlChatExample",
+		"ofxGgmlEmbeddingExample"
+	)
+	$running = @(Get-Process -Name $processNames -ErrorAction SilentlyContinue |
+		Sort-Object ProcessName,Id |
+		ForEach-Object { "$($_.ProcessName)($($_.Id))" })
+	if ($running.Count -gt 0) {
+		return "Stop these running processes and rerun the build: $($running -join ', ')."
+	}
+	return "Stop any running llama-server/example process that may be using files under libs\llama\bin, then rerun the build."
 }
 
 function Get-BuiltRuntimeFiles {
@@ -344,9 +370,7 @@ if ($Cuda -and !$jobsSpecified -and !$IsLinux -and !$IsMacOS) {
 if ($Clean) {
 	Write-Step "Cleaning llama.cpp source/build/install outputs"
 	Remove-Item -LiteralPath $SourceDir,$BuildDir -Recurse -Force -ErrorAction SilentlyContinue
-	Get-ChildItem -LiteralPath $InstallDir -Force -ErrorAction SilentlyContinue |
-		Where-Object { $_.Name -ne ".gitkeep" } |
-		Remove-Item -Recurse -Force
+	Clear-InstallDirectory
 }
 if ($Refetch) {
 	Remove-Item -LiteralPath $SourceDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -398,7 +422,12 @@ if (!$DryRun) {
 	Write-Step "Installing llama.cpp tools into $InstallDir"
 	Clear-InstallDirectory
 	foreach ($file in Get-BuiltRuntimeFiles) {
-		Copy-Item -LiteralPath $file.FullName -Destination $InstallDir -Force
+		try {
+			Copy-Item -LiteralPath $file.FullName -Destination $InstallDir -Force -ErrorAction Stop
+		} catch {
+			$hint = Get-RuntimeProcessHint
+			throw "Could not copy '$($file.FullName)' into '$InstallDir'. $hint"
+		}
 	}
 
 	Write-Step "Source and build cache kept under libs\llama.cpp"

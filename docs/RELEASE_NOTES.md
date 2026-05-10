@@ -12,6 +12,8 @@
 - Added a short first-run command sequence to the README.
 - Clarified run-script errors and model hints so missing example builds or GGUF
   files point to the next useful command.
+- Clarified llama.cpp install failures when runtime DLLs are locked by running
+  server/example processes.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 

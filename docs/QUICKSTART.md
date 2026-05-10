@@ -130,6 +130,9 @@ Dry-run launch resolution without opening windows:
 - CUDA requested but not found: use default setup or install the CUDA Toolkit.
 - No model found: pass `-Model C:\path\to\model.gguf` or place a GGUF in
   `addons/models`.
+- Rebuilding llama.cpp fails while installing DLLs: stop running
+  `llama-server`, text, chat, or embedding example processes, then rerun the
+  build.
 - Server request failed: start from the run scripts instead of opening the `.exe`
   directly; they set the needed environment variables and can start the server.
 - Embeddings fail on port `8080`: use the embedding launcher or start
