@@ -276,6 +276,16 @@ Assert-Contains $serverOutput "url:       http://127.0.0.1:9082" "Server dry-run
 Assert-Contains $serverOutput "cudaGraph: off" "Server dry-run"
 Assert-Contains $serverOutput "--no-cuda-graphs" "Server dry-run"
 
+$stopServerOutput = Invoke-DryRun `
+	-Label "stop llama-server dry-run" `
+	-Script (Join-Path $scriptRoot "stop-llama-server.ps1") `
+	-Parameters @{
+		DryRun = $true
+		IncludeExamples = $true
+	}
+Assert-Contains $stopServerOutput "llama-server stop plan" "Stop server dry-run"
+Assert-Contains $stopServerOutput "mode:            dry-run" "Stop server dry-run"
+
 $embeddingServerOutput = Invoke-DryRun `
 	-Label "embedding llama-server dry-run" `
 	-Script (Join-Path $scriptRoot "start-llama-server.ps1") `

@@ -232,6 +232,8 @@ scripts\build-llama-server.bat -DryRun
 scripts\start-llama-server.bat -ModelPath C:\path\to\model.gguf
 scripts\start-llama-server.bat -ModelPath C:\path\to\embedding-model.gguf -Embeddings
 scripts\start-llama-server.bat -Detached -LogDir logs\llama-server
+scripts\stop-llama-server.bat
+scripts\stop-llama-server.bat -IncludeExamples
 scripts\start-llama-server.bat -DryRun
 ```
 
@@ -288,6 +290,10 @@ already reachable, it prints the health status and reuses it instead of
 starting a duplicate process. Pass `-ForceNew` to intentionally start another
 server, `-NoHealthCheck` to skip probing, or `-StartupTimeoutSeconds` to tune
 the detached startup wait.
+Use `scripts\stop-llama-server.bat` to stop detached servers launched from this
+addon. Add `-IncludeExamples` when you also want to close running example apps,
+or `-All` when you intentionally want to stop every matching `llama-server`
+process.
 
 You can launch it without setting global environment variables:
 

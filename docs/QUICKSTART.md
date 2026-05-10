@@ -184,6 +184,8 @@ Dry-run launch resolution without opening windows:
 - Rebuilding llama.cpp fails while installing DLLs: stop running
   `llama-server`, text, chat, or embedding example processes, or rerun
   `build-llama-server.bat -StopRunningRuntime`.
+- Detached server keeps running: use `scripts\stop-llama-server.bat`, or
+  `scripts\stop-llama-server.bat -IncludeExamples` when examples are still open.
 - Server request failed: start from the run scripts instead of opening the `.exe`
   directly; they set the needed environment variables and can start the server.
 - Embeddings fail on port `8080`: use the embedding launcher or start

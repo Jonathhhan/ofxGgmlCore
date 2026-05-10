@@ -24,6 +24,8 @@
   wrappers and dry-run coverage.
 - Added `first-run.*` to run ggml setup, llama.cpp tool builds, and doctor as one
   first-checkout workflow.
+- Added `stop-llama-server.*` to inspect or stop detached local llama-server
+  processes launched from the addon.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 

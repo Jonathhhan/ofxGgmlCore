@@ -99,6 +99,7 @@ scripts\run-text-example.bat -DryRun
 scripts\run-chat-example.bat -DryRun
 scripts\run-embedding-example.bat -DryRun
 scripts\start-llama-server.bat -DryRun -ModelPath C:\path\to\model.gguf
+scripts\stop-llama-server.bat -DryRun -IncludeExamples
 ```
 
 ## Common Fixes
@@ -110,3 +111,4 @@ scripts\start-llama-server.bat -DryRun -ModelPath C:\path\to\model.gguf
   the `.exe` directly.
 - If rebuilding llama.cpp cannot replace DLLs, close running examples and
   servers, or run `scripts\build-llama-server.bat -StopRunningRuntime`.
+- If a detached server is still running, use `scripts\stop-llama-server.bat`.
