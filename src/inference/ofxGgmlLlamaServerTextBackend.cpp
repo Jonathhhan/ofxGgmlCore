@@ -11,6 +11,14 @@
 #define OFXGGML_HAS_OF_HTTP_RUNTIME 1
 #endif
 
+#if defined(OFXGGML_HAS_OF_HTTP_RUNTIME) && __has_include("curl/curl.h")
+#if defined(_WIN32) && !defined(CURL_STATICLIB)
+#define CURL_STATICLIB
+#endif
+#include "curl/curl.h"
+#define OFXGGML_HAS_CURL_HTTP_RUNTIME 1
+#endif
+
 namespace {
 
 std::string trimCopy(const std::string & value) {
@@ -140,6 +148,162 @@ std::string extractJsonStringField(const std::string & json, const std::string &
 	}
 }
 
+bool processServerSentEventLine(
+	const std::string & line,
+	ofxGgmlTextServerResponse & response,
+	const ofxGgmlTextChunkCallback & onChunk) {
+	const std::string prefix = "data:";
+	if (line.compare(0, prefix.size(), prefix) != 0) {
+		return true;
+	}
+	std::string payload = trimCopy(line.substr(prefix.size()));
+	if (payload.empty() || payload == "[DONE]") {
+		return true;
+	}
+	response.body += payload;
+	response.body.push_back('\n');
+	const std::string text = ofxGgmlLlamaServerTextBackend::extractTextFromResponse(payload);
+	if (text.empty()) {
+		return true;
+	}
+	response.text += text;
+	if (onChunk && !onChunk(text)) {
+		response.cancelled = true;
+		response.error = "llama-server request cancelled";
+		return false;
+	}
+	return true;
+}
+
+#if defined(OFXGGML_HAS_CURL_HTTP_RUNTIME)
+struct CurlStreamState {
+	ofxGgmlTextServerResponse * response = nullptr;
+	ofxGgmlTextChunkCallback onChunk;
+	std::function<bool()> shouldCancel;
+	bool parseServerSentEvents = false;
+	std::string pending;
+};
+
+bool cancelCurlRequest(CurlStreamState & state) {
+	if (!state.shouldCancel || !state.shouldCancel()) {
+		return false;
+	}
+	if (state.response) {
+		state.response->cancelled = true;
+		state.response->error = "llama-server request cancelled";
+	}
+	return true;
+}
+
+int progressCurlResponse(
+	void * userData,
+	curl_off_t,
+	curl_off_t,
+	curl_off_t,
+	curl_off_t) {
+	auto * state = static_cast<CurlStreamState *>(userData);
+	if (!state) {
+		return 0;
+	}
+	return cancelCurlRequest(*state) ? 1 : 0;
+}
+
+std::size_t writeCurlResponse(
+	char * data,
+	std::size_t size,
+	std::size_t count,
+	void * userData) {
+	const std::size_t bytes = size * count;
+	auto * state = static_cast<CurlStreamState *>(userData);
+	if (!state || !state->response || !data) {
+		return 0;
+	}
+	if (cancelCurlRequest(*state)) {
+		return 0;
+	}
+	if (!state->response->started) {
+		state->response->started = true;
+	}
+	if (!state->parseServerSentEvents) {
+		state->response->body.append(data, bytes);
+		return bytes;
+	}
+	state->pending.append(data, bytes);
+	while (true) {
+		const std::size_t newline = state->pending.find('\n');
+		if (newline == std::string::npos) {
+			break;
+		}
+		std::string line = state->pending.substr(0, newline);
+		state->pending.erase(0, newline + 1);
+		if (!line.empty() && line.back() == '\r') {
+			line.pop_back();
+		}
+		if (!processServerSentEventLine(line, *state->response, state->onChunk)) {
+			return 0;
+		}
+	}
+	return bytes;
+}
+
+ofxGgmlTextServerResponse runCurlRequest(
+	const ofxGgmlTextServerRequest & request) {
+	ofxGgmlTextServerResponse result;
+	CURL * curl = curl_easy_init();
+	if (!curl) {
+		result.error = "curl_easy_init failed";
+		return result;
+	}
+
+	struct curl_slist * headers = nullptr;
+	const std::string acceptHeader = request.stream
+		? "Accept: text/event-stream"
+		: "Accept: application/json";
+	const std::string contentTypeHeader = "Content-Type: " + request.contentType;
+	headers = curl_slist_append(headers, acceptHeader.c_str());
+	headers = curl_slist_append(headers, contentTypeHeader.c_str());
+
+	CurlStreamState state;
+	state.response = &result;
+	state.parseServerSentEvents = request.stream;
+	state.shouldCancel = request.shouldCancel;
+	if (request.stream) {
+		state.onChunk = request.onChunk;
+	}
+
+	curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
+	curl_easy_setopt(curl, CURLOPT_POST, 1L);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request.body.c_str());
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(request.body.size()));
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCurlResponse);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &state);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, static_cast<long>(request.timeoutSeconds));
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, "ofxGgml/llama-server");
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+	curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progressCurlResponse);
+	curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &state);
+
+	const CURLcode code = curl_easy_perform(curl);
+	long status = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+	result.status = static_cast<int>(status);
+	result.started = true;
+
+	if (code != CURLE_OK && !result.cancelled) {
+		result.error = curl_easy_strerror(code);
+	}
+	if (request.stream && !state.pending.empty() && !result.cancelled) {
+		processServerSentEventLine(state.pending, result, request.onChunk);
+	}
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+	return result;
+}
+#endif
+
 } // namespace
 
 ofxGgmlLlamaServerTextBackend::ofxGgmlLlamaServerTextBackend(
@@ -200,6 +364,13 @@ ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
 		request,
 		prompt,
 		request.settings.serverModel);
+	serverRequest.stream = request.settings.stream;
+	serverRequest.onChunk = onChunk;
+	if (onChunk) {
+		serverRequest.shouldCancel = [onChunk]() {
+			return !onChunk(std::string());
+		};
+	}
 	const ofxGgmlTextServerResponse response = m_runner(serverRequest);
 	result.elapsedMs = std::chrono::duration<float, std::milli>(
 		std::chrono::steady_clock::now() - started).count();
@@ -214,6 +385,13 @@ ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
 			? "llama-server request did not start"
 			: response.error;
 		result.error += " (" + requestUrl + ")";
+		return result;
+	}
+	if (response.cancelled) {
+		result.text = response.text;
+		result.error = response.error.empty()
+			? "llama-server request cancelled"
+			: response.error;
 		return result;
 	}
 	if (response.status <= 0) {
@@ -234,14 +412,16 @@ ofxGgmlTextResult ofxGgmlLlamaServerTextBackend::generate(
 		return result;
 	}
 
-	result.text = extractTextFromResponse(response.body);
+	result.text = request.settings.stream
+		? response.text
+		: extractTextFromResponse(response.body);
 	if (result.text.empty()) {
 		result.error = "llama-server returned empty output";
 		return result;
 	}
 	result.success = true;
 	result.finishReason = "stop";
-	if (onChunk) {
+	if (onChunk && !request.settings.stream) {
 		onChunk(result.text);
 	}
 	return result;
@@ -315,7 +495,7 @@ std::string ofxGgmlLlamaServerTextBackend::buildRequestBody(
 	body << "\"max_tokens\":" << std::max(1, request.settings.maxTokens) << ",";
 	body << "\"temperature\":" << std::max(0.0f, request.settings.temperature) << ",";
 	body << "\"top_p\":" << std::clamp(request.settings.topP, 0.0f, 1.0f) << ",";
-	body << "\"stream\":false";
+	body << "\"stream\":" << (request.settings.stream ? "true" : "false");
 	if (request.settings.topK > 0) {
 		body << ",\"top_k\":" << request.settings.topK;
 	}
@@ -355,6 +535,16 @@ ofxGgmlTextServerResponse ofxGgmlLlamaServerTextBackend::runRequest(
 		return result;
 	}
 #if defined(OFXGGML_HAS_OF_HTTP_RUNTIME)
+#if defined(OFXGGML_HAS_CURL_HTTP_RUNTIME)
+	if (request.stream) {
+		return runCurlRequest(request);
+	}
+#else
+	if (request.stream) {
+		result.error = "streaming llama-server requests require curl runtime";
+		return result;
+	}
+#endif
 	ofHttpRequest httpRequest(request.url, "llama-server-text");
 	httpRequest.method = ofHttpRequest::POST;
 	httpRequest.body = request.body;

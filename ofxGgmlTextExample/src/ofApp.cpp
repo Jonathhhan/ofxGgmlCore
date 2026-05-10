@@ -266,12 +266,10 @@ void ofApp::draw() {
 	std::string promptSnapshot;
 	std::string outputSnapshot;
 	bool runningSnapshot = false;
-	bool cancelSupportedSnapshot = false;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		statusSnapshot = status;
 		backendSnapshot = settings.useServerBackend ? "llama-server" : "llama-cli";
-		cancelSupportedSnapshot = !settings.useServerBackend;
 		serverUrlSnapshot = settings.serverUrl.empty() ? "(unset)" : settings.serverUrl;
 		serverModelSnapshot = settings.serverModel.empty() ? "(auto)" : settings.serverModel;
 		executableSnapshot = settings.executablePath.empty() ? "(optional)" : settings.executablePath;
@@ -292,17 +290,15 @@ void ofApp::draw() {
 		if (ImGui::Button("Run")) {
 			shouldRun = true;
 		}
-		if (cancelSupportedSnapshot) {
-			ImGui::SameLine();
-			if (!runningSnapshot) {
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.45f);
-			}
-			if (ImGui::Button("Cancel") && runningSnapshot) {
-				shouldCancel = true;
-			}
-			if (!runningSnapshot) {
-				ImGui::PopStyleVar();
-			}
+		ImGui::SameLine();
+		if (!runningSnapshot) {
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.45f);
+		}
+		if (ImGui::Button("Cancel") && runningSnapshot) {
+			shouldCancel = true;
+		}
+		if (!runningSnapshot) {
+			ImGui::PopStyleVar();
 		}
 
 		ImGui::Separator();
@@ -361,14 +357,7 @@ void ofApp::keyPressed(int key) {
 		return;
 	}
 	if (key == 'c' || key == 'C') {
-		std::lock_guard<std::mutex> lock(stateMutex);
-		if (!settings.useServerBackend) {
-			cancelRequested = true;
-			if (running) {
-				status = "cancelling after the next output chunk...";
-				rebuildLinesLocked();
-			}
-		}
+		requestCancel();
 	}
 }
 
@@ -413,12 +402,9 @@ void ofApp::startPrompt() {
 
 void ofApp::requestCancel() {
 	std::lock_guard<std::mutex> lock(stateMutex);
-	if (settings.useServerBackend) {
-		return;
-	}
 	cancelRequested = true;
 	if (running) {
-		status = "cancelling after the next output chunk...";
+		status = "cancelling...";
 		rebuildLinesLocked();
 	}
 }
@@ -480,10 +466,14 @@ void ofApp::runPromptWorker() {
 	request.settings.maxTokens = 64;
 	request.settings.temperature = 0.7f;
 	request.settings.gpuLayers = -1;
+	request.settings.stream = requestSettings.useServerBackend;
 
 	auto appendServerTextChunk = [this](const std::string & chunk) {
 		if (cancelRequested) {
 			return false;
+		}
+		if (chunk.empty()) {
+			return true;
 		}
 		std::lock_guard<std::mutex> lock(stateMutex);
 		output += chunk;
@@ -530,9 +520,7 @@ void ofApp::rebuildLinesLocked() {
 	lines.push_back("ofxGgml text example");
 	lines.push_back(status);
 	lines.push_back(std::string("state: ") + (running ? "running" : "idle"));
-	lines.push_back(settings.useServerBackend
-		? "keys: R run again"
-		: "keys: R run again, C cancel");
+	lines.push_back("keys: R run again, C cancel");
 	lines.push_back("backend: " + std::string(settings.useServerBackend ? "llama-server" : "llama-cli"));
 	lines.push_back("server: " + (settings.serverUrl.empty() ? "(unset)" : settings.serverUrl));
 	lines.push_back("server model: " + (settings.serverModel.empty() ? "(auto)" : settings.serverModel));

@@ -10,12 +10,17 @@ struct ofxGgmlTextServerRequest {
 	std::string body;
 	std::string contentType = "application/json";
 	int timeoutSeconds = 180;
+	bool stream = false;
+	ofxGgmlTextChunkCallback onChunk;
+	std::function<bool()> shouldCancel;
 };
 
 struct ofxGgmlTextServerResponse {
 	bool started = false;
+	bool cancelled = false;
 	int status = 0;
 	std::string body;
+	std::string text;
 	std::string error;
 };
 
