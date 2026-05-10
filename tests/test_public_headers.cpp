@@ -7,7 +7,7 @@
 #include "../src/ofxGgml.h"
 
 OFXGGML_TEST(public_core_header_compiles) {
-	OFXGGML_REQUIRE(OFXGGML_VERSION_MAJOR == 2);
+	OFXGGML_REQUIRE(OFXGGML_VERSION_MAJOR == 1);
 	OFXGGML_REQUIRE(std::string(ofxGgmlGetBackendName(ofxGgmlBackend::Auto)) == "Auto");
 	OFXGGML_REQUIRE(std::string(ofxGgmlGetBackendName(ofxGgmlBackend::CPU)) == "CPU");
 	OFXGGML_REQUIRE(std::string(ofxGgmlGetBackendName(ofxGgmlBackend::CUDA)) == "CUDA");

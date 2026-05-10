@@ -1,11 +1,11 @@
 # Release Readiness
 
 This document is the pre-tag checklist for the rewritten `main` line. It defines
-what belongs in the first rewrite tag and what must stay optional.
+what belongs in `1.0.0` and what must stay optional.
 
-## First Rewrite Tag Scope
+## 1.0.0 Scope
 
-The first tag should promise a narrow, dependable addon:
+`1.0.0` should promise a narrow, dependable addon:
 
 - ggml setup pinned to `v0.11.0`
 - `ofxGgmlCore.h` for runtime, tensors, graphs, GGUF metadata, and results
@@ -16,7 +16,7 @@ The first tag should promise a narrow, dependable addon:
 - script-tested segmentation/SAM3 boundary
 - Windows batch and PowerShell scripts, with POSIX shell wrappers where practical
 
-The first tag should not promise assistants, RAG, speech, TTS, diffusion, broad
+`1.0.0` should not promise assistants, RAG, speech, TTS, diffusion, broad
 vision workflows, model downloads, or product-level GUI workflows.
 
 ## Required Checks
@@ -91,7 +91,7 @@ Visual Studio project integration, not addon compile errors.
 
 ## Tag Gate
 
-Before creating a rewrite checkpoint tag:
+Before creating the `1.0.0` tag:
 
 - `main` is clean after validation.
 - README setup and validation commands match the actual scripts.
@@ -103,7 +103,7 @@ Before creating a rewrite checkpoint tag:
 
 ## Gap Review
 
-These items are intentionally not blockers for the first rewrite tag:
+These items are intentionally not blockers for `1.0.0`:
 
 - Real SAM3 model/image UX: deferred until a known-compatible model and sample
   image workflow are available. See `docs/SEGMENTATION.md`.
@@ -118,18 +118,16 @@ These items are intentionally not blockers for the first rewrite tag:
   SDKs.
 - POSIX generated project builds: deferred. Shell wrappers are included, but
   platform projects still depend on local openFrameworks project generation.
-- Exact release version string: closed for the first rewrite tag as
-  `2.0.0-rewrite.0`.
+- Exact release version string: closed for `1.0.0`.
 
-These items should be closed before the first rewrite tag:
+These items should be closed before `1.0.0`:
 
 - No open pre-tag hygiene items remain in this document. If new public API or
   scripts are added, rerun this checklist before tagging.
 
 ## Versioning
 
-The current rewritten API is allowed to break before the first rewrite tag. After
-that tag, breaking changes should be called out in release notes and should move
-the version intentionally.
+After `1.0.0`, breaking changes should be called out in release notes and should
+move the version intentionally.
 
 `legacy-full` remains the archive branch for the previous broad implementation.

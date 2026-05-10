@@ -1,60 +1,60 @@
 # Roadmap
 
-This roadmap starts after `v2.0.0-rewrite.0`. The goal is to keep `main`
-small, testable, and useful for openFrameworks projects without rebuilding the
-old all-in-one framework.
+This roadmap tracks the `1.0.0` release line. The goal is to keep `main` small,
+testable, and useful for openFrameworks projects without rebuilding the old
+all-in-one framework.
 
 ## Next Checkpoint
 
-Target: `v2.0.0-rewrite.1`
+Target: `1.0.0`
 
-Purpose: stabilize the tagged rewrite by improving confidence and ergonomics
-without widening the core surface.
+Purpose: ship the rewritten addon as a narrow, stable starting point with the
+current confidence and ergonomics work included.
 
-Status: ready for a final release confidence pass. Do not widen the public API
-before this checkpoint unless a blocking validation issue requires it.
+Status: ready for a final `1.0.0` confidence pass. Do not widen the public API
+before this release unless a blocking validation issue requires it.
 
 ## Workstreams
 
 ### 1. Public API Stability
 
-- Done after `v2.0.0-rewrite.0`: align `ofxGgmlBackend` with the setup backend
+- Done for `1.0.0`: align `ofxGgmlBackend` with the setup backend
   switches by exposing OpenCL and wiring Metal/OpenCL initialization when built.
-- Done after `v2.0.0-rewrite.0`: add `ofxGgmlGetBackendName()` so examples and
+- Done for `1.0.0`: add `ofxGgmlGetBackendName()` so examples and
   downstream projects can use one stable backend label spelling.
-- Done after `v2.0.0-rewrite.0`: add result-style helpers to
+- Done for `1.0.0`: add result-style helpers to
   `ofxGgmlComputeResult` without changing the runtime compute return type.
-- Done after `v2.0.0-rewrite.0`: split optional SAM3 adapter includes into
+- Done for `1.0.0`: split optional SAM3 adapter includes into
   `ofxGgmlSam3.h` so `ofxGgmlSegmentation.h` stays backend-neutral.
-- Done after `v2.0.0-rewrite.0`: add result-style helpers to text, embedding,
+- Done for `1.0.0`: add result-style helpers to text, embedding,
   and segmentation result structs.
-- Done after `v2.0.0-rewrite.0`: add status helpers to public llama CLI/server
+- Done for `1.0.0`: add status helpers to public llama CLI/server
   adapter helper result structs.
-- Done after `v2.0.0-rewrite.0`: move example prompt/output logging to `ofLog`
+- Done for `1.0.0`: move example prompt/output logging to `ofLog`
   and model result checks with the bool-style helpers.
-- Done after `v2.0.0-rewrite.0`: add standalone compile coverage for every
+- Done for `1.0.0`: add standalone compile coverage for every
   public umbrella header.
-- Done after `v2.0.0-rewrite.0`: remove `m_` private member prefixes from the
+- Done for `1.0.0`: remove `m_` private member prefixes from the
   inference layer to better match openFrameworks implementation style.
-- Done after `v2.0.0-rewrite.0`: rename public backend label accessors to
+- Done for `1.0.0`: rename public backend label accessors to
   `getBackendName()` for openFrameworks-style getter naming.
-- Done after `v2.0.0-rewrite.0`: rename the free backend label helper to
+- Done for `1.0.0`: rename the free backend label helper to
   `ofxGgmlGetBackendName()` for openFrameworks-style helper naming.
-- Done after `v2.0.0-rewrite.0`: update tests to assert result values through
+- Done for `1.0.0`: update tests to assert result values through
   bool-style helpers instead of direct `.success` reads where possible.
-- Done after `v2.0.0-rewrite.0`: update the core contract and architecture
+- Done for `1.0.0`: update the core contract and architecture
   notes to describe the current OF-style public backend naming.
-- Done after `v2.0.0-rewrite.0`: rename CPU/CUDA backend enum values to keep
+- Done for `1.0.0`: rename CPU/CUDA backend enum values to keep
   acronym spelling consistent with OpenCL.
-- Done after `v2.0.0-rewrite.0`: rename tensor shape/storage accessors to
+- Done for `1.0.0`: rename tensor shape/storage accessors to
   explicit openFrameworks-style getter names.
-- Done after `v2.0.0-rewrite.0`: rename graph/tensor low-level accessors to
+- Done for `1.0.0`: rename graph/tensor low-level accessors to
   explicit getter names.
-- Done after `v2.0.0-rewrite.0`: rename `ofxGgmlRuntime::state()` to
+- Done for `1.0.0`: rename `ofxGgmlRuntime::state()` to
   `getState()` for openFrameworks-style getter naming.
-- Done after `v2.0.0-rewrite.0`: rename `ofxGgmlRuntime::listDevices()` to
+- Done for `1.0.0`: rename `ofxGgmlRuntime::listDevices()` to
   `getDevices()` for openFrameworks-style getter naming.
-- Done after `v2.0.0-rewrite.0`: review every public header for naming
+- Done for `1.0.0`: review every public header for naming
   consistency and avoidable churn.
 - Ongoing rule: add focused tests before changing any public type.
 - Ongoing rule: keep `ofxGgml.h` as a small umbrella; avoid workflow-specific
@@ -65,21 +65,21 @@ before this checkpoint unless a blocking validation issue requires it.
 ### 2. Build And Backend Confidence
 
 - Ongoing rule: keep CPU as the required baseline.
-- Done after `v2.0.0-rewrite.0`: add `setup-ggml -DryRun` and smoke coverage
+- Done for `1.0.0`: add `setup-ggml -DryRun` and smoke coverage
   for setup plan reporting.
-- Done after `v2.0.0-rewrite.0`: add explicit setup dry-run smoke commands and
+- Done for `1.0.0`: add explicit setup dry-run smoke commands and
   notes for CUDA and Vulkan machines.
-- Done after `v2.0.0-rewrite.0`: keep `-Auto` as the default setup behavior
+- Done for `1.0.0`: keep `-Auto` as the default setup behavior
   and add dry-run smoke coverage for early setup option failures.
-- Done after `v2.0.0-rewrite.0`: add generated-artifact hygiene checks to keep
+- Done for `1.0.0`: add generated-artifact hygiene checks to keep
   ggml, llama.cpp, SAM3, model, and generated project outputs out of commits.
 
 ### 3. Examples
 
 - Ongoing rule: keep examples focused: simple runtime, text, chat, embeddings.
-- Done after `v2.0.0-rewrite.0`: add launch dry-run coverage for the explicit
+- Done for `1.0.0`: add launch dry-run coverage for the explicit
   text/chat llama.cpp CLI fallback path.
-- Done after `v2.0.0-rewrite.0`: add launch dry-run coverage for the standalone
+- Done for `1.0.0`: add launch dry-run coverage for the standalone
   `llama-embedding` runner.
 - Ongoing rule: improve example UX only when it clarifies the focused workflow.
 - Ongoing rule: do not add an all-in-one example to core.
@@ -107,7 +107,7 @@ If one becomes important, start it as a companion addon that depends on
 
 ## Release Rule
 
-Before each rewrite checkpoint:
+Before each release checkpoint:
 
 - run `scripts\validate-local.ps1`
 - build changed examples explicitly
