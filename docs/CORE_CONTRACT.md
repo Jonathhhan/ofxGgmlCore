@@ -59,7 +59,10 @@ and testable, and carry focused tests.
 
 Getter-style public methods should follow openFrameworks naming where it is
 clearer for addon users. Public backend labels use `getBackendName()` on runtime
-and adapter instances, and `ofxGgmlGetBackendName()` for enum labels.
+and adapter instances, and `ofxGgmlGetBackendName()` for enum labels. Runtime
+state and device snapshots are exposed as `getState()` and `getDevices()`.
+Low-level tensor and graph escape hatches are explicit getters such as
+`getRaw()`, `getContext()`, and `getNodeCount()`.
 
 ## Runtime Contract
 
@@ -70,6 +73,8 @@ and adapter instances, and `ofxGgmlGetBackendName()` for enum labels.
 - make `setup()` idempotent by closing previous state first
 - default to `Auto`, trying built GPU backends before CPU fallback
 - report backend setup failures through `ofxGgmlResult<void>`
+- expose state, backend label, and device snapshots through getter-style
+  methods
 - avoid process aborts where recovery is practical
 - keep async execution out of the first stable core release
 
@@ -194,4 +199,5 @@ layer.
 26. Done: create and push the first rewrite tag.
 27. Done: add standalone public umbrella header compile coverage.
 28. Done: align backend label APIs with openFrameworks-style getter naming.
-29. Next: follow `docs/ROADMAP.md` toward `v2.0.0-rewrite.1` without widening core by accident.
+29. Done: align public runtime, graph, and tensor getter names with openFrameworks-style naming.
+30. Next: follow `docs/ROADMAP.md` toward `v2.0.0-rewrite.1` without widening core by accident.

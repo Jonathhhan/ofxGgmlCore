@@ -10,6 +10,7 @@
   openFrameworks-style getter naming.
 - Breaking: renamed `ofxGgmlRuntime::listDevices()` to `getDevices()` for
   openFrameworks-style getter naming.
+- Updated the core contract and roadmap after the public header naming audit.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.

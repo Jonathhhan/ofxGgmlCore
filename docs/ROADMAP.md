@@ -51,7 +51,8 @@ without widening the core surface.
   `getState()` for openFrameworks-style getter naming.
 - Done after `v2.0.0-rewrite.0`: rename `ofxGgmlRuntime::listDevices()` to
   `getDevices()` for openFrameworks-style getter naming.
-- Review every public header for naming consistency and avoidable churn.
+- Done after `v2.0.0-rewrite.0`: review every public header for naming
+  consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.
 - Document every intentional breaking change in `docs/RELEASE_NOTES.md`.

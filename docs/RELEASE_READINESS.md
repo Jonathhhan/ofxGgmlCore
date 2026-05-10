@@ -58,7 +58,7 @@ Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
 
 - `scripts\validate-local.ps1` passed.
 - `scripts\build-simple-example.ps1 -Configuration Release -Platform x64`
-  passed after a transient openFrameworks tlog lock retry; 23 warnings, 0
+  passed after a transient openFrameworks tlog lock retry; 0 warnings, 0
   errors.
 - `scripts\build-text-example.ps1 -Configuration Release -Platform x64`
   passed after closing a running `ofxGgmlTextExample.exe`; 0 warnings, 0
