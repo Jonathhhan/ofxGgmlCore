@@ -9,7 +9,7 @@ OFXGGML_TEST(runtime_starts_uninitialized) {
 	ofxGgmlRuntime runtime;
 
 	OFXGGML_REQUIRE(!runtime.isReady());
-	OFXGGML_REQUIRE(runtime.state() == ofxGgmlRuntimeState::Uninitialized);
+	OFXGGML_REQUIRE(runtime.getState() == ofxGgmlRuntimeState::Uninitialized);
 	OFXGGML_REQUIRE(runtime.getBackendName().empty());
 }
 
@@ -19,7 +19,7 @@ OFXGGML_TEST(runtime_setup_auto_falls_back_to_cpu_backend) {
 
 	OFXGGML_REQUIRE(result.isOk());
 	OFXGGML_REQUIRE(runtime.isReady());
-	OFXGGML_REQUIRE(runtime.state() == ofxGgmlRuntimeState::Ready);
+	OFXGGML_REQUIRE(runtime.getState() == ofxGgmlRuntimeState::Ready);
 	OFXGGML_REQUIRE(runtime.getBackendName() == "CPU");
 
 	auto devices = runtime.listDevices();
@@ -60,7 +60,7 @@ OFXGGML_TEST(runtime_requested_gpu_falls_back_or_errors) {
 		strictSettings.allowCpuFallback = false;
 
 		OFXGGML_REQUIRE(strictRuntime.setup(strictSettings).isError());
-		OFXGGML_REQUIRE(strictRuntime.state() == ofxGgmlRuntimeState::Error);
+		OFXGGML_REQUIRE(strictRuntime.getState() == ofxGgmlRuntimeState::Error);
 	}
 }
 
@@ -140,7 +140,7 @@ OFXGGML_TEST(runtime_close_resets_state) {
 	runtime.close();
 
 	OFXGGML_REQUIRE(!runtime.isReady());
-	OFXGGML_REQUIRE(runtime.state() == ofxGgmlRuntimeState::Uninitialized);
+	OFXGGML_REQUIRE(runtime.getState() == ofxGgmlRuntimeState::Uninitialized);
 	OFXGGML_REQUIRE(runtime.getBackendName().empty());
 }
 

@@ -209,7 +209,7 @@ bool ofxGgmlRuntime::isReady() const {
 #endif
 }
 
-ofxGgmlRuntimeState ofxGgmlRuntime::state() const {
+ofxGgmlRuntimeState ofxGgmlRuntime::getState() const {
 	return impl ? impl->state : ofxGgmlRuntimeState::Uninitialized;
 }
 

@@ -6,6 +6,8 @@
   `getNumDims()`, `getExtent()`, `getByteSize()`, and `getElementCount()`.
 - Breaking: renamed graph/tensor low-level accessors to explicit getter names:
   `getRaw()`, `getContext()`, and `getNodeCount()`.
+- Breaking: renamed `ofxGgmlRuntime::state()` to `getState()` for
+  openFrameworks-style getter naming.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.

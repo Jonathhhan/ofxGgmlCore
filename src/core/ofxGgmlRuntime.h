@@ -24,7 +24,7 @@ public:
 	void close();
 
 	bool isReady() const;
-	ofxGgmlRuntimeState state() const;
+	ofxGgmlRuntimeState getState() const;
 	std::string getBackendName() const;
 	std::vector<ofxGgmlDeviceInfo> listDevices() const;
 

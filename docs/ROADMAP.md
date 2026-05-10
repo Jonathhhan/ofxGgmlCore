@@ -47,6 +47,8 @@ without widening the core surface.
   explicit openFrameworks-style getter names.
 - Done after `v2.0.0-rewrite.0`: rename graph/tensor low-level accessors to
   explicit getter names.
+- Done after `v2.0.0-rewrite.0`: rename `ofxGgmlRuntime::state()` to
+  `getState()` for openFrameworks-style getter naming.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.
