@@ -21,6 +21,8 @@ without widening the core surface.
   downstream projects can use one stable backend label spelling.
 - Done after `v2.0.0-rewrite.0`: add result-style helpers to
   `ofxGgmlComputeResult` without changing the runtime compute return type.
+- Done after `v2.0.0-rewrite.0`: split optional SAM3 adapter includes into
+  `ofxGgmlSam3.h` so `ofxGgmlSegmentation.h` stays backend-neutral.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

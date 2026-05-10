@@ -39,19 +39,22 @@ The core public surface is:
 - `ofxGgmlTextGenerator` and text request/result types
 - `ofxGgmlLlamaCliTextBackend` and `ofxGgmlLlamaServerTextBackend`
 - `ofxGgmlEmbeddingGenerator`, embedding request/result types, and vector helpers
-- `ofxGgmlSegmentationInference`, segmentation request/result types, and SAM3 adapter hooks
+- `ofxGgmlSegmentationInference` and segmentation request/result types
+- `ofxGgmlSam3.h` and SAM3 adapter hooks as an optional layer
 - `ofxGgmlCore.h`
 - `ofxGgmlText.h`
 - `ofxGgmlEmbedding.h`
 - `ofxGgmlSegmentation.h`
+- `ofxGgmlSam3.h`
 - `ofxGgml.h`
 
 `ofxGgml.h` should remain a boring umbrella. Text belongs there only as a small
 backend-neutral API. Embeddings belong there only as a small request/result API
 and math helpers. Segmentation belongs there only as a small prompt/result API;
-SAM3 remains an optional adapter. Concrete llama.cpp CLI/server adapters must
-keep process execution or HTTP transport behind a replaceable boundary, provide
-a default runner only when it is small and testable, and carry focused tests.
+SAM3 remains an optional adapter exposed through `ofxGgmlSam3.h`. Concrete
+llama.cpp CLI/server adapters must keep process execution or HTTP transport
+behind a replaceable boundary, provide a default runner only when it is small
+and testable, and carry focused tests.
 
 ## Runtime Contract
 

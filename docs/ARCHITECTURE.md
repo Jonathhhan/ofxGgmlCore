@@ -30,6 +30,7 @@ These should live in companion addons or optional layers:
 - `ofxGgmlText.h`: small text request/result API with pluggable backends
 - `ofxGgmlEmbedding.h`: embedding request/result API and vector helpers
 - `ofxGgmlSegmentation.h`: point-prompt segmentation API with optional adapters
+- `ofxGgmlSam3.h`: optional SAM3 adapter boundary
 - `ofxGgml.h`: default umbrella for core, text, embeddings, and stable optional bridge APIs
 
 ## Optional Runtime Layers
@@ -44,7 +45,7 @@ SAM/SAM3 remains an adapter boundary. Its generated native integration can be
 enabled locally, but projects that only include the core, text, or embedding
 headers should compile without a SAM checkout. Segmentation callers should use
 `ofxGgmlSegmentation.h`; concrete SAM3 code stays behind
-`ofxGgmlSam3Adapters`.
+`ofxGgmlSam3.h` and `ofxGgmlSam3Adapters`.
 
 ## Compatibility
 

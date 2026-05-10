@@ -1,5 +1,6 @@
 #include "test_harness.h"
 #include "../src/ofxGgmlSegmentation.h"
+#include "../src/ofxGgmlSam3.h"
 
 #include <cstdlib>
 #include <memory>

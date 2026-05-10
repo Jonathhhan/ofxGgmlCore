@@ -2,7 +2,8 @@
 
 `ofxGgmlSegmentation.h` is the public segmentation boundary. It intentionally
 stays small: point prompts in, masks out. SAM3 is one optional adapter behind
-that boundary, not a required addon dependency.
+that boundary, not a required addon dependency. Include `ofxGgmlSam3.h` only in
+projects that need the concrete SAM3 adapter helpers.
 
 ## Current Decision
 

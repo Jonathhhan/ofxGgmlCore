@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Split optional SAM3 adapter includes into `ofxGgmlSam3.h`; generic
+  `ofxGgmlSegmentation.h` now exposes only the backend-neutral segmentation API.
 - Added `isOk()`, `isError()`, and bool-conversion helpers to
   `ofxGgmlComputeResult`.
 - Added `ofxGgmlBackend::OpenCL` so the public runtime backend enum matches the
