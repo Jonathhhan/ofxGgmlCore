@@ -64,7 +64,8 @@ Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
 - `scripts\test-setup-dry-run.ps1` passed as part of local validation, including
   default, CPU-only, and invalid-option dry-run checks.
 - `scripts\test-launch-dry-run.ps1` passed as part of local validation,
-  including server-mode and explicit CLI fallback dry-runs.
+  including server-mode, explicit CLI fallback, and standalone
+  `llama-embedding` runner dry-runs.
 - `scripts\test-backend-setup-dry-run.ps1 -Cuda -Vulkan -CudaVulkan` passed
   setup-plan checks on a machine with CUDA and Vulkan SDKs installed.
 - `scripts\build-simple-example.ps1 -Configuration Release -Platform x64`

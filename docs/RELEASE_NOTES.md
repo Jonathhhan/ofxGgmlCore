@@ -19,6 +19,7 @@
   stay early and clear.
 - Added launch dry-run coverage for the explicit text/chat llama.cpp CLI
   fallback path.
+- Added launch dry-run coverage for the standalone `llama-embedding` runner.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.

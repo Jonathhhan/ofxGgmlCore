@@ -73,6 +73,8 @@ without widening the core surface.
 - Keep examples focused: simple runtime, text, chat, embeddings.
 - Done after `v2.0.0-rewrite.0`: add launch dry-run coverage for the explicit
   text/chat llama.cpp CLI fallback path.
+- Done after `v2.0.0-rewrite.0`: add launch dry-run coverage for the standalone
+  `llama-embedding` runner.
 - Improve example UX only when it clarifies the focused workflow.
 - Do not add an all-in-one example to core.
 - Keep `ofxImGui` usage optional to examples, not to the public addon API.

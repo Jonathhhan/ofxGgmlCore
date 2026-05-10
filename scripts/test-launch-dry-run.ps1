@@ -23,6 +23,8 @@ function Invoke-DryRun {
 	$previousTextServerModel = $env:OFXGGML_TEXT_SERVER_MODEL
 	$previousTextModel = $env:OFXGGML_TEXT_MODEL
 	$previousLlamaCli = $env:OFXGGML_LLAMA_CLI
+	$previousLlamaEmbedding = $env:OFXGGML_LLAMA_EMBEDDING
+	$previousEmbeddingModel = $env:OFXGGML_EMBEDDING_MODEL
 	$previousEmbeddingServerUrl = $env:OFXGGML_EMBEDDING_SERVER_URL
 	$previousEmbeddingServerModel = $env:OFXGGML_EMBEDDING_SERVER_MODEL
 	$env:OFXGGML_LAUNCH_DRY_RUN_ONLY = "1"
@@ -61,6 +63,16 @@ function Invoke-DryRun {
 			Remove-Item Env:\OFXGGML_LLAMA_CLI -ErrorAction SilentlyContinue
 		} else {
 			$env:OFXGGML_LLAMA_CLI = $previousLlamaCli
+		}
+		if ($null -eq $previousLlamaEmbedding) {
+			Remove-Item Env:\OFXGGML_LLAMA_EMBEDDING -ErrorAction SilentlyContinue
+		} else {
+			$env:OFXGGML_LLAMA_EMBEDDING = $previousLlamaEmbedding
+		}
+		if ($null -eq $previousEmbeddingModel) {
+			Remove-Item Env:\OFXGGML_EMBEDDING_MODEL -ErrorAction SilentlyContinue
+		} else {
+			$env:OFXGGML_EMBEDDING_MODEL = $previousEmbeddingModel
 		}
 		if ($null -eq $previousEmbeddingServerUrl) {
 			Remove-Item Env:\OFXGGML_EMBEDDING_SERVER_URL -ErrorAction SilentlyContinue
@@ -108,6 +120,7 @@ New-Item -ItemType Directory -Force -Path $scratchDir | Out-Null
 $modelPath = Join-Path $scratchDir "dry-run-model.gguf"
 $serverExe = Join-Path $scratchDir "llama-server.exe"
 $llamaCliExe = Join-Path $scratchDir "llama-cli.exe"
+$llamaEmbeddingExe = Join-Path $scratchDir "llama-embedding.exe"
 if (!(Test-Path -LiteralPath $modelPath -PathType Leaf)) {
 	New-Item -ItemType File -Path $modelPath | Out-Null
 }
@@ -116,6 +129,9 @@ if (!(Test-Path -LiteralPath $serverExe -PathType Leaf)) {
 }
 if (!(Test-Path -LiteralPath $llamaCliExe -PathType Leaf)) {
 	New-Item -ItemType File -Path $llamaCliExe | Out-Null
+}
+if (!(Test-Path -LiteralPath $llamaEmbeddingExe -PathType Leaf)) {
+	New-Item -ItemType File -Path $llamaEmbeddingExe | Out-Null
 }
 
 $textOutput = Invoke-DryRun `
@@ -210,6 +226,27 @@ Assert-Contains $embeddingOutput "Using embedding model: $modelPath" "Embedding 
 Assert-Contains $embeddingOutput "Executable:" "Embedding dry-run"
 Assert-Contains $embeddingOutput "Auto server: off" "Embedding dry-run"
 Assert-NotContains $embeddingOutput "Starting ofxGgmlEmbeddingExample" "Embedding dry-run"
+
+$embeddingRunnerOutput = Invoke-DryRun `
+	-Label "embedding runner dry-run" `
+	-Script (Join-Path $scriptRoot "run-embedding.ps1") `
+	-Parameters @{
+		DryRun = $true
+		EmbeddingExe = $llamaEmbeddingExe
+		ModelPath = $modelPath
+		Prompt = "dry embedding prompt"
+		Format = "json+"
+		GpuLayers = "12"
+		ContextSize = 2048
+		Pooling = "mean"
+	}
+Assert-Contains $embeddingRunnerOutput "Running llama-embedding" "Embedding runner dry-run"
+Assert-Contains $embeddingRunnerOutput "exe:       $llamaEmbeddingExe" "Embedding runner dry-run"
+Assert-Contains $embeddingRunnerOutput "model:     $modelPath" "Embedding runner dry-run"
+Assert-Contains $embeddingRunnerOutput "prompt:    dry embedding prompt" "Embedding runner dry-run"
+Assert-Contains $embeddingRunnerOutput "format:    json+" "Embedding runner dry-run"
+Assert-Contains $embeddingRunnerOutput "--embd-output-format json+" "Embedding runner dry-run"
+Assert-Contains $embeddingRunnerOutput "-ngl 12" "Embedding runner dry-run"
 
 $serverOutput = Invoke-DryRun `
 	-Label "llama-server dry-run" `
