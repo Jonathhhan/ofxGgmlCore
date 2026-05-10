@@ -183,6 +183,21 @@ explicit fallback only when you launch with `-Backend cli`.
 `llama-completion` is intentionally excluded from the default runtime bundle;
 pass `-WithCompletionTool` only when you need that upstream helper executable.
 
+Run a local embedding smoke test:
+
+```powershell
+scripts\run-embedding.bat -Prompt "openFrameworks local inference"
+scripts\run-embedding.bat -ModelPath C:\path\to\embedding-model.gguf -Format json
+scripts\run-embedding.bat -ModelPath C:\path\to\embedding-model.gguf -Raw
+```
+
+The embedding runner uses `libs\llama\bin\llama-embedding.exe` by default and
+searches the same local model folders as the text/chat scripts. Set
+`OFXGGML_EMBEDDING_MODEL` or pass `-ModelPath` to use an embedding-tuned GGUF;
+general instruct models are useful only as smoke tests. The default output is
+OpenAI-style JSON. Use `-Format array`, `-Format json+`, or `-Raw` for other
+`llama-embedding` output formats.
+
 If `-ModelPath` is omitted, the server launcher searches the text example data
 folders, this addon's `models` folder, and the sibling shared `addons/models`
 folder. Detached server launches emit `OFXGGML_LLAMA_SERVER_PID=...`; pass
