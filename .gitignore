@@ -52,3 +52,12 @@ ofxGgmlChatExample/*.vcxproj
 ofxGgmlChatExample/*.vcxproj.filters
 !ofxGgmlChatExample/bin/data/
 !ofxGgmlChatExample/bin/data/.gitkeep
+
+ofxGgmlEmbeddingExample/bin/*
+ofxGgmlEmbeddingExample/config.make
+ofxGgmlEmbeddingExample/icon.rc
+ofxGgmlEmbeddingExample/*.sln
+ofxGgmlEmbeddingExample/*.vcxproj
+ofxGgmlEmbeddingExample/*.vcxproj.filters
+!ofxGgmlEmbeddingExample/bin/data/
+!ofxGgmlEmbeddingExample/bin/data/.gitkeep
