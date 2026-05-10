@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added standalone compile coverage for each public umbrella header so hidden
+  include dependencies are caught before API refactors.
 - Switched example prompt/output console prints to the openFrameworks `ofLog`
   system and updated examples to use the result-style bool helpers.
 - Added result-style status helpers to the llama CLI command result and

@@ -31,5 +31,17 @@ target_include_directories(ofxGgml_rewrite_tests PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
+add_library(ofxGgml_public_header_includes OBJECT
+	public_headers/include_ofxGgml.cpp
+	public_headers/include_ofxGgmlCore.cpp
+	public_headers/include_ofxGgmlEmbedding.cpp
+	public_headers/include_ofxGgmlSam3.cpp
+	public_headers/include_ofxGgmlSegmentation.cpp
+	public_headers/include_ofxGgmlText.cpp)
+
+target_include_directories(ofxGgml_public_header_includes PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/../src)
+
 enable_testing()
 add_test(NAME ofxGgml_rewrite_tests COMMAND ofxGgml_rewrite_tests)
