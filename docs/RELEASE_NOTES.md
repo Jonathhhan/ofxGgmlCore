@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- No unreleased changes.
+- Documented `ofxGgmlSam`, `ofxGgmlMusic`, and `ofxGgmlSpeech` as planned
+  companion addon lanes for SAM/SAM3, music/audio, and speech/voice workflows.
 
 ## v1.0.1
 

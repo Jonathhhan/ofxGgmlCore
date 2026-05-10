@@ -100,7 +100,13 @@ These should not enter core by default:
 - assistants and coding workflows
 - RAG, web crawling, citations, or project memory
 - speech, TTS, diffusion, CLIP, YOLO, broad vision workflows
-- montage, music, video, or product-level GUI workflows
+- montage, video, or product-level GUI workflows
+
+Named companion lanes:
+
+- `ofxGgmlSam` for SAM/SAM2/SAM3 image segmentation workflows.
+- `ofxGgmlMusic` for music, audio analysis, and generation workflows.
+- `ofxGgmlSpeech` for speech recognition, transcription, and voice workflows.
 
 If one becomes important, start it as a companion addon that depends on
 `ofxGgml` instead of expanding the core contract.

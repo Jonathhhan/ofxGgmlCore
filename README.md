@@ -30,8 +30,8 @@ Everything else should become a companion addon or an optional layer.
 | Text | `ofxGgmlText.h` | small text request/result API with pluggable llama.cpp / server adapters |
 | Embeddings | `ofxGgmlEmbedding.h` | embedding requests, llama-server adapter, vector helpers |
 | Segmentation | `ofxGgmlSegmentation.h` | point-prompt segmentation API |
-| SAM3 adapter | `ofxGgmlSam3.h` | optional SAM3 adapter helpers |
-| Optional companions | separate addons | vision, speech, SAM, assistants, workflows |
+| SAM3 adapter | `ofxGgmlSam3.h` | temporary optional SAM3 adapter hooks |
+| Optional companions | separate addons | `ofxGgmlSam`, `ofxGgmlMusic`, `ofxGgmlSpeech`, vision, assistants, workflows |
 
 The text layer has explicit llama.cpp adapters for a warm `llama-server` and a
 CLI fallback. The server runtime is optional and installed only through the
@@ -141,7 +141,9 @@ priority order (`CUDA`, `Vulkan`, `Metal`, then `OpenCL`) before falling back to
 CPU. Use `ofxGgmlRuntimeSettings::preferredBackend` when an app needs to force
 CPU or a specific GPU backend.
 
-SAM3 support is optional and generated locally:
+SAM3 support is optional and generated locally. Concrete SAM/SAM3 development
+is planned for the companion addon `ofxGgmlSam`; this core addon keeps only the
+small segmentation boundary and temporary adapter hooks.
 
 ```powershell
 scripts\install-sam3-cpp.bat

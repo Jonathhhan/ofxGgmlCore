@@ -25,8 +25,10 @@ These should live in companion addons or optional layers:
 
 - assistants and coding agents
 - RAG, web crawling, citation search
-- SAM/SAM3, vision, speech, TTS, diffusion
-- video essay, music, montage, MilkDrop, Holoscan workflows
+- SAM/SAM3 through `ofxGgmlSam`, plus vision, TTS, diffusion
+- music, audio analysis, and generation workflows through `ofxGgmlMusic`
+- speech recognition, transcription, and voice workflows through `ofxGgmlSpeech`
+- video essay, montage, MilkDrop, Holoscan workflows
 - large all-in-one GUI experiments
 
 ## Public Header Plan
@@ -35,7 +37,7 @@ These should live in companion addons or optional layers:
 - `ofxGgmlText.h`: small text request/result API with pluggable backends
 - `ofxGgmlEmbedding.h`: embedding request/result API and vector helpers
 - `ofxGgmlSegmentation.h`: point-prompt segmentation API with optional adapters
-- `ofxGgmlSam3.h`: optional SAM3 adapter boundary
+- `ofxGgmlSam3.h`: temporary optional SAM3 adapter boundary
 - `ofxGgml.h`: default umbrella for core, text, embeddings, and stable optional bridge APIs
 
 ## Optional Runtime Layers
@@ -46,10 +48,11 @@ explicit scripts and are treated as a local runtime, not as a required core
 dependency. Chat and embedding examples may use `ofxImGui`, but the public API
 must not depend on GUI code.
 
-SAM/SAM3 remains an adapter boundary. Its generated native integration can be
-enabled locally, but projects that only include the core, text, or embedding
-headers should compile without a SAM checkout. Segmentation callers should use
-`ofxGgmlSegmentation.h`; concrete SAM3 code stays behind
+SAM/SAM3 should live in the companion addon `ofxGgmlSam`. Until that exists,
+this repo keeps a small adapter boundary only. Its generated native integration
+can be enabled locally, but projects that only include the core, text, or
+embedding headers should compile without a SAM checkout. Segmentation callers
+should use `ofxGgmlSegmentation.h`; concrete SAM3 code stays behind
 `ofxGgmlSam3.h` and `ofxGgmlSam3Adapters`.
 
 ## Compatibility

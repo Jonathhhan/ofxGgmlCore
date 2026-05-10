@@ -1,16 +1,17 @@
 # Segmentation And SAM3
 
 `ofxGgmlSegmentation.h` is the public segmentation boundary. It intentionally
-stays small: point prompts in, masks out. SAM3 is one optional adapter behind
-that boundary, not a required addon dependency. Include `ofxGgmlSam3.h` only in
-projects that need the concrete SAM3 adapter helpers.
+stays small: point prompts in, masks out. SAM/SAM3 model integration should move
+to the companion addon `ofxGgmlSam`; this core addon keeps only the small
+boundary and temporary optional SAM3 adapter hooks. Include `ofxGgmlSam3.h` only
+in projects that need the current concrete SAM3 adapter helpers.
 
 ## Current Decision
 
 Do not add an openFrameworks segmentation example yet.
 
 The segmentation API is test-covered and script-smoked, but a useful GUI example
-needs a real model/image workflow:
+belongs in `ofxGgmlSam` once there is a real model/image workflow:
 
 - a known-compatible SAM3 GGUF model path
 - a small sample image that can be redistributed or generated locally
@@ -51,5 +52,6 @@ Add `ofxGgmlSegmentationExample` only when all of these are true:
 - mask preview is visible and deterministic enough for manual verification
 - the example does not require committed model binaries or downloaded assets
 
-When the gate is met, the example should use `ofxImGui` like the text, chat, and
-embedding examples, and it should remain focused on one point-prompt mask flow.
+When the gate is met, build the example in `ofxGgmlSam`. It should use
+`ofxImGui` like the text, chat, and embedding examples, and it should remain
+focused on one point-prompt mask flow.

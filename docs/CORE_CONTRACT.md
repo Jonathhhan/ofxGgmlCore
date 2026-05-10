@@ -20,12 +20,16 @@ These are not allowed in core by default:
 
 - chat/coding assistants
 - RAG, web crawling, citation search, project memory, or workflow manifests
-- speech, TTS, vision, diffusion, YOLO, CLIP, SAM, or SAM3 adapters
-- video essay, montage, music, MilkDrop, Holoscan, or GUI workflow experiments
+- TTS, vision, diffusion, YOLO, CLIP, SAM, or SAM3 adapters
+- speech recognition, transcription, or voice workflows; use `ofxGgmlSpeech`
+- video essay, montage, MilkDrop, Holoscan, or GUI workflow experiments
+- music, audio analysis, or generation workflows; use `ofxGgmlMusic`
 - model downloads or large generated binaries committed to the repository
 
 Those features can become companion addons or optional layers that depend on
-core.
+core. The first named companion lanes are `ofxGgmlSam` for SAM/SAM3 work,
+`ofxGgmlMusic` for music/audio workflows, and `ofxGgmlSpeech` for speech and
+voice workflows.
 
 ## Public Surface
 
