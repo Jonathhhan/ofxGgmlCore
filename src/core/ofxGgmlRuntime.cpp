@@ -271,7 +271,7 @@ ofxGgmlResult<void> ofxGgmlRuntime::allocate(ofxGgmlGraph & graph) {
 		ggml_backend_buffer_free(impl->buffer);
 		impl->buffer = nullptr;
 	}
-	impl->buffer = ggml_backend_alloc_ctx_tensors(graph.context(), impl->backend);
+	impl->buffer = ggml_backend_alloc_ctx_tensors(graph.getContext(), impl->backend);
 	if (!impl->buffer) return ofxGgmlResult<void>::failure("failed to allocate graph tensors");
 	return ofxGgmlResult<void>::success();
 #else
@@ -296,7 +296,7 @@ ofxGgmlComputeResult ofxGgmlRuntime::compute(ofxGgmlGraph & graph) {
 		return result;
 	}
 	const auto start = std::chrono::steady_clock::now();
-	const ggml_status status = ggml_backend_graph_compute(impl->backend, graph.raw());
+	const ggml_status status = ggml_backend_graph_compute(impl->backend, graph.getRaw());
 	const auto stop = std::chrono::steady_clock::now();
 	result.elapsedMs = std::chrono::duration<float, std::milli>(stop - start).count();
 	result.success = status == GGML_STATUS_SUCCESS;
@@ -316,7 +316,7 @@ ofxGgmlResult<void> ofxGgmlRuntime::setData(ofxGgmlTensor tensor, const void * d
 	if (!impl->buffer) return ofxGgmlResult<void>::failure("graph tensors are not allocated");
 	if (!tensor || !data) return ofxGgmlResult<void>::failure("invalid tensor data");
 	if (bytes != tensor.getByteSize()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
-	ggml_backend_tensor_set(tensor.raw(), data, 0, bytes);
+	ggml_backend_tensor_set(tensor.getRaw(), data, 0, bytes);
 	return ofxGgmlResult<void>::success();
 #else
 	(void) tensor;
@@ -332,7 +332,7 @@ ofxGgmlResult<void> ofxGgmlRuntime::getData(ofxGgmlTensor tensor, void * data, s
 	if (!impl->buffer) return ofxGgmlResult<void>::failure("graph tensors are not allocated");
 	if (!tensor || !data) return ofxGgmlResult<void>::failure("invalid tensor data");
 	if (bytes != tensor.getByteSize()) return ofxGgmlResult<void>::failure("tensor byte count mismatch");
-	ggml_backend_tensor_get(tensor.raw(), data, 0, bytes);
+	ggml_backend_tensor_get(tensor.getRaw(), data, 0, bytes);
 	return ofxGgmlResult<void>::success();
 #else
 	(void) tensor;

@@ -86,7 +86,7 @@ ofxGgmlTensor ofxGgmlGraph::tensor2d(ofxGgmlType type, int64_t ne0, int64_t ne1)
 ofxGgmlTensor ofxGgmlGraph::add(ofxGgmlTensor a, ofxGgmlTensor b) {
 #if OFXGGML_HAS_GGML
 	if (!ctx || !a || !b) return {};
-	return ofxGgmlTensor(ggml_add(ctx, a.raw(), b.raw()));
+	return ofxGgmlTensor(ggml_add(ctx, a.getRaw(), b.getRaw()));
 #else
 	(void) a;
 	(void) b;
@@ -97,7 +97,7 @@ ofxGgmlTensor ofxGgmlGraph::add(ofxGgmlTensor a, ofxGgmlTensor b) {
 ofxGgmlTensor ofxGgmlGraph::mul(ofxGgmlTensor a, ofxGgmlTensor b) {
 #if OFXGGML_HAS_GGML
 	if (!ctx || !a || !b) return {};
-	return ofxGgmlTensor(ggml_mul(ctx, a.raw(), b.raw()));
+	return ofxGgmlTensor(ggml_mul(ctx, a.getRaw(), b.getRaw()));
 #else
 	(void) a;
 	(void) b;
@@ -108,7 +108,7 @@ ofxGgmlTensor ofxGgmlGraph::mul(ofxGgmlTensor a, ofxGgmlTensor b) {
 ofxGgmlTensor ofxGgmlGraph::matmul(ofxGgmlTensor a, ofxGgmlTensor b) {
 #if OFXGGML_HAS_GGML
 	if (!ctx || !a || !b) return {};
-	return ofxGgmlTensor(ggml_mul_mat(ctx, a.raw(), b.raw()));
+	return ofxGgmlTensor(ggml_mul_mat(ctx, a.getRaw(), b.getRaw()));
 #else
 	(void) a;
 	(void) b;
@@ -123,7 +123,7 @@ void ofxGgmlGraph::build(ofxGgmlTensor output) {
 		return;
 	}
 	graph = ggml_new_graph(ctx);
-	ggml_build_forward_expand(graph, output.raw());
+	ggml_build_forward_expand(graph, output.getRaw());
 #else
 	(void) output;
 #endif
@@ -141,7 +141,7 @@ void ofxGgmlGraph::build(const std::vector<ofxGgmlTensor> & outputs) {
 	}
 	graph = ggml_new_graph(ctx);
 	for (const auto & output : outputs) {
-		if (output) ggml_build_forward_expand(graph, output.raw());
+		if (output) ggml_build_forward_expand(graph, output.getRaw());
 	}
 #else
 	(void) outputs;
@@ -156,7 +156,7 @@ bool ofxGgmlGraph::isBuilt() const {
 #endif
 }
 
-int ofxGgmlGraph::nodeCount() const {
+int ofxGgmlGraph::getNodeCount() const {
 #if OFXGGML_HAS_GGML
 	return graph ? ggml_graph_n_nodes(graph) : 0;
 #else
@@ -164,11 +164,11 @@ int ofxGgmlGraph::nodeCount() const {
 #endif
 }
 
-ggml_context * ofxGgmlGraph::context() const {
+ggml_context * ofxGgmlGraph::getContext() const {
 	return ctx;
 }
 
-ggml_cgraph * ofxGgmlGraph::raw() const {
+ggml_cgraph * ofxGgmlGraph::getRaw() const {
 	return graph;
 }
 

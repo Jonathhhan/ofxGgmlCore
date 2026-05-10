@@ -31,10 +31,10 @@ public:
 	void build(std::initializer_list<ofxGgmlTensor> outputs);
 	void build(const std::vector<ofxGgmlTensor> & outputs);
 	bool isBuilt() const;
-	int nodeCount() const;
+	int getNodeCount() const;
 
-	ggml_context * context() const;
-	ggml_cgraph * raw() const;
+	ggml_context * getContext() const;
+	ggml_cgraph * getRaw() const;
 
 private:
 	void release();

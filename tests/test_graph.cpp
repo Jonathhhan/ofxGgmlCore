@@ -4,10 +4,10 @@
 OFXGGML_TEST(graph_starts_unbuilt) {
 	ofxGgmlGraph graph;
 
-	OFXGGML_REQUIRE(graph.context() != nullptr);
-	OFXGGML_REQUIRE(graph.raw() == nullptr);
+	OFXGGML_REQUIRE(graph.getContext() != nullptr);
+	OFXGGML_REQUIRE(graph.getRaw() == nullptr);
 	OFXGGML_REQUIRE(!graph.isBuilt());
-	OFXGGML_REQUIRE(graph.nodeCount() == 0);
+	OFXGGML_REQUIRE(graph.getNodeCount() == 0);
 }
 
 OFXGGML_TEST(graph_builds_single_output) {
@@ -19,9 +19,9 @@ OFXGGML_TEST(graph_builds_single_output) {
 	graph.build(sum);
 
 	OFXGGML_REQUIRE(sum);
-	OFXGGML_REQUIRE(graph.raw() != nullptr);
+	OFXGGML_REQUIRE(graph.getRaw() != nullptr);
 	OFXGGML_REQUIRE(graph.isBuilt());
-	OFXGGML_REQUIRE(graph.nodeCount() == 1);
+	OFXGGML_REQUIRE(graph.getNodeCount() == 1);
 }
 
 OFXGGML_TEST(graph_builds_multiple_outputs) {
@@ -32,7 +32,7 @@ OFXGGML_TEST(graph_builds_multiple_outputs) {
 	graph.build({ graph.add(a, b), graph.mul(a, b) });
 
 	OFXGGML_REQUIRE(graph.isBuilt());
-	OFXGGML_REQUIRE(graph.nodeCount() == 2);
+	OFXGGML_REQUIRE(graph.getNodeCount() == 2);
 }
 
 OFXGGML_TEST(graph_rejects_invalid_build_outputs) {
@@ -40,11 +40,11 @@ OFXGGML_TEST(graph_rejects_invalid_build_outputs) {
 
 	graph.build(ofxGgmlTensor());
 	OFXGGML_REQUIRE(!graph.isBuilt());
-	OFXGGML_REQUIRE(graph.nodeCount() == 0);
+	OFXGGML_REQUIRE(graph.getNodeCount() == 0);
 
 	graph.build({});
 	OFXGGML_REQUIRE(!graph.isBuilt());
-	OFXGGML_REQUIRE(graph.nodeCount() == 0);
+	OFXGGML_REQUIRE(graph.getNodeCount() == 0);
 }
 
 OFXGGML_TEST(graph_is_movable) {
@@ -54,8 +54,8 @@ OFXGGML_TEST(graph_is_movable) {
 
 	moved.build(tensor);
 
-	OFXGGML_REQUIRE(graph.context() == nullptr);
-	OFXGGML_REQUIRE(moved.context() != nullptr);
+	OFXGGML_REQUIRE(graph.getContext() == nullptr);
+	OFXGGML_REQUIRE(moved.getContext() != nullptr);
 	OFXGGML_REQUIRE(moved.isBuilt());
-	OFXGGML_REQUIRE(moved.nodeCount() == 1);
+	OFXGGML_REQUIRE(moved.getNodeCount() == 1);
 }

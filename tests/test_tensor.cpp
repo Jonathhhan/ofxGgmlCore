@@ -6,7 +6,7 @@ OFXGGML_TEST(default_tensor_is_invalid) {
 	ofxGgmlTensor tensor;
 	OFXGGML_REQUIRE(!tensor);
 	OFXGGML_REQUIRE(!tensor.isValid());
-	OFXGGML_REQUIRE(tensor.raw() == nullptr);
+	OFXGGML_REQUIRE(tensor.getRaw() == nullptr);
 	OFXGGML_REQUIRE(tensor.getNumDims() == 0);
 	OFXGGML_REQUIRE(tensor.getExtent(0) == 0);
 	OFXGGML_REQUIRE(tensor.getByteSize() == 0);

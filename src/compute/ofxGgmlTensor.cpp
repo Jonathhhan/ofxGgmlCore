@@ -39,7 +39,7 @@ bool ofxGgmlTensor::isValid() const {
 	return tensor != nullptr;
 }
 
-ggml_tensor * ofxGgmlTensor::raw() const {
+ggml_tensor * ofxGgmlTensor::getRaw() const {
 	return tensor;
 }
 

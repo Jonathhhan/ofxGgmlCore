@@ -45,6 +45,8 @@ without widening the core surface.
   acronym spelling consistent with OpenCL.
 - Done after `v2.0.0-rewrite.0`: rename tensor shape/storage accessors to
   explicit openFrameworks-style getter names.
+- Done after `v2.0.0-rewrite.0`: rename graph/tensor low-level accessors to
+  explicit getter names.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

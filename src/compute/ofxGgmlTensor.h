@@ -16,7 +16,7 @@ public:
 	explicit operator bool() const;
 	bool isValid() const;
 
-	ggml_tensor * raw() const;
+	ggml_tensor * getRaw() const;
 	ofxGgmlType getType() const;
 	int getNumDims() const;
 	int64_t getExtent(int dim) const;
