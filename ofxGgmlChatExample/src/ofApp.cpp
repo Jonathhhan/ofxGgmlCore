@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+#include "imgui_stdlib.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <cctype>
@@ -24,6 +26,12 @@ namespace {
 
 std::string toString(const std::filesystem::path & path) {
 	return path.lexically_normal().string();
+}
+
+std::string filenameForDisplay(const std::string & path) {
+	const std::filesystem::path filePath(path);
+	const std::string filename = filePath.filename().string();
+	return filename.empty() ? path : filename;
 }
 
 ImVec2 fitWindowSize(float preferredWidth, float preferredHeight) {
@@ -118,10 +126,11 @@ std::string findFirstFile(const std::vector<std::filesystem::path> & candidates)
 	return {};
 }
 
-std::string findFirstFileByExtension(
+std::vector<std::string> findFilesByExtension(
 	const std::vector<std::filesystem::path> & roots,
 	const std::vector<std::filesystem::path> & relativeDirectories,
 	const std::string & extension) {
+	std::vector<std::string> files;
 	for (const auto & root : roots) {
 		for (const auto & relative : relativeDirectories) {
 			const std::filesystem::path directory = (root / relative).lexically_normal();
@@ -134,12 +143,14 @@ std::string findFirstFileByExtension(
 					break;
 				}
 				if (entry.is_regular_file(error) && entry.path().extension() == extension) {
-					return toString(entry.path());
+					files.push_back(toString(entry.path()));
 				}
 			}
 		}
 	}
-	return {};
+	std::sort(files.begin(), files.end());
+	files.erase(std::unique(files.begin(), files.end()), files.end());
+	return files;
 }
 
 std::string discoverLlamaCli() {
@@ -181,7 +192,27 @@ std::string discoverLlamaCli() {
 }
 
 std::string discoverTextModel() {
-	return findFirstFileByExtension(
+	const auto models = findFilesByExtension(
+		searchRoots(),
+		{
+			"",
+			"data",
+			"data/models",
+			"models",
+			"../models",
+			"ofxGgmlChatExample/bin/data",
+			"ofxGgmlChatExample/bin/data/models",
+			"ofxGgmlChatExample/models",
+			"ofxGgmlTextExample/bin/data",
+			"ofxGgmlTextExample/bin/data/models",
+			"ofxGgmlTextExample/models"
+		},
+		".gguf");
+	return models.empty() ? std::string() : models.front();
+}
+
+std::vector<std::string> discoverTextModels() {
+	return findFilesByExtension(
 		searchRoots(),
 		{
 			"",
@@ -222,6 +253,7 @@ void ofApp::setup() {
 
 	modelPath = normalizeEnvPath(envValue("OFXGGML_TEXT_MODEL"));
 	autoConfigureTextBackend(settings, modelPath);
+	refreshModelChoices();
 	const std::string backend = normalizeEnvPath(envValue("OFXGGML_TEXT_BACKEND"));
 	if (backend == "cli") {
 		settings.useServerBackend = false;
@@ -245,8 +277,10 @@ void ofApp::draw() {
 	std::string serverModelSnapshot;
 	std::string executableSnapshot;
 	std::string modelPathSnapshot;
+	std::vector<std::string> modelChoicesSnapshot;
 	bool runningSnapshot = false;
 	bool useServer = false;
+	int selectedModelIndexSnapshot = -1;
 	int maxTokens = 0;
 	float temperature = 0.0f;
 	float topP = 0.0f;
@@ -260,6 +294,8 @@ void ofApp::draw() {
 		serverModelSnapshot = settings.serverModel.empty() ? "(auto)" : settings.serverModel;
 		executableSnapshot = settings.executablePath.empty() ? "(optional)" : settings.executablePath;
 		modelPathSnapshot = modelPath.empty() ? "(server-managed)" : modelPath;
+		modelChoicesSnapshot = modelChoices;
+		selectedModelIndexSnapshot = selectedModelIndex;
 		maxTokens = settings.maxTokens;
 		temperature = settings.temperature;
 		topP = settings.topP;
@@ -312,10 +348,70 @@ void ofApp::draw() {
 		}
 
 		if (ImGui::CollapsingHeader("Runtime", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::TextWrapped("Server: %s", serverUrlSnapshot.c_str());
-			ImGui::TextWrapped("Server model: %s", serverModelSnapshot.c_str());
+			std::string serverUrlEdit = serverUrlSnapshot == "(unset)" ? std::string() : serverUrlSnapshot;
+			std::string serverModelEdit = serverModelSnapshot == "(auto)" ? std::string() : serverModelSnapshot;
+			std::string modelPathEdit = modelPathSnapshot == "(server-managed)" ? std::string() : modelPathSnapshot;
+			if (runningSnapshot) {
+				ImGui::BeginDisabled();
+			}
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputText("Server URL", &serverUrlEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				settings.serverUrl = normalizeEnvPath(serverUrlEdit);
+				if (settings.useServerBackend) {
+					configureGenerator();
+				}
+			}
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputText("Server model", &serverModelEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				settings.serverModel = normalizeEnvPath(serverModelEdit);
+			}
+			const std::string preview = selectedModelIndexSnapshot >= 0 &&
+				selectedModelIndexSnapshot < static_cast<int>(modelChoicesSnapshot.size())
+				? filenameForDisplay(modelChoicesSnapshot[static_cast<std::size_t>(selectedModelIndexSnapshot)])
+				: "(custom / server-managed)";
+			if (ImGui::BeginCombo("Local GGUF", preview.c_str())) {
+				for (std::size_t i = 0; i < modelChoicesSnapshot.size(); ++i) {
+					const bool selected = static_cast<int>(i) == selectedModelIndexSnapshot;
+					const std::string label = filenameForDisplay(modelChoicesSnapshot[i]);
+					if (ImGui::Selectable(label.c_str(), selected)) {
+						std::lock_guard<std::mutex> lock(stateMutex);
+						selectedModelIndex = static_cast<int>(i);
+						modelPath = modelChoices[static_cast<std::size_t>(selectedModelIndex)];
+					}
+					if (ImGui::IsItemHovered()) {
+						ImGui::SetTooltip("%s", modelChoicesSnapshot[i].c_str());
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputText("Local model path", &modelPathEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				modelPath = normalizeEnvPath(modelPathEdit);
+				selectedModelIndex = -1;
+				for (std::size_t i = 0; i < modelChoices.size(); ++i) {
+					if (modelChoices[i] == modelPath) {
+						selectedModelIndex = static_cast<int>(i);
+						break;
+					}
+				}
+			}
+			if (ImGui::Button("Refresh models", ImVec2(120.0f, 0.0f))) {
+				refreshModelChoices();
+			}
+			if (runningSnapshot) {
+				ImGui::EndDisabled();
+			}
+			ImGui::TextWrapped(
+				"Server: %s | Transport: %s | Local model: %s",
+				useServer ? "configured" : "off",
+				useServer ? "streaming" : "CLI",
+				modelPathSnapshot.empty() || modelPathSnapshot == "(server-managed)"
+					? "server-managed"
+					: (fileExists(modelPathSnapshot) ? "found" : "missing"));
 			ImGui::TextWrapped("CLI: %s", executableSnapshot.c_str());
-			ImGui::TextWrapped("Model: %s", modelPathSnapshot.c_str());
 		}
 
 		ImGui::TextUnformatted("System");
@@ -590,6 +686,23 @@ void ofApp::configureGenerator() {
 		generator.setBackend(std::make_shared<ofxGgmlLlamaServerTextBackend>(settings.serverUrl));
 	} else {
 		generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
+	}
+}
+
+void ofApp::refreshModelChoices() {
+	std::vector<std::string> discovered = discoverTextModels();
+	std::lock_guard<std::mutex> lock(stateMutex);
+	modelChoices = std::move(discovered);
+	selectedModelIndex = -1;
+	for (std::size_t i = 0; i < modelChoices.size(); ++i) {
+		if (modelChoices[i] == modelPath) {
+			selectedModelIndex = static_cast<int>(i);
+			break;
+		}
+	}
+	if (modelPath.empty() && !modelChoices.empty()) {
+		selectedModelIndex = 0;
+		modelPath = modelChoices.front();
 	}
 }
 

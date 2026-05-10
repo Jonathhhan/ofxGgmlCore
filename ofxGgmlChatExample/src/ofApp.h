@@ -30,6 +30,7 @@ private:
 	void runChatWorker();
 	void configureGenerator();
 	void appendAssistantText(const std::string & text);
+	void refreshModelChoices();
 	static std::string envValue(const char * name);
 	static void autoConfigureTextBackend(ofxGgmlTextGenerationSettings & settings, std::string & modelPath);
 	static std::string normalizeEnvPath(const std::string & path);
@@ -43,12 +44,14 @@ private:
 	std::string modelPath;
 	std::string status;
 	std::vector<ChatEntry> chat;
+	std::vector<std::string> modelChoices;
 	std::thread worker;
 	std::mutex stateMutex;
 	std::atomic_bool cancelRequested { false };
 	std::array<char, 4096> promptBuffer {};
 	std::array<char, 1024> systemBuffer {};
 	std::size_t pendingAssistantIndex = 0;
+	int selectedModelIndex = -1;
 	bool running = false;
 	bool scrollToBottom = true;
 };

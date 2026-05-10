@@ -71,6 +71,12 @@ std::string toString(const std::filesystem::path & path) {
 	return path.lexically_normal().string();
 }
 
+std::string filenameForDisplay(const std::string & path) {
+	const std::filesystem::path filePath(path);
+	const std::string filename = filePath.filename().string();
+	return filename.empty() ? path : filename;
+}
+
 bool pathExists(const std::filesystem::path & path) {
 	std::error_code error;
 	return std::filesystem::is_regular_file(path, error);
@@ -154,10 +160,11 @@ std::string findFirstFile(const std::vector<std::filesystem::path> & candidates)
 	return {};
 }
 
-std::string findFirstFileByExtension(
+std::vector<std::string> findFilesByExtension(
 	const std::vector<std::filesystem::path> & roots,
 	const std::vector<std::filesystem::path> & relativeDirectories,
 	const std::string & extension) {
+	std::vector<std::string> files;
 	for (const auto & root : roots) {
 		for (const auto & relative : relativeDirectories) {
 			const std::filesystem::path directory = (root / relative).lexically_normal();
@@ -170,12 +177,14 @@ std::string findFirstFileByExtension(
 					break;
 				}
 				if (entry.is_regular_file(error) && entry.path().extension() == extension) {
-					return toString(entry.path());
+					files.push_back(toString(entry.path()));
 				}
 			}
 		}
 	}
-	return {};
+	std::sort(files.begin(), files.end());
+	files.erase(std::unique(files.begin(), files.end()), files.end());
+	return files;
 }
 
 std::string discoverLlamaCli() {
@@ -217,7 +226,7 @@ std::string discoverLlamaCli() {
 }
 
 std::string discoverTextModel() {
-	return findFirstFileByExtension(
+	const auto models = findFilesByExtension(
 		searchRoots(),
 		{
 			"",
@@ -227,6 +236,26 @@ std::string discoverTextModel() {
 			"ofxGgmlTextExample/bin/data",
 			"ofxGgmlTextExample/bin/data/models",
 			"ofxGgmlTextExample/models"
+		},
+		".gguf");
+	return models.empty() ? std::string() : models.front();
+}
+
+std::vector<std::string> discoverTextModels() {
+	return findFilesByExtension(
+		searchRoots(),
+		{
+			"",
+			"data",
+			"data/models",
+			"models",
+			"../models",
+			"ofxGgmlTextExample/bin/data",
+			"ofxGgmlTextExample/bin/data/models",
+			"ofxGgmlTextExample/models",
+			"ofxGgmlChatExample/bin/data",
+			"ofxGgmlChatExample/bin/data/models",
+			"ofxGgmlChatExample/models"
 		},
 		".gguf");
 }
@@ -247,6 +276,8 @@ void ofApp::setup() {
 	settings.useServerBackend = true;
 	modelPath = normalizeEnvPath(envValue("OFXGGML_TEXT_MODEL"));
 	autoConfigureTextBackend(settings, modelPath);
+	modelChoices = discoverTextModels();
+	refreshModelChoices();
 	prompt = "Write one concise sentence about local inference in openFrameworks.";
 	promptEdit = prompt;
 	promptEdit.reserve(4096);
@@ -254,10 +285,8 @@ void ofApp::setup() {
 	const std::string backend = normalizeEnvPath(envValue("OFXGGML_TEXT_BACKEND"));
 	if (backend == "cli") {
 		settings.useServerBackend = false;
-		generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
-	} else {
-		generator.setBackend(std::make_shared<ofxGgmlLlamaServerTextBackend>(settings.serverUrl));
 	}
+	configureGenerator();
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		status = "ready";
@@ -273,21 +302,28 @@ void ofApp::draw() {
 	std::string executableSnapshot;
 	std::string modelPathSnapshot;
 	std::string outputSnapshot;
+	std::vector<std::string> modelChoicesSnapshot;
 	bool runningSnapshot = false;
+	bool useServerSnapshot = false;
+	int selectedModelIndexSnapshot = -1;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		statusSnapshot = status;
+		useServerSnapshot = settings.useServerBackend;
 		backendSnapshot = settings.useServerBackend ? "llama-server" : "llama-cli";
 		serverUrlSnapshot = settings.serverUrl.empty() ? "(unset)" : settings.serverUrl;
 		serverModelSnapshot = settings.serverModel.empty() ? "(auto)" : settings.serverModel;
 		executableSnapshot = settings.executablePath.empty() ? "(optional)" : settings.executablePath;
 		modelPathSnapshot = modelPath.empty() ? "(server-managed)" : modelPath;
 		outputSnapshot = output;
+		modelChoicesSnapshot = modelChoices;
+		selectedModelIndexSnapshot = selectedModelIndex;
 		runningSnapshot = running;
 	}
 
 	bool shouldRun = false;
 	bool shouldCancel = false;
+	bool shouldRefreshModels = false;
 
 	ofBackground(12);
 	gui.begin();
@@ -315,10 +351,85 @@ void ofApp::draw() {
 		ImGui::TextColored(statusColor, "%s", statusSnapshot.c_str());
 		ImGui::Text("State: %s", runningSnapshot ? "running" : "idle");
 		ImGui::Text("Backend: %s", backendSnapshot.c_str());
-		ImGui::TextWrapped("Server: %s", serverUrlSnapshot.c_str());
-		ImGui::TextWrapped("Server model: %s", serverModelSnapshot.c_str());
-		ImGui::TextWrapped("Executable: %s", executableSnapshot.c_str());
-		ImGui::TextWrapped("Model: %s", modelPathSnapshot.c_str());
+
+		if (ImGui::CollapsingHeader("Runtime", ImGuiTreeNodeFlags_DefaultOpen)) {
+			bool useServerEdit = useServerSnapshot;
+			std::string serverUrlEdit = serverUrlSnapshot == "(unset)" ? std::string() : serverUrlSnapshot;
+			std::string serverModelEdit = serverModelSnapshot == "(auto)" ? std::string() : serverModelSnapshot;
+			std::string modelPathEdit = modelPathSnapshot == "(server-managed)" ? std::string() : modelPathSnapshot;
+			if (runningSnapshot) {
+				ImGui::BeginDisabled();
+			}
+			if (ImGui::Checkbox("Use llama-server", &useServerEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				settings.useServerBackend = useServerEdit;
+				configureGenerator();
+				rebuildLinesLocked();
+			}
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputText("Server URL", &serverUrlEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				settings.serverUrl = normalizeEnvPath(serverUrlEdit);
+				if (settings.useServerBackend) {
+					configureGenerator();
+				}
+				rebuildLinesLocked();
+			}
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputText("Server model", &serverModelEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				settings.serverModel = normalizeEnvPath(serverModelEdit);
+				rebuildLinesLocked();
+			}
+
+			const std::string preview = selectedModelIndexSnapshot >= 0 &&
+				selectedModelIndexSnapshot < static_cast<int>(modelChoicesSnapshot.size())
+				? filenameForDisplay(modelChoicesSnapshot[static_cast<std::size_t>(selectedModelIndexSnapshot)])
+				: "(custom / server-managed)";
+			if (ImGui::BeginCombo("Local GGUF", preview.c_str())) {
+				for (std::size_t i = 0; i < modelChoicesSnapshot.size(); ++i) {
+					const bool selected = static_cast<int>(i) == selectedModelIndexSnapshot;
+					const std::string label = filenameForDisplay(modelChoicesSnapshot[i]);
+					if (ImGui::Selectable(label.c_str(), selected)) {
+						std::lock_guard<std::mutex> lock(stateMutex);
+						selectedModelIndex = static_cast<int>(i);
+						modelPath = modelChoices[static_cast<std::size_t>(selectedModelIndex)];
+						rebuildLinesLocked();
+					}
+					if (ImGui::IsItemHovered()) {
+						ImGui::SetTooltip("%s", modelChoicesSnapshot[i].c_str());
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::InputText("Local model path", &modelPathEdit)) {
+				std::lock_guard<std::mutex> lock(stateMutex);
+				modelPath = normalizeEnvPath(modelPathEdit);
+				selectedModelIndex = -1;
+				for (std::size_t i = 0; i < modelChoices.size(); ++i) {
+					if (modelChoices[i] == modelPath) {
+						selectedModelIndex = static_cast<int>(i);
+						break;
+					}
+				}
+				rebuildLinesLocked();
+			}
+			if (ImGui::Button("Refresh models", ImVec2(120.0f, 0.0f))) {
+				shouldRefreshModels = true;
+			}
+			if (runningSnapshot) {
+				ImGui::EndDisabled();
+			}
+			ImGui::TextWrapped(
+				"Server: %s | Transport: %s | Local model: %s",
+				useServerSnapshot ? "configured" : "off",
+				useServerSnapshot ? "streaming" : "CLI",
+				modelPathSnapshot.empty() || modelPathSnapshot == "(server-managed)"
+					? "server-managed"
+					: (fileExists(modelPathSnapshot) ? "found" : "missing"));
+			ImGui::TextWrapped("CLI: %s", executableSnapshot.c_str());
+		}
 
 		ImGui::Spacing();
 		ImGui::TextUnformatted("Prompt");
@@ -349,6 +460,9 @@ void ofApp::draw() {
 	}
 	if (shouldCancel) {
 		requestCancel();
+	}
+	if (shouldRefreshModels) {
+		refreshModelChoices();
 	}
 }
 
@@ -544,6 +658,32 @@ void ofApp::rebuildLinesLocked() {
 			lines.push_back("  " + line);
 		}
 	}
+}
+
+void ofApp::configureGenerator() {
+	if (settings.useServerBackend) {
+		generator.setBackend(std::make_shared<ofxGgmlLlamaServerTextBackend>(settings.serverUrl));
+	} else {
+		generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
+	}
+}
+
+void ofApp::refreshModelChoices() {
+	std::vector<std::string> discovered = discoverTextModels();
+	std::lock_guard<std::mutex> lock(stateMutex);
+	modelChoices = std::move(discovered);
+	selectedModelIndex = -1;
+	for (std::size_t i = 0; i < modelChoices.size(); ++i) {
+		if (modelChoices[i] == modelPath) {
+			selectedModelIndex = static_cast<int>(i);
+			break;
+		}
+	}
+	if (modelPath.empty() && !modelChoices.empty()) {
+		selectedModelIndex = 0;
+		modelPath = modelChoices.front();
+	}
+	rebuildLinesLocked();
 }
 
 void ofApp::autoConfigureTextBackend(

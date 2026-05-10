@@ -22,6 +22,8 @@ private:
 	void requestCancel();
 	void runPromptWorker();
 	void rebuildLinesLocked();
+	void configureGenerator();
+	void refreshModelChoices();
 	static std::string envValue(const char * name);
 	static void autoConfigureTextBackend(ofxGgmlTextGenerationSettings & settings, std::string & modelPath);
 	static std::string normalizeEnvPath(const std::string & path);
@@ -36,8 +38,10 @@ private:
 	std::string output;
 	std::string status;
 	std::vector<std::string> lines;
+	std::vector<std::string> modelChoices;
 	std::thread worker;
 	std::mutex stateMutex;
 	std::atomic_bool cancelRequested { false };
+	int selectedModelIndex = -1;
 	bool running = false;
 };
