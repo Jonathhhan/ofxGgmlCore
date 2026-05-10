@@ -11,7 +11,10 @@ function Write-Step {
 }
 
 function Invoke-DryRun {
-	param([hashtable]$Parameters)
+	param(
+		[hashtable]$Parameters,
+		[switch]$AllowFailure
+	)
 	$scriptRoot = $PSScriptRoot
 	$scriptPath = Join-Path $scriptRoot "setup-ggml.ps1"
 	$powershell = Get-Command pwsh.exe -ErrorAction SilentlyContinue
@@ -35,9 +38,23 @@ function Invoke-DryRun {
 		}
 	}
 
-	$output = & $powershell.Source @arguments 2>&1
-	if ($LASTEXITCODE -ne 0) {
+	$previousErrorActionPreference = $ErrorActionPreference
+	try {
+		$ErrorActionPreference = "Continue"
+		$output = & $powershell.Source @arguments 2>&1
+		$exitCode = $LASTEXITCODE
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
+	}
+
+	if ($exitCode -ne 0) {
+		if ($AllowFailure) {
+			return ($output | ForEach-Object { $_.ToString() }) -join "`n"
+		}
 		throw "setup-ggml dry-run failed: $($output -join "`n")"
+	}
+	if ($AllowFailure) {
+		throw "setup-ggml dry-run succeeded but failure was expected: $($output -join "`n")"
 	}
 	return $output -join "`n"
 }
@@ -72,5 +89,15 @@ $cpuOutput = Invoke-DryRun @{
 }
 Assert-Contains $cpuOutput "mode: CpuOnly" "CPU-only setup dry-run"
 Assert-Contains $cpuOutput "enabled backends: CPU=ON CUDA=OFF Vulkan=OFF Metal=OFF OpenCL=OFF" "CPU-only setup dry-run"
+
+Write-Step "setup-ggml invalid option dry-run"
+$invalidOutput = Invoke-DryRun `
+	-Parameters @{
+		DryRun = $true
+		CpuOnly = $true
+		Cuda = $true
+	} `
+	-AllowFailure
+Assert-Contains $invalidOutput "-CpuOnly cannot be combined with backend switches" "Invalid setup dry-run"
 
 Write-Step "Setup dry-run smoke coverage passed"

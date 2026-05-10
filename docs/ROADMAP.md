@@ -64,8 +64,8 @@ without widening the core surface.
   for setup plan reporting.
 - Done after `v2.0.0-rewrite.0`: add explicit setup dry-run smoke commands and
   notes for CUDA and Vulkan machines.
-- Keep `-Auto` as the default setup behavior and preserve early SDK failures for
-  explicit backend switches.
+- Done after `v2.0.0-rewrite.0`: keep `-Auto` as the default setup behavior
+  and add dry-run smoke coverage for early setup option failures.
 - Avoid committing generated ggml, llama.cpp, SAM3, model, or project artifacts.
 
 ### 3. Examples

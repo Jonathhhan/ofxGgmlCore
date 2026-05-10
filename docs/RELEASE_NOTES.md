@@ -15,6 +15,8 @@
   checked without fetching, cleaning, configuring, or compiling ggml.
 - Added optional explicit backend setup dry-run smoke scripts for CUDA, Vulkan,
   CUDA+Vulkan, OpenCL, and AllBackends plans.
+- Added setup dry-run coverage for invalid option combinations so setup failures
+  stay early and clear.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.
