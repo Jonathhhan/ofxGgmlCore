@@ -27,6 +27,8 @@ without widening the core surface.
   and segmentation result structs.
 - Done after `v2.0.0-rewrite.0`: add status helpers to public llama CLI/server
   adapter helper result structs.
+- Done after `v2.0.0-rewrite.0`: move example prompt/output logging to `ofLog`
+  and model result checks with the bool-style helpers.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

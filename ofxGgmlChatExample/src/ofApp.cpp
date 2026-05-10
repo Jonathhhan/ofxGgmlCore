@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -655,20 +654,20 @@ void ofApp::runChatWorker() {
 			break;
 		}
 	}
-	std::cout << "\n[ofxGgmlChatExample] prompt\n"
-		<< consolePrompt
-		<< "\n" << std::flush;
+	ofLogNotice("ofxGgmlChatExample") << "prompt\n" << consolePrompt;
 	auto result = generator.generate(request, onTextChunk);
-	std::cout << "\n[ofxGgmlChatExample] output\n"
-		<< (result.success ? result.text : std::string("ERROR: ") + result.error)
-		<< "\n" << std::flush;
+	if (result) {
+		ofLogNotice("ofxGgmlChatExample") << "output\n" << result.text;
+	} else {
+		ofLogError("ofxGgmlChatExample") << "output error\n" << result.error;
+	}
 
 	std::lock_guard<std::mutex> lock(stateMutex);
 	if (pendingAssistantIndex < chat.size()) {
 		if (cancelRequested) {
 			chat.erase(chat.begin() + static_cast<std::ptrdiff_t>(pendingAssistantIndex));
 			status = "cancelled";
-		} else if (result.success) {
+		} else if (result) {
 			chat[pendingAssistantIndex].content = result.text;
 			status = "complete via " + result.backendName + " in " +
 				std::to_string(static_cast<int>(result.elapsedMs)) + " ms";

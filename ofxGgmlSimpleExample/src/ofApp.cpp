@@ -6,14 +6,7 @@
 namespace {
 
 std::string backendLabel(ofxGgmlBackend backend) {
-	switch (backend) {
-	case ofxGgmlBackend::Auto: return "Auto";
-	case ofxGgmlBackend::Cpu: return "CPU";
-	case ofxGgmlBackend::Cuda: return "CUDA";
-	case ofxGgmlBackend::Vulkan: return "Vulkan";
-	case ofxGgmlBackend::Metal: return "Metal";
-	}
-	return "Unknown";
+	return ofxGgmlBackendName(backend);
 }
 
 std::string formatBytes(std::size_t bytes) {
@@ -75,7 +68,7 @@ void ofApp::setup() {
 			graphError = setRight.error().message;
 		}
 		ofxGgmlComputeResult compute = graphError.empty() ? runtime.compute(graph) : ofxGgmlComputeResult {};
-		if (!compute.success && graphError.empty()) {
+		if (!compute && graphError.empty()) {
 			graphError = compute.error.empty() ? "graph compute failed" : compute.error;
 		}
 		auto readResult = graphError.empty()

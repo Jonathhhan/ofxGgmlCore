@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Switched example prompt/output console prints to the openFrameworks `ofLog`
+  system and updated examples to use the result-style bool helpers.
 - Added result-style status helpers to the llama CLI command result and
   llama-server transport response helper structs.
 - Added result-style `isOk()`, `isError()`, and bool-conversion helpers to

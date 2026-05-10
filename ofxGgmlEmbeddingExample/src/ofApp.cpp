@@ -6,7 +6,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <iomanip>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -256,35 +255,34 @@ void ofApp::runEmbeddingWorker() {
 	request.inputs = { requestInputA, requestInputB };
 	request.settings = requestSettings;
 
-	std::cout << "\n[ofxGgmlEmbeddingExample] input A\n"
-		<< requestInputA
-		<< "\n[ofxGgmlEmbeddingExample] input B\n"
-		<< requestInputB
-		<< "\n" << std::flush;
+	ofLogNotice("ofxGgmlEmbeddingExample")
+		<< "input A\n" << requestInputA
+		<< "\ninput B\n" << requestInputB;
 
 	const auto result = generator.embed(request);
 
-	std::cout << "\n[ofxGgmlEmbeddingExample] output\n";
-	if (result.success) {
+	if (result) {
+		std::ostringstream log;
+		log << "output\n";
 		for (std::size_t i = 0; i < result.embeddings.size(); ++i) {
-			std::cout << static_cast<char>('A' + static_cast<int>(i))
+			log << static_cast<char>('A' + static_cast<int>(i))
 				<< " dimension: " << result.embeddings[i].size() << "\n"
 				<< embeddingPreview(result.embeddings[i]) << "\n";
 		}
 		if (result.embeddings.size() >= 2) {
-			std::cout << "cosine similarity: "
+			log << "cosine similarity: "
 				<< ofxGgmlEmbeddingUtils::cosineSimilarity(
 					result.embeddings[0],
 					result.embeddings[1])
 				<< "\n";
 		}
+		ofLogNotice("ofxGgmlEmbeddingExample") << log.str();
 	} else {
-		std::cout << "ERROR: " << result.error << "\n";
+		ofLogError("ofxGgmlEmbeddingExample") << "output error\n" << result.error;
 	}
-	std::cout << std::flush;
 
 	std::lock_guard<std::mutex> lock(stateMutex);
-	if (result.success) {
+	if (result) {
 		embeddings = result.embeddings;
 		hasSimilarity = embeddings.size() >= 2;
 		similarity = hasSimilarity

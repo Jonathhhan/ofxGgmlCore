@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -609,19 +608,19 @@ void ofApp::runPromptWorker() {
 		onTextChunk = cancelOnlyChunk;
 	}
 
-	std::cout << "\n[ofxGgmlTextExample] prompt\n"
-		<< request.prompt
-		<< "\n" << std::flush;
+	ofLogNotice("ofxGgmlTextExample") << "prompt\n" << request.prompt;
 	auto result = generator.generate(request, onTextChunk);
-	std::cout << "\n[ofxGgmlTextExample] output\n"
-		<< (result.success ? result.text : std::string("ERROR: ") + result.error)
-		<< "\n" << std::flush;
+	if (result) {
+		ofLogNotice("ofxGgmlTextExample") << "output\n" << result.text;
+	} else {
+		ofLogError("ofxGgmlTextExample") << "output error\n" << result.error;
+	}
 
 	std::lock_guard<std::mutex> lock(stateMutex);
 	if (cancelRequested) {
 		output.clear();
 		status = "cancelled";
-	} else if (result.success) {
+	} else if (result) {
 		output = result.text;
 		status = "complete via " + result.backendName + " in " +
 			std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
