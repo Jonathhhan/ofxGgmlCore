@@ -13,6 +13,8 @@
 - Updated the core contract and roadmap after the public header naming audit.
 - Added `setup-ggml -DryRun` plus smoke coverage so backend setup plans can be
   checked without fetching, cleaning, configuring, or compiling ggml.
+- Added optional explicit backend setup dry-run smoke scripts for CUDA, Vulkan,
+  CUDA+Vulkan, OpenCL, and AllBackends plans.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.

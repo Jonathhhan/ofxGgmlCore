@@ -38,6 +38,9 @@ servers. It covers:
 When validating optional local runtimes, also run the relevant smoke scripts:
 
 ```bat
+scripts\test-backend-setup-dry-run.bat -Cuda
+scripts\test-backend-setup-dry-run.bat -Vulkan
+scripts\test-backend-setup-dry-run.bat -CudaVulkan
 scripts\test-sam3-smoke.bat
 scripts\test-sam3-smoke.bat -ModelPath C:\path\to\sam3-model.gguf
 scripts\run-embedding.bat -Prompt "openFrameworks local inference"
@@ -59,6 +62,8 @@ Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
 
 - `scripts\validate-local.ps1` passed.
 - `scripts\test-setup-dry-run.ps1` passed as part of local validation.
+- `scripts\test-backend-setup-dry-run.ps1 -Cuda -Vulkan -CudaVulkan` passed
+  setup-plan checks on a machine with CUDA and Vulkan SDKs installed.
 - `scripts\build-simple-example.ps1 -Configuration Release -Platform x64`
   passed after a transient openFrameworks tlog lock retry; 0 warnings, 0
   errors.
@@ -102,8 +107,9 @@ These items are intentionally not blockers for the first rewrite tag:
   fast and non-interactive; full openFrameworks example builds remain explicit
   confidence checks.
 - All-backend build verification: deferred from the core tag gate. CPU is the
-  required baseline; CUDA, Vulkan, Metal, and OpenCL are validated through their
-  setup switches on machines that have the relevant SDKs.
+  required baseline; CUDA, Vulkan, Metal, and OpenCL are validated through
+  explicit setup dry-runs and setup switches on machines that have the relevant
+  SDKs.
 - POSIX generated project builds: deferred. Shell wrappers are included, but
   platform projects still depend on local openFrameworks project generation.
 - Exact release version string: closed for the first rewrite tag as

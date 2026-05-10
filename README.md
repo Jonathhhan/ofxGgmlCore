@@ -285,6 +285,18 @@ Run the setup dry-run smoke checks:
 scripts\test-setup-dry-run.bat
 ```
 
+On machines with explicit backend SDKs installed, run backend setup dry-run
+smoke checks before spending time on a full compile:
+
+```bat
+scripts\test-backend-setup-dry-run.bat -Cuda
+scripts\test-backend-setup-dry-run.bat -Vulkan
+scripts\test-backend-setup-dry-run.bat -CudaVulkan
+```
+
+These checks intentionally fail when a requested SDK is missing, matching the
+real setup script's explicit-backend behavior.
+
 The old CLI fallback is still available when you explicitly request it:
 
 ```powershell

@@ -62,8 +62,8 @@ without widening the core surface.
 - Keep CPU as the required baseline.
 - Done after `v2.0.0-rewrite.0`: add `setup-ggml -DryRun` and smoke coverage
   for setup plan reporting.
-- Add explicit smoke notes for CUDA and Vulkan machines when those paths are
-  exercised locally.
+- Done after `v2.0.0-rewrite.0`: add explicit setup dry-run smoke commands and
+  notes for CUDA and Vulkan machines.
 - Keep `-Auto` as the default setup behavior and preserve early SDK failures for
   explicit backend switches.
 - Avoid committing generated ggml, llama.cpp, SAM3, model, or project artifacts.
