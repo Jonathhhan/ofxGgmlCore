@@ -50,9 +50,12 @@ void ofApp::setup() {
 	}
 	configureGenerator();
 
-	input = "openFrameworks local inference";
-	inputEdit = input;
-	inputEdit.reserve(4096);
+	inputA = "openFrameworks local inference";
+	inputB = "interactive creative coding with local AI";
+	inputAEdit = inputA;
+	inputBEdit = inputB;
+	inputAEdit.reserve(4096);
+	inputBEdit.reserve(4096);
 
 	std::lock_guard<std::mutex> lock(stateMutex);
 	status = "ready";
@@ -63,7 +66,9 @@ void ofApp::draw() {
 	std::string errorSnapshot;
 	std::string serverUrlSnapshot;
 	std::string serverModelSnapshot;
-	std::vector<float> embeddingSnapshot;
+	std::vector<std::vector<float>> embeddingsSnapshot;
+	float similaritySnapshot = 0.0f;
+	bool hasSimilaritySnapshot = false;
 	bool runningSnapshot = false;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
@@ -71,7 +76,9 @@ void ofApp::draw() {
 		errorSnapshot = error;
 		serverUrlSnapshot = settings.serverUrl;
 		serverModelSnapshot = settings.serverModel;
-		embeddingSnapshot = embedding;
+		embeddingsSnapshot = embeddings;
+		similaritySnapshot = similarity;
+		hasSimilaritySnapshot = hasSimilarity;
 		runningSnapshot = running;
 	}
 
@@ -125,26 +132,46 @@ void ofApp::draw() {
 		}
 
 		ImGui::Spacing();
-		ImGui::TextUnformatted("Input");
+		ImGui::TextUnformatted("Input A");
 		ImGui::Separator();
 		ImGui::InputTextMultiline(
-			"##embedding-input",
-			&inputEdit,
-			ImVec2(0.0f, 86.0f),
+			"##embedding-input-a",
+			&inputAEdit,
+			ImVec2(0.0f, 64.0f),
+			runningSnapshot ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+		ImGui::Spacing();
+		ImGui::TextUnformatted("Input B");
+		ImGui::Separator();
+		ImGui::InputTextMultiline(
+			"##embedding-input-b",
+			&inputBEdit,
+			ImVec2(0.0f, 64.0f),
 			runningSnapshot ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 
 		ImGui::Spacing();
-		ImGui::TextUnformatted("Embedding");
+		ImGui::TextUnformatted("Embeddings");
 		ImGui::Separator();
-		ImGui::BeginChild("ofxGgmlEmbeddingOutput", ImVec2(0.0f, 150.0f), true);
+		ImGui::BeginChild("ofxGgmlEmbeddingOutput", ImVec2(0.0f, 164.0f), true);
 		if (!errorSnapshot.empty()) {
 			ImGui::TextWrapped("Error: %s", errorSnapshot.c_str());
-		} else if (embeddingSnapshot.empty()) {
+		} else if (embeddingsSnapshot.empty()) {
 			ImGui::TextDisabled("(none)");
 		} else {
-			ImGui::Text("Dimension: %d", static_cast<int>(embeddingSnapshot.size()));
-			const std::string preview = embeddingPreview(embeddingSnapshot);
-			ImGui::TextWrapped("%s", preview.c_str());
+			if (hasSimilaritySnapshot) {
+				ImGui::Text("Cosine similarity: %.4f", similaritySnapshot);
+				ImGui::Separator();
+			}
+			for (std::size_t i = 0; i < embeddingsSnapshot.size(); ++i) {
+				ImGui::Text(
+					"%c dimension: %d",
+					static_cast<char>('A' + static_cast<int>(i)),
+					static_cast<int>(embeddingsSnapshot[i].size()));
+				const std::string preview = embeddingPreview(embeddingsSnapshot[i]);
+				ImGui::TextWrapped("%s", preview.c_str());
+				if (i + 1 < embeddingsSnapshot.size()) {
+					ImGui::Spacing();
+				}
+			}
 		}
 		ImGui::EndChild();
 	}
@@ -187,16 +214,19 @@ void ofApp::startEmbedding() {
 
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
-		input = trimText(inputEdit);
-		if (input.empty()) {
-			status = "type input text first";
+		inputA = trimText(inputAEdit);
+		inputB = trimText(inputBEdit);
+		if (inputA.empty() || inputB.empty()) {
+			status = "type both input texts first";
 			error.clear();
-			embedding.clear();
+			embeddings.clear();
+			hasSimilarity = false;
 			return;
 		}
 		status = "requesting embedding...";
 		error.clear();
-		embedding.clear();
+		embeddings.clear();
+		hasSimilarity = false;
 		running = true;
 	}
 
@@ -205,11 +235,13 @@ void ofApp::startEmbedding() {
 
 void ofApp::runEmbeddingWorker() {
 	ofxGgmlEmbeddingSettings requestSettings;
-	std::string requestInput;
+	std::string requestInputA;
+	std::string requestInputB;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		requestSettings = settings;
-		requestInput = input;
+		requestInputA = inputA;
+		requestInputB = inputB;
 	}
 
 	if (requestSettings.serverUrl.empty()) {
@@ -221,19 +253,31 @@ void ofApp::runEmbeddingWorker() {
 	}
 
 	ofxGgmlEmbeddingRequest request;
-	request.input = requestInput;
+	request.inputs = { requestInputA, requestInputB };
 	request.settings = requestSettings;
 
-	std::cout << "\n[ofxGgmlEmbeddingExample] input\n"
-		<< request.input
+	std::cout << "\n[ofxGgmlEmbeddingExample] input A\n"
+		<< requestInputA
+		<< "\n[ofxGgmlEmbeddingExample] input B\n"
+		<< requestInputB
 		<< "\n" << std::flush;
 
 	const auto result = generator.embed(request);
 
 	std::cout << "\n[ofxGgmlEmbeddingExample] output\n";
 	if (result.success) {
-		std::cout << "dimension: " << result.embedding.size() << "\n"
-			<< embeddingPreview(result.embedding) << "\n";
+		for (std::size_t i = 0; i < result.embeddings.size(); ++i) {
+			std::cout << static_cast<char>('A' + static_cast<int>(i))
+				<< " dimension: " << result.embeddings[i].size() << "\n"
+				<< embeddingPreview(result.embeddings[i]) << "\n";
+		}
+		if (result.embeddings.size() >= 2) {
+			std::cout << "cosine similarity: "
+				<< ofxGgmlEmbeddingUtils::cosineSimilarity(
+					result.embeddings[0],
+					result.embeddings[1])
+				<< "\n";
+		}
 	} else {
 		std::cout << "ERROR: " << result.error << "\n";
 	}
@@ -241,12 +285,18 @@ void ofApp::runEmbeddingWorker() {
 
 	std::lock_guard<std::mutex> lock(stateMutex);
 	if (result.success) {
-		embedding = result.embedding;
+		embeddings = result.embeddings;
+		hasSimilarity = embeddings.size() >= 2;
+		similarity = hasSimilarity
+			? ofxGgmlEmbeddingUtils::cosineSimilarity(embeddings[0], embeddings[1])
+			: 0.0f;
 		error.clear();
 		status = "complete via " + result.backendName + " in " +
 			std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
 	} else {
-		embedding.clear();
+		embeddings.clear();
+		similarity = 0.0f;
+		hasSimilarity = false;
 		error = result.error;
 		status = "embedding error";
 	}

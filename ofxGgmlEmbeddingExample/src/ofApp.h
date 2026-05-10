@@ -29,11 +29,15 @@ private:
 	ofxGgmlEmbeddingSettings settings;
 	ofxImGui::Gui gui;
 
-	std::string input;
-	std::string inputEdit;
+	std::string inputA;
+	std::string inputB;
+	std::string inputAEdit;
+	std::string inputBEdit;
 	std::string status;
 	std::string error;
-	std::vector<float> embedding;
+	std::vector<std::vector<float>> embeddings;
+	float similarity = 0.0f;
+	bool hasSimilarity = false;
 
 	std::thread worker;
 	std::mutex stateMutex;

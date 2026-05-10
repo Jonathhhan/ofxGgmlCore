@@ -110,3 +110,15 @@ public:
 private:
 	std::shared_ptr<ofxGgmlEmbeddingBackend> m_backend;
 };
+
+namespace ofxGgmlEmbeddingUtils {
+
+float dotProduct(
+	const std::vector<float> & a,
+	const std::vector<float> & b);
+float l2Norm(const std::vector<float> & values);
+float cosineSimilarity(
+	const std::vector<float> & a,
+	const std::vector<float> & b);
+
+} // namespace ofxGgmlEmbeddingUtils

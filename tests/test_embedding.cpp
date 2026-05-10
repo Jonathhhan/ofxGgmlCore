@@ -139,3 +139,15 @@ OFXGGML_TEST(llama_server_embedding_backend_reports_unreachable_server) {
 		result.error.find("llama-server is not reachable") != std::string::npos);
 	OFXGGML_REQUIRE(result.error.find("connection refused") != std::string::npos);
 }
+
+OFXGGML_TEST(embedding_utils_compute_cosine_similarity) {
+	const std::vector<float> a = { 1.0f, 0.0f, 0.0f };
+	const std::vector<float> b = { 0.0f, 1.0f, 0.0f };
+	const std::vector<float> c = { 2.0f, 0.0f, 0.0f };
+
+	OFXGGML_REQUIRE(ofxGgmlEmbeddingUtils::dotProduct(a, c) == 2.0f);
+	OFXGGML_REQUIRE(ofxGgmlEmbeddingUtils::l2Norm(c) == 2.0f);
+	OFXGGML_REQUIRE(ofxGgmlEmbeddingUtils::cosineSimilarity(a, b) == 0.0f);
+	OFXGGML_REQUIRE(ofxGgmlEmbeddingUtils::cosineSimilarity(a, c) == 1.0f);
+	OFXGGML_REQUIRE(ofxGgmlEmbeddingUtils::cosineSimilarity(a, {}) == 0.0f);
+}

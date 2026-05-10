@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cctype>
 #include <cstdlib>
+#include <cmath>
 #include <sstream>
 #include <utility>
 
@@ -343,4 +344,39 @@ ofxGgmlEmbeddingResult ofxGgmlEmbeddingGenerator::embed(
 	request.input = input;
 	request.settings = settings;
 	return embed(request);
+}
+
+float ofxGgmlEmbeddingUtils::dotProduct(
+	const std::vector<float> & a,
+	const std::vector<float> & b) {
+	if (a.empty() || a.size() != b.size()) {
+		return 0.0f;
+	}
+	double sum = 0.0;
+	for (std::size_t i = 0; i < a.size(); ++i) {
+		sum += static_cast<double>(a[i]) * static_cast<double>(b[i]);
+	}
+	return static_cast<float>(sum);
+}
+
+float ofxGgmlEmbeddingUtils::l2Norm(const std::vector<float> & values) {
+	if (values.empty()) {
+		return 0.0f;
+	}
+	double sum = 0.0;
+	for (const float value : values) {
+		sum += static_cast<double>(value) * static_cast<double>(value);
+	}
+	return static_cast<float>(std::sqrt(sum));
+}
+
+float ofxGgmlEmbeddingUtils::cosineSimilarity(
+	const std::vector<float> & a,
+	const std::vector<float> & b) {
+	const float normA = l2Norm(a);
+	const float normB = l2Norm(b);
+	if (normA <= 0.0f || normB <= 0.0f || a.size() != b.size()) {
+		return 0.0f;
+	}
+	return dotProduct(a, b) / (normA * normB);
 }
