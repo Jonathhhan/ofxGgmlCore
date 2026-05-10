@@ -19,33 +19,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
-
-function Resolve-FirstFile {
-	param([string[]]$Candidates)
-	foreach ($candidate in $Candidates) {
-		if (![string]::IsNullOrWhiteSpace($candidate) -and
-			(Test-Path -LiteralPath $candidate -PathType Leaf)) {
-			return (Resolve-Path -LiteralPath $candidate).Path
-		}
-	}
-	return ""
-}
-
-function Find-FirstModel {
-	param([string[]]$Directories)
-	foreach ($directory in $Directories) {
-		if (!(Test-Path -LiteralPath $directory -PathType Container)) {
-			continue
-		}
-		$model = Get-ChildItem -LiteralPath $directory -Filter "*.gguf" -File -ErrorAction SilentlyContinue |
-			Sort-Object Name |
-			Select-Object -First 1
-		if ($model) {
-			return $model.FullName
-		}
-	}
-	return ""
-}
+. (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
 
 function Get-ServerUrl {
 	param([string]$HostValue, [int]$PortValue)
@@ -116,7 +90,7 @@ function Join-ProcessArguments {
 
 if ([string]::IsNullOrWhiteSpace($ServerExe)) {
 	$serverName = if ($IsLinux -or $IsMacOS) { "llama-server" } else { "llama-server.exe" }
-	$ServerExe = Resolve-FirstFile @(
+	$ServerExe = Resolve-OfxGgmlFirstFile @(
 		(Join-Path $addonRoot "libs\llama\bin\$serverName"),
 		(Join-Path $addonRoot "libs\llama.cpp\build\bin\Release\$serverName"),
 		(Join-Path $addonRoot "libs\llama.cpp\build\bin\$serverName"),
@@ -128,13 +102,16 @@ if ([string]::IsNullOrWhiteSpace($ServerExe)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($ModelPath)) {
-	$ModelPath = Find-FirstModel @(
-		(Join-Path $addonRoot "ofxGgmlTextExample\bin\data\models"),
-		(Join-Path $addonRoot "ofxGgmlTextExample\bin\data"),
-		(Join-Path $addonRoot "ofxGgmlTextExample\models"),
-		(Join-Path $addonRoot "models"),
-		(Join-Path (Split-Path -Parent $addonRoot) "models")
-	)
+	$primaryExample = if ($Embeddings) { "ofxGgmlEmbeddingExample" } else { "ofxGgmlTextExample" }
+	$extraExamples = if ($Embeddings) {
+		@("ofxGgmlTextExample", "ofxGgmlChatExample")
+	} else {
+		@("ofxGgmlChatExample")
+	}
+	$ModelPath = Find-OfxGgmlFirstModel (Get-OfxGgmlModelSearchDirectories `
+		-AddonRoot $addonRoot `
+		-ExampleRoot (Join-Path $addonRoot $primaryExample) `
+		-ExtraExampleNames $extraExamples)
 }
 if ([string]::IsNullOrWhiteSpace($ModelPath)) {
 	throw "Could not find a GGUF model. Pass -ModelPath or set OFXGGML_TEXT_MODEL."

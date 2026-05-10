@@ -164,4 +164,5 @@ layer.
 11. Done: add an interactive chat example.
 12. Done: add embedding runner, server API, and embedding similarity example.
 13. Done: add generated-project repair coverage for multiple examples.
-14. Next: tighten example launch scripts and model/server discovery consistency.
+14. Done: tighten example launch scripts and model/server discovery consistency.
+15. Next: add focused smoke coverage for launch-script dry-run behavior.

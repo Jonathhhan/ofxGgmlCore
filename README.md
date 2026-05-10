@@ -237,6 +237,9 @@ The run scripts check the local server URL first. If no local `llama-server`
 responds and a bundled server/model can be found, they start
 `libs\llama\bin\llama-server.exe` detached before launching the example. Pass
 `-NoAutoServer` to only connect to an already-running server.
+Pass `-DryRun` to `run-text-example`, `run-chat-example`, `run-embedding-example`,
+or `start-llama-server` to inspect the resolved executable, model, and server
+settings without starting the UI or server process.
 
 The old CLI fallback is still available when you explicitly request it:
 
