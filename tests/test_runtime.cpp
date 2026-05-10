@@ -113,13 +113,17 @@ OFXGGML_TEST(runtime_computes_cpu_graph_end_to_end) {
 	std::array<float, 4> output {};
 
 	OFXGGML_REQUIRE(runtime.setup().isOk());
-	OFXGGML_REQUIRE(runtime.compute(graph).success == false);
+	ofxGgmlComputeResult unallocated = runtime.compute(graph);
+	OFXGGML_REQUIRE(!unallocated);
+	OFXGGML_REQUIRE(unallocated.isError());
 	OFXGGML_REQUIRE(runtime.allocate(graph).isOk());
 	OFXGGML_REQUIRE(runtime.setData(a, left.data(), sizeof(left)).isOk());
 	OFXGGML_REQUIRE(runtime.setData(b, right.data(), sizeof(right)).isOk());
 
 	ofxGgmlComputeResult compute = runtime.compute(graph);
-	OFXGGML_REQUIRE(compute.success);
+	OFXGGML_REQUIRE(compute);
+	OFXGGML_REQUIRE(compute.isOk());
+	OFXGGML_REQUIRE(!compute.isError());
 	OFXGGML_REQUIRE(compute.error.empty());
 
 	OFXGGML_REQUIRE(runtime.getData(sum, output.data(), sizeof(output)).isOk());

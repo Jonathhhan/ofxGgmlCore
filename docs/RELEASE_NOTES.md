@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `isOk()`, `isError()`, and bool-conversion helpers to
+  `ofxGgmlComputeResult`.
 - Added `ofxGgmlBackend::OpenCL` so the public runtime backend enum matches the
   setup script backend switches.
 - Added `ofxGgmlBackendName()` for stable public backend labels.

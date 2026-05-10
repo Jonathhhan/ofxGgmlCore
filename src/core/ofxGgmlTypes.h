@@ -57,4 +57,16 @@ struct ofxGgmlComputeResult {
 	bool success = false;
 	float elapsedMs = 0.0f;
 	std::string error;
+
+	explicit operator bool() const {
+		return isOk();
+	}
+
+	bool isOk() const {
+		return success;
+	}
+
+	bool isError() const {
+		return !isOk();
+	}
 };
