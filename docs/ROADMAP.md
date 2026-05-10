@@ -1,17 +1,17 @@
 # Roadmap
 
-This roadmap tracks the `1.0.0` release line. The goal is to keep `main` small,
+This roadmap tracks the `1.0.1` release line. The goal is to keep `main` small,
 testable, and useful for openFrameworks projects without rebuilding the old
 all-in-one framework.
 
 ## Next Checkpoint
 
-Target: `1.0.0`
+Target: `1.0.1`
 
 Purpose: ship the rewritten addon as a narrow, stable starting point with the
 current confidence and ergonomics work included.
 
-Status: ready for a final `1.0.0` confidence pass. Do not widen the public API
+Status: ready for a final `1.0.1` confidence pass. Do not widen the public API
 before this release unless a blocking validation issue requires it.
 
 ## Workstreams

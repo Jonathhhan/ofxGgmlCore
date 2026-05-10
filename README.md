@@ -39,9 +39,9 @@ dedicated scripts, so core builds and tests do not require llama.cpp.
 
 ## Status
 
-`main` is the active `1.0.0` line. It contains the core runtime, text,
+`main` is the active `1.0.1` line. It contains the core runtime, text,
 embedding, and segmentation boundaries plus focused examples and local
-validation scripts. Breaking changes after `1.0.0` should be called out in
+validation scripts. Breaking changes after `1.0.1` should be called out in
 release notes. Use `legacy-full` if you need the prior broad implementation.
 
 See `docs/RELEASE_NOTES.md` for release notes, `docs/ROADMAP.md` for future

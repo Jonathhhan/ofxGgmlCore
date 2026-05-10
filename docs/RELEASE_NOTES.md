@@ -4,6 +4,12 @@
 
 - No unreleased changes.
 
+## v1.0.1
+
+- Patch release metadata to make `1.0.1` the active release target.
+- Keep the narrowed rewritten addon scope unchanged while preserving the
+  existing `1.0.0` foundation notes for history.
+
 ## v1.0.0
 
 This is the first stable release for the rewritten `main` line. It is a

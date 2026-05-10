@@ -1,11 +1,11 @@
 # Release Readiness
 
 This document is the pre-tag checklist for the rewritten `main` line. It defines
-what belongs in `1.0.0` and what must stay optional.
+what belongs in `1.0.1` and what must stay optional.
 
-## 1.0.0 Scope
+## 1.0.1 Scope
 
-`1.0.0` should promise a narrow, dependable addon:
+`1.0.1` should promise a narrow, dependable addon:
 
 - ggml setup pinned to `v0.11.0`
 - `ofxGgmlCore.h` for runtime, tensors, graphs, GGUF metadata, and results
@@ -16,7 +16,7 @@ what belongs in `1.0.0` and what must stay optional.
 - script-tested segmentation/SAM3 boundary
 - Windows batch and PowerShell scripts, with POSIX shell wrappers where practical
 
-`1.0.0` should not promise assistants, RAG, speech, TTS, diffusion, broad
+`1.0.1` should not promise assistants, RAG, speech, TTS, diffusion, broad
 vision workflows, model downloads, or product-level GUI workflows.
 
 ## Required Checks
@@ -91,7 +91,7 @@ Visual Studio project integration, not addon compile errors.
 
 ## Tag Gate
 
-Before creating the `1.0.0` tag:
+Before creating the `1.0.1` tag:
 
 - `main` is clean after validation.
 - README setup and validation commands match the actual scripts.
@@ -103,7 +103,7 @@ Before creating the `1.0.0` tag:
 
 ## Gap Review
 
-These items are intentionally not blockers for `1.0.0`:
+These items are intentionally not blockers for `1.0.1`:
 
 - Real SAM3 model/image UX: deferred until a known-compatible model and sample
   image workflow are available. See `docs/SEGMENTATION.md`.
@@ -118,16 +118,16 @@ These items are intentionally not blockers for `1.0.0`:
   SDKs.
 - POSIX generated project builds: deferred. Shell wrappers are included, but
   platform projects still depend on local openFrameworks project generation.
-- Exact release version string: closed for `1.0.0`.
+- Exact release version string: closed for `1.0.1`.
 
-These items should be closed before `1.0.0`:
+These items should be closed before `1.0.1`:
 
 - No open pre-tag hygiene items remain in this document. If new public API or
   scripts are added, rerun this checklist before tagging.
 
 ## Versioning
 
-After `1.0.0`, breaking changes should be called out in release notes and should
+After `1.0.1`, breaking changes should be called out in release notes and should
 move the version intentionally.
 
 `legacy-full` remains the archive branch for the previous broad implementation.

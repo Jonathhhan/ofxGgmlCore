@@ -109,7 +109,7 @@ have not run dependency setup.
 
 Core dependency setup must be reproducible:
 
-- pin ggml to `v0.11.0` before the `1.0.0` release
+- pin ggml to `v0.11.0` before the `1.0.1` release
 - populate `libs/ggml/include`
 - populate `libs/ggml/lib`
 - do not commit generated ggml binaries by default
@@ -190,7 +190,7 @@ layer.
 17. Done: decide the next optional layer boundary before adding more runtime surface.
 18. Done: add a focused segmentation example or documented SAM3 smoke path.
 19. Done: decide whether segmentation needs an openFrameworks example or should remain script-tested until a real SAM3 model workflow is available.
-20. Done: tighten release/readiness docs around what belongs in `main` before `1.0.0`.
+20. Done: tighten release/readiness docs around what belongs in `main` before `1.0.1`.
 21. Done: review release readiness gaps and either close them or intentionally defer them.
 22. Done: run a full generated-example build confidence pass before considering the first stable tag.
 23. Done: confirm README setup, validation, llama-server, embedding, and SAM3 smoke commands match the scripts.
@@ -200,8 +200,8 @@ layer.
 27. Done: add standalone public umbrella header compile coverage.
 28. Done: align backend label APIs with openFrameworks-style getter naming.
 29. Done: align public runtime, graph, and tensor getter names with openFrameworks-style naming.
-30. Done: add `1.0.0` stabilization checks for setup dry-runs,
+30. Done: add `1.0.1` stabilization checks for setup dry-runs,
     backend setup plans, launch dry-runs, and generated-artifact hygiene without
     widening core.
-31. Next: run a final release confidence pass, then tag `1.0.0` only when the
+31. Next: run a final release confidence pass, then tag `1.0.1` only when the
     repository is clean.
