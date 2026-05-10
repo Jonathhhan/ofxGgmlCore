@@ -15,6 +15,8 @@ copyable starting points, not as one big application.
 Run `scripts\doctor.bat` first when something feels unclear. It reports missing
 tools, addon neighbors, runtime files, models, built examples, and reachable
 servers.
+Run `scripts\list-models.bat` when you want to see every discovered GGUF and the
+folders that were searched.
 For a fresh checkout, `scripts\first-run.bat` runs setup, builds llama.cpp
 tools, and then runs doctor.
 
@@ -72,6 +74,8 @@ openFrameworks/addons/ofxGgml/<Example>/models
 
 Passing `-Model C:\path\to\model.gguf` is the most explicit option and is
 recommended for first runs.
+Use `scripts\list-models.bat` to print the same search folders and discovered
+models.
 
 ## Environment Overrides
 

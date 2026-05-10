@@ -61,6 +61,7 @@ git clone https://github.com/Jonathhhan/ofxGgml.git
 cd ofxGgml
 .\scripts\first-run.bat
 .\scripts\doctor.bat
+.\scripts\list-models.bat
 .\scripts\run-simple-example.bat -Build
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
@@ -74,6 +75,8 @@ want to force the build plan. Put models in `addons\models`, `ofxGgml\models`,
 or pass `-Model` explicitly as shown above.
 Run `.\scripts\doctor.bat` any time to check local tools, addon neighbors,
 runtime files, models, and server reachability.
+Run `.\scripts\list-models.bat` to see every GGUF found in the model search
+paths.
 
 ## Setup Direction
 

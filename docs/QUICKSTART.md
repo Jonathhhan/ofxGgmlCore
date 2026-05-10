@@ -112,6 +112,7 @@ Check the local install before opening examples:
 
 ```powershell
 .\scripts\doctor.bat
+.\scripts\list-models.bat
 ```
 
 Warnings are meant to be actionable. For example, a missing model warning means

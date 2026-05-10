@@ -6,6 +6,7 @@ param(
 	[switch]$SkipProjectRepair,
 	[switch]$SkipLaunchDryRun,
 	[switch]$SkipFirstRunDryRun,
+	[switch]$SkipModelList,
 	[switch]$SkipDoctor,
 	[switch]$SkipArtifactHygiene
 )
@@ -80,6 +81,12 @@ if (!$SkipFirstRunDryRun) {
 			CpuOnly = $true
 			SkipDoctor = $true
 		}
+}
+
+if (!$SkipModelList) {
+	Invoke-CheckedScript `
+		-Label "Checking model discovery" `
+		-ScriptPath (Join-Path $scriptRoot "list-models.ps1")
 }
 
 if (!$SkipDoctor) {

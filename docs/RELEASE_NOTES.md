@@ -26,6 +26,8 @@
   first-checkout workflow.
 - Added `stop-llama-server.*` to inspect or stop detached local llama-server
   processes launched from the addon.
+- Added `list-models.*` to show model search directories and discovered GGUF
+  files before launching examples.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 
