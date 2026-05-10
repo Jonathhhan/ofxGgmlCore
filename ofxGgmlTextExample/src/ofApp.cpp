@@ -211,16 +211,6 @@ void ofApp::setup() {
 	ofSetWindowTitle("ofxGgml text example");
 	ofBackground(12);
 	gui.setup(nullptr, false);
-	ImGui::StyleColorsDark();
-	ImGuiStyle & style = ImGui::GetStyle();
-	style.WindowRounding = 6.0f;
-	style.FrameRounding = 4.0f;
-	style.GrabRounding = 4.0f;
-	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.10f, 0.11f, 0.13f, 1.0f);
-	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.19f, 0.22f, 1.0f);
-	style.Colors[ImGuiCol_Header] = ImVec4(0.20f, 0.27f, 0.32f, 1.0f);
-	style.Colors[ImGuiCol_Button] = ImVec4(0.18f, 0.25f, 0.30f, 1.0f);
-	style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.25f, 0.34f, 0.40f, 1.0f);
 
 	settings.executablePath = normalizeEnvPath(envValue("OFXGGML_LLAMA_CLI"));
 	settings.serverUrl = normalizeEnvPath(envValue("OFXGGML_TEXT_SERVER_URL"));
