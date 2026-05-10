@@ -32,7 +32,8 @@ core.
 The core public surface is:
 
 - `ofxGgmlResult<T>` and `ofxGgmlError`
-- `ofxGgmlRuntime`
+- `ofxGgmlRuntime`, `ofxGgmlRuntimeSettings`, and `ofxGgmlComputeResult`
+- `ofxGgmlBackend` and `ofxGgmlGetBackendName()`
 - `ofxGgmlTensor`
 - `ofxGgmlGraph`
 - `ofxGgmlModel` and `ofxGgmlModelInfo`
@@ -55,6 +56,10 @@ SAM3 remains an optional adapter exposed through `ofxGgmlSam3.h`. Concrete
 llama.cpp CLI/server adapters must keep process execution or HTTP transport
 behind a replaceable boundary, provide a default runner only when it is small
 and testable, and carry focused tests.
+
+Getter-style public methods should follow openFrameworks naming where it is
+clearer for addon users. Public backend labels use `getBackendName()` on runtime
+and adapter instances, and `ofxGgmlGetBackendName()` for enum labels.
 
 ## Runtime Contract
 
@@ -121,6 +126,7 @@ Minimum test categories:
 
 - result/error behavior
 - public header compilation
+- standalone public umbrella header compilation
 - graph lifecycle
 - tensor shape and byte-size reporting
 - runtime setup failure when ggml is absent
@@ -186,4 +192,6 @@ layer.
 24. Done: confirm no generated project files, binaries, caches, or model files are staged before the rewrite tag.
 25. Done: choose the first rewrite tag name and write release notes.
 26. Done: create and push the first rewrite tag.
-27. Next: follow `docs/ROADMAP.md` toward `v2.0.0-rewrite.1` without widening core by accident.
+27. Done: add standalone public umbrella header compile coverage.
+28. Done: align backend label APIs with openFrameworks-style getter naming.
+29. Next: follow `docs/ROADMAP.md` toward `v2.0.0-rewrite.1` without widening core by accident.

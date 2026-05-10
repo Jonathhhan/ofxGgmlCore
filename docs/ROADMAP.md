@@ -39,6 +39,8 @@ without widening the core surface.
   `ofxGgmlGetBackendName()` for openFrameworks-style helper naming.
 - Done after `v2.0.0-rewrite.0`: update tests to assert result values through
   bool-style helpers instead of direct `.success` reads where possible.
+- Done after `v2.0.0-rewrite.0`: update the core contract and architecture
+  notes to describe the current OF-style public backend naming.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

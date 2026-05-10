@@ -14,6 +14,8 @@ belong in the default addon.
 - Keep inference result structs result-like (`isOk()`, `isError()`, bool
   conversion) while preserving their simple data fields.
 - Keep public adapter transport result structs similarly status-checkable.
+- Prefer openFrameworks-style getter names for public addon API where that makes
+  call sites clearer, such as `getBackendName()`.
 - Keep binary dependency setup reproducible.
 - Provide focused examples that each prove one concept.
 
