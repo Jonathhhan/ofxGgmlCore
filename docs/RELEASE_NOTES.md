@@ -28,6 +28,8 @@
   processes launched from the addon.
 - Added `list-models.*` to show model search directories and discovered GGUF
   files before launching examples.
+- Added `status-llama-server.*` to inspect default text/embedding health
+  endpoints and running local llama-server processes.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 

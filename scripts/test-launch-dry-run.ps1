@@ -286,6 +286,17 @@ $stopServerOutput = Invoke-DryRun `
 Assert-Contains $stopServerOutput "llama-server stop plan" "Stop server dry-run"
 Assert-Contains $stopServerOutput "mode:            dry-run" "Stop server dry-run"
 
+$statusServerOutput = Invoke-DryRun `
+	-Label "status llama-server smoke" `
+	-Script (Join-Path $scriptRoot "status-llama-server.ps1") `
+	-Parameters @{
+		TextServerUrl = "http://127.0.0.1:9080"
+		EmbeddingServerUrl = "http://127.0.0.1:9081"
+	}
+Assert-Contains $statusServerOutput "llama-server status" "Status server smoke"
+Assert-Contains $statusServerOutput "text      http://127.0.0.1:9080" "Status server smoke"
+Assert-Contains $statusServerOutput "embedding http://127.0.0.1:9081" "Status server smoke"
+
 $embeddingServerOutput = Invoke-DryRun `
 	-Label "embedding llama-server dry-run" `
 	-Script (Join-Path $scriptRoot "start-llama-server.ps1") `

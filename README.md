@@ -235,6 +235,7 @@ scripts\build-llama-server.bat -DryRun
 scripts\start-llama-server.bat -ModelPath C:\path\to\model.gguf
 scripts\start-llama-server.bat -ModelPath C:\path\to\embedding-model.gguf -Embeddings
 scripts\start-llama-server.bat -Detached -LogDir logs\llama-server
+scripts\status-llama-server.bat
 scripts\stop-llama-server.bat
 scripts\stop-llama-server.bat -IncludeExamples
 scripts\start-llama-server.bat -DryRun
@@ -297,6 +298,8 @@ Use `scripts\stop-llama-server.bat` to stop detached servers launched from this
 addon. Add `-IncludeExamples` when you also want to close running example apps,
 or `-All` when you intentionally want to stop every matching `llama-server`
 process.
+Use `scripts\status-llama-server.bat` when you only want to inspect local
+processes and the default text/embedding health endpoints.
 
 You can launch it without setting global environment variables:
 
