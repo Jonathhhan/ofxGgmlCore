@@ -15,6 +15,8 @@ without widening the core surface.
 
 ### 1. Public API Stability
 
+- Done after `v2.0.0-rewrite.0`: align `ofxGgmlBackend` with the setup backend
+  switches by exposing OpenCL and wiring Metal/OpenCL initialization when built.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

@@ -1,5 +1,15 @@
 # Release Notes
 
+## Unreleased
+
+- Added `ofxGgmlBackend::OpenCL` so the public runtime backend enum matches the
+  setup script backend switches.
+- Wired Metal and OpenCL runtime initialization behind `OFXGGML_WITH_METAL` and
+  `OFXGGML_WITH_OPENCL`; unbuilt or unavailable backends still fall back to CPU
+  when allowed, or fail clearly in strict mode.
+- Expanded runtime tests to cover strict/fallback behavior for CUDA, Vulkan,
+  Metal, and OpenCL selections.
+
 ## v2.0.0-rewrite.0
 
 This is the first checkpoint tag for the rewritten `main` line. It is a

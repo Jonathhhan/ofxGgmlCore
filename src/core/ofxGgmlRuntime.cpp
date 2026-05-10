@@ -20,11 +20,25 @@
 #else
 #define OFXGGML_HAS_VULKAN_BACKEND 0
 #endif
+#if defined(OFXGGML_WITH_METAL) && __has_include("ggml-metal.h")
+#include "ggml-metal.h"
+#define OFXGGML_HAS_METAL_BACKEND 1
+#else
+#define OFXGGML_HAS_METAL_BACKEND 0
+#endif
+#if defined(OFXGGML_WITH_OPENCL) && __has_include("ggml-opencl.h")
+#include "ggml-opencl.h"
+#define OFXGGML_HAS_OPENCL_BACKEND 1
+#else
+#define OFXGGML_HAS_OPENCL_BACKEND 0
+#endif
 #define OFXGGML_HAS_GGML 1
 #else
 #define OFXGGML_HAS_GGML 0
 #define OFXGGML_HAS_CUDA_BACKEND 0
 #define OFXGGML_HAS_VULKAN_BACKEND 0
+#define OFXGGML_HAS_METAL_BACKEND 0
+#define OFXGGML_HAS_OPENCL_BACKEND 0
 #endif
 
 #include <array>
@@ -90,6 +104,22 @@ ggml_backend_t createVulkanBackend(int deviceIndex) {
 #endif
 }
 
+ggml_backend_t createMetalBackend() {
+#if OFXGGML_HAS_METAL_BACKEND
+	return ggml_backend_metal_init();
+#else
+	return nullptr;
+#endif
+}
+
+ggml_backend_t createOpenCLBackend() {
+#if OFXGGML_HAS_OPENCL_BACKEND
+	return ggml_backend_opencl_init();
+#else
+	return nullptr;
+#endif
+}
+
 std::string backendLabel(ofxGgmlBackend backend) {
 	switch (backend) {
 	case ofxGgmlBackend::Auto: return "Auto";
@@ -97,6 +127,7 @@ std::string backendLabel(ofxGgmlBackend backend) {
 	case ofxGgmlBackend::Cuda: return "CUDA";
 	case ofxGgmlBackend::Vulkan: return "Vulkan";
 	case ofxGgmlBackend::Metal: return "Metal";
+	case ofxGgmlBackend::OpenCL: return "OpenCL";
 	}
 	return "unknown";
 }
@@ -132,15 +163,19 @@ ofxGgmlResult<void> ofxGgmlRuntime::setup(const ofxGgmlRuntimeSettings & setting
 		case ofxGgmlBackend::Vulkan:
 			return createVulkanBackend(settings.deviceIndex);
 		case ofxGgmlBackend::Metal:
-			return nullptr;
+			return createMetalBackend();
+		case ofxGgmlBackend::OpenCL:
+			return createOpenCLBackend();
 		}
 		return nullptr;
 	};
 
 	if (settings.preferredBackend == ofxGgmlBackend::Auto) {
-		for (const ofxGgmlBackend candidate : std::array<ofxGgmlBackend, 3> {
+		for (const ofxGgmlBackend candidate : std::array<ofxGgmlBackend, 5> {
 			ofxGgmlBackend::Cuda,
 			ofxGgmlBackend::Vulkan,
+			ofxGgmlBackend::Metal,
+			ofxGgmlBackend::OpenCL,
 			ofxGgmlBackend::Cpu
 		}) {
 			impl->backend = tryBackend(candidate);

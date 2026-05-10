@@ -9,7 +9,8 @@ enum class ofxGgmlBackend {
 	Cpu,
 	Cuda,
 	Vulkan,
-	Metal
+	Metal,
+	OpenCL
 };
 
 enum class ofxGgmlType {
