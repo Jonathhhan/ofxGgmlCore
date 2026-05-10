@@ -43,8 +43,9 @@ embedding, and segmentation boundaries plus focused examples and local
 validation scripts. Breaking changes after rewrite tags should be called out in
 release notes. Use `legacy-full` if you need the prior broad implementation.
 
-See `docs/RELEASE_NOTES.md` for the first rewrite checkpoint and
-`docs/RELEASE_READINESS.md` before tagging again or widening the public surface.
+See `docs/RELEASE_NOTES.md` for rewrite checkpoints, `docs/ROADMAP.md` for
+future work, and `docs/RELEASE_READINESS.md` before tagging again or widening
+the public surface.
 
 ## Setup Direction
 

@@ -182,4 +182,5 @@ layer.
 23. Done: confirm README setup, validation, llama-server, embedding, and SAM3 smoke commands match the scripts.
 24. Done: confirm no generated project files, binaries, caches, or model files are staged before the rewrite tag.
 25. Done: choose the first rewrite tag name and write release notes.
-26. Next: create and push the first rewrite tag.
+26. Done: create and push the first rewrite tag.
+27. Next: follow `docs/ROADMAP.md` toward `v2.0.0-rewrite.1` without widening core by accident.
