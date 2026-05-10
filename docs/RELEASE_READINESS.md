@@ -52,6 +52,25 @@ scripts\build-chat-example.bat
 scripts\build-embedding-example.bat
 ```
 
+## Current Local Confidence
+
+Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
+
+- `scripts\validate-local.ps1` passed.
+- `scripts\build-simple-example.ps1 -Configuration Release -Platform x64`
+  passed after a transient openFrameworks tlog lock retry; 23 warnings, 0
+  errors.
+- `scripts\build-text-example.ps1 -Configuration Release -Platform x64`
+  passed after closing a running `ofxGgmlTextExample.exe`; 0 warnings, 0
+  errors.
+- `scripts\build-chat-example.ps1 -Configuration Release -Platform x64`
+  passed; 23 warnings, 0 errors.
+- `scripts\build-embedding-example.ps1 -Configuration Release -Platform x64`
+  passed; 23 warnings, 0 errors.
+
+The remaining warnings are from openFrameworks/ofxImGui headers and generated
+Visual Studio project integration, not addon compile errors.
+
 ## Tag Gate
 
 Before creating the first rewrite tag:
@@ -85,8 +104,6 @@ These items are intentionally not blockers for the first rewrite tag:
 
 These items should be closed before the first rewrite tag:
 
-- Run `scripts\validate-local.bat` from a clean `main`.
-- Build all generated examples once on the release machine.
 - Confirm README commands for setup, validation, llama-server, embeddings, and
   SAM3 smoke match the scripts.
 - Confirm no generated project files, binaries, caches, or model files are
