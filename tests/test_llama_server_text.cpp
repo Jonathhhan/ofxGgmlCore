@@ -98,7 +98,7 @@ OFXGGML_TEST(llama_server_backend_runs_injected_runner) {
 			return true;
 		});
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
 	OFXGGML_REQUIRE(result.backendName == "llama-server");
 	OFXGGML_REQUIRE(result.text == "server hello");
 	OFXGGML_REQUIRE(streamed == "server hello");
@@ -124,7 +124,7 @@ OFXGGML_TEST(llama_server_backend_reports_unreachable_server) {
 
 	const auto result = backend.generate(request);
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
 	OFXGGML_REQUIRE(
 		result.error.find("llama-server is not reachable") != std::string::npos);
 	OFXGGML_REQUIRE(result.error.find("connection refused") != std::string::npos);
@@ -158,7 +158,7 @@ OFXGGML_TEST(llama_server_backend_accepts_streamed_runner_output) {
 			return true;
 		});
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
 	OFXGGML_REQUIRE(result.text == "stream hello");
 	OFXGGML_REQUIRE(streamed == "stream hello");
 }
@@ -188,7 +188,7 @@ OFXGGML_TEST(llama_server_backend_reports_stream_cancel) {
 			return false;
 		});
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
 	OFXGGML_REQUIRE(result.text == "partial");
 	OFXGGML_REQUIRE(result.error.find("cancelled") != std::string::npos);
 }
@@ -227,7 +227,7 @@ OFXGGML_TEST(llama_server_backend_exposes_transport_cancel_probe) {
 		});
 
 	OFXGGML_REQUIRE(receivedText);
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
 	OFXGGML_REQUIRE(result.text == "partial");
 	OFXGGML_REQUIRE(result.error.find("cancelled") != std::string::npos);
 }

@@ -37,6 +37,8 @@ without widening the core surface.
   `getBackendName()` for openFrameworks-style getter naming.
 - Done after `v2.0.0-rewrite.0`: rename the free backend label helper to
   `ofxGgmlGetBackendName()` for openFrameworks-style helper naming.
+- Done after `v2.0.0-rewrite.0`: update tests to assert result values through
+  bool-style helpers instead of direct `.success` reads where possible.
 - Review every public header for naming consistency and avoidable churn.
 - Add focused tests before changing any public type.
 - Keep `ofxGgml.h` as a small umbrella; avoid workflow-specific includes.

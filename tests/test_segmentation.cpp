@@ -83,7 +83,7 @@ OFXGGML_TEST(sam3_adapter_boundary_smoke) {
 		request.points.push_back({ 0.5f, 0.5f, true });
 
 		const auto result = segmentation.segment(request);
-		OFXGGML_REQUIRE(!result.success);
+		OFXGGML_REQUIRE(!result);
 		OFXGGML_REQUIRE(result.backendName == "sam3.cpp");
 		OFXGGML_REQUIRE(
 			result.error.find("failed to load sam3.cpp model") != std::string::npos);
@@ -109,7 +109,7 @@ OFXGGML_TEST(sam3_adapter_boundary_smoke) {
 
 	const auto result = segmentation.segment(request);
 	OFXGGML_REQUIRE(result.backendName == "sam3.cpp");
-	OFXGGML_REQUIRE(result.success || !result.error.empty());
+	OFXGGML_REQUIRE(result || !result.error.empty());
 #else
 	OFXGGML_REQUIRE(OFXGGML_HAS_SAM3 == 0);
 
@@ -126,7 +126,7 @@ OFXGGML_TEST(sam3_adapter_boundary_smoke) {
 	request.points.push_back({ 0.5f, 0.5f, true });
 
 	const auto result = segmentation.segment(request);
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
 	OFXGGML_REQUIRE(result.backendName == "sam3.cpp");
 	OFXGGML_REQUIRE(result.error.find("sam3.cpp adapter is disabled") != std::string::npos);
 #endif

@@ -10,6 +10,8 @@
   include dependencies are caught before API refactors.
 - Renamed private inference-layer members away from `m_` prefixes to better
   match openFrameworks-style implementation code.
+- Updated tests to assert text and segmentation results through bool-style
+  helpers instead of reading `.success` directly.
 - Switched example prompt/output console prints to the openFrameworks `ofLog`
   system and updated examples to use the result-style bool helpers.
 - Added result-style status helpers to the llama CLI command result and

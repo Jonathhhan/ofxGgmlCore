@@ -47,13 +47,13 @@ OFXGGML_TEST(llama_cli_backend_validates_required_fields) {
 	request.modelPath = "model.gguf";
 	request.prompt = "hello";
 
-	OFXGGML_REQUIRE(!backend.generate(request).success);
+	OFXGGML_REQUIRE(!backend.generate(request));
 	request.settings.executablePath = "llama-cli";
 	request.modelPath.clear();
-	OFXGGML_REQUIRE(!backend.generate(request).success);
+	OFXGGML_REQUIRE(!backend.generate(request));
 	request.modelPath = "model.gguf";
 	request.prompt.clear();
-	OFXGGML_REQUIRE(!backend.generate(request).success);
+	OFXGGML_REQUIRE(!backend.generate(request));
 }
 
 OFXGGML_TEST(llama_cli_backend_has_default_runner) {
@@ -73,7 +73,7 @@ OFXGGML_TEST(llama_cli_default_runner_reports_missing_executable) {
 
 	const auto result = backend.generate(request);
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
 	OFXGGML_REQUIRE(!result.error.empty());
 }
 
@@ -157,7 +157,7 @@ OFXGGML_TEST(llama_cli_backend_runs_injected_runner) {
 			return true;
 		});
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
 	OFXGGML_REQUIRE(result.backendName == "llama.cpp CLI");
 	OFXGGML_REQUIRE(result.text == "hello from llama");
 	OFXGGML_REQUIRE(result.rawOutput == "hello from llama");
@@ -197,7 +197,7 @@ OFXGGML_TEST(llama_cli_backend_strips_startup_noise_from_final_text) {
 
 	const auto result = backend.generate(request);
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
 	OFXGGML_REQUIRE(result.text == "Local inference keeps the model and data on your machine.");
 	OFXGGML_REQUIRE(result.rawOutput.find("ggml_cuda_init") != std::string::npos);
 }
