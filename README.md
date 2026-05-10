@@ -104,6 +104,8 @@ SAM3 support is optional and generated locally:
 ```powershell
 scripts\install-sam3-cpp.bat
 scripts\build-sam3-cpp.bat -Cuda -SkipExamples
+scripts\test-sam3-smoke.bat
+scripts\test-sam3-smoke.bat -ModelPath C:\path\to\sam3-model.gguf
 ```
 
 The install script patches `sam3.cpp` with a `SAM3_CUDA` CMake option and a CUDA
@@ -112,6 +114,9 @@ and enables `OFXGGML_ENABLE_SAM3_ADAPTER` in the local `addon_config.mk` SAM3
 marker. By default, SAM3 builds against the addon ggml source under
 `libs/ggml/.source` so the addon links a single ggml version; pass
 `-BundledGgml` only when intentionally testing upstream sam3.cpp in isolation.
+The smoke script always verifies the public segmentation boundary; when a model
+path is provided and the adapter is enabled, it also runs a tiny generated RGB
+point-prompt request.
 
 ## Validation
 

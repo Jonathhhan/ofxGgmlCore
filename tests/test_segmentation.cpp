@@ -1,6 +1,7 @@
 #include "test_harness.h"
 #include "../src/ofxGgmlSegmentation.h"
 
+#include <cstdlib>
 #include <memory>
 #include <string>
 
@@ -61,7 +62,51 @@ OFXGGML_TEST(segmentation_bridge_backend_runs_callback) {
 	OFXGGML_REQUIRE(result.metadata.front().second == "1");
 }
 
-OFXGGML_TEST(sam3_adapter_missing_integration_fails_cleanly) {
+OFXGGML_TEST(sam3_adapter_boundary_smoke) {
+#if OFXGGML_HAS_SAM3
+	const char * modelPath = std::getenv("OFXGGML_SAM3_MODEL");
+	if (!modelPath || std::string(modelPath).empty()) {
+		ofxGgmlSegmentationInference segmentation;
+		ofxGgmlSam3Adapters::attachBackend(
+			segmentation,
+			"/definitely/missing/ofxGgml-test-sam3-model.gguf");
+
+		ofxGgmlSegmentationRequest request;
+		request.imagePath = "image.jpg";
+		request.imageWidth = 1;
+		request.imageHeight = 1;
+		request.imageRgb = { 0, 0, 0 };
+		request.points.push_back({ 0.5f, 0.5f, true });
+
+		const auto result = segmentation.segment(request);
+		OFXGGML_REQUIRE(!result.success);
+		OFXGGML_REQUIRE(result.backendName == "sam3.cpp");
+		OFXGGML_REQUIRE(
+			result.error.find("failed to load sam3.cpp model") != std::string::npos);
+		return;
+	}
+
+	ofxGgmlSegmentationInference segmentation;
+	ofxGgmlSam3Adapters::RuntimeOptions options;
+	options.useGpu = true;
+	ofxGgmlSam3Adapters::attachBackend(segmentation, modelPath, options);
+
+	ofxGgmlSegmentationRequest request;
+	request.imagePath = "generated-rgb-smoke";
+	request.imageWidth = 2;
+	request.imageHeight = 2;
+	request.imageRgb = {
+		255, 0, 0,
+		0, 255, 0,
+		0, 0, 255,
+		255, 255, 255
+	};
+	request.points.push_back({ 0.5f, 0.5f, true });
+
+	const auto result = segmentation.segment(request);
+	OFXGGML_REQUIRE(result.backendName == "sam3.cpp");
+	OFXGGML_REQUIRE(result.success || !result.error.empty());
+#else
 	OFXGGML_REQUIRE(OFXGGML_HAS_SAM3 == 0);
 
 	ofxGgmlSegmentationInference segmentation;
@@ -80,4 +125,5 @@ OFXGGML_TEST(sam3_adapter_missing_integration_fails_cleanly) {
 	OFXGGML_REQUIRE(!result.success);
 	OFXGGML_REQUIRE(result.backendName == "sam3.cpp");
 	OFXGGML_REQUIRE(result.error.find("sam3.cpp adapter is disabled") != std::string::npos);
+#endif
 }

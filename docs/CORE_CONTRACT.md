@@ -171,4 +171,5 @@ layer.
 15. Done: add focused smoke coverage for launch-script dry-run behavior.
 16. Done: make launch-script smoke checks part of a single local validation entrypoint.
 17. Done: decide the next optional layer boundary before adding more runtime surface.
-18. Next: add a focused segmentation example or documented SAM3 smoke path.
+18. Done: add a focused segmentation example or documented SAM3 smoke path.
+19. Next: decide whether segmentation needs an openFrameworks example or should remain script-tested until a real SAM3 model workflow is available.
