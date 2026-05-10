@@ -19,26 +19,36 @@ public:
 	void exit() override;
 
 private:
-	void startPrompt();
+	struct ChatEntry {
+		ofxGgmlTextRole role = ofxGgmlTextRole::User;
+		std::string content;
+	};
+
+	void sendPrompt();
 	void requestCancel();
-	void runPromptWorker();
-	void rebuildLinesLocked();
+	void clearChat();
+	void runChatWorker();
+	void configureGenerator();
+	void appendAssistantText(const std::string & text);
 	static std::string envValue(const char * name);
 	static void autoConfigureTextBackend(ofxGgmlTextGenerationSettings & settings, std::string & modelPath);
 	static std::string normalizeEnvPath(const std::string & path);
 	static bool fileExists(const std::string & path);
+	static std::string trimCopy(const std::string & value);
+	static const char * roleName(ofxGgmlTextRole role);
 
 	ofxGgmlTextGenerator generator;
 	ofxGgmlTextGenerationSettings settings;
 	ofxImGui::Gui gui;
 	std::string modelPath;
-	std::string prompt;
-	std::string output;
 	std::string status;
-	std::array<char, 2048> promptBuffer {};
-	std::vector<std::string> lines;
+	std::vector<ChatEntry> chat;
 	std::thread worker;
 	std::mutex stateMutex;
 	std::atomic_bool cancelRequested { false };
+	std::array<char, 4096> promptBuffer {};
+	std::array<char, 1024> systemBuffer {};
+	std::size_t pendingAssistantIndex = 0;
 	bool running = false;
+	bool scrollToBottom = true;
 };

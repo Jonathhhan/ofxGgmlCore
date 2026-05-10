@@ -21,26 +21,6 @@
 
 namespace {
 
-std::vector<std::string> wrapText(const std::string & text, std::size_t width) {
-	std::vector<std::string> wrapped;
-	std::istringstream words(text);
-	std::string word;
-	std::string line;
-	while (words >> word) {
-		const std::string next = line.empty() ? word : line + " " + word;
-		if (next.size() > width && !line.empty()) {
-			wrapped.push_back(line);
-			line = word;
-		} else {
-			line = next;
-		}
-	}
-	if (!line.empty()) {
-		wrapped.push_back(line);
-	}
-	return wrapped;
-}
-
 std::string toString(const std::filesystem::path & path) {
 	return path.lexically_normal().string();
 }
@@ -111,7 +91,7 @@ std::vector<std::filesystem::path> searchRoots() {
 	const std::size_t initialCount = roots.size();
 	for (std::size_t i = 0; i < initialCount; ++i) {
 		std::filesystem::path parent = roots[i];
-		for (int depth = 0; depth < 5 && !parent.empty(); ++depth) {
+		for (int depth = 0; depth < 6 && !parent.empty(); ++depth) {
 			addUniquePath(roots, parent);
 			parent = parent.parent_path();
 		}
@@ -198,6 +178,10 @@ std::string discoverTextModel() {
 			"data",
 			"data/models",
 			"models",
+			"../models",
+			"ofxGgmlChatExample/bin/data",
+			"ofxGgmlChatExample/bin/data/models",
+			"ofxGgmlChatExample/models",
 			"ofxGgmlTextExample/bin/data",
 			"ofxGgmlTextExample/bin/data/models",
 			"ofxGgmlTextExample/models"
@@ -208,7 +192,8 @@ std::string discoverTextModel() {
 } // namespace
 
 void ofApp::setup() {
-	ofSetWindowTitle("ofxGgml text example");
+	ofSetWindowTitle("ofxGgml chat example");
+	ofSetFrameRate(60);
 	ofBackground(12);
 	gui.setup(nullptr, false);
 	ImGui::StyleColorsDark();
@@ -229,58 +214,141 @@ void ofApp::setup() {
 		settings.serverUrl = "http://127.0.0.1:8080";
 	}
 	settings.useServerBackend = true;
+	settings.maxTokens = 256;
+	settings.temperature = 0.7f;
+	settings.topP = 0.95f;
+	settings.gpuLayers = -1;
+	settings.contextSize = 4096;
+
 	modelPath = normalizeEnvPath(envValue("OFXGGML_TEXT_MODEL"));
 	autoConfigureTextBackend(settings, modelPath);
-	prompt = "Write one concise sentence about local inference in openFrameworks.";
-
 	const std::string backend = normalizeEnvPath(envValue("OFXGGML_TEXT_BACKEND"));
 	if (backend == "cli") {
 		settings.useServerBackend = false;
-		generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
-	} else {
-		generator.setBackend(std::make_shared<ofxGgmlLlamaServerTextBackend>(settings.serverUrl));
 	}
-	std::copy(prompt.begin(), prompt.end(), promptBuffer.begin());
-	{
-		std::lock_guard<std::mutex> lock(stateMutex);
-		status = "ready";
-		rebuildLinesLocked();
-	}
+	configureGenerator();
+
+	const std::string defaultSystem =
+		"You are a concise local assistant running inside an openFrameworks example.";
+	std::copy(defaultSystem.begin(), defaultSystem.end(), systemBuffer.begin());
+	status = "ready";
 }
 
 void ofApp::draw() {
+	bool shouldSend = false;
+	bool shouldCancel = false;
+	bool shouldClear = false;
+	std::vector<ChatEntry> chatSnapshot;
 	std::string statusSnapshot;
 	std::string backendSnapshot;
 	std::string serverUrlSnapshot;
 	std::string serverModelSnapshot;
 	std::string executableSnapshot;
 	std::string modelPathSnapshot;
-	std::string promptSnapshot;
-	std::string outputSnapshot;
 	bool runningSnapshot = false;
+	bool useServer = false;
+	int maxTokens = 0;
+	float temperature = 0.0f;
+	float topP = 0.0f;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
+		chatSnapshot = chat;
 		statusSnapshot = status;
+		useServer = settings.useServerBackend;
 		backendSnapshot = settings.useServerBackend ? "llama-server" : "llama-cli";
 		serverUrlSnapshot = settings.serverUrl.empty() ? "(unset)" : settings.serverUrl;
 		serverModelSnapshot = settings.serverModel.empty() ? "(auto)" : settings.serverModel;
 		executableSnapshot = settings.executablePath.empty() ? "(optional)" : settings.executablePath;
 		modelPathSnapshot = modelPath.empty() ? "(server-managed)" : modelPath;
-		promptSnapshot = prompt;
-		outputSnapshot = output;
+		maxTokens = settings.maxTokens;
+		temperature = settings.temperature;
+		topP = settings.topP;
 		runningSnapshot = running;
 	}
 
-	bool shouldRun = false;
-	bool shouldCancel = false;
-
 	ofBackground(12);
 	gui.begin();
-	ImGui::SetNextWindowPos(ImVec2(24.0f, 24.0f), ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(880.0f, 520.0f), ImGuiCond_Once);
-	if (ImGui::Begin("ofxGgml Text Example")) {
-		if (ImGui::Button("Run")) {
-			shouldRun = true;
+	ImGui::SetNextWindowPos(ImVec2(18.0f, 18.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(1080.0f, 680.0f), ImGuiCond_Once);
+	if (ImGui::Begin("ofxGgml Chat Example")) {
+		ImGui::TextColored(
+			runningSnapshot ? ImVec4(0.45f, 0.75f, 1.0f, 1.0f) : ImVec4(0.70f, 0.92f, 0.70f, 1.0f),
+			"%s",
+			statusSnapshot.c_str());
+		ImGui::SameLine();
+		ImGui::TextDisabled("Backend: %s", backendSnapshot.c_str());
+
+		ImGui::Separator();
+		if (ImGui::Checkbox("Use llama-server", &useServer)) {
+			std::lock_guard<std::mutex> lock(stateMutex);
+			if (!running) {
+				settings.useServerBackend = useServer;
+				configureGenerator();
+			}
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(140.0f);
+		if (ImGui::SliderInt("Max tokens", &maxTokens, 16, 1024)) {
+			std::lock_guard<std::mutex> lock(stateMutex);
+			settings.maxTokens = maxTokens;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::SliderFloat("Temp", &temperature, 0.0f, 1.5f, "%.2f")) {
+			std::lock_guard<std::mutex> lock(stateMutex);
+			settings.temperature = temperature;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::SliderFloat("Top-p", &topP, 0.1f, 1.0f, "%.2f")) {
+			std::lock_guard<std::mutex> lock(stateMutex);
+			settings.topP = topP;
+		}
+
+		if (ImGui::CollapsingHeader("Runtime", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::TextWrapped("Server: %s", serverUrlSnapshot.c_str());
+			ImGui::TextWrapped("Server model: %s", serverModelSnapshot.c_str());
+			ImGui::TextWrapped("CLI: %s", executableSnapshot.c_str());
+			ImGui::TextWrapped("Model: %s", modelPathSnapshot.c_str());
+		}
+
+		ImGui::TextUnformatted("System");
+		ImGui::InputTextMultiline(
+			"##system",
+			systemBuffer.data(),
+			systemBuffer.size(),
+			ImVec2(-1.0f, 54.0f));
+
+		ImGui::BeginChild("chat-history", ImVec2(0.0f, -148.0f), true);
+		if (chatSnapshot.empty()) {
+			ImGui::TextDisabled("No messages yet.");
+		}
+		for (const auto & entry : chatSnapshot) {
+			const ImVec4 color = entry.role == ofxGgmlTextRole::User
+				? ImVec4(0.65f, 0.82f, 1.0f, 1.0f)
+				: ImVec4(0.78f, 0.92f, 0.72f, 1.0f);
+			ImGui::TextColored(color, "%s", roleName(entry.role));
+			ImGui::TextWrapped("%s", entry.content.empty() ? "..." : entry.content.c_str());
+			ImGui::Spacing();
+		}
+		if (scrollToBottom) {
+			ImGui::SetScrollHereY(1.0f);
+			scrollToBottom = false;
+		}
+		ImGui::EndChild();
+
+		ImGui::InputTextMultiline(
+			"##prompt",
+			promptBuffer.data(),
+			promptBuffer.size(),
+			ImVec2(-1.0f, 74.0f),
+			ImGuiInputTextFlags_AllowTabInput);
+		const bool ctrlEnter =
+			ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+			ImGui::GetIO().KeyCtrl &&
+			ImGui::IsKeyPressed(ImGuiKey_Enter);
+		if (ImGui::Button("Send") || ctrlEnter) {
+			shouldSend = true;
 		}
 		ImGui::SameLine();
 		if (!runningSnapshot) {
@@ -292,58 +360,30 @@ void ofApp::draw() {
 		if (!runningSnapshot) {
 			ImGui::PopStyleVar();
 		}
-
-		ImGui::Separator();
-		const ImVec4 statusColor = runningSnapshot
-			? ImVec4(0.45f, 0.75f, 1.0f, 1.0f)
-			: ImVec4(0.70f, 0.92f, 0.70f, 1.0f);
-		ImGui::TextColored(statusColor, "%s", statusSnapshot.c_str());
-		ImGui::Text("State: %s", runningSnapshot ? "running" : "idle");
-		ImGui::Text("Backend: %s", backendSnapshot.c_str());
-		ImGui::TextWrapped("Server: %s", serverUrlSnapshot.c_str());
-		ImGui::TextWrapped("Server model: %s", serverModelSnapshot.c_str());
-		ImGui::TextWrapped("Executable: %s", executableSnapshot.c_str());
-		ImGui::TextWrapped("Model: %s", modelPathSnapshot.c_str());
-
-		ImGui::Spacing();
-		ImGui::TextUnformatted("Prompt");
-		ImGui::Separator();
-		if (!runningSnapshot) {
-			ImGui::InputTextMultiline(
-				"##prompt",
-				promptBuffer.data(),
-				promptBuffer.size(),
-				ImVec2(0.0f, 70.0f));
-		} else {
-			ImGui::TextWrapped("%s", promptSnapshot.c_str());
+		ImGui::SameLine();
+		if (ImGui::Button("Clear")) {
+			shouldClear = true;
 		}
-
-		ImGui::Spacing();
-		ImGui::TextUnformatted("Output");
-		ImGui::Separator();
-		ImGui::BeginChild("ofxGgmlTextOutput", ImVec2(0.0f, 170.0f), true);
-		if (outputSnapshot.empty()) {
-			ImGui::TextDisabled("(none)");
-		} else {
-			ImGui::TextWrapped("%s", outputSnapshot.c_str());
-		}
-		ImGui::EndChild();
 	}
 	ImGui::End();
 	gui.end();
 	gui.draw();
 
-	if (shouldRun) {
-		startPrompt();
+	if (shouldSend) {
+		sendPrompt();
 	}
 	if (shouldCancel) {
 		requestCancel();
 	}
+	if (shouldClear) {
+		clearChat();
+	}
 }
 
 void ofApp::keyPressed(int key) {
-	if (key == 'r' || key == 'R') {
-		startPrompt();
+	if (key == OF_KEY_RETURN &&
+		(ofGetKeyPressed(OF_KEY_CONTROL) || ofGetKeyPressed(OF_KEY_COMMAND))) {
+		sendPrompt();
 		return;
 	}
 	if (key == 'c' || key == 'C') {
@@ -358,36 +398,37 @@ void ofApp::exit() {
 	}
 }
 
-void ofApp::startPrompt() {
+void ofApp::sendPrompt() {
+	const std::string prompt = trimCopy(promptBuffer.data());
+	if (prompt.empty()) {
+		std::lock_guard<std::mutex> lock(stateMutex);
+		status = "type a message first";
+		return;
+	}
+
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		if (running) {
-			status = "text request is already running";
-			rebuildLinesLocked();
+			status = "chat request is already running";
 			return;
 		}
 	}
-
 	if (worker.joinable()) {
 		worker.join();
 	}
 
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
-		output.clear();
-		prompt = normalizeEnvPath(promptBuffer.data());
-		if (prompt.empty()) {
-			status = "type a prompt first";
-			rebuildLinesLocked();
-			return;
-		}
-		status = "checking text backend configuration...";
+		chat.push_back({ ofxGgmlTextRole::User, prompt });
+		chat.push_back({ ofxGgmlTextRole::Assistant, {} });
+		pendingAssistantIndex = chat.size() - 1;
+		status = "checking chat backend configuration...";
 		running = true;
 		cancelRequested = false;
-		rebuildLinesLocked();
+		scrollToBottom = true;
 	}
-
-	worker = std::thread(&ofApp::runPromptWorker, this);
+	std::fill(promptBuffer.begin(), promptBuffer.end(), '\0');
+	worker = std::thread(&ofApp::runChatWorker, this);
 }
 
 void ofApp::requestCancel() {
@@ -395,26 +436,46 @@ void ofApp::requestCancel() {
 	std::lock_guard<std::mutex> lock(stateMutex);
 	if (running) {
 		status = "cancelling after the next output chunk...";
-		rebuildLinesLocked();
 	}
 }
 
-void ofApp::runPromptWorker() {
+void ofApp::clearChat() {
+	std::lock_guard<std::mutex> lock(stateMutex);
+	if (running) {
+		status = "cancel the running request before clearing";
+		return;
+	}
+	chat.clear();
+	status = "chat cleared";
+	scrollToBottom = true;
+}
+
+void ofApp::runChatWorker() {
 	auto fail = [this](std::string message) {
 		std::lock_guard<std::mutex> lock(stateMutex);
+		if (pendingAssistantIndex < chat.size() && chat[pendingAssistantIndex].content.empty()) {
+			chat[pendingAssistantIndex].content = message;
+		}
 		status = std::move(message);
 		running = false;
-		rebuildLinesLocked();
+		scrollToBottom = true;
 	};
 
 	ofxGgmlTextGenerationSettings requestSettings;
 	std::string requestModelPath;
-	std::string requestPrompt;
+	std::string systemPrompt;
+	std::vector<ofxGgmlTextMessage> messages;
 	{
 		std::lock_guard<std::mutex> lock(stateMutex);
 		requestSettings = settings;
 		requestModelPath = modelPath;
-		requestPrompt = prompt;
+		systemPrompt = trimCopy(systemBuffer.data());
+		for (std::size_t i = 0; i < chat.size(); ++i) {
+			if (i == pendingAssistantIndex && chat[i].content.empty()) {
+				continue;
+			}
+			messages.push_back({ chat[i].role, chat[i].content });
+		}
 	}
 
 	if (requestSettings.useServerBackend) {
@@ -446,27 +507,22 @@ void ofApp::runPromptWorker() {
 		status = requestSettings.useServerBackend
 			? "requesting llama-server..."
 			: "running llama.cpp CLI...";
-		rebuildLinesLocked();
 	}
 
 	ofxGgmlTextRequest request;
 	request.modelPath = requestModelPath;
-	request.prompt = requestPrompt;
+	request.systemPrompt = systemPrompt;
+	request.messages = std::move(messages);
 	request.settings = requestSettings;
-	request.settings.maxTokens = 64;
-	request.settings.temperature = 0.7f;
 	request.settings.gpuLayers = -1;
 
 	auto onTextChunk = [this](const std::string & chunk) {
-			if (cancelRequested) {
-				return false;
-			}
-			std::lock_guard<std::mutex> lock(stateMutex);
-			output += chunk;
-			status = "receiving text output...";
-			rebuildLinesLocked();
-			return !cancelRequested;
-		};
+		if (cancelRequested) {
+			return false;
+		}
+		appendAssistantText(chunk);
+		return !cancelRequested;
+	};
 
 	auto result = generator.generate(request, onTextChunk);
 	if (requestSettings.useServerBackend && !result.success && !cancelRequested) {
@@ -479,9 +535,11 @@ void ofApp::runPromptWorker() {
 		if (canFallbackToCli) {
 			{
 				std::lock_guard<std::mutex> lock(stateMutex);
-				output.clear();
+				if (pendingAssistantIndex < chat.size()) {
+					chat[pendingAssistantIndex].content.clear();
+				}
 				status = "llama-server unavailable; falling back to llama.cpp CLI...";
-				rebuildLinesLocked();
+				scrollToBottom = true;
 			}
 			ofxGgmlTextRequest fallbackRequest = request;
 			fallbackRequest.settings.useServerBackend = false;
@@ -495,45 +553,38 @@ void ofApp::runPromptWorker() {
 	}
 
 	std::lock_guard<std::mutex> lock(stateMutex);
-	if (result.success) {
-		output = result.text;
-		status = "complete via " + result.backendName + " in " +
-			std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
-	} else {
-		if (output.empty() && !result.rawOutput.empty()) {
-			output = result.rawOutput;
+	if (pendingAssistantIndex < chat.size()) {
+		if (result.success) {
+			chat[pendingAssistantIndex].content = result.text;
+			status = "complete via " + result.backendName + " in " +
+				std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
+		} else if (!result.rawOutput.empty()) {
+			chat[pendingAssistantIndex].content = result.rawOutput;
+			status = "chat error: " + result.error;
+		} else {
+			chat[pendingAssistantIndex].content = "Error: " + result.error;
+			status = "chat error: " + result.error;
 		}
-		status = "text error: " + result.error;
 	}
 	running = false;
-	rebuildLinesLocked();
+	scrollToBottom = true;
 }
 
-void ofApp::rebuildLinesLocked() {
-	lines.clear();
-	lines.push_back("ofxGgml text example");
-	lines.push_back(status);
-	lines.push_back(std::string("state: ") + (running ? "running" : "idle"));
-	lines.push_back("keys: R run again, C cancel");
-	lines.push_back("backend: " + std::string(settings.useServerBackend ? "llama-server" : "llama-cli"));
-	lines.push_back("server: " + (settings.serverUrl.empty() ? "(unset)" : settings.serverUrl));
-	lines.push_back("server model: " + (settings.serverModel.empty() ? "(auto)" : settings.serverModel));
-	lines.push_back("executable: " + (settings.executablePath.empty() ? "(optional)" : settings.executablePath));
-	lines.push_back("model: " + (modelPath.empty() ? "(server-managed)" : modelPath));
-	lines.push_back("");
-	lines.push_back("prompt:");
-	for (const auto & line : wrapText(prompt, 96)) {
-		lines.push_back("  " + line);
-	}
-	lines.push_back("");
-	lines.push_back("output:");
-	if (output.empty()) {
-		lines.push_back("  (none)");
+void ofApp::configureGenerator() {
+	if (settings.useServerBackend) {
+		generator.setBackend(std::make_shared<ofxGgmlLlamaServerTextBackend>(settings.serverUrl));
 	} else {
-		for (const auto & line : wrapText(output, 96)) {
-			lines.push_back("  " + line);
-		}
+		generator.setBackend(std::make_shared<ofxGgmlLlamaCliTextBackend>());
 	}
+}
+
+void ofApp::appendAssistantText(const std::string & text) {
+	std::lock_guard<std::mutex> lock(stateMutex);
+	if (pendingAssistantIndex < chat.size()) {
+		chat[pendingAssistantIndex].content += text;
+	}
+	status = "receiving chat output...";
+	scrollToBottom = true;
 }
 
 void ofApp::autoConfigureTextBackend(
@@ -548,25 +599,38 @@ void ofApp::autoConfigureTextBackend(
 }
 
 std::string ofApp::normalizeEnvPath(const std::string & path) {
+	return trimCopy(path);
+}
+
+bool ofApp::fileExists(const std::string & path) {
+	return !path.empty() && ofFile::doesFileExist(path, false);
+}
+
+std::string ofApp::trimCopy(const std::string & value) {
 	std::size_t first = 0;
-	while (first < path.size() &&
-		std::isspace(static_cast<unsigned char>(path[first]))) {
+	while (first < value.size() &&
+		std::isspace(static_cast<unsigned char>(value[first]))) {
 		++first;
 	}
-	std::size_t last = path.size();
+	std::size_t last = value.size();
 	while (last > first &&
-		std::isspace(static_cast<unsigned char>(path[last - 1]))) {
+		std::isspace(static_cast<unsigned char>(value[last - 1]))) {
 		--last;
 	}
-	std::string normalized = path.substr(first, last - first);
+	std::string normalized = value.substr(first, last - first);
 	if (normalized.size() >= 2 && normalized.front() == '"' && normalized.back() == '"') {
 		normalized = normalized.substr(1, normalized.size() - 2);
 	}
 	return normalized;
 }
 
-bool ofApp::fileExists(const std::string & path) {
-	return !path.empty() && ofFile::doesFileExist(path, false);
+const char * ofApp::roleName(ofxGgmlTextRole role) {
+	switch (role) {
+	case ofxGgmlTextRole::System: return "System";
+	case ofxGgmlTextRole::User: return "You";
+	case ofxGgmlTextRole::Assistant: return "Assistant";
+	}
+	return "Message";
 }
 
 std::string ofApp::envValue(const char * name) {

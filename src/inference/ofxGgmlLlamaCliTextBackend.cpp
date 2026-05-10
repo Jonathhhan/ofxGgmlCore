@@ -438,6 +438,7 @@ ofxGgmlTextCommand ofxGgmlLlamaCliTextBackend::buildCommand(
 			args.push_back(stop);
 		}
 	}
+	args.push_back("--log-disable");
 	args.push_back("--no-display-prompt");
 	return command;
 }

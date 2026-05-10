@@ -16,6 +16,41 @@ function Test-WindowsHost {
 	return !($IsLinux -or $IsMacOS)
 }
 
+function Normalize-WindowsPathEnvironment {
+	if (!(Test-WindowsHost)) {
+		return
+	}
+	$variables = [Environment]::GetEnvironmentVariables("Process")
+	$pathNames = New-Object System.Collections.Generic.List[string]
+	foreach ($key in $variables.Keys) {
+		$name = [string]$key
+		if ($name.Equals("Path", [System.StringComparison]::OrdinalIgnoreCase)) {
+			$pathNames.Add($name)
+		}
+	}
+	if ($pathNames.Count -le 1) {
+		return
+	}
+
+	$preferredName = if ($pathNames.Contains("Path")) { "Path" } else { $pathNames[0] }
+	$pathValue = [string]$variables[$preferredName]
+	if ([string]::IsNullOrWhiteSpace($pathValue)) {
+		foreach ($name in $pathNames) {
+			$value = [string]$variables[$name]
+			if (![string]::IsNullOrWhiteSpace($value)) {
+				$pathValue = $value
+				break
+			}
+		}
+	}
+	foreach ($name in $pathNames) {
+		if (!$name.Equals("Path", [System.StringComparison]::Ordinal)) {
+			[Environment]::SetEnvironmentVariable($name, $null, "Process")
+		}
+	}
+	[Environment]::SetEnvironmentVariable("Path", $pathValue, "Process")
+}
+
 function Test-ExampleUsesAddon {
 	param(
 		[string]$ExampleDir,
@@ -394,6 +429,7 @@ $exampleDir = Join-Path $addonRoot $Example
 if (!(Test-Path -LiteralPath $exampleDir)) {
 	throw "Example directory not found: $exampleDir"
 }
+Normalize-WindowsPathEnvironment
 
 if (Test-WindowsHost) {
 	$project = Join-Path $exampleDir "$Example.vcxproj"
@@ -422,6 +458,14 @@ if (Test-WindowsHost) {
 			}
 			if ($attempt -lt 2) {
 				Write-Step "MSBuild failed with exit code $exitCode; retrying once"
+			}
+		}
+		if (!$Clean) {
+			Write-Step "MSBuild failed with exit code $exitCode; retrying without rebuilding project references"
+			& $msbuild $project /t:$target /p:Configuration=$Configuration /p:Platform=$Platform /p:TrackFileAccess=false /p:MultiProcessorCompilation=false /p:BuildProjectReferences=false /m:1 /nr:false
+			$exitCode = $LASTEXITCODE
+			if ($exitCode -eq 0) {
+				return
 			}
 		}
 		throw "MSBuild $Example failed with exit code $exitCode"
