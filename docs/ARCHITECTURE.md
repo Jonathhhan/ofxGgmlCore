@@ -26,7 +26,20 @@ These should live in companion addons or optional layers:
 
 - `ofxGgmlCore.h`: low-level stable foundation
 - `ofxGgmlText.h`: small text request/result API with pluggable backends
-- `ofxGgml.h`: default umbrella for core, text, and stable optional bridge APIs
+- `ofxGgmlEmbedding.h`: embedding request/result API and vector helpers
+- `ofxGgml.h`: default umbrella for core, text, embeddings, and stable optional bridge APIs
+
+## Optional Runtime Layers
+
+The default addon API can expose small optional layers when their boundaries stay
+plain C++ and testable. The llama.cpp server tools are installed only through
+explicit scripts and are treated as a local runtime, not as a required core
+dependency. Chat and embedding examples may use `ofxImGui`, but the public API
+must not depend on GUI code.
+
+SAM/SAM3 remains an adapter boundary. Its generated native integration can be
+enabled locally, but projects that only include the core, text, or embedding
+headers should compile without a SAM checkout.
 
 ## Compatibility
 

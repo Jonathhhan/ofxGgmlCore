@@ -37,15 +37,18 @@ The core public surface is:
 - `ofxGgmlGraph`
 - `ofxGgmlModel` and `ofxGgmlModelInfo`
 - `ofxGgmlTextGenerator` and text request/result types
-- `ofxGgmlLlamaCliTextBackend` as the first concrete text adapter boundary
+- `ofxGgmlLlamaCliTextBackend` and `ofxGgmlLlamaServerTextBackend`
+- `ofxGgmlEmbeddingGenerator`, embedding request/result types, and vector helpers
 - `ofxGgmlCore.h`
 - `ofxGgmlText.h`
+- `ofxGgmlEmbedding.h`
 - `ofxGgml.h`
 
 `ofxGgml.h` should remain a boring umbrella. Text belongs there only as a small
-backend-neutral API. Concrete llama.cpp CLI/server adapters must keep process
-execution behind a replaceable boundary, provide a default runner only when it
-is small and testable, and carry focused tests.
+backend-neutral API. Embeddings belong there only as a small request/result API
+and math helpers. Concrete llama.cpp CLI/server adapters must keep process
+execution or HTTP transport behind a replaceable boundary, provide a default
+runner only when it is small and testable, and carry focused tests.
 
 ## Runtime Contract
 
@@ -126,7 +129,9 @@ examples are smoke checks, not the only tests.
 Each example should demonstrate one idea:
 
 - `ofxGgmlSimpleExample`: runtime setup and one tiny graph
-- `ofxGgmlTextExample`: one local llama.cpp CLI text generation path
+- `ofxGgmlTextExample`: one editable local text-generation prompt
+- `ofxGgmlChatExample`: interactive chat against a warm server, with CLI fallback
+- `ofxGgmlEmbeddingExample`: compare two texts through an embedding server
 
 No all-in-one GUI example belongs in core.
 
@@ -155,4 +160,7 @@ layer.
 7. Done: add the llama.cpp CLI adapter boundary.
 8. Done: add the real platform process runner.
 9. Done: add `ofxGgmlTextExample`.
-10. Next: add generated-project repair coverage for multiple examples.
+10. Done: add llama-server text transport with true streaming/cancel support.
+11. Done: add an interactive chat example.
+12. Done: add embedding runner, server API, and embedding similarity example.
+13. Next: add generated-project repair coverage for multiple examples.
