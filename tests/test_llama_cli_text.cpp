@@ -166,7 +166,14 @@ OFXGGML_TEST(llama_cli_backend_strips_startup_noise_from_final_text) {
 				"  Device 0: NVIDIA GeForce RTX 3090, compute capability 8.6, VRAM: 24575 MiB\n"
 				"Loading model...\n"
 				"?? ?? ????? ?????\n"
+				"build      : b1-1e5ad35\n"
+				"model      : qwen2.5.gguf\n"
+				"modalities : text\n"
+				"available commands:\n"
+				"  /exit or Ctrl+C     stop or exit\n"
+				"> hello\n"
 				"Local inference keeps the model and data on your machine.\n"
+				"Exiting...\n"
 				"llama_perf_context_print:        load time = 1.00 ms\n";
 			return result;
 		});

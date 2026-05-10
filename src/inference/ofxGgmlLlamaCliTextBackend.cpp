@@ -92,6 +92,7 @@ bool containsText(const std::string & value, const std::string & needle) {
 bool isQuestionMarkBannerLine(const std::string & line) {
 	std::size_t questionMarks = 0;
 	std::size_t visible = 0;
+	std::size_t nonAscii = 0;
 	for (const unsigned char c : line) {
 		if (std::isspace(c)) {
 			continue;
@@ -100,8 +101,12 @@ bool isQuestionMarkBannerLine(const std::string & line) {
 		if (c == '?') {
 			++questionMarks;
 		}
+		if (c >= 0x80) {
+			++nonAscii;
+		}
 	}
-	return visible >= 2 && questionMarks * 2 >= visible;
+	return visible >= 2 &&
+		(questionMarks * 2 >= visible || nonAscii * 2 >= visible);
 }
 
 bool isLlamaCliNoiseLine(const std::string & line) {
@@ -125,7 +130,18 @@ bool isLlamaCliNoiseLine(const std::string & line) {
 		"generate:",
 		"Device ",
 		"CUDA ",
-		"Loading model"
+		"Loading model",
+		"available commands:",
+		"/exit",
+		"/regen",
+		"/clear",
+		"/read",
+		"/glob",
+		"build      :",
+		"model      :",
+		"modalities :",
+		"Exiting...",
+		"> "
 	};
 	for (const auto & prefix : prefixes) {
 		if (startsWith(trimmed, prefix)) {

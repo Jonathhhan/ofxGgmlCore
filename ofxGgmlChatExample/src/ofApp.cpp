@@ -524,32 +524,6 @@ void ofApp::runChatWorker() {
 	}
 
 	auto result = generator.generate(request, onTextChunk);
-	if (requestSettings.useServerBackend && !result.success && !cancelRequested) {
-		const std::string serverError = result.error;
-		const bool canFallbackToCli =
-			!requestSettings.executablePath.empty() &&
-			fileExists(requestSettings.executablePath) &&
-			!requestModelPath.empty() &&
-			fileExists(requestModelPath);
-		if (canFallbackToCli) {
-			{
-				std::lock_guard<std::mutex> lock(stateMutex);
-				if (pendingAssistantIndex < chat.size()) {
-					chat[pendingAssistantIndex].content.clear();
-				}
-				status = "llama-server unavailable; falling back to llama.cpp CLI...";
-				scrollToBottom = true;
-			}
-			ofxGgmlTextRequest fallbackRequest = request;
-			fallbackRequest.settings.useServerBackend = false;
-			ofxGgmlLlamaCliTextBackend fallbackBackend;
-			result = fallbackBackend.generate(fallbackRequest, cancelOnlyChunk);
-			if (!result.success) {
-				result.error = "llama-server failed: " + serverError +
-					"; CLI fallback failed: " + result.error;
-			}
-		}
-	}
 
 	std::lock_guard<std::mutex> lock(stateMutex);
 	if (pendingAssistantIndex < chat.size()) {

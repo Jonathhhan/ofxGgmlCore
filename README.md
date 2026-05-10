@@ -176,8 +176,8 @@ On macOS/Linux, the matching wrappers call the same PowerShell implementation:
 
 Those scripts clone/build upstream `llama.cpp` under `libs/llama.cpp` and
 install `llama-server`, `llama-cli`, and `llama-embedding` into
-`libs/llama/bin`. The text example tries the server first; if it is unavailable
-and a local CLI/model are found, it falls back to `llama-cli`.
+`libs/llama/bin`. The examples use `llama-server` by default; `llama-cli` is an
+explicit fallback only when you launch with `-Backend cli`.
 `llama-completion` is intentionally excluded from the default runtime bundle;
 pass `-WithCompletionTool` only when you need that upstream helper executable.
 
