@@ -560,9 +560,6 @@ void ofApp::runChatWorker() {
 			chat[pendingAssistantIndex].content = result.text;
 			status = "complete via " + result.backendName + " in " +
 				std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
-		} else if (!result.rawOutput.empty()) {
-			chat[pendingAssistantIndex].content = result.rawOutput;
-			status = "chat error: " + result.error;
 		} else {
 			chat[pendingAssistantIndex].content = "Error: " + result.error;
 			status = "chat error: " + result.error;

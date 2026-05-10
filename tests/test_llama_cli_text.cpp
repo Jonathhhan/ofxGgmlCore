@@ -113,10 +113,6 @@ OFXGGML_TEST(llama_cli_builds_expected_command) {
 		command.arguments.begin(),
 		command.arguments.end(),
 		"--simple-io") != command.arguments.end());
-	OFXGGML_REQUIRE(std::find(
-		command.arguments.begin(),
-		command.arguments.end(),
-		"--no-conversation") != command.arguments.end());
 	OFXGGML_REQUIRE(containsPair(command.arguments, "--color", "off"));
 }
 

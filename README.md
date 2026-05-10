@@ -193,6 +193,11 @@ scripts\run-text-example.bat -ServerUrl http://127.0.0.1:8080
 scripts\run-text-example.ps1 -ServerUrl http://127.0.0.1:8080 -ServerModel local-model
 ```
 
+The run scripts check the local server URL first. If no local `llama-server`
+responds and a bundled server/model can be found, they start
+`libs\llama\bin\llama-server.exe` detached before launching the example. Pass
+`-NoAutoServer` to only connect to an already-running server.
+
 The old CLI fallback is still available when you explicitly request it:
 
 ```powershell

@@ -569,7 +569,6 @@ ofxGgmlTextCommand ofxGgmlLlamaCliTextBackend::buildCommand(
 	args.push_back("--simple-io");
 	args.push_back("--color");
 	args.push_back("off");
-	args.push_back("--no-conversation");
 	args.push_back("--single-turn");
 	return command;
 }

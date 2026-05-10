@@ -502,9 +502,7 @@ void ofApp::runPromptWorker() {
 		status = "complete via " + result.backendName + " in " +
 			std::to_string(static_cast<int>(result.elapsedMs)) + " ms";
 	} else {
-		if (output.empty() && !result.rawOutput.empty()) {
-			output = result.rawOutput;
-		}
+		output.clear();
 		status = "text error: " + result.error;
 	}
 	running = false;
