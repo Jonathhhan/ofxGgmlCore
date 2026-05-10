@@ -20,6 +20,8 @@
   dependencies, models, examples, and local llama-server endpoints.
 - Added `docs/EXAMPLES.md` as a compact guide to choosing, building, and
   launching the focused examples.
+- Added `run-simple-example.*` so all focused examples have consistent launch
+  wrappers and dry-run coverage.
 - Keep the narrowed rewritten addon scope unchanged while preserving the
   existing `1.0.0` foundation notes for history.
 

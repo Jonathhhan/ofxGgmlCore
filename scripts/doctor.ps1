@@ -141,7 +141,7 @@ if ($embeddingModel) {
 $examples = @(
 	@{
 		Name = "ofxGgmlSimpleExample"
-		Command = "scripts\build-simple-example.bat"
+		Command = "scripts\run-simple-example.bat -Build"
 	},
 	@{
 		Name = "ofxGgmlTextExample"

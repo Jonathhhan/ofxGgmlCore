@@ -21,8 +21,7 @@ servers.
 Simple runtime smoke test:
 
 ```powershell
-scripts\build-simple-example.bat
-ofxGgmlSimpleExample\bin\ofxGgmlSimpleExample.exe
+scripts\run-simple-example.bat -Build
 ```
 
 Text:
@@ -93,6 +92,7 @@ when launching examples directly from an IDE.
 Dry runs show what would launch without opening an example window:
 
 ```powershell
+scripts\run-simple-example.bat -DryRun
 scripts\run-text-example.bat -DryRun
 scripts\run-chat-example.bat -DryRun
 scripts\run-embedding-example.bat -DryRun

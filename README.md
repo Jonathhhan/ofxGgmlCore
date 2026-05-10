@@ -62,6 +62,7 @@ cd ofxGgml
 .\scripts\setup-ggml.bat
 .\scripts\build-llama-server.bat
 .\scripts\doctor.bat
+.\scripts\run-simple-example.bat -Build
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
@@ -178,6 +179,7 @@ Build the generated openFrameworks simple example:
 
 ```powershell
 scripts\build-simple-example.bat
+scripts\run-simple-example.bat -Build
 scripts\build-simple-example.ps1 -Configuration Release
 ```
 

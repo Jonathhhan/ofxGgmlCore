@@ -89,7 +89,16 @@ Warnings are meant to be actionable. For example, a missing model warning means
 you can either place a GGUF in `addons/models` or pass `-Model` to the run
 script.
 
-## 5. Run Text
+## 5. Run Simple
+
+```powershell
+.\scripts\run-simple-example.bat -Build
+```
+
+The simple example verifies runtime setup, backend selection, device reporting,
+and a tiny graph without requiring a model or server.
+
+## 6. Run Text
 
 ```powershell
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
@@ -99,7 +108,7 @@ The launcher builds the example, starts `llama-server` on `127.0.0.1:8080` if
 needed, and opens the openFrameworks example. Use the editable prompt field in
 the UI, or press `R` to run again.
 
-## 6. Run Chat
+## 7. Run Chat
 
 ```powershell
 .\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
@@ -108,7 +117,7 @@ the UI, or press `R` to run again.
 Chat uses the same text server on port `8080`. If the server is already healthy,
 the launcher reuses it instead of starting a duplicate.
 
-## 7. Run Embeddings
+## 8. Run Embeddings
 
 Use an embedding-tuned GGUF model for meaningful vectors:
 
@@ -119,7 +128,7 @@ Use an embedding-tuned GGUF model for meaningful vectors:
 The embedding launcher starts a dedicated `llama-server --embeddings` process on
 port `8081`, because embedding mode and chat mode should be separate.
 
-## 8. Sanity Checks
+## 9. Sanity Checks
 
 Fast validation:
 
@@ -130,6 +139,7 @@ Fast validation:
 Dry-run launch resolution without opening windows:
 
 ```powershell
+.\scripts\run-simple-example.bat -DryRun
 .\scripts\run-text-example.bat -DryRun
 .\scripts\run-chat-example.bat -DryRun
 .\scripts\run-embedding-example.bat -DryRun

@@ -134,6 +134,17 @@ if (!(Test-Path -LiteralPath $llamaEmbeddingExe -PathType Leaf)) {
 	New-Item -ItemType File -Path $llamaEmbeddingExe | Out-Null
 }
 
+$simpleOutput = Invoke-DryRun `
+	-Label "Simple example dry-run" `
+	-Script (Join-Path $scriptRoot "run-simple-example.ps1") `
+	-Parameters @{
+		DryRun = $true
+		Configuration = $Configuration
+		Platform = $Platform
+	}
+Assert-Contains $simpleOutput "Executable:" "Simple dry-run"
+Assert-NotContains $simpleOutput "Starting ofxGgmlSimpleExample" "Simple dry-run"
+
 $textOutput = Invoke-DryRun `
 	-Label "Text example dry-run" `
 	-Script (Join-Path $scriptRoot "run-text-example.ps1") `
