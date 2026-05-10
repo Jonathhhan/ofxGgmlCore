@@ -11,7 +11,8 @@ param(
 	[switch]$OpenCL,
 	[switch]$AllBackends,
 	[switch]$Clean,
-	[switch]$WithDebug
+	[switch]$WithDebug,
+	[switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,6 +27,14 @@ $Lib = Join-Path $GgmlRoot "lib"
 function Write-Step {
 	param([string]$Message)
 	Write-Host "==> $Message"
+}
+
+function Format-OnOff {
+	param([bool]$Value)
+	if ($Value) {
+		return "ON"
+	}
+	return "OFF"
 }
 
 function Test-Command {
@@ -456,6 +465,51 @@ function Update-AddonConfig {
 	Write-Step "Updated addon_config.mk [$section] with $($orderedPaths.Count) ggml libraries"
 }
 
+function Get-SetupModeLabel {
+	if ($AllBackends) {
+		return "AllBackends"
+	}
+	if ($CpuOnly) {
+		return "CpuOnly"
+	}
+	if ($autoRequested) {
+		return "Auto"
+	}
+	return "Explicit"
+}
+
+function Get-SourceActionLabel {
+	if (!(Test-Path -LiteralPath $Source)) {
+		return "clone"
+	}
+	if (Test-SourceRevisionMatches $Source $Revision) {
+		return "reuse"
+	}
+	return "fetch"
+}
+
+function Get-BuildLayoutLabel {
+	if (!$IsLinux -and !$IsMacOS -and $Cuda -and ($Vulkan -or $OpenCL)) {
+		return "split-windows-cuda-native"
+	}
+	return "single"
+}
+
+function Write-DryRunPlan {
+	Write-Step "Dry run: ggml setup plan"
+	Write-Host "  revision: $Revision"
+	Write-Host "  repo: $Repo"
+	Write-Host "  root: $GgmlRoot"
+	Write-Host "  source action: $(Get-SourceActionLabel)"
+	Write-Host "  mode: $(Get-SetupModeLabel)"
+	Write-Host "  enabled backends: CPU=$(Format-OnOff $true) CUDA=$(Format-OnOff $Cuda) Vulkan=$(Format-OnOff $Vulkan) Metal=$(Format-OnOff $Metal) OpenCL=$(Format-OnOff $OpenCL)"
+	Write-Host "  jobs: $Jobs"
+	Write-Host "  clean: $(Format-OnOff $Clean)"
+	Write-Host "  debug libs: $(Format-OnOff $WithDebug)"
+	Write-Host "  build layout: $(Get-BuildLayoutLabel)"
+	Write-Step "Dry run complete; no files were changed"
+}
+
 if ($Jobs -le 0) {
 	$Jobs = [Math]::Max(1, [Environment]::ProcessorCount)
 }
@@ -500,6 +554,11 @@ if ($autoRequested -and !$CpuOnly) {
 	if ($IsMacOS) {
 		$Metal = $true
 	}
+}
+
+if ($DryRun) {
+	Write-DryRunPlan
+	return
 }
 
 New-Item -ItemType Directory -Path $GgmlRoot,$Include,$Lib -Force | Out-Null

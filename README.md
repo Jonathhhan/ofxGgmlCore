@@ -67,6 +67,7 @@ from the pinned upstream ggml `v0.11.0` revision.
 .\scripts\setup-ggml.ps1 -Cuda
 .\scripts\setup-ggml.ps1 -Vulkan
 .\scripts\setup-ggml.ps1 -AllBackends
+.\scripts\setup-ggml.ps1 -DryRun
 ```
 
 On macOS and Linux, use the shell wrapper:
@@ -80,6 +81,8 @@ On macOS and Linux, use the shell wrapper:
 Running without backend switches is the default `-Auto` mode. Explicit backend
 switches keep the build narrow, and adding `-Auto` to an explicit backend also
 enables any other locally detected backend.
+Use `-DryRun` to print the resolved backend plan, source action, and build
+layout without cloning, cleaning, configuring, or compiling.
 
 `-Auto` and `-AllBackends` are intentionally different:
 
@@ -141,9 +144,9 @@ Run the fast local validation suite:
 scripts\validate-local.bat
 ```
 
-This runs the headless addon tests, generated-project repair checks, and launch
-dry-run smoke checks. It does not open example windows or start long-running
-servers.
+This runs the headless addon tests, setup dry-run checks, generated-project
+repair checks, and launch dry-run smoke checks. It does not open example
+windows or start long-running servers.
 
 Build the generated openFrameworks simple example:
 
@@ -274,6 +277,12 @@ Run the launch dry-run smoke checks:
 
 ```bat
 scripts\test-launch-dry-run.bat
+```
+
+Run the setup dry-run smoke checks:
+
+```bat
+scripts\test-setup-dry-run.bat
 ```
 
 The old CLI fallback is still available when you explicitly request it:

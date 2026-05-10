@@ -2,6 +2,7 @@ param(
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
 	[switch]$SkipAddonTests,
+	[switch]$SkipSetupDryRun,
 	[switch]$SkipProjectRepair,
 	[switch]$SkipLaunchDryRun
 )
@@ -34,6 +35,16 @@ if (!$SkipAddonTests) {
 		-ScriptPath (Join-Path $scriptRoot "test-addon.ps1") `
 		-Parameters @{
 			Configuration = $Configuration
+		}
+}
+
+if (!$SkipSetupDryRun) {
+	Invoke-CheckedScript `
+		-Label "Checking setup dry-run plan" `
+		-ScriptPath (Join-Path $scriptRoot "test-setup-dry-run.ps1") `
+		-Parameters @{
+			Configuration = $Configuration
+			Platform = $Platform
 		}
 }
 

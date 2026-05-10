@@ -31,6 +31,7 @@ That command must pass and must not open UI windows or start long-running
 servers. It covers:
 
 - headless C++ addon tests
+- setup dry-run smoke checks
 - generated Visual Studio project repair checks
 - launch dry-run smoke checks
 
@@ -57,6 +58,7 @@ scripts\build-embedding-example.bat
 Last checked on 2026-05-10 on Windows x64 with Visual Studio 18:
 
 - `scripts\validate-local.ps1` passed.
+- `scripts\test-setup-dry-run.ps1` passed as part of local validation.
 - `scripts\build-simple-example.ps1 -Configuration Release -Platform x64`
   passed after a transient openFrameworks tlog lock retry; 0 warnings, 0
   errors.

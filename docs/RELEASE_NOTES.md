@@ -11,6 +11,8 @@
 - Breaking: renamed `ofxGgmlRuntime::listDevices()` to `getDevices()` for
   openFrameworks-style getter naming.
 - Updated the core contract and roadmap after the public header naming audit.
+- Added `setup-ggml -DryRun` plus smoke coverage so backend setup plans can be
+  checked without fetching, cleaning, configuring, or compiling ggml.
 - Breaking: renamed `ofxGgmlBackend::Cpu` and `ofxGgmlBackend::Cuda` to
   `ofxGgmlBackend::CPU` and `ofxGgmlBackend::CUDA` so acronym values use the
   same spelling as `OpenCL`.
