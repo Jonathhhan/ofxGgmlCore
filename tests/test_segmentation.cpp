@@ -17,7 +17,8 @@ OFXGGML_TEST(segmentation_unconfigured_backend_reports_error) {
 	ofxGgmlSegmentationInference segmentation;
 	const auto result = segmentation.segmentPoint("image.jpg", 0.5f, 0.5f);
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
+	OFXGGML_REQUIRE(result.isError());
 	OFXGGML_REQUIRE(!result.error.empty());
 	OFXGGML_REQUIRE(result.imagePath == "image.jpg");
 }
@@ -56,7 +57,9 @@ OFXGGML_TEST(segmentation_bridge_backend_runs_callback) {
 		"sam3.gguf",
 		4);
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
+	OFXGGML_REQUIRE(result.isOk());
+	OFXGGML_REQUIRE(!result.isError());
 	OFXGGML_REQUIRE(result.imagePath == "image.jpg");
 	OFXGGML_REQUIRE(result.masks.size() == 1);
 	OFXGGML_REQUIRE(result.masks.front().pixels.front() == 255);

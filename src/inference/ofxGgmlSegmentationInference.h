@@ -47,6 +47,18 @@ struct ofxGgmlSegmentationResult {
 	std::string imagePath;
 	std::vector<ofxGgmlSegmentationMask> masks;
 	std::vector<std::pair<std::string, std::string>> metadata;
+
+	explicit operator bool() const {
+		return isOk();
+	}
+
+	bool isOk() const {
+		return success;
+	}
+
+	bool isError() const {
+		return !isOk();
+	}
 };
 
 class ofxGgmlSegmentationBackend {

@@ -54,6 +54,18 @@ struct ofxGgmlTextResult {
 	std::string rawOutput;
 	int tokensGenerated = 0;
 	std::vector<std::pair<std::string, std::string>> metadata;
+
+	explicit operator bool() const {
+		return isOk();
+	}
+
+	bool isOk() const {
+		return success;
+	}
+
+	bool isError() const {
+		return !isOk();
+	}
 };
 
 using ofxGgmlTextChunkCallback = std::function<bool(const std::string &)>;

@@ -15,7 +15,8 @@ OFXGGML_TEST(embedding_unconfigured_backend_reports_error) {
 	ofxGgmlEmbeddingGenerator generator;
 	const auto result = generator.embed("hello");
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
+	OFXGGML_REQUIRE(result.isError());
 	OFXGGML_REQUIRE(!result.error.empty());
 	OFXGGML_REQUIRE(result.backendName == "EmbeddingBridge");
 }
@@ -42,7 +43,9 @@ OFXGGML_TEST(embedding_bridge_backend_runs_callback) {
 	generator.setBackend(backend);
 	const auto result = generator.embed("hello");
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
+	OFXGGML_REQUIRE(result.isOk());
+	OFXGGML_REQUIRE(!result.isError());
 	OFXGGML_REQUIRE(result.backendName == "EmbeddingBridge");
 	OFXGGML_REQUIRE(result.embedding.size() == 2);
 	OFXGGML_REQUIRE(result.embedding[0] == 5.0f);
@@ -109,7 +112,7 @@ OFXGGML_TEST(llama_server_embedding_backend_runs_injected_runner) {
 
 	const auto result = backend.embed(request);
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
 	OFXGGML_REQUIRE(result.backendName == "llama-server-embedding");
 	OFXGGML_REQUIRE(result.embedding.size() == 3);
 	OFXGGML_REQUIRE(result.embeddings.size() == 1);
@@ -134,7 +137,7 @@ OFXGGML_TEST(llama_server_embedding_backend_reports_unreachable_server) {
 
 	const auto result = backend.embed(request);
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
 	OFXGGML_REQUIRE(
 		result.error.find("llama-server is not reachable") != std::string::npos);
 	OFXGGML_REQUIRE(result.error.find("connection refused") != std::string::npos);

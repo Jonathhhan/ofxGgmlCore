@@ -15,7 +15,8 @@ OFXGGML_TEST(text_unconfigured_backend_reports_error) {
 	ofxGgmlTextGenerator generator;
 	const auto result = generator.generate("hello", "model.gguf");
 
-	OFXGGML_REQUIRE(!result.success);
+	OFXGGML_REQUIRE(!result);
+	OFXGGML_REQUIRE(result.isError());
 	OFXGGML_REQUIRE(!result.error.empty());
 	OFXGGML_REQUIRE(result.backendName == "TextBridge");
 }
@@ -54,7 +55,9 @@ OFXGGML_TEST(text_bridge_backend_runs_callback) {
 			return true;
 		});
 
-	OFXGGML_REQUIRE(result.success);
+	OFXGGML_REQUIRE(result);
+	OFXGGML_REQUIRE(result.isOk());
+	OFXGGML_REQUIRE(!result.isError());
 	OFXGGML_REQUIRE(result.backendName == "TextBridge");
 	OFXGGML_REQUIRE(result.text == "echo: hello");
 	OFXGGML_REQUIRE(streamed == "echo: hello");

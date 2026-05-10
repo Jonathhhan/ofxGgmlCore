@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added result-style `isOk()`, `isError()`, and bool-conversion helpers to
+  text, embedding, and segmentation result structs.
 - Split optional SAM3 adapter includes into `ofxGgmlSam3.h`; generic
   `ofxGgmlSegmentation.h` now exposes only the backend-neutral segmentation API.
 - Added `isOk()`, `isError()`, and bool-conversion helpers to

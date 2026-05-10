@@ -29,6 +29,18 @@ struct ofxGgmlEmbeddingResult {
 	std::string backendName;
 	std::string rawOutput;
 	std::vector<std::pair<std::string, std::string>> metadata;
+
+	explicit operator bool() const {
+		return isOk();
+	}
+
+	bool isOk() const {
+		return success;
+	}
+
+	bool isError() const {
+		return !isOk();
+	}
 };
 
 class ofxGgmlEmbeddingBackend {

@@ -11,6 +11,8 @@ belong in the default addon.
 - Surface errors through `ofxGgmlResult<T>` rather than process-level aborts.
 - Keep runtime compute status result-like while preserving elapsed-time data in
   `ofxGgmlComputeResult`.
+- Keep inference result structs result-like (`isOk()`, `isError()`, bool
+  conversion) while preserving their simple data fields.
 - Keep binary dependency setup reproducible.
 - Provide focused examples that each prove one concept.
 
