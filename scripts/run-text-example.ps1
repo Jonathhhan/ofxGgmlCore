@@ -19,6 +19,12 @@ $exampleRoot = Join-Path $addonRoot "ofxGgmlTextExample"
 $exampleExe = Join-Path $exampleRoot "bin\ofxGgmlTextExample.exe"
 . (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
 
+if ($env:OFXGGML_LAUNCH_DRY_RUN_ONLY -eq "1") {
+	$Build = $false
+	$DryRun = $true
+	$NoAutoServer = $true
+}
+
 if ($Build) {
 	& (Join-Path $scriptRoot "build-text-example.ps1") -Configuration $Configuration -Platform $Platform
 	if ($LASTEXITCODE -ne 0) {
@@ -26,7 +32,12 @@ if ($Build) {
 	}
 }
 
-if (!(Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
+if ((Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
+	$exampleExeExists = $true
+} elseif ($DryRun) {
+	$exampleExeExists = $false
+	Write-Warning "Text example executable was not found: $exampleExe"
+} else {
 	throw "Text example executable was not found: $exampleExe. Build it first with scripts\build-text-example.bat."
 }
 

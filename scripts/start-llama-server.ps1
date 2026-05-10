@@ -5,6 +5,7 @@ param(
 	[int]$Port = 8080,
 	[int]$GpuLayers = 28,
 	[int]$ContextSize = 4096,
+	[string]$EmbeddingPooling = "mean",
 	[switch]$NoCudaGraphs,
 	[switch]$Embeddings,
 	[switch]$Detached,
@@ -20,6 +21,13 @@ $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
 . (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
+Normalize-OfxGgmlWindowsPathEnvironment
+
+if ($env:OFXGGML_LAUNCH_DRY_RUN_ONLY -eq "1") {
+	$DryRun = $true
+	$Detached = $false
+	$NoHealthCheck = $true
+}
 
 function Get-ServerUrl {
 	param([string]$HostValue, [int]$PortValue)
@@ -155,6 +163,10 @@ if ($NoCudaGraphs) {
 }
 if ($Embeddings) {
 	$arguments += "--embeddings"
+	if (![string]::IsNullOrWhiteSpace($EmbeddingPooling)) {
+		$arguments += "--pooling"
+		$arguments += $EmbeddingPooling
+	}
 }
 
 Write-Host "Starting llama-server"
@@ -168,6 +180,7 @@ Write-Host "  cudaGraph: $(if ($NoCudaGraphs) { 'off' } else { 'on' })"
 Write-Host "  embeddings: $(if ($Embeddings) { 'on' } else { 'off' })"
 if ($Embeddings) {
 	Write-Host "  serverMode: embeddings only"
+	Write-Host "  pooling:   $EmbeddingPooling"
 }
 Write-Host "  mode:      $(if ($Detached) { 'detached' } else { 'foreground' })"
 if (![string]::IsNullOrWhiteSpace($LogDir)) {
@@ -182,34 +195,41 @@ if ($DryRun) {
 
 $workingDir = Split-Path -Parent $ServerExe
 if ($Detached) {
-	$startArgs = @{
-		FilePath = $ServerExe
-		ArgumentList = (Join-ProcessArguments $arguments)
-		WorkingDirectory = $workingDir
-		WindowStyle = "Hidden"
-		PassThru = $true
-	}
+	$startInfo = New-Object System.Diagnostics.ProcessStartInfo
+	$startInfo.FileName = $ServerExe
+	$startInfo.Arguments = Join-ProcessArguments $arguments
+	$startInfo.WorkingDirectory = $workingDir
+	$startInfo.UseShellExecute = $true
+	$startInfo.CreateNoWindow = $true
+	$startInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
 	if (![string]::IsNullOrWhiteSpace($LogDir)) {
 		New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
-		$startArgs.RedirectStandardOutput = Join-Path $LogDir "llama-server.out.log"
-		$startArgs.RedirectStandardError = Join-Path $LogDir "llama-server.err.log"
 	}
-	$process = Start-Process @startArgs
+	$process = New-Object System.Diagnostics.Process
+	$process.StartInfo = $startInfo
+	if (![string]::IsNullOrWhiteSpace($LogDir)) {
+		Set-Content -LiteralPath (Join-Path $LogDir "llama-server.command.txt") `
+			-Value ("`"$ServerExe`" " + (Join-ProcessArguments $arguments))
+	}
+	if (!$process.Start()) {
+		throw "Failed to start llama-server."
+	}
 	Write-Host ""
 	Write-Host "llama-server started in the background (PID $($process.Id))."
 	Write-Host "Use OFXGGML_TEXT_SERVER_URL=$serverUrl"
 	if (![string]::IsNullOrWhiteSpace($LogDir)) {
-		Write-Host "Logs are in $LogDir"
+		Write-Host "Command line saved in $LogDir"
 	}
-	if (!$NoHealthCheck) {
-		Write-Host "Waiting for llama-server health..."
-		$health = Wait-LlamaServer $serverUrl $StartupTimeoutSeconds
+	if (!$NoHealthCheck -and $StartupTimeoutSeconds -gt 0) {
+		Write-Host "Checking llama-server health once..."
+		Start-Sleep -Milliseconds 500
+		$health = Test-LlamaServer $serverUrl
 		if ($health.Ready) {
 			Write-Host "llama-server is ready at $serverUrl"
 		} elseif ($health.Reachable) {
-			Write-Warning "llama-server is reachable but not ready yet (HTTP $($health.StatusCode))."
+			Write-Warning "llama-server is reachable but still loading (HTTP $($health.StatusCode))."
 		} else {
-			Write-Warning "llama-server did not become reachable within $StartupTimeoutSeconds seconds."
+			Write-Warning "llama-server is still starting. Check $serverUrl/health in a moment."
 		}
 	}
 	Write-Output "OFXGGML_LLAMA_SERVER_PID=$($process.Id)"

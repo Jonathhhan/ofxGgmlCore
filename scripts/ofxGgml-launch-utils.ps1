@@ -5,6 +5,46 @@ function Write-OfxGgmlStep {
 	Write-Host "==> $Message"
 }
 
+function Test-OfxGgmlWindowsHost {
+	return !($IsLinux -or $IsMacOS)
+}
+
+function Normalize-OfxGgmlWindowsPathEnvironment {
+	if (!(Test-OfxGgmlWindowsHost)) {
+		return
+	}
+
+	$variables = [Environment]::GetEnvironmentVariables("Process")
+	$pathNames = New-Object System.Collections.Generic.List[string]
+	foreach ($key in $variables.Keys) {
+		$name = [string]$key
+		if ($name.Equals("Path", [System.StringComparison]::OrdinalIgnoreCase)) {
+			$pathNames.Add($name)
+		}
+	}
+	if ($pathNames.Count -le 1) {
+		return
+	}
+
+	$preferredName = if ($pathNames.Contains("Path")) { "Path" } else { $pathNames[0] }
+	$pathValue = [string]$variables[$preferredName]
+	if ([string]::IsNullOrWhiteSpace($pathValue)) {
+		foreach ($name in $pathNames) {
+			$value = [string]$variables[$name]
+			if (![string]::IsNullOrWhiteSpace($value)) {
+				$pathValue = $value
+				break
+			}
+		}
+	}
+	foreach ($name in $pathNames) {
+		if (!$name.Equals("Path", [System.StringComparison]::Ordinal)) {
+			[Environment]::SetEnvironmentVariable($name, $null, "Process")
+		}
+	}
+	[Environment]::SetEnvironmentVariable("Path", $pathValue, "Process")
+}
+
 function Normalize-OfxGgmlPathText {
 	param([string]$PathText)
 	if ([string]::IsNullOrWhiteSpace($PathText)) {

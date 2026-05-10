@@ -19,6 +19,12 @@ $exampleRoot = Join-Path $addonRoot "ofxGgmlChatExample"
 $exampleExe = Join-Path $exampleRoot "bin\ofxGgmlChatExample.exe"
 . (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
 
+if ($env:OFXGGML_LAUNCH_DRY_RUN_ONLY -eq "1") {
+	$Build = $false
+	$DryRun = $true
+	$NoAutoServer = $true
+}
+
 if ($Build) {
 	& (Join-Path $scriptRoot "build-chat-example.ps1") -Configuration $Configuration -Platform $Platform
 	if ($LASTEXITCODE -ne 0) {
@@ -26,7 +32,12 @@ if ($Build) {
 	}
 }
 
-if (!(Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
+if ((Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
+	$exampleExeExists = $true
+} elseif ($DryRun) {
+	$exampleExeExists = $false
+	Write-Warning "Chat example executable was not found: $exampleExe"
+} else {
 	throw "Chat example executable was not found: $exampleExe. Build it first with scripts\build-chat-example.bat."
 }
 

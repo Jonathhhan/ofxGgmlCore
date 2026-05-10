@@ -17,6 +17,12 @@ $exampleRoot = Join-Path $addonRoot "ofxGgmlEmbeddingExample"
 $exampleExe = Join-Path $exampleRoot "bin\ofxGgmlEmbeddingExample.exe"
 . (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
 
+if ($env:OFXGGML_LAUNCH_DRY_RUN_ONLY -eq "1") {
+	$Build = $false
+	$DryRun = $true
+	$NoAutoServer = $true
+}
+
 if ($Build) {
 	& (Join-Path $scriptRoot "build-embedding-example.ps1") -Configuration $Configuration -Platform $Platform
 	if ($LASTEXITCODE -ne 0) {
@@ -24,7 +30,12 @@ if ($Build) {
 	}
 }
 
-if (!(Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
+if ((Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
+	$exampleExeExists = $true
+} elseif ($DryRun) {
+	$exampleExeExists = $false
+	Write-Warning "Embedding example executable was not found: $exampleExe"
+} else {
 	throw "Embedding example executable was not found: $exampleExe. Build it first with scripts\build-embedding-example.bat."
 }
 
