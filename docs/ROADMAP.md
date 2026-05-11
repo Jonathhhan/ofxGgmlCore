@@ -160,6 +160,10 @@ user-provided local model assets.
 `ofxGgmlDiffusion` also has generated-project build/run scripts and launch
 dry-run validation for the text-to-image example.
 
+`ofxGgmlDiffusion` now wraps native text-to-image generation in a worker-thread
+async runner, with cancellation applied at the addon result boundary when the
+native call returns control.
+
 ## Release Rule
 
 Before each release checkpoint:

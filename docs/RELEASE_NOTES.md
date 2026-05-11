@@ -23,6 +23,8 @@
   example into a user-model text-to-image run path.
 - Added `ofxGgmlDiffusion` build/run scripts and launch dry-run validation for
   the text-to-image example.
+- Added `ofxGgmlDiffusionAsyncRunner` so the diffusion text-to-image example can
+  run generation off the openFrameworks main thread.
 
 ## v1.0.1
 
