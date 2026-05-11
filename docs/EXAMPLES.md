@@ -66,10 +66,10 @@ The run scripts and examples look for `.gguf` models in these places:
 
 ```text
 openFrameworks/addons/models
-openFrameworks/addons/ofxGgml/models
-openFrameworks/addons/ofxGgml/<Example>/bin/data
-openFrameworks/addons/ofxGgml/<Example>/bin/data/models
-openFrameworks/addons/ofxGgml/<Example>/models
+openFrameworks/addons/ofxGgmlCore/models
+openFrameworks/addons/ofxGgmlCore/<Example>/bin/data
+openFrameworks/addons/ofxGgmlCore/<Example>/bin/data/models
+openFrameworks/addons/ofxGgmlCore/<Example>/models
 ```
 
 Passing `-Model C:\path\to\model.gguf` is the most explicit option and is
@@ -110,7 +110,7 @@ scripts\stop-llama-server.bat -DryRun -IncludeExamples
 ## Common Fixes
 
 - If a GUI example cannot find `ofxImGui.h`, install `ofxImGui` beside
-  `ofxGgml`, then rebuild or regenerate the project.
+  `ofxGgmlCore`, then rebuild or regenerate the project.
 - If a model is missing, pass `-Model` or put a GGUF under `addons/models`.
 - If a server request fails, launch through the run scripts instead of opening
   the `.exe` directly.

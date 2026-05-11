@@ -1,6 +1,6 @@
 # Documentation
 
-Start here when you are new to the rewritten `ofxGgml` line.
+Start here when you are new to the rewritten `ofxGgmlCore` line.
 
 ## First Reads
 

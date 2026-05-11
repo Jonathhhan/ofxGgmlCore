@@ -222,7 +222,7 @@ function Repair-VisualStudioAddonItems {
 
 	$addonEntries = @(
 		@{
-			Name = "ofxGgml"
+			Name = "ofxGgmlCore"
 			Root = $addonRoot.Path
 			SourceRoots = @("src")
 			Excludes = @()

@@ -1,7 +1,7 @@
-# ofxGgml
+# ofxGgmlCore
 
-`ofxGgml` is being restarted as a small, planned openFrameworks addon for
-ggml-based local compute and inference.
+`ofxGgmlCore` is the small, planned openFrameworks foundation for ggml-based
+local compute and inference.
 
 The previous full framework has been frozen on the `legacy-full` branch. That
 branch keeps the broad experimental surface: assistants, web/RAG helpers,
@@ -21,6 +21,10 @@ Keep the default addon boring, dependable, and easy to embed:
 - focused tests and examples
 
 Everything else should become a companion addon or an optional layer.
+
+The repository and addon are now named `ofxGgmlCore`. The C++ API keeps the
+existing `ofxGgml*` public type and header prefix for compatibility during the
+split; a symbol-level rename can happen later if it clearly pays for itself.
 
 ## Layers
 
@@ -58,8 +62,8 @@ For the shortest path from a fresh clone to a working local model example, use
 On Windows, from the openFrameworks `addons` folder:
 
 ```powershell
-git clone https://github.com/Jonathhhan/ofxGgml.git
-cd ofxGgml
+git clone https://github.com/Jonathhhan/ofxGgmlCore.git
+cd ofxGgmlCore
 .\scripts\first-run.bat
 .\scripts\doctor.bat
 .\scripts\list-models.bat
@@ -72,7 +76,7 @@ cd ofxGgml
 Plain `.\scripts\first-run.bat` runs ggml setup, builds the llama.cpp tools, and
 then runs doctor. It auto-enables available local backends, including CUDA when
 it is installed. Use `-CpuOnly` or explicit switches such as `-Cuda` when you
-want to force the build plan. Put models in `addons\models`, `ofxGgml\models`,
+want to force the build plan. Put models in `addons\models`, `ofxGgmlCore\models`,
 or pass `-Model` explicitly as shown above.
 Run `.\scripts\doctor.bat` any time to check local tools, addon neighbors,
 runtime files, models, and server reachability.

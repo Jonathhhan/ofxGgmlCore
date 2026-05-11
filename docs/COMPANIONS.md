@@ -1,8 +1,8 @@
 # Companion Addons
 
-`ofxGgml` should stay the boring core: ggml setup, runtime ownership, tensors,
+`ofxGgmlCore` should stay the boring core: ggml setup, runtime ownership, tensors,
 graphs, model metadata, result types, and small, stable inference boundaries.
-Domain workflows belong in companion addons that depend on `ofxGgml`.
+Domain workflows belong in companion addons that depend on `ofxGgmlCore`.
 
 ## Split Rule
 
@@ -12,7 +12,7 @@ Start a companion addon when a feature needs any of these:
 - committed sample media or domain assets
 - a large GUI workflow
 - network retrieval, indexing, memory, or agent orchestration
-- dependencies that most `ofxGgml` users do not need
+- dependencies that most `ofxGgmlCore` users do not need
 - examples that are more like applications than focused smoke tests
 
 Keep a feature in core only when it is small, backend-neutral, testable without
@@ -40,16 +40,16 @@ large external assets, and useful to most downstream companion addons.
 
 ## Dependency Direction
 
-Companion addons may depend on `ofxGgml`. `ofxGgml` must not depend on companion
+Companion addons may depend on `ofxGgmlCore`. `ofxGgmlCore` must not depend on companion
 addons.
 
-Shared code can move down into `ofxGgml` only when it becomes a stable,
+Shared code can move down into `ofxGgmlCore` only when it becomes a stable,
 domain-neutral primitive with focused tests and no heavy runtime dependency.
 
 ## Llama Split Timing
 
 `ofxGgmlLlama` is the planned home for llama.cpp-specific runtime tooling:
 server lifecycle scripts, CLI fallback, text/chat/embedding examples, and
-llama.cpp build helpers. Keep the current `v1.0.1` llama workflow in `ofxGgml`
+llama.cpp build helpers. Keep the current `v1.0.1` llama workflow in `ofxGgmlCore`
 until `ofxGgmlSam` has one useful example and the move can preserve the
 clone/setup/run path for existing users.

@@ -9,8 +9,8 @@ For a compact guide to what each example is for, see `docs/EXAMPLES.md`.
 ## 1. Prerequisites
 
 - openFrameworks installed locally
-- `ofxGgml` cloned into the openFrameworks `addons` folder
-- `ofxImGui` installed beside `ofxGgml`
+- `ofxGgmlCore` cloned into the openFrameworks `addons` folder
+- `ofxImGui` installed beside `ofxGgmlCore`
 - Git, CMake, and a C++ compiler
 - Windows: Visual Studio C++ build tools
 - macOS/Linux: PowerShell 7+ for the wrapper scripts
@@ -20,8 +20,8 @@ Models are not downloaded by this addon. Put them in one of these places:
 
 ```text
 openFrameworks/addons/models
-openFrameworks/addons/ofxGgml/models
-openFrameworks/addons/ofxGgml/ofxGgmlTextExample/bin/data/models
+openFrameworks/addons/ofxGgmlCore/models
+openFrameworks/addons/ofxGgmlCore/ofxGgmlTextExample/bin/data/models
 ```
 
 You can also pass a model path directly with `-Model`.
@@ -31,8 +31,8 @@ You can also pass a model path directly with `-Model`.
 From the openFrameworks `addons` folder:
 
 ```powershell
-git clone https://github.com/Jonathhhan/ofxGgml.git
-cd ofxGgml
+git clone https://github.com/Jonathhhan/ofxGgmlCore.git
+cd ofxGgmlCore
 ```
 
 ## 3. Run First-Run Setup
@@ -177,7 +177,7 @@ Dry-run launch resolution without opening windows:
 
 ## Common Fixes
 
-- `ofxImGui.h` missing: install `ofxImGui` beside `ofxGgml`, then regenerate or
+- `ofxImGui.h` missing: install `ofxImGui` beside `ofxGgmlCore`, then regenerate or
   rebuild the example project.
 - CUDA requested but not found: use default setup or install the CUDA Toolkit.
 - No model found: pass `-Model C:\path\to\model.gguf` or place a GGUF in

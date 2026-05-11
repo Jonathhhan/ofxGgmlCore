@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Breaking: renamed the addon/repository line to `ofxGgmlCore` and updated addon
+  metadata, example addon dependencies, and first-run documentation.
+- Kept the existing public C++ `ofxGgml*` symbol and header prefix as a
+  compatibility layer during the first companion split.
 - Documented `ofxGgmlLlama` as the planned future split for llama.cpp-specific
   server/CLI tooling and text/chat/embedding examples.
 

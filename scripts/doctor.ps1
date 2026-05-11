@@ -65,7 +65,7 @@ $isWindowsHost = !($IsLinux -or $IsMacOS)
 $exeSuffix = if ($isWindowsHost) { ".exe" } else { "" }
 $addonParent = Split-Path -Parent $addonRoot
 
-Write-Host "ofxGgml doctor"
+Write-Host "ofxGgmlCore doctor"
 Write-Host "Root  $addonRoot"
 Write-Host ""
 
@@ -96,7 +96,7 @@ $ofxImGui = Join-Path $addonParent "ofxImGui"
 if (Test-Path -LiteralPath $ofxImGui -PathType Container) {
 	Write-Check "OK" "ofxImGui" $ofxImGui
 } else {
-	Write-Check "WARN" "ofxImGui" "install beside ofxGgml before building GUI examples"
+	Write-Check "WARN" "ofxImGui" "install beside ofxGgmlCore before building GUI examples"
 }
 
 $ggmlInclude = Join-Path $addonRoot "libs\ggml\include"
@@ -125,7 +125,7 @@ $textModel = Find-OfxGgmlFirstModel (Get-OfxGgmlModelSearchDirectories `
 if ($textModel) {
 	Write-Check "OK" "text model" $textModel
 } else {
-	Write-Check "WARN" "text model" "put a GGUF under addons\models, ofxGgml\models, or pass -Model"
+	Write-Check "WARN" "text model" "put a GGUF under addons\models, ofxGgmlCore\models, or pass -Model"
 }
 
 $embeddingModel = Find-OfxGgmlFirstModel (Get-OfxGgmlModelSearchDirectories `

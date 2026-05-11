@@ -1,9 +1,9 @@
 meta:
-	ADDON_NAME = ofxGgml
-	ADDON_DESCRIPTION = Planned openFrameworks addon for ggml runtime, tensors, graphs, and local inference layers
+	ADDON_NAME = ofxGgmlCore
+	ADDON_DESCRIPTION = Core openFrameworks addon for ggml runtime, tensors, graphs, and local inference boundaries
 	ADDON_AUTHOR = Jonathan Frank
 	ADDON_TAGS = "ggml,ai,tensor,compute,inference"
-	ADDON_URL = https://github.com/Jonathhhan/ofxGgml
+	ADDON_URL = https://github.com/Jonathhhan/ofxGgmlCore
 
 common:
 	ADDON_INCLUDES += src

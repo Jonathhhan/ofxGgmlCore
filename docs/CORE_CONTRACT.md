@@ -1,12 +1,12 @@
 # Core Contract
 
-This document is the working contract for the `main` rewrite of `ofxGgml`.
+This document is the working contract for the `main` rewrite of `ofxGgmlCore`.
 It should be updated before large implementation changes, not after the addon
 has drifted.
 
 ## Purpose
 
-`ofxGgml` core is the narrow foundation for openFrameworks projects that need
+`ofxGgmlCore` is the narrow foundation for openFrameworks projects that need
 local ggml compute. It owns ggml runtime setup, graph execution, model metadata,
 and a small C++ API that can be depended on by optional layers.
 
@@ -54,6 +54,11 @@ The core public surface is:
 - `ofxGgmlSegmentation.h`
 - `ofxGgmlSam3.h`
 - `ofxGgml.h`
+
+The addon/repository name is `ofxGgmlCore`, but the public C++ symbols and
+headers intentionally keep the `ofxGgml*` prefix during the first companion
+split. That keeps existing examples and downstream code readable while the repo
+family settles.
 
 `ofxGgml.h` should remain a boring umbrella. Text belongs there only as a small
 backend-neutral API. Embeddings belong there only as a small request/result API

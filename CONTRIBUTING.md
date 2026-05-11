@@ -1,6 +1,6 @@
 # Contributing
 
-`ofxGgml` is the small core addon. Before adding a feature, first decide whether
+`ofxGgmlCore` is the small core addon. Before adding a feature, first decide whether
 it belongs in core or in a companion addon.
 
 ## Start Here

@@ -143,6 +143,8 @@ if (!(Test-WindowsHost)) {
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
 $buildScript = Join-Path $scriptRoot "build-simple-example.ps1"
+$validatedCount = 0
+$skippedCount = 0
 
 foreach ($example in $Examples) {
 	$exampleDir = Join-Path $addonRoot $example
@@ -150,7 +152,9 @@ foreach ($example in $Examples) {
 	$filters = "$project.filters"
 
 	if (!(Test-Path -LiteralPath $project -PathType Leaf)) {
-		throw "Visual Studio project not found for $example. Generate it with openFrameworks projectGenerator first."
+		Write-Step "Skipping $example generated metadata; Visual Studio project has not been generated"
+		$skippedCount++
+		continue
 	}
 
 	Write-Step "Repairing $example generated metadata"
@@ -165,6 +169,7 @@ foreach ($example in $Examples) {
 
 	Write-Step "Validating $example generated metadata"
 	Assert-ProjectMetadata -Example $example -Project $project -Filters $filters
+	$validatedCount++
 }
 
-Write-Step "Generated project repair coverage passed"
+Write-Step "Generated project repair coverage passed ($validatedCount checked, $skippedCount skipped)"

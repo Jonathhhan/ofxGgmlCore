@@ -41,7 +41,7 @@ function Ensure-GeneratedProject {
 		throw "Visual Studio project not found and projectGenerator.exe was not found under $ofRoot."
 	}
 	Write-Host "==> Generating $exampleName Visual Studio project"
-	& $projectGenerator "-o$ofRoot" "-aofxGgml,ofxImGui" "-pvs" $exampleDir
+	& $projectGenerator "-o$ofRoot" "-aofxGgmlCore,ofxImGui" "-pvs" $exampleDir
 	if ($LASTEXITCODE -ne 0) {
 		throw "projectGenerator failed with exit code $LASTEXITCODE"
 	}

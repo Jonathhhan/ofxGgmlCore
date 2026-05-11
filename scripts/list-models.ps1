@@ -82,7 +82,7 @@ if ($Json) {
 		Models = $modelArray
 	} | ConvertTo-Json -Depth 4
 } else {
-	Write-Host "ofxGgml model search"
+	Write-Host "ofxGgmlCore model search"
 	Write-Host "Root  $addonRoot"
 	Write-Host ""
 	Write-Host "Search directories:"
@@ -93,7 +93,7 @@ if ($Json) {
 	Write-Host ""
 	if ($models.Count -eq 0) {
 		Write-Host "No GGUF models found."
-		Write-Host "Put models under addons\models or ofxGgml\models, or pass -Model to the run scripts."
+		Write-Host "Put models under addons\models or ofxGgmlCore\models, or pass -Model to the run scripts."
 	} else {
 		Write-Host "Models:"
 		foreach ($model in $models) {
