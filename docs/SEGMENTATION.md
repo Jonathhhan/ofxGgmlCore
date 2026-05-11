@@ -53,5 +53,5 @@ Add `ofxGgmlSegmentationExample` only when all of these are true:
 - the example does not require committed model binaries or downloaded assets
 
 When the gate is met, build the example in `ofxGgmlSam`. It should use
-`ofxImGui` like the text, chat, and embedding examples, and it should remain
-focused on one point-prompt mask flow.
+`ofxImGui` like the companion examples, and it should remain focused on one
+point-prompt mask flow.

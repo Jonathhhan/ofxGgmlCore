@@ -76,11 +76,8 @@ before this release unless a blocking validation issue requires it.
 
 ### 3. Examples
 
-- Ongoing rule: keep examples focused: simple runtime, text, chat, embeddings.
-- Done for `1.0.0`: add launch dry-run coverage for the explicit
-  text/chat llama.cpp CLI fallback path.
-- Done for `1.0.0`: add launch dry-run coverage for the standalone
-  `llama-embedding` runner.
+- Ongoing rule: keep Core examples focused on backend-neutral smoke coverage.
+- Done for `1.0.1`: move text, chat, and embedding examples to `ofxGgmlLlama`.
 - Ongoing rule: improve example UX only when it clarifies the focused workflow.
 - Ongoing rule: do not add an all-in-one example to core.
 - Ongoing rule: examples may depend on `ofxImGui`, but the public addon API
@@ -101,7 +98,7 @@ These should not enter core by default:
 
 - assistants and coding workflows
 - RAG, web crawling, citations, or project memory
-- speech, TTS, diffusion, CLIP, YOLO, broad vision workflows
+- audio, speech, TTS, diffusion, CLIP, YOLO, broad vision workflows
 - montage, video, or product-level GUI workflows
 
 Named companion lanes:
@@ -110,8 +107,10 @@ Named companion lanes:
 - `ofxGgmlLlama` for llama.cpp server/CLI tooling plus text, chat, and
   embedding examples.
 - `ofxGgmlMusic` for music, audio analysis, and generation workflows.
-- `ofxGgmlSpeech` for speech recognition, transcription, and voice workflows.
-  Whisper.cpp belongs in this lane first, not in a separate addon.
+- `ofxGgmlAudio` for real-time audio inference, denoising, voice conversion,
+  emotion cues, speech recognition, transcription, and voice workflows.
+  Whisper.cpp belongs in this lane first, not in a separate addon. The current
+  local repo is still named `ofxGgmlSpeech` until the GitHub rename exists.
 - `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image and
   video workflows, including PhotoMaker-style identity adapters.
 - `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
@@ -131,12 +130,12 @@ Candidate companion lanes, only when a real project needs them:
 If one becomes important, start it as a companion addon that depends on
 `ofxGgmlCore` instead of expanding the core contract.
 
-`ofxGgmlLlama` has been seeded with the current text/chat/embedding examples and
-llama.cpp server scripts. Next, prove the companion builds through
-projectGenerator, then move llama-specific C++ adapter implementations out of
-core while keeping backend-neutral request/result APIs in core.
+`ofxGgmlLlama` owns the text/chat/embedding examples and llama.cpp server
+scripts. Next, prove the companion builds through projectGenerator, then move
+llama-specific C++ adapter implementations out of core while keeping
+backend-neutral request/result APIs in core.
 
-`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`,
+`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlAudio`/`ofxGgmlSpeech`, `ofxGgmlVision`,
 `ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlVideo` have initial skeletons with
 root-level smoke examples, local validation scripts, and headless
 request/helper tests. Next work should make one of them useful with a real

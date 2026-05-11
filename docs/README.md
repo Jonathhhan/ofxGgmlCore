@@ -7,8 +7,8 @@ Start here when you are new to the rewritten `ofxGgmlCore` line.
 | Document | Use it for |
 | --- | --- |
 | `index.html` | GitHub Pages landing page for the addon family. |
-| `QUICKSTART.md` | Clone, setup, and run the focused examples. |
-| `EXAMPLES.md` | Choose between simple, text, chat, and embedding examples. |
+| `QUICKSTART.md` | Clone, setup, and run the Core smoke example. |
+| `EXAMPLES.md` | Understand the Core example and where companion examples live. |
 | `RELEASE_NOTES.md` | See what changed in the current release line. |
 | `../CONTRIBUTING.md` | Follow the change rules before editing core. |
 

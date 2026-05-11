@@ -1,6 +1,5 @@
 param(
 	[int]$Jobs = 0,
-	[string]$CudaArchitectures = "",
 	[switch]$Auto,
 	[switch]$CpuOnly,
 	[switch]$Cuda,
@@ -9,9 +8,7 @@ param(
 	[switch]$OpenCL,
 	[switch]$AllBackends,
 	[switch]$Clean,
-	[switch]$StopRunningRuntime,
 	[switch]$SkipGgml,
-	[switch]$SkipLlama,
 	[switch]$SkipDoctor,
 	[switch]$StrictDoctor,
 	[switch]$DryRun
@@ -55,9 +52,6 @@ function Add-CommonBackendParameters {
 if ($AllBackends -and $CpuOnly) {
 	throw "-AllBackends cannot be combined with -CpuOnly."
 }
-if ($AllBackends -and !$SkipLlama) {
-	throw "-AllBackends is only supported for ggml setup in first-run. Pass -SkipLlama, or use explicit llama backend switches such as -Cuda, -Vulkan, or -OpenCL."
-}
 
 if (!$SkipGgml) {
 	$setupParams = Add-CommonBackendParameters @{}
@@ -70,24 +64,8 @@ if (!$SkipGgml) {
 		-Parameters $setupParams
 }
 
-if (!$SkipLlama) {
-	$llamaParams = Add-CommonBackendParameters @{}
-	if (![string]::IsNullOrWhiteSpace($CudaArchitectures)) {
-		$llamaParams.CudaArchitectures = $CudaArchitectures
-	}
-	if ($StopRunningRuntime) {
-		$llamaParams.StopRunningRuntime = $true
-	}
-	Invoke-Step `
-		-Label "Building llama.cpp tools" `
-		-Script (Join-Path $scriptRoot "build-llama-server.ps1") `
-		-Parameters $llamaParams
-}
-
 if (!$SkipDoctor) {
-	$doctorParams = @{
-		NoServerProbe = $DryRun
-	}
+	$doctorParams = @{}
 	if ($StrictDoctor) {
 		$doctorParams.Strict = $true
 	}

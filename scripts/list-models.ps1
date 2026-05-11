@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
-. (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
+$addonParent = Split-Path -Parent $addonRoot
 
 function Format-Size {
 	param([long]$Bytes)
@@ -21,15 +21,6 @@ function Format-Size {
 		return "{0:N1} KB" -f ($Bytes / 1KB)
 	}
 	return "$Bytes B"
-}
-
-function Get-ModelRoleHint {
-	param([string]$Name)
-	$lower = $Name.ToLowerInvariant()
-	if ($lower -match "embed|embedding|bge|e5|gte|nomic|jina") {
-		return "embedding"
-	}
-	return "text"
 }
 
 function Get-UniqueDirectories {
@@ -48,12 +39,10 @@ function Get-UniqueDirectories {
 	}
 }
 
-$directories = Get-UniqueDirectories (Get-OfxGgmlModelSearchDirectories `
-	-AddonRoot $addonRoot `
-	-ExampleRoot (Join-Path $addonRoot "ofxGgmlTextExample") `
-	-ExtraExampleNames @(
-		"ofxGgmlChatExample",
-		"ofxGgmlEmbeddingExample"))
+$directories = Get-UniqueDirectories @(
+	(Join-Path $addonRoot "models"),
+	(Join-Path $addonParent "models")
+)
 
 $models = New-Object System.Collections.Generic.List[object]
 foreach ($directory in $directories) {
@@ -69,7 +58,6 @@ foreach ($directory in $directories) {
 				Directory = $directory
 				Bytes = [long]$_.Length
 				Size = Format-Size $_.Length
-				RoleHint = Get-ModelRoleHint $_.Name
 			})
 		}
 }
@@ -85,6 +73,8 @@ if ($Json) {
 	Write-Host "ofxGgmlCore model search"
 	Write-Host "Root  $addonRoot"
 	Write-Host ""
+	Write-Host "Core does not require a model. Text, chat, and embedding model workflows live in ofxGgmlLlama."
+	Write-Host ""
 	Write-Host "Search directories:"
 	foreach ($directory in $directories) {
 		$exists = Test-Path -LiteralPath $directory -PathType Container
@@ -93,11 +83,10 @@ if ($Json) {
 	Write-Host ""
 	if ($models.Count -eq 0) {
 		Write-Host "No GGUF models found."
-		Write-Host "Put models under addons\models or ofxGgmlCore\models, or pass -Model to the run scripts."
 	} else {
 		Write-Host "Models:"
 		foreach ($model in $models) {
-			Write-Host ("  {0}  {1}  {2}" -f $model.RoleHint.PadRight(9), $model.Size.PadLeft(9), $model.Path)
+			Write-Host ("  {0}  {1}" -f $model.Size.PadLeft(9), $model.Path)
 		}
 	}
 }

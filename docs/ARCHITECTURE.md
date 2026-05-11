@@ -25,10 +25,11 @@ These should live in companion addons or optional layers:
 
 - assistants and coding agents
 - RAG, web crawling, citation search
-- llama.cpp-specific server/CLI tooling through the planned `ofxGgmlLlama`
+- llama.cpp-specific server/CLI tooling through `ofxGgmlLlama`
 - SAM/SAM3 through `ofxGgmlSam`, plus vision, TTS, diffusion, agents, and video
 - music, audio analysis, and generation workflows through `ofxGgmlMusic`
-- speech recognition, transcription, and voice workflows through `ofxGgmlSpeech`
+- real-time audio, Whisper, transcription, denoising, voice conversion, emotion
+  cues, and voice workflows through the planned `ofxGgmlAudio` lane
 - video essay, montage, MilkDrop, Holoscan workflows
 - large all-in-one GUI experiments
 
@@ -44,12 +45,10 @@ These should live in companion addons or optional layers:
 ## Optional Runtime Layers
 
 The default addon API can expose small optional layers when their boundaries stay
-plain C++ and testable. The llama.cpp server tools are installed only through
-explicit scripts and are treated as a local runtime, not as a required core
-dependency. `ofxGgmlLlama` is the planned future home for that llama-specific
-tooling, but the `v1.0.1` workflow stays here until the split can preserve the
-current setup path. Examples may use `ofxImGui` for controls and status panels,
-but the public API must not depend on GUI code.
+plain C++ and testable. Model-specific runtime tools belong in companion addons;
+`ofxGgmlLlama` owns llama.cpp server and CLI workflows. Core examples may use
+`ofxImGui` for controls and status panels, but the public API must not depend on
+GUI code.
 
 SAM/SAM3 should live in the companion addon `ofxGgmlSam`. Until that exists,
 this repo keeps a small adapter boundary only. Its generated native integration

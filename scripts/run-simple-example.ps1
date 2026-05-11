@@ -12,7 +12,11 @@ $addonRoot = Split-Path -Parent $scriptRoot
 $exampleRoot = Join-Path $addonRoot "ofxGgmlSimpleExample"
 $exeSuffix = if ($IsLinux -or $IsMacOS) { "" } else { ".exe" }
 $exampleExe = Join-Path $exampleRoot "bin\ofxGgmlSimpleExample$exeSuffix"
-. (Join-Path $scriptRoot "ofxGgml-launch-utils.ps1")
+
+function Write-Step {
+	param([string]$Message)
+	Write-Host "==> $Message"
+}
 
 if ($env:OFXGGML_LAUNCH_DRY_RUN_ONLY -eq "1") {
 	$Build = $false
@@ -35,10 +39,10 @@ if (!(Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
 }
 
 if ($DryRun) {
-	Write-OfxGgmlStep "Executable: $exampleExe"
+	Write-Step "Executable: $exampleExe"
 	return
 }
 
-Write-OfxGgmlStep "Starting ofxGgmlSimpleExample"
+Write-Step "Starting ofxGgmlSimpleExample"
 & $exampleExe
 exit $LASTEXITCODE

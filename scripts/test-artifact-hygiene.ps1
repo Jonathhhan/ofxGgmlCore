@@ -25,18 +25,18 @@ function Assert-NoMatches {
 		[string[]]$Patterns,
 		[string]$Label
 	)
-	$matches = New-Object System.Collections.Generic.List[string]
+	$matchedPaths = New-Object System.Collections.Generic.List[string]
 	foreach ($path in $Paths) {
 		$normalized = $path -replace "\\", "/"
 		foreach ($pattern in $Patterns) {
 			if ($normalized -match $pattern) {
-				$matches.Add($path)
+				$matchedPaths.Add($path)
 				break
 			}
 		}
 	}
-	if ($matches.Count -gt 0) {
-		throw "$Label contains generated artifacts:`n$($matches -join "`n")"
+	if ($matchedPaths.Count -gt 0) {
+		throw "$Label contains generated artifacts:`n$($matchedPaths -join "`n")"
 	}
 }
 
@@ -64,6 +64,7 @@ try {
 		"^libs/ggml/\.source/",
 		"^libs/ggml/build",
 		"^libs/llama\.cpp/",
+		"^libs/llama/",
 		"^libs/sam3\.cpp/",
 		"(^|/)(models)(/|$)",
 		"\.(exe|dll|exp|ilk|lib|pdb|sln|suo|user|vcxproj|vcxproj\.filters|VC\.db|VC\.VC\.opendb)$",
@@ -75,7 +76,7 @@ try {
 	Assert-NoMatches -Paths $tracked -Patterns $forbiddenPatterns -Label "Tracked files"
 
 	Write-Step "Checking staged generated artifacts"
-	$staged = Invoke-GitLines @("diff", "--cached", "--name-only")
+	$staged = Invoke-GitLines @("diff", "--cached", "--name-only", "--diff-filter=ACMRT")
 	Assert-NoMatches -Paths $staged -Patterns $forbiddenPatterns -Label "Staged files"
 
 	Write-Step "Checking generated artifact ignore rules"
@@ -90,8 +91,8 @@ try {
 		"libs/sam3.cpp/CMakeLists.txt",
 		"libs/sam3/lib/sam3.lib",
 		"models/model.gguf",
-		"ofxGgmlTextExample/ofxGgmlTextExample.vcxproj",
-		"ofxGgmlTextExample/bin/ofxGgmlTextExample.exe"
+		"ofxGgmlSimpleExample/ofxGgmlSimpleExample.vcxproj",
+		"ofxGgmlSimpleExample/bin/ofxGgmlSimpleExample.exe"
 	)
 } finally {
 	Pop-Location

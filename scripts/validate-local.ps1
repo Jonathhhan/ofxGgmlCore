@@ -92,10 +92,7 @@ if (!$SkipModelList) {
 if (!$SkipDoctor) {
 	Invoke-CheckedScript `
 		-Label "Checking local doctor" `
-		-ScriptPath (Join-Path $scriptRoot "doctor.ps1") `
-		-Parameters @{
-			NoServerProbe = $true
-		}
+		-ScriptPath (Join-Path $scriptRoot "doctor.ps1")
 }
 
 if (!$SkipArtifactHygiene) {
