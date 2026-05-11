@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes.
+
+## v1.0.1
+
 - Documented `ofxGgmlSam`, `ofxGgmlMusic`, and `ofxGgmlSpeech` as planned
   companion addon lanes for SAM/SAM3, music/audio, and speech/voice workflows.
 - Added a roadmap list for later companion candidates: vision, diffusion, RAG,
@@ -10,9 +14,6 @@
   companion addon work.
 - Added `docs/README.md` as a compact map of the documentation set.
 - Added `CONTRIBUTING.md` with change rules and validation expectations.
-
-## v1.0.1
-
 - Patch release metadata to make `1.0.1` the active release target.
 - Added `docs/QUICKSTART.md` with a direct clone/setup/run path for text, chat,
   and embedding examples.
