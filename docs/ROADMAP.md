@@ -139,6 +139,11 @@ validation scripts, and headless request/helper tests. Next work should make
 one of them useful with a real backend rather than broadening every skeleton at
 once.
 
+`ofxGgmlDiffusion` has started that migration by carrying over the useful typed
+request/result/config shape from `ofxStableDiffusion` while leaving the native
+runtime, generated binaries, sample media, and broad workflow experiments out
+of the new repo.
+
 ## Release Rule
 
 Before each release checkpoint:

@@ -11,6 +11,9 @@
 - Seeded `ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`,
   and `ofxGgmlRag` as companion skeletons with root-level smoke examples and
   local validation.
+- Started the `ofxStableDiffusion` to `ofxGgmlDiffusion` migration by moving
+  the typed diffusion request/config/result shape into the companion without
+  copying native runtime artifacts.
 
 ## v1.0.1
 
