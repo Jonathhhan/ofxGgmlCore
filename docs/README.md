@@ -9,6 +9,7 @@ Start here when you are new to the rewritten `ofxGgml` line.
 | `QUICKSTART.md` | Clone, setup, and run the focused examples. |
 | `EXAMPLES.md` | Choose between simple, text, chat, and embedding examples. |
 | `RELEASE_NOTES.md` | See what changed in the current release line. |
+| `../CONTRIBUTING.md` | Follow the change rules before editing core. |
 
 ## Design And Scope
 
