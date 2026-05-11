@@ -148,6 +148,11 @@ of the new repo.
 that default to the sibling `ofxGgmlCore` ggml install, with an explicit
 bundled-ggml escape hatch for upstream experiments.
 
+`ofxGgmlDiffusion` also has its first opt-in native bridge boundary for
+stable-diffusion.cpp text-to-image generation. It stays unavailable by default
+until the generated runtime is installed and the app explicitly enables the
+native bridge compile flag.
+
 ## Release Rule
 
 Before each release checkpoint:

@@ -17,6 +17,8 @@
 - Added generated stable-diffusion.cpp setup/build scripts to
   `ofxGgmlDiffusion`, defaulting to the sibling `ofxGgmlCore` ggml runtime
   instead of building a second ggml stack.
+- Added the first opt-in `ofxGgmlDiffusion` native bridge boundary for
+  stable-diffusion.cpp text-to-image generation.
 
 ## v1.0.1
 
