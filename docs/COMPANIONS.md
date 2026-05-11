@@ -26,14 +26,14 @@ large external assets, and useful to most downstream companion addons.
 | `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts |
 | `ofxGgmlMusic` | music/audio analysis, music embeddings, generation workflows |
 | `ofxGgmlSpeech` | speech recognition, transcription, voice workflows |
+| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows |
+| `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
+| `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory |
 
 ## Candidate Lanes
 
 | Addon | Scope |
 | --- | --- |
-| `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
-| `ofxGgmlDiffusion` | image/video diffusion and generative visual models |
-| `ofxGgmlRag` | document indexing, retrieval, citations, project memory |
 | `ofxGgmlAgents` | assistants, tool use, coding/workflow agents |
 | `ofxGgmlVideo` | video understanding, montage, temporal analysis |
 | `ofxGgmlUI` | larger optional ImGui tools, model browser, prompt workbench |

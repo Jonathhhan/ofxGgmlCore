@@ -111,13 +111,15 @@ Named companion lanes:
   embedding examples.
 - `ofxGgmlMusic` for music, audio analysis, and generation workflows.
 - `ofxGgmlSpeech` for speech recognition, transcription, and voice workflows.
+- `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image and
+  video workflows.
+- `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
+  understanding.
+- `ofxGgmlRag` for document ingestion, web crawl, retrieval, citations, and
+  project memory.
 
 Candidate companion lanes, only when a real project needs them:
 
-- `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
-  understanding.
-- `ofxGgmlDiffusion` for image/video diffusion and generative visual models.
-- `ofxGgmlRag` for document indexing, retrieval, citations, and project memory.
 - `ofxGgmlAgents` for assistants, tool use, and workflow automation.
 - `ofxGgmlVideo` for video understanding, montage, and temporal analysis.
 - `ofxGgmlUI` for larger optional ImGui tools, model browsers, and prompt
@@ -130,6 +132,12 @@ If one becomes important, start it as a companion addon that depends on
 llama.cpp server scripts. Next, prove the companion builds through
 projectGenerator, then move llama-specific C++ adapter implementations out of
 core while keeping backend-neutral request/result APIs in core.
+
+`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`, and
+`ofxGgmlRag` have initial skeletons with root-level smoke examples, local
+validation scripts, and headless request/helper tests. Next work should make
+one of them useful with a real backend rather than broadening every skeleton at
+once.
 
 ## Release Rule
 

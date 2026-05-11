@@ -8,6 +8,9 @@
   compatibility layer during the first companion split.
 - Seeded `ofxGgmlLlama` as the companion home for llama.cpp-specific
   server/CLI tooling and text/chat/embedding examples.
+- Seeded `ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`,
+  and `ofxGgmlRag` as companion skeletons with root-level smoke examples and
+  local validation.
 
 ## v1.0.1
 
