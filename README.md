@@ -54,6 +54,9 @@ addon split rules, and `docs/RELEASE_READINESS.md` before tagging again or
 widening the public surface. See `CONTRIBUTING.md` before changing core code,
 and `docs/EXAMPLES.md` when choosing between the focused example apps.
 
+The addon family landing page lives at `docs/index.html` and is ready for
+GitHub Pages from the repository `/docs` folder.
+
 ## First Run
 
 For the shortest path from a fresh clone to a working local model example, use

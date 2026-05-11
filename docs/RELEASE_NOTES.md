@@ -25,6 +25,8 @@
   the text-to-image example.
 - Added `ofxGgmlDiffusionAsyncRunner` so the diffusion text-to-image example can
   run generation off the openFrameworks main thread.
+- Added a GitHub Pages-ready `docs/index.html` landing page for the addon
+  family.
 
 ## v1.0.1
 

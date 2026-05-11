@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ofxGgml Addon Family</title>
+	<meta name="description" content="A small map of the ofxGgml openFrameworks addon family for local ggml-based AI workflows.">
+	<style>
+		:root {
+			color-scheme: light dark;
+			--bg: #f6f7f2;
+			--panel: #ffffff;
+			--text: #20231f;
+			--muted: #5c625a;
+			--line: #d8ddd1;
+			--accent: #176c63;
+			--accent-strong: #0f4f49;
+			--tag: #e7efe9;
+			--tag-text: #174c43;
+			--code: #eef1ea;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg: #111411;
+				--panel: #1b201c;
+				--text: #f1f4eb;
+				--muted: #b1baad;
+				--line: #343d35;
+				--accent: #70d1c1;
+				--accent-strong: #9ae4d9;
+				--tag: #22362f;
+				--tag-text: #a7eadf;
+				--code: #242a24;
+			}
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			background: var(--bg);
+			color: var(--text);
+			font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}
+
+		a {
+			color: var(--accent-strong);
+			text-decoration-thickness: 0.08em;
+			text-underline-offset: 0.18em;
+		}
+
+		.page {
+			width: min(1120px, calc(100% - 32px));
+			margin: 0 auto;
+			padding: 40px 0 56px;
+		}
+
+		header {
+			display: grid;
+			gap: 16px;
+			padding: 24px 0 32px;
+			border-bottom: 1px solid var(--line);
+		}
+
+		h1 {
+			margin: 0;
+			font-size: clamp(2rem, 6vw, 4.5rem);
+			line-height: 0.98;
+			letter-spacing: 0;
+		}
+
+		h2 {
+			margin: 0 0 14px;
+			font-size: 1.35rem;
+			letter-spacing: 0;
+		}
+
+		h3 {
+			margin: 0;
+			font-size: 1rem;
+			letter-spacing: 0;
+		}
+
+		p {
+			margin: 0;
+		}
+
+		.lede {
+			max-width: 760px;
+			color: var(--muted);
+			font-size: 1.1rem;
+		}
+
+		.actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-top: 6px;
+		}
+
+		.button {
+			display: inline-flex;
+			align-items: center;
+			min-height: 40px;
+			padding: 8px 14px;
+			border: 1px solid var(--accent);
+			border-radius: 6px;
+			background: var(--accent);
+			color: #ffffff;
+			font-weight: 650;
+			text-decoration: none;
+		}
+
+		.button.secondary {
+			background: transparent;
+			color: var(--accent-strong);
+		}
+
+		main {
+			display: grid;
+			gap: 30px;
+			padding-top: 32px;
+		}
+
+		.summary {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 12px;
+		}
+
+		.summary div,
+		.card,
+		.panel {
+			background: var(--panel);
+			border: 1px solid var(--line);
+			border-radius: 8px;
+		}
+
+		.summary div {
+			padding: 16px;
+		}
+
+		.summary strong {
+			display: block;
+			font-size: 1.8rem;
+			line-height: 1;
+		}
+
+		.summary span {
+			color: var(--muted);
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 14px;
+		}
+
+		.card {
+			display: grid;
+			gap: 12px;
+			padding: 18px;
+		}
+
+		.card-title {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+		}
+
+		.tag {
+			display: inline-flex;
+			align-items: center;
+			white-space: nowrap;
+			border-radius: 999px;
+			background: var(--tag);
+			color: var(--tag-text);
+			padding: 4px 9px;
+			font-size: 0.78rem;
+			font-weight: 700;
+		}
+
+		.meta {
+			color: var(--muted);
+		}
+
+		.links {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px;
+			font-size: 0.94rem;
+		}
+
+		.panel {
+			padding: 18px;
+		}
+
+		pre {
+			overflow: auto;
+			margin: 12px 0 0;
+			padding: 14px;
+			border-radius: 6px;
+			background: var(--code);
+			border: 1px solid var(--line);
+		}
+
+		code {
+			font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+			font-size: 0.92em;
+		}
+
+		footer {
+			margin-top: 34px;
+			padding-top: 18px;
+			border-top: 1px solid var(--line);
+			color: var(--muted);
+			font-size: 0.94rem;
+		}
+
+		@media (max-width: 760px) {
+			.page {
+				width: min(100% - 22px, 1120px);
+				padding-top: 22px;
+			}
+
+			.summary,
+			.grid {
+				grid-template-columns: 1fr;
+			}
+
+			.card-title {
+				align-items: flex-start;
+				flex-direction: column;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="page">
+		<header>
+			<h1>ofxGgml addon family</h1>
+			<p class="lede">A small openFrameworks addon family for local ggml-based AI workflows. Core stays narrow and dependable; domain workflows live in companion addons.</p>
+			<div class="actions">
+				<a class="button" href="https://github.com/Jonathhhan/ofxGgmlCore">Open Core Repo</a>
+				<a class="button secondary" href="QUICKSTART.md">Quickstart</a>
+				<a class="button secondary" href="COMPANIONS.md">Split Rules</a>
+			</div>
+		</header>
+
+		<main>
+			<section class="summary" aria-label="Family summary">
+				<div><strong>8</strong><span>named addons</span></div>
+				<div><strong>1</strong><span>small required core</span></div>
+				<div><strong>0</strong><span>model files committed</span></div>
+			</section>
+
+			<section>
+				<h2>Addons</h2>
+				<div class="grid">
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlCore</h3>
+							<span class="tag">active core</span>
+						</div>
+						<p class="meta">ggml setup, runtime ownership, tensors, graphs, GGUF metadata, stable result types, and focused first-run examples.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlCore">Repository</a>
+							<a href="QUICKSTART.md">Quickstart</a>
+							<a href="EXAMPLES.md">Examples</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlLlama</h3>
+							<span class="tag">companion</span>
+						</div>
+						<p class="meta">llama.cpp server and CLI workflows for text, chat, embeddings, and launch tooling outside the core contract.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlLlama">Repository</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlDiffusion</h3>
+							<span class="tag">in progress</span>
+						</div>
+						<p class="meta">Stable Diffusion, SDXL, Flux-style image/video workflows, generated stable-diffusion.cpp runtime scripts, and text-to-image examples.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlDiffusion">Repository</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlSam</h3>
+							<span class="tag">seeded</span>
+						</div>
+						<p class="meta">SAM, SAM2, and SAM3 image segmentation workflows, masks, image prompts, and segmentation UI experiments.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlSam">Repository</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlMusic</h3>
+							<span class="tag">seeded</span>
+						</div>
+						<p class="meta">Music generation, audio analysis, audio embeddings, and creative coding workflows for sound.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlMusic">Repository</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlSpeech</h3>
+							<span class="tag">seeded</span>
+						</div>
+						<p class="meta">Speech recognition, transcription, voice input, and voice-oriented local inference workflows.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlSpeech">Repository</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlVision</h3>
+							<span class="tag">seeded</span>
+						</div>
+						<p class="meta">CLIP, image embeddings, captions, and VLM-style image understanding workflows.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlVision">Repository</a>
+						</div>
+					</article>
+
+					<article class="card">
+						<div class="card-title">
+							<h3>ofxGgmlRag</h3>
+							<span class="tag">seeded</span>
+						</div>
+						<p class="meta">Document ingestion, web crawl, retrieval, citations, and project memory workflows.</p>
+						<div class="links">
+							<a href="https://github.com/Jonathhhan/ofxGgmlRag">Repository</a>
+						</div>
+					</article>
+				</div>
+			</section>
+
+			<section class="panel">
+				<h2>Fresh Checkout</h2>
+				<p>Clone the core addon into the openFrameworks <code>addons</code> folder first. Companion addons depend on it.</p>
+				<pre><code>git clone https://github.com/Jonathhhan/ofxGgmlCore.git
+cd ofxGgmlCore
+scripts\first-run.bat
+scripts\doctor.bat
+scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf</code></pre>
+			</section>
+
+			<section class="panel">
+				<h2>Design Rule</h2>
+				<p>Move code into <code>ofxGgmlCore</code> only when it is backend-neutral, small, stable, and useful to most companion addons. Model-specific workflows, large examples, media assets, network retrieval, and product-style tools belong in companions.</p>
+			</section>
+		</main>
+
+		<footer>
+			<p>Previous broad experiments live on the <code>legacy-full</code> branch. This page tracks the cleaner addon family around the rewritten main line.</p>
+		</footer>
+	</div>
+</body>
+</html>

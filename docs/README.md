@@ -6,6 +6,7 @@ Start here when you are new to the rewritten `ofxGgmlCore` line.
 
 | Document | Use it for |
 | --- | --- |
+| `index.html` | GitHub Pages landing page for the addon family. |
 | `QUICKSTART.md` | Clone, setup, and run the focused examples. |
 | `EXAMPLES.md` | Choose between simple, text, chat, and embedding examples. |
 | `RELEASE_NOTES.md` | See what changed in the current release line. |
