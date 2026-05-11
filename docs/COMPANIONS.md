@@ -29,13 +29,13 @@ large external assets, and useful to most downstream companion addons.
 | `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows |
 | `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
 | `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory |
+| `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation |
+| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, video generation |
 
 ## Candidate Lanes
 
 | Addon | Scope |
 | --- | --- |
-| `ofxGgmlAgents` | assistants, tool use, coding/workflow agents |
-| `ofxGgmlVideo` | video understanding, montage, temporal analysis |
 | `ofxGgmlUI` | larger optional ImGui tools, model browser, prompt workbench |
 
 ## Dependency Direction

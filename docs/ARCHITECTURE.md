@@ -26,7 +26,7 @@ These should live in companion addons or optional layers:
 - assistants and coding agents
 - RAG, web crawling, citation search
 - llama.cpp-specific server/CLI tooling through the planned `ofxGgmlLlama`
-- SAM/SAM3 through `ofxGgmlSam`, plus vision, TTS, diffusion
+- SAM/SAM3 through `ofxGgmlSam`, plus vision, TTS, diffusion, agents, and video
 - music, audio analysis, and generation workflows through `ofxGgmlMusic`
 - speech recognition, transcription, and voice workflows through `ofxGgmlSpeech`
 - video essay, montage, MilkDrop, Holoscan workflows

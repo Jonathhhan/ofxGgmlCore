@@ -35,7 +35,7 @@ split; a symbol-level rename can happen later if it clearly pays for itself.
 | Embeddings | `ofxGgmlEmbedding.h` | embedding requests, llama-server adapter, vector helpers |
 | Segmentation | `ofxGgmlSegmentation.h` | point-prompt segmentation API |
 | SAM3 adapter | `ofxGgmlSam3.h` | temporary optional SAM3 adapter hooks |
-| Optional companions | separate addons | `ofxGgmlSam`, `ofxGgmlMusic`, `ofxGgmlSpeech`, vision, assistants, workflows |
+| Optional companions | separate addons | `ofxGgmlSam`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`, `ofxGgmlRag`, `ofxGgmlAgents`, `ofxGgmlVideo` |
 
 The text layer has explicit llama.cpp adapters for a warm `llama-server` and a
 CLI fallback. The server runtime is optional and installed only through the

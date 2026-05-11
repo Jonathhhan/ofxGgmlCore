@@ -29,7 +29,8 @@ These are not allowed in core by default:
 Those features can become companion addons or optional layers that depend on
 core. The first named companion lanes are `ofxGgmlSam` for SAM/SAM3 work,
 `ofxGgmlLlama` for llama.cpp-specific runtime tooling, `ofxGgmlMusic` for
-music/audio workflows, and `ofxGgmlSpeech` for speech and voice workflows. See
+music/audio workflows, `ofxGgmlSpeech` for speech and voice workflows,
+`ofxGgmlAgents` for orchestration, and `ofxGgmlVideo` for video workflows. See
 `docs/COMPANIONS.md` for the split rule before adding any domain workflow to
 core.
 

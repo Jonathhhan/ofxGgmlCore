@@ -117,11 +117,13 @@ Named companion lanes:
   understanding.
 - `ofxGgmlRag` for document ingestion, web crawl, retrieval, citations, and
   project memory.
+- `ofxGgmlAgents` for assistants, tool use, planning loops, and workflow
+  automation.
+- `ofxGgmlVideo` for video understanding, frame pipelines, temporal analysis,
+  and video generation.
 
 Candidate companion lanes, only when a real project needs them:
 
-- `ofxGgmlAgents` for assistants, tool use, and workflow automation.
-- `ofxGgmlVideo` for video understanding, montage, and temporal analysis.
 - `ofxGgmlUI` for larger optional ImGui tools, model browsers, and prompt
   workbenches.
 
@@ -133,11 +135,11 @@ llama.cpp server scripts. Next, prove the companion builds through
 projectGenerator, then move llama-specific C++ adapter implementations out of
 core while keeping backend-neutral request/result APIs in core.
 
-`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`, and
-`ofxGgmlRag` have initial skeletons with root-level smoke examples, local
-validation scripts, and headless request/helper tests. Next work should make
-one of them useful with a real backend rather than broadening every skeleton at
-once.
+`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlSpeech`, `ofxGgmlVision`,
+`ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlVideo` have initial skeletons with
+root-level smoke examples, local validation scripts, and headless
+request/helper tests. Next work should make one of them useful with a real
+backend rather than broadening every skeleton at once.
 
 `ofxGgmlDiffusion` has started that migration by carrying over the useful typed
 request/result/config shape from `ofxStableDiffusion` while leaving the native
