@@ -111,6 +111,7 @@ Named companion lanes:
   embedding examples.
 - `ofxGgmlMusic` for music, audio analysis, and generation workflows.
 - `ofxGgmlSpeech` for speech recognition, transcription, and voice workflows.
+  Whisper.cpp belongs in this lane first, not in a separate addon.
 - `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image and
   video workflows.
 - `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image

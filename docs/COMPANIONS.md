@@ -25,7 +25,7 @@ large external assets, and useful to most downstream companion addons.
 | `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI |
 | `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts |
 | `ofxGgmlMusic` | music/audio analysis, music embeddings, generation workflows |
-| `ofxGgmlSpeech` | speech recognition, transcription, voice workflows |
+| `ofxGgmlSpeech` | speech recognition, transcription, voice workflows, whisper.cpp backend |
 | `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows |
 | `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
 | `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory |
@@ -53,3 +53,7 @@ tooling: server lifecycle scripts, CLI fallback, text/chat/embedding examples,
 and llama.cpp build helpers. The current `ofxGgmlCore` llama APIs and examples
 are transitional compatibility pieces until the companion builds are fully
 proven and the core surface can be narrowed without breaking the first-run path.
+
+`ofxGgmlSpeech` is the planned home for whisper.cpp. Do not create a separate
+`ofxGgmlWhisper` addon unless the Whisper layer grows into a larger reusable
+runtime with multiple consumers outside speech workflows.
