@@ -157,6 +157,9 @@ native bridge compile flag.
 and its root prompt example has become a first text-to-image run path for
 user-provided local model assets.
 
+`ofxGgmlDiffusion` also has generated-project build/run scripts and launch
+dry-run validation for the text-to-image example.
+
 ## Release Rule
 
 Before each release checkpoint:

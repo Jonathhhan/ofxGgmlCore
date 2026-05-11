@@ -21,6 +21,8 @@
   stable-diffusion.cpp text-to-image generation.
 - Added `ofxGgmlDiffusion` image save/display helpers and turned the root prompt
   example into a user-model text-to-image run path.
+- Added `ofxGgmlDiffusion` build/run scripts and launch dry-run validation for
+  the text-to-image example.
 
 ## v1.0.1
 
