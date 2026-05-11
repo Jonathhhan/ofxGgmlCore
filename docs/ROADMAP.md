@@ -153,6 +153,10 @@ stable-diffusion.cpp text-to-image generation. It stays unavailable by default
 until the generated runtime is installed and the app explicitly enables the
 native bridge compile flag.
 
+`ofxGgmlDiffusion` now includes openFrameworks image conversion/saving helpers
+and its root prompt example has become a first text-to-image run path for
+user-provided local model assets.
+
 ## Release Rule
 
 Before each release checkpoint:

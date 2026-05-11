@@ -19,6 +19,8 @@
   instead of building a second ggml stack.
 - Added the first opt-in `ofxGgmlDiffusion` native bridge boundary for
   stable-diffusion.cpp text-to-image generation.
+- Added `ofxGgmlDiffusion` image save/display helpers and turned the root prompt
+  example into a user-model text-to-image run path.
 
 ## v1.0.1
 
