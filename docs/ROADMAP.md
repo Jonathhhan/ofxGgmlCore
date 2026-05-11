@@ -124,11 +124,12 @@ Candidate companion lanes, only when a real project needs them:
   workbenches.
 
 If one becomes important, start it as a companion addon that depends on
-`ofxGgml` instead of expanding the core contract.
+`ofxGgmlCore` instead of expanding the core contract.
 
-Split `ofxGgmlLlama` after `ofxGgmlSam` has one useful point-prompt example.
-Until then, keep the stable `v1.0.1` llama.cpp workflow in core so text/chat and
-embedding users keep the current clone/setup/run path.
+`ofxGgmlLlama` has been seeded with the current text/chat/embedding examples and
+llama.cpp server scripts. Next, prove the companion builds through
+projectGenerator, then move llama-specific C++ adapter implementations out of
+core while keeping backend-neutral request/result APIs in core.
 
 ## Release Rule
 

@@ -46,10 +46,10 @@ addons.
 Shared code can move down into `ofxGgmlCore` only when it becomes a stable,
 domain-neutral primitive with focused tests and no heavy runtime dependency.
 
-## Llama Split Timing
+## Llama Split Status
 
-`ofxGgmlLlama` is the planned home for llama.cpp-specific runtime tooling:
-server lifecycle scripts, CLI fallback, text/chat/embedding examples, and
-llama.cpp build helpers. Keep the current `v1.0.1` llama workflow in `ofxGgmlCore`
-until `ofxGgmlSam` has one useful example and the move can preserve the
-clone/setup/run path for existing users.
+`ofxGgmlLlama` has been seeded as the home for llama.cpp-specific runtime
+tooling: server lifecycle scripts, CLI fallback, text/chat/embedding examples,
+and llama.cpp build helpers. The current `ofxGgmlCore` llama APIs and examples
+are transitional compatibility pieces until the companion builds are fully
+proven and the core surface can be narrowed without breaking the first-run path.
