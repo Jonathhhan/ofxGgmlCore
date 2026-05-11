@@ -26,11 +26,11 @@ large external assets, and useful to most downstream companion addons.
 | `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts |
 | `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, music embeddings, generation workflows |
 | `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows |
-| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows, identity adapters such as PhotoMaker |
+| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image workflows, GAN-style image generation, identity adapters such as PhotoMaker |
 | `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
 | `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory |
 | `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation |
-| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, video generation |
+| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, temporal GAN and video generation |
 
 ## Candidate Lanes
 
@@ -64,9 +64,10 @@ stream chunking, PCM, VAD, and lightweight features, but owns music-specific
 terms, examples, models, and workflows such as beats, key/chords, stems,
 embeddings, arrangement, and generation.
 
-`ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters.
-Do not create `ofxGgmlPhotoMaker` unless identity personalization grows into a
-larger cross-addon layer with several non-diffusion consumers.
+`ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters
+and image GAN generation. Do not create `ofxGgmlPhotoMaker` unless identity
+personalization grows into a larger cross-addon layer with several
+non-diffusion consumers.
 
 Diffusers is a useful design reference for `ofxGgmlDiffusion` terminology:
 pipelines, schedulers, model families, and adapters. Treat it as inspiration

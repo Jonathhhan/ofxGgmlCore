@@ -17,7 +17,7 @@ small, predictable, and backend-neutral.
 - llama.cpp server lifecycle
 - text, chat, or embedding examples
 - SAM segmentation UX
-- diffusion or image generation UX
+- diffusion, GAN, or image generation UX
 - audio, music, vision, video, RAG, or agent workflows
 - model downloads or model-specific launch policy
 
@@ -29,13 +29,13 @@ Those workflows belong in companion addons.
 | --- | --- |
 | `ofxGgmlLlama` | llama.cpp tools, text, chat, embeddings |
 | `ofxGgmlSam` | SAM segmentation |
-| `ofxGgmlDiffusion` | diffusion and image generation |
+| `ofxGgmlDiffusion` | diffusion, GAN, and image generation |
 | `ofxGgmlAudio` | real-time audio, Whisper, denoising, voice conversion, emotion, and speech workflows |
 | `ofxGgmlMusic` | music analysis, beat/key/chord workflows, embeddings, and generation |
 | `ofxGgmlVision` | image understanding |
 | `ofxGgmlRag` | retrieval, citations, search |
 | `ofxGgmlAgents` | local tool-using agents |
-| `ofxGgmlVideo` | video workflows |
+| `ofxGgmlVideo` | video and temporal generation workflows |
 
 ## Compatibility Note
 

@@ -112,8 +112,9 @@ Named companion lanes:
 - `ofxGgmlAudio` for real-time audio inference, denoising, voice conversion,
   emotion cues, speech recognition, transcription, and voice workflows.
   Whisper.cpp belongs in this lane first, not in a separate addon.
-- `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image and
-  video workflows, including PhotoMaker-style identity adapters.
+- `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image
+  workflows, GAN-style image generation, and PhotoMaker-style identity
+  adapters.
 - `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
   understanding.
 - `ofxGgmlRag` for document ingestion, web crawl, retrieval, citations, and
@@ -121,7 +122,7 @@ Named companion lanes:
 - `ofxGgmlAgents` for assistants, tool use, planning loops, and workflow
   automation.
 - `ofxGgmlVideo` for video understanding, frame pipelines, temporal analysis,
-  and video generation.
+  temporal GAN work, and video generation.
 
 Candidate companion lanes, only when a real project needs them:
 
