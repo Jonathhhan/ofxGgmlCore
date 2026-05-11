@@ -6,6 +6,8 @@
   companion addon lanes for SAM/SAM3, music/audio, and speech/voice workflows.
 - Added a roadmap list for later companion candidates: vision, diffusion, RAG,
   agents, video, and larger UI tooling.
+- Added `docs/COMPANIONS.md` as the central split rule for core versus
+  companion addon work.
 
 ## v1.0.1
 

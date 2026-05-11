@@ -95,6 +95,8 @@ before this release unless a blocking validation issue requires it.
 
 ### 5. Companion Addons
 
+See `docs/COMPANIONS.md` for the split rule and named companion lanes.
+
 These should not enter core by default:
 
 - assistants and coding workflows
