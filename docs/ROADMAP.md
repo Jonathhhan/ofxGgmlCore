@@ -144,6 +144,10 @@ request/result/config shape from `ofxStableDiffusion` while leaving the native
 runtime, generated binaries, sample media, and broad workflow experiments out
 of the new repo.
 
+`ofxGgmlDiffusion` now has generated stable-diffusion.cpp setup/build scripts
+that default to the sibling `ofxGgmlCore` ggml install, with an explicit
+bundled-ggml escape hatch for upstream experiments.
+
 ## Release Rule
 
 Before each release checkpoint:

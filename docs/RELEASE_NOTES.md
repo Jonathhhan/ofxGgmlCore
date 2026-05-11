@@ -14,6 +14,9 @@
 - Started the `ofxStableDiffusion` to `ofxGgmlDiffusion` migration by moving
   the typed diffusion request/config/result shape into the companion without
   copying native runtime artifacts.
+- Added generated stable-diffusion.cpp setup/build scripts to
+  `ofxGgmlDiffusion`, defaulting to the sibling `ofxGgmlCore` ggml runtime
+  instead of building a second ggml stack.
 
 ## v1.0.1
 
