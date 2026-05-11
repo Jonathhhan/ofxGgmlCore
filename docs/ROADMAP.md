@@ -83,8 +83,8 @@ before this release unless a blocking validation issue requires it.
   `llama-embedding` runner.
 - Ongoing rule: improve example UX only when it clarifies the focused workflow.
 - Ongoing rule: do not add an all-in-one example to core.
-- Ongoing rule: keep `ofxImGui` usage optional to examples, not to the public
-  addon API.
+- Ongoing rule: examples may depend on `ofxImGui`, but the public addon API
+  must not.
 
 ### 4. Segmentation Boundary
 

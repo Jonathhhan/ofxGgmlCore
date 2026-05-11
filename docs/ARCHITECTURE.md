@@ -48,8 +48,8 @@ plain C++ and testable. The llama.cpp server tools are installed only through
 explicit scripts and are treated as a local runtime, not as a required core
 dependency. `ofxGgmlLlama` is the planned future home for that llama-specific
 tooling, but the `v1.0.1` workflow stays here until the split can preserve the
-current setup path. Chat and embedding examples may use `ofxImGui`, but the
-public API must not depend on GUI code.
+current setup path. Examples may use `ofxImGui` for controls and status panels,
+but the public API must not depend on GUI code.
 
 SAM/SAM3 should live in the companion addon `ofxGgmlSam`. Until that exists,
 this repo keeps a small adapter boundary only. Its generated native integration
