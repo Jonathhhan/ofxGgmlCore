@@ -26,7 +26,7 @@ large external assets, and useful to most downstream companion addons.
 | `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts |
 | `ofxGgmlMusic` | music/audio analysis, music embeddings, generation workflows |
 | `ofxGgmlSpeech` | speech recognition, transcription, voice workflows, whisper.cpp backend |
-| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows |
+| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows, identity adapters such as PhotoMaker |
 | `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
 | `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory |
 | `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation |
@@ -57,3 +57,7 @@ proven and the core surface can be narrowed without breaking the first-run path.
 `ofxGgmlSpeech` is the planned home for whisper.cpp. Do not create a separate
 `ofxGgmlWhisper` addon unless the Whisper layer grows into a larger reusable
 runtime with multiple consumers outside speech workflows.
+
+`ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters.
+Do not create `ofxGgmlPhotoMaker` unless identity personalization grows into a
+larger cross-addon layer with several non-diffusion consumers.
