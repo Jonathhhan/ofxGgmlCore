@@ -106,7 +106,9 @@ Named companion lanes:
 - `ofxGgmlSam` for SAM/SAM2/SAM3 image segmentation workflows.
 - `ofxGgmlLlama` for llama.cpp server/CLI tooling plus text, chat, and
   embedding examples.
-- `ofxGgmlMusic` for music, audio analysis, and generation workflows.
+- `ofxGgmlMusic` for music analysis, beat/downbeat, tempo, key/chord,
+  embeddings, arrangement, and generation workflows. It may depend on
+  `ofxGgmlAudio` for low-level audio primitives, but stays a separate lane.
 - `ofxGgmlAudio` for real-time audio inference, denoising, voice conversion,
   emotion cues, speech recognition, transcription, and voice workflows.
   Whisper.cpp belongs in this lane first, not in a separate addon.

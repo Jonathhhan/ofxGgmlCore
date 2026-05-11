@@ -24,7 +24,7 @@ large external assets, and useful to most downstream companion addons.
 | --- | --- |
 | `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI |
 | `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts |
-| `ofxGgmlMusic` | music/audio analysis, music embeddings, generation workflows |
+| `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, music embeddings, generation workflows |
 | `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows |
 | `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image and video diffusion workflows, identity adapters such as PhotoMaker |
 | `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
@@ -58,6 +58,11 @@ and the core surface can be narrowed without breaking dependent addons.
 Whisper.cpp belongs inside that audio lane first. Do not create a separate
 `ofxGgmlWhisper` addon unless the Whisper layer grows into a larger reusable
 runtime with multiple consumers outside audio workflows.
+
+`ofxGgmlMusic` stays separate from `ofxGgmlAudio`. Music may depend on Audio for
+stream chunking, PCM, VAD, and lightweight features, but owns music-specific
+terms, examples, models, and workflows such as beats, key/chords, stems,
+embeddings, arrangement, and generation.
 
 `ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters.
 Do not create `ofxGgmlPhotoMaker` unless identity personalization grows into a

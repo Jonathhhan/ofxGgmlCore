@@ -12,7 +12,7 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 | [`ofxGgmlSam`](../ofxGgmlSam) | SAM segmentation workflows |
 | [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion and image generation workflows |
 | [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice conversion, emotion, and real-time stream inference |
-| [`ofxGgmlMusic`](../ofxGgmlMusic) | music and audio-generation workflows |
+| [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis, beat/key/chord workflows, embeddings, and generation |
 | [`ofxGgmlVision`](../ofxGgmlVision) | vision-language and image understanding workflows |
 | [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, and local search workflows |
 | [`ofxGgmlAgents`](../ofxGgmlAgents) | tool-using local agent workflows |

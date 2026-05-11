@@ -31,7 +31,7 @@ Those workflows belong in companion addons.
 | `ofxGgmlSam` | SAM segmentation |
 | `ofxGgmlDiffusion` | diffusion and image generation |
 | `ofxGgmlAudio` | real-time audio, Whisper, denoising, voice conversion, emotion, and speech workflows |
-| `ofxGgmlMusic` | music and audio generation |
+| `ofxGgmlMusic` | music analysis, beat/key/chord workflows, embeddings, and generation |
 | `ofxGgmlVision` | image understanding |
 | `ofxGgmlRag` | retrieval, citations, search |
 | `ofxGgmlAgents` | local tool-using agents |
