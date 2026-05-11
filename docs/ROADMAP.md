@@ -108,6 +108,17 @@ Named companion lanes:
 - `ofxGgmlMusic` for music, audio analysis, and generation workflows.
 - `ofxGgmlSpeech` for speech recognition, transcription, and voice workflows.
 
+Candidate companion lanes, only when a real project needs them:
+
+- `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
+  understanding.
+- `ofxGgmlDiffusion` for image/video diffusion and generative visual models.
+- `ofxGgmlRag` for document indexing, retrieval, citations, and project memory.
+- `ofxGgmlAgents` for assistants, tool use, and workflow automation.
+- `ofxGgmlVideo` for video understanding, montage, and temporal analysis.
+- `ofxGgmlUI` for larger optional ImGui tools, model browsers, and prompt
+  workbenches.
+
 If one becomes important, start it as a companion addon that depends on
 `ofxGgml` instead of expanding the core contract.
 

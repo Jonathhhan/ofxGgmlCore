@@ -4,6 +4,8 @@
 
 - Documented `ofxGgmlSam`, `ofxGgmlMusic`, and `ofxGgmlSpeech` as planned
   companion addon lanes for SAM/SAM3, music/audio, and speech/voice workflows.
+- Added a roadmap list for later companion candidates: vision, diffusion, RAG,
+  agents, video, and larger UI tooling.
 
 ## v1.0.1
 
