@@ -27,6 +27,7 @@
   run generation off the openFrameworks main thread.
 - Added a GitHub Pages-ready `docs/index.html` landing page for the addon
   family.
+- Added a GitHub Actions Pages workflow that publishes the `docs` folder.
 
 ## v1.0.1
 
