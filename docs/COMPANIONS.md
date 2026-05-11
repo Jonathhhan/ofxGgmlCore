@@ -54,11 +54,10 @@ and llama.cpp build helpers. The current `ofxGgmlCore` text/embedding APIs are
 transitional compatibility pieces until the companion builds are fully proven
 and the core surface can be narrowed without breaking dependent addons.
 
-`ofxGgmlAudio` is the better long-term name for the current `ofxGgmlSpeech`
-repo because the lane should cover real-time audio inference, not just
-transcription. Whisper.cpp belongs inside that audio lane first. Do not create a
-separate `ofxGgmlWhisper` addon unless the Whisper layer grows into a larger
-reusable runtime with multiple consumers outside audio workflows.
+`ofxGgmlAudio` covers real-time audio inference, not just transcription.
+Whisper.cpp belongs inside that audio lane first. Do not create a separate
+`ofxGgmlWhisper` addon unless the Whisper layer grows into a larger reusable
+runtime with multiple consumers outside audio workflows.
 
 `ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters.
 Do not create `ofxGgmlPhotoMaker` unless identity personalization grows into a

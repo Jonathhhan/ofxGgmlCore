@@ -109,8 +109,7 @@ Named companion lanes:
 - `ofxGgmlMusic` for music, audio analysis, and generation workflows.
 - `ofxGgmlAudio` for real-time audio inference, denoising, voice conversion,
   emotion cues, speech recognition, transcription, and voice workflows.
-  Whisper.cpp belongs in this lane first, not in a separate addon. The current
-  local repo is still named `ofxGgmlSpeech` until the GitHub rename exists.
+  Whisper.cpp belongs in this lane first, not in a separate addon.
 - `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image and
   video workflows, including PhotoMaker-style identity adapters.
 - `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
@@ -135,7 +134,7 @@ scripts. Next, prove the companion builds through projectGenerator, then move
 llama-specific C++ adapter implementations out of core while keeping
 backend-neutral request/result APIs in core.
 
-`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlAudio`/`ofxGgmlSpeech`, `ofxGgmlVision`,
+`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlAudio`, `ofxGgmlVision`,
 `ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlVideo` have initial skeletons with
 root-level smoke examples, local validation scripts, and headless
 request/helper tests. Next work should make one of them useful with a real

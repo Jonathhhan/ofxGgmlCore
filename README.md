@@ -11,7 +11,7 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 | [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embedding examples |
 | [`ofxGgmlSam`](../ofxGgmlSam) | SAM segmentation workflows |
 | [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion and image generation workflows |
-| [`ofxGgmlAudio`](../ofxGgmlSpeech) | audio lane, currently hosted in `ofxGgmlSpeech`: Whisper, transcription, denoising, voice conversion, emotion, and real-time stream inference |
+| [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice conversion, emotion, and real-time stream inference |
 | [`ofxGgmlMusic`](../ofxGgmlMusic) | music and audio-generation workflows |
 | [`ofxGgmlVision`](../ofxGgmlVision) | vision-language and image understanding workflows |
 | [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, and local search workflows |
