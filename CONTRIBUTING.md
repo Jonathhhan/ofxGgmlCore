@@ -19,7 +19,7 @@ Read these first:
 - Do not add model downloads or large generated binaries.
 - Do not commit generated ggml, llama.cpp, SAM3, model, or project output files.
 - Put domain workflows in companion addons such as `ofxGgmlSam`,
-  `ofxGgmlMusic`, or `ofxGgmlSpeech`.
+  `ofxGgmlMusic`, or `ofxGgmlAudio`.
 - Update `docs/RELEASE_NOTES.md` when behavior, commands, public API, or
   user-facing docs change.
 
