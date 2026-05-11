@@ -61,3 +61,7 @@ runtime with multiple consumers outside speech workflows.
 `ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters.
 Do not create `ofxGgmlPhotoMaker` unless identity personalization grows into a
 larger cross-addon layer with several non-diffusion consumers.
+
+Diffusers is a useful design reference for `ofxGgmlDiffusion` terminology:
+pipelines, schedulers, model families, and adapters. Treat it as inspiration
+for C++ API shape, not as a runtime dependency for the addon family.
