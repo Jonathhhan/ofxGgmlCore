@@ -1,0 +1,79 @@
+{
+  "name": "ofxGgml",
+  "description": "openFrameworks addon family for local ggml-based AI workflows",
+  "baseline": "v1.0.1",
+  "core": {
+    "repo": "Jonathhhan/ofxGgmlCore",
+    "role": "backend-neutral primitives, ggml setup, runtime discovery, tensor/graph helpers, validation scripts"
+  },
+  "addons": [
+    {
+      "name": "ofxGgmlLlama",
+      "repo": "Jonathhhan/ofxGgmlLlama",
+      "lane": "text-chat-embeddings",
+      "owns": ["llama.cpp", "text generation", "chat", "embeddings", "server/CLI integration"]
+    },
+    {
+      "name": "ofxGgmlAudio",
+      "repo": "Jonathhhan/ofxGgmlAudio",
+      "lane": "audio",
+      "owns": ["Whisper", "transcription", "denoising", "voice", "audio inference"]
+    },
+    {
+      "name": "ofxGgmlVision",
+      "repo": "Jonathhhan/ofxGgmlVision",
+      "lane": "vision",
+      "owns": ["CLIP", "image embeddings", "captions", "image understanding"]
+    },
+    {
+      "name": "ofxGgmlDiffusion",
+      "repo": "Jonathhhan/ofxGgmlDiffusion",
+      "lane": "image-generation",
+      "owns": ["diffusion", "GAN boundaries", "text-to-image", "PhotoMaker", "generated-project repair"]
+    },
+    {
+      "name": "ofxGgmlSam",
+      "repo": "Jonathhhan/ofxGgmlSam",
+      "lane": "segmentation",
+      "owns": ["SAM", "SAM2", "SAM3", "point prompts", "segmentation examples"]
+    },
+    {
+      "name": "ofxGgmlMusic",
+      "repo": "Jonathhhan/ofxGgmlMusic",
+      "lane": "music",
+      "owns": ["music analysis", "beat/key/chord workflows", "stems", "music generation"]
+    },
+    {
+      "name": "ofxGgmlRag",
+      "repo": "Jonathhhan/ofxGgmlRag",
+      "lane": "retrieval",
+      "owns": ["retrieval", "citations", "web crawl", "local search"]
+    },
+    {
+      "name": "ofxGgmlAgents",
+      "repo": "Jonathhhan/ofxGgmlAgents",
+      "lane": "agents",
+      "owns": ["tool use", "planning loops", "local agents"]
+    },
+    {
+      "name": "ofxGgmlVideo",
+      "repo": "Jonathhhan/ofxGgmlVideo",
+      "lane": "video",
+      "owns": ["video understanding", "frame pipelines", "temporal analysis", "video generation"]
+    }
+  ],
+  "required_files": [
+    "README.md",
+    "addon_config.mk",
+    "CHANGELOG.md",
+    "AGENTS.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    ".github/workflows/addon-hygiene.yml",
+    ".github/workflows/release-check.yml"
+  ],
+  "artifact_policy": {
+    "forbidden_extensions": [".gguf", ".dll", ".so", ".dylib", ".exe", ".bin"],
+    "forbidden_directories": ["build", "obj", ".vs", "bin/data/models"]
+  }
+}
