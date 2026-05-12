@@ -1,5 +1,5 @@
 #include "test_harness.h"
-#include "../src/ofxGgmlText.h"
+#include "../src/inference/ofxGgmlLlamaServerTextBackend.h"
 
 #include <string>
 

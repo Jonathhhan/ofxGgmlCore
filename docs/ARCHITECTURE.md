@@ -46,9 +46,11 @@ These should live in companion addons or optional layers:
 
 The default addon API can expose small optional layers when their boundaries stay
 plain C++ and testable. Model-specific runtime tools belong in companion addons;
-`ofxGgmlLlama` owns llama.cpp server and CLI workflows. Core examples may use
-`ofxImGui` for controls and status panels, but the public API must not depend on
-GUI code.
+`ofxGgmlLlama` owns llama.cpp server and CLI workflows. Core's `ofxGgmlText.h`
+exports only the generic text bridge surface; transitional llama adapter headers
+must be included explicitly while downstream code migrates to `ofxGgmlLlama`.
+Core examples may use `ofxImGui` for controls and status panels, but the public
+API must not depend on GUI code.
 
 SAM/SAM3 should live in the companion addon `ofxGgmlSam`. Until that exists,
 this repo keeps a small adapter boundary only. Its generated native integration

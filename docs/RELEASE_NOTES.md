@@ -6,6 +6,9 @@
   metadata, example addon dependencies, and first-run documentation.
 - Breaking: removed Llama text, chat, embedding examples and llama.cpp runtime
   scripts from Core; those workflows now live in `ofxGgmlLlama`.
+- Breaking: `ofxGgmlText.h` now exports only the generic text bridge surface.
+  Transitional llama adapter headers must be included explicitly or replaced by
+  `ofxGgmlLlama`.
 - Kept the existing public C++ `ofxGgml*` symbol and header prefix as a
   compatibility layer during the first companion split.
 - Seeded companion addon lanes for Llama, SAM, diffusion, audio, music,
