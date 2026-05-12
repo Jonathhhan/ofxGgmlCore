@@ -31,6 +31,13 @@ From this folder:
 .\scripts\run-simple-example.bat -Build
 ```
 
+On macOS/Linux:
+
+```sh
+./scripts/first-run.sh
+./scripts/run-simple-example.sh -Build
+```
+
 `first-run` sets up ggml and runs the Core doctor. The simple example verifies
 that openFrameworks can include the addon, see the ggml runtime, and render a
 small ofxImGui UI.
@@ -44,6 +51,16 @@ cd ..\ofxGgmlLlama
 .\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
 .\scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
+```
+
+On macOS/Linux:
+
+```sh
+cd ../ofxGgmlLlama
+./scripts/build-llama-server.sh
+./scripts/run-text-example.sh -Build -Model /path/to/model.gguf
+./scripts/run-chat-example.sh -Build -Model /path/to/model.gguf
+./scripts/run-embedding-example.sh -Build -Model /path/to/embedding-model.gguf
 ```
 
 ## Scripts
@@ -79,6 +96,12 @@ addons.
 
 ```powershell
 .\scripts\validate-local.bat
+```
+
+On macOS/Linux:
+
+```sh
+./scripts/validate-local.sh
 ```
 
 This checks addon headers, setup dry-runs, generated project repair, launch

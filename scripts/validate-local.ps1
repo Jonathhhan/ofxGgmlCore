@@ -31,7 +31,20 @@ function Invoke-CheckedScript {
 	}
 }
 
+function Assert-FileContains {
+	param(
+		[string]$Path,
+		[string]$Pattern,
+		[string]$Label
+	)
+	$content = Get-Content -LiteralPath $Path -Raw
+	if ($content -notmatch $Pattern) {
+		throw "$Label did not contain expected pattern: $Pattern"
+	}
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$addonRoot = Split-Path -Parent $scriptRoot
 
 foreach ($shellWrapper in Get-ChildItem -LiteralPath $scriptRoot -Filter "*.sh" -File) {
 	$content = Get-Content -LiteralPath $shellWrapper.FullName -Raw
@@ -40,6 +53,12 @@ foreach ($shellWrapper in Get-ChildItem -LiteralPath $scriptRoot -Filter "*.sh" 
 		throw "Shell wrapper should use -ExecutionPolicy Bypass when launching PowerShell: $($shellWrapper.Name)"
 	}
 }
+
+Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/first-run.sh" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/validate-local.sh" "README"
+Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/setup-ggml.sh -CpuOnly" "quickstart docs"
+Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/run-simple-example.sh -Build" "quickstart docs"
+Assert-FileContains (Join-Path $addonRoot "docs\EXAMPLES.md") "./scripts/run-simple-example.sh -Build" "examples docs"
 
 if (!$SkipAddonTests) {
 	Invoke-CheckedScript `
