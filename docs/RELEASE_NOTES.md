@@ -6,6 +6,8 @@
   Audio, Music, Diffusion, Vision, Video, RAG, and Agents.
 - Added an ecosystem status document with current release heads and next backend
   priorities.
+- Made Project Generator metadata explicit and stopped linking SAM3 from Core;
+  concrete SAM workflows now belong to `ofxGgmlSam`.
 
 ## 1.0.1 - 2026-05-12
 
