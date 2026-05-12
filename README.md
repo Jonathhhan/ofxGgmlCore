@@ -12,7 +12,7 @@ generated model/build artifacts committed to git.
 
 | Addon | Lane | Current state |
 | --- | --- | --- |
-| [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embeddings | usable companion; owns the former Core llama examples |
+| [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embeddings | usable companion; owns llama adapters and examples |
 | [`ofxGgmlSam`](../ofxGgmlSam) | SAM/SAM2/SAM3 segmentation | seeded companion with point-prompt example baseline |
 | [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation | active native-runtime lane; first text-to-image and GAN boundaries |
 | [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice, and stream inference | seeded audio lane; Whisper belongs here first |
@@ -42,8 +42,7 @@ On macOS/Linux:
 that openFrameworks can include the addon, see the ggml runtime, and render a
 small ofxImGui UI.
 
-For the old text, chat, and embedding examples, use `ofxGgmlLlama` beside this
-addon:
+For text, chat, and embedding examples, use `ofxGgmlLlama` beside this addon:
 
 ```powershell
 cd ..\ofxGgmlLlama
@@ -88,9 +87,8 @@ Core should stay small and boring:
 - no SAM, diffusion, audio, music, video, RAG, or agent-specific UX
 - no generated build output committed to git
 
-Core may keep shared request/result types and compatibility adapters while the
-family split settles, but user-facing model workflows should move to companion
-addons.
+Core keeps shared request/result types and domain-neutral primitives. Concrete
+model adapters and user-facing model workflows belong in companion addons.
 
 ## Validation
 
