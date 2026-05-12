@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No changes yet.
+
+## 1.0.1 - 2026-05-12
+
 - Breaking: renamed the addon/repository line to `ofxGgmlCore` and updated addon
   metadata, example addon dependencies, and first-run documentation.
 - Breaking: removed Llama text, chat, embedding examples and llama.cpp runtime
@@ -19,6 +23,8 @@
 - Added a GitHub Pages-ready `docs/index.html` landing page for the addon
   family.
 - Added a GitHub Actions Pages workflow that publishes the `docs` folder.
+- Current release candidate validation passed with
+  `scripts\validate-local.bat`.
 
 ## 1.0.0
 

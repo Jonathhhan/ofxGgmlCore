@@ -11,8 +11,8 @@ Target: `1.0.1`
 Purpose: ship the rewritten addon as a narrow, stable starting point with the
 current confidence and ergonomics work included.
 
-Status: ready for a final `1.0.1` confidence pass. Do not widen the public API
-before this release unless a blocking validation issue requires it.
+Status: `1.0.1` release docs and validation are current. Do not widen the
+public API before this release unless a blocking validation issue requires it.
 
 ## Workstreams
 
@@ -132,10 +132,9 @@ Candidate companion lanes, only when a real project needs them:
 If one becomes important, start it as a companion addon that depends on
 `ofxGgmlCore` instead of expanding the core contract.
 
-`ofxGgmlLlama` owns the text/chat/embedding examples and llama.cpp server
-scripts. Next, prove the companion builds through projectGenerator, then move
-llama-specific C++ adapter implementations out of core while keeping
-backend-neutral request/result APIs in core.
+`ofxGgmlLlama` owns the text/chat/embedding examples, llama.cpp server scripts,
+and llama-specific C++ adapter implementations. Core keeps backend-neutral
+request/result APIs only.
 
 `ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlAudio`, `ofxGgmlVision`,
 `ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlVideo` have initial skeletons with
