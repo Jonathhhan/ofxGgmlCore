@@ -6,9 +6,9 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `21923ae` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `ce7be0f` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
-| `ofxGgmlSam` | `v1.0.1` | `ea0d054` | SAM request/result bridge, external adapter boundary, point example mask UI |
+| `ofxGgmlSam` | `v1.0.1` | `91dd6c7` | SAM request/result bridge, external adapter boundary, mock contract test, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `a0971c7` | audio stream helpers, Whisper lane, transcription example, headless transcription smoke |
 | `ofxGgmlMusic` | `v1.0.1` | `00f0ac8` | music request types, procedural generation, manifests, MIDI/stem outputs, external model bridge |
 | `ofxGgmlDiffusion` | `v1.0.1` | `c3c1414` | diffusion request types, native bridge boundary, GAN proof lane, native bridge smoke |
@@ -38,14 +38,14 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlSam`: document one concrete local SAM/SAM2/SAM3 executable contract
-   with setup or download notes.
-2. `ofxGgmlMusic`: connect the external bridge to one concrete local music
+1. `ofxGgmlMusic`: connect the external bridge to one concrete local music
    generator executable and document its model/setup path.
-3. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
+2. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
    timestamps, and subtitle export.
-4. `ofxGgmlDiffusion`: connect the stable-diffusion.cpp bridge to the shared
+3. `ofxGgmlDiffusion`: connect the stable-diffusion.cpp bridge to the shared
    image backend interface and then test with a tiny local model fixture.
+4. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
+   setup/download notes against the tested external adapter contract.
 
 RAG, Agents, Vision, and Video should stay narrow until one lower-level runtime
 path is proven and reusable.
