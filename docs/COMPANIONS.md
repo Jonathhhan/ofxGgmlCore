@@ -40,7 +40,7 @@ shape, fix the addon structure before widening the API.
 
 | Addon | Scope | Current state |
 | --- | --- | --- |
-| `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts | usable companion |
+| `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, adapters, launch scripts | v1.0.1 companion |
 | `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI | seeded baseline |
 | `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows | seeded baseline |
 | `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, stems, music embeddings, generation workflows | hardened baseline |
@@ -66,11 +66,10 @@ domain-neutral primitive with focused tests and no heavy runtime dependency.
 
 ## Llama Split Status
 
-`ofxGgmlLlama` has been seeded as the home for llama.cpp-specific runtime
-tooling: server lifecycle scripts, CLI fallback, text/chat/embedding examples,
-and llama.cpp build helpers. The current `ofxGgmlCore` text/embedding APIs are
-transitional compatibility pieces until the companion builds are fully proven
-and the core surface can be narrowed without breaking dependent addons.
+`ofxGgmlLlama` is the home for llama.cpp-specific runtime tooling: server
+lifecycle scripts, CLI fallback, text/chat/embedding examples, concrete
+adapters, and llama.cpp build helpers. `ofxGgmlCore` keeps only backend-neutral
+text and embedding request/result APIs.
 
 `ofxGgmlAudio` covers real-time audio inference, not just transcription.
 Whisper.cpp belongs inside that audio lane first. Do not create a separate
