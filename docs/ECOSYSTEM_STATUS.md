@@ -6,11 +6,11 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `ce7be0f` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `15c754b` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `91dd6c7` | SAM request/result bridge, external adapter boundary, mock contract test, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `a0971c7` | audio stream helpers, Whisper lane, transcription example, headless transcription smoke |
-| `ofxGgmlMusic` | `v1.0.1` | `00f0ac8` | music request types, procedural generation, manifests, MIDI/stem outputs, external model bridge |
+| `ofxGgmlMusic` | `v1.0.1` | `12b566e` | music request types, procedural generation, manifests, MIDI/stem outputs, external bridge contract |
 | `ofxGgmlDiffusion` | `v1.0.1` | `c3c1414` | diffusion request types, native bridge boundary, GAN proof lane, native bridge smoke |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
 | `ofxGgmlVideo` | `v1.0.1` | `431f436` | video/frame request/example baseline |
@@ -38,8 +38,8 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlMusic`: connect the external bridge to one concrete local music
-   generator executable and document its model/setup path.
+1. `ofxGgmlMusic`: connect the tested external bridge to one concrete
+   model-backed local music generator and document its model/setup path.
 2. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
    timestamps, and subtitle export.
 3. `ofxGgmlDiffusion`: connect the stable-diffusion.cpp bridge to the shared
