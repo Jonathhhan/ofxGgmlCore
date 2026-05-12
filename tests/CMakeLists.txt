@@ -22,6 +22,7 @@ add_executable(ofxGgml_rewrite_tests
 	../src/compute/ofxGgmlGraph.cpp
 	../src/model/ofxGgmlModel.cpp
 	../src/inference/ofxGgmlEmbedding.cpp
+	../src/inference/ofxGgmlLlamaServerEmbeddingBackend.cpp
 	../src/inference/ofxGgmlTextGeneration.cpp
 	../src/inference/ofxGgmlLlamaCliTextBackend.cpp
 	../src/inference/ofxGgmlLlamaServerTextBackend.cpp
