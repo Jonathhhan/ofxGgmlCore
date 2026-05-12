@@ -6,10 +6,10 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `15c754b` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `1ae3958` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `91dd6c7` | SAM request/result bridge, external adapter boundary, mock contract test, point example mask UI |
-| `ofxGgmlAudio` | `v1.0.1` | `a0971c7` | audio stream helpers, Whisper lane, transcription example, headless transcription smoke |
+| `ofxGgmlAudio` | `v1.0.1` | `e765854` | audio stream helpers, Whisper lane, timestamped subtitle export, transcription example |
 | `ofxGgmlMusic` | `v1.0.1` | `12b566e` | music request types, procedural generation, manifests, MIDI/stem outputs, external bridge contract |
 | `ofxGgmlDiffusion` | `v1.0.1` | `c3c1414` | diffusion request types, native bridge boundary, GAN proof lane, native bridge smoke |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
@@ -40,8 +40,8 @@ family again.
 
 1. `ofxGgmlMusic`: connect the tested external bridge to one concrete
    model-backed local music generator and document its model/setup path.
-2. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
-   timestamps, and subtitle export.
+2. `ofxGgmlAudio`: extend timestamped Whisper transcription into a documented
+   rolling chunk workflow.
 3. `ofxGgmlDiffusion`: connect the stable-diffusion.cpp bridge to the shared
    image backend interface and then test with a tiny local model fixture.
 4. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
