@@ -18,19 +18,37 @@ Start a companion addon when a feature needs any of these:
 Keep a feature in core only when it is small, backend-neutral, testable without
 large external assets, and useful to most downstream companion addons.
 
+## Baseline Contract
+
+Every active companion addon should keep the same boring project shape:
+
+- root-level README with clone/setup/run instructions
+- docs for architecture, roadmap, examples, and release notes when the addon
+  has public workflow decisions
+- one or more root-level openFrameworks examples, with `ofxImGui` allowed for
+  example UX
+- `scripts\validate-local.bat`, `scripts\validate-local.ps1`, and
+  `scripts\validate-local.sh` where practical
+- headless request/helper tests that do not need model downloads
+- no generated build output, model files, sample media dumps, or runtime caches
+  committed to git
+
+Use this baseline before adding new features. If a companion cannot pass this
+shape, fix the addon structure before widening the API.
+
 ## Named Lanes
 
-| Addon | Scope |
-| --- | --- |
-| `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI |
-| `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts |
-| `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, music embeddings, generation workflows |
-| `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows |
-| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image workflows, GAN-style image generation, identity adapters such as PhotoMaker |
-| `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding |
-| `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory |
-| `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation |
-| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, temporal GAN and video generation |
+| Addon | Scope | Current state |
+| --- | --- | --- |
+| `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, launch scripts | usable companion |
+| `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI | seeded baseline |
+| `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows | seeded baseline |
+| `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, stems, music embeddings, generation workflows | hardened baseline |
+| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image workflows, GAN-style image generation, identity adapters such as PhotoMaker | active native bridge lane |
+| `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding | seeded baseline |
+| `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory | seeded baseline |
+| `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation | seeded baseline |
+| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, temporal GAN and video generation | seeded baseline |
 
 ## Candidate Lanes
 
@@ -72,3 +90,15 @@ non-diffusion consumers.
 Diffusers is a useful design reference for `ofxGgmlDiffusion` terminology:
 pipelines, schedulers, model families, and adapters. Treat it as inspiration
 for C++ API shape, not as a runtime dependency for the addon family.
+
+## Next Milestone Rule
+
+Do not broaden every companion at once. Pick one addon and make it genuinely
+useful with a repeatable local backend path, then copy the proven pattern.
+Current best candidates are:
+
+- `ofxGgmlDiffusion`: finish the stable-diffusion.cpp bridge and keep GAN as an
+  explicit experimental path.
+- `ofxGgmlMusic`: add the first real music-generation backend boundary after
+  the CLI/request validation baseline.
+- `ofxGgmlAudio`: wire Whisper.cpp transcription as the first real audio backend.

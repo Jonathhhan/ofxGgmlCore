@@ -6,17 +6,21 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 
 ## Addon Family
 
-| Addon | Purpose |
-| --- | --- |
-| [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embedding examples |
-| [`ofxGgmlSam`](../ofxGgmlSam) | SAM segmentation workflows |
-| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation workflows |
-| [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice conversion, emotion, and real-time stream inference |
-| [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis, beat/key/chord workflows, embeddings, and generation |
-| [`ofxGgmlVision`](../ofxGgmlVision) | vision-language and image understanding workflows |
-| [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, and local search workflows |
-| [`ofxGgmlAgents`](../ofxGgmlAgents) | tool-using local agent workflows |
-| [`ofxGgmlVideo`](../ofxGgmlVideo) | video understanding, temporal analysis, and video generation workflows |
+The active repos now share a common baseline: a README, docs, root-level
+openFrameworks examples, `scripts\validate-local.*`, headless tests, and no
+generated model/build artifacts committed to git.
+
+| Addon | Lane | Current state |
+| --- | --- | --- |
+| [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embeddings | usable companion; owns the former Core llama examples |
+| [`ofxGgmlSam`](../ofxGgmlSam) | SAM/SAM2/SAM3 segmentation | seeded companion with point-prompt example baseline |
+| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation | active native-runtime lane; first text-to-image and GAN boundaries |
+| [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice, and stream inference | seeded audio lane; Whisper belongs here first |
+| [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis, beat/key/chord workflows, stems, and generation | hardened baseline; next real model bridge should start here or Diffusion |
+| [`ofxGgmlVision`](../ofxGgmlVision) | CLIP, image embeddings, captions, and image understanding | seeded companion with image example baseline |
+| [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, web crawl, and local search | seeded companion for document/search workflows |
+| [`ofxGgmlAgents`](../ofxGgmlAgents) | tool-using local agents and planning loops | seeded companion for orchestration workflows |
+| [`ofxGgmlVideo`](../ofxGgmlVideo) | video understanding, frame pipelines, temporal analysis, and generation | seeded companion for temporal workflows |
 
 ## Quick Start
 
