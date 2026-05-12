@@ -6,9 +6,9 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `cebb22e` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `4bc07ed` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
-| `ofxGgmlSam` | `v1.0.1` | `91dd6c7` | SAM request/result bridge, external adapter boundary, mock contract test, point example mask UI |
+| `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `e765854` | audio stream helpers, Whisper lane, timestamped subtitle export, transcription example |
 | `ofxGgmlMusic` | `v1.0.1` | `12b566e` | music request types, procedural generation, manifests, MIDI/stem outputs, external bridge contract |
 | `ofxGgmlDiffusion` | `v1.0.1` | `f1803f5` | diffusion request types, shared image backend interface, GAN proof lane, native bridge smoke |
@@ -45,7 +45,7 @@ family again.
 3. `ofxGgmlDiffusion`: test the shared native bridge with a tiny local model
    fixture, then wire PhotoMaker only if the installed C API supports it.
 4. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
-   setup/download notes against the tested external adapter contract.
+   setup/download notes against the tested multi-point adapter contract.
 
 RAG, Agents, Vision, and Video should stay narrow until one lower-level runtime
 path is proven and reusable.
