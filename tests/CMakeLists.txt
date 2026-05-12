@@ -14,18 +14,13 @@ add_executable(ofxGgml_rewrite_tests
 	test_model.cpp
 	test_text.cpp
 	test_embedding.cpp
-	test_llama_cli_text.cpp
-	test_llama_server_text.cpp
 	test_segmentation.cpp
 	../src/core/ofxGgmlRuntime.cpp
 	../src/compute/ofxGgmlTensor.cpp
 	../src/compute/ofxGgmlGraph.cpp
 	../src/model/ofxGgmlModel.cpp
 	../src/inference/ofxGgmlEmbedding.cpp
-	../src/inference/ofxGgmlLlamaServerEmbeddingBackend.cpp
 	../src/inference/ofxGgmlTextGeneration.cpp
-	../src/inference/ofxGgmlLlamaCliTextBackend.cpp
-	../src/inference/ofxGgmlLlamaServerTextBackend.cpp
 	../src/inference/ofxGgmlSegmentationInference.cpp)
 
 target_include_directories(ofxGgml_rewrite_tests PRIVATE
@@ -36,7 +31,6 @@ add_library(ofxGgml_public_header_includes OBJECT
 	public_headers/include_ofxGgml.cpp
 	public_headers/include_ofxGgmlCore.cpp
 	public_headers/include_ofxGgmlEmbedding.cpp
-	public_headers/include_ofxGgmlLlamaServerEmbeddingBackend.cpp
 	public_headers/include_ofxGgmlSam3.cpp
 	public_headers/include_ofxGgmlSegmentation.cpp
 	public_headers/include_ofxGgmlText.cpp)
