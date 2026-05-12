@@ -10,6 +10,7 @@ Start here when you are new to the rewritten `ofxGgmlCore` line.
 | `QUICKSTART.md` | Clone, setup, and run the Core smoke example. |
 | `EXAMPLES.md` | Understand the Core example and where companion examples live. |
 | `RELEASE_NOTES.md` | See what changed in the current release line. |
+| `ECOSYSTEM_STATUS.md` | See current addon release heads and next backend priorities. |
 | `../CONTRIBUTING.md` | Follow the change rules before editing core. |
 
 ## Design And Scope

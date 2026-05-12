@@ -98,8 +98,13 @@ Do not broaden every companion at once. Pick one addon and make it genuinely
 useful with a repeatable local backend path, then copy the proven pattern.
 Current best candidates are:
 
+- `ofxGgmlAudio`: verify and polish the Whisper transcription path end to end
+  with a tiny downloaded model and sample WAV.
 - `ofxGgmlDiffusion`: finish the stable-diffusion.cpp bridge and keep GAN as an
   explicit experimental path.
 - `ofxGgmlMusic`: add the first real music-generation backend boundary after
   the CLI/request validation baseline.
-- `ofxGgmlAudio`: wire Whisper.cpp transcription as the first real audio backend.
+- `ofxGgmlSam`: wire the first concrete SAM/SAM2/SAM3 adapter after the point
+  prompt example can load an image and preview a mask.
+
+See `docs/ECOSYSTEM_STATUS.md` for the current release-head map.
