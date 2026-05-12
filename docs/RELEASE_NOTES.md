@@ -8,6 +8,9 @@
   priorities.
 - Made Project Generator metadata explicit and stopped linking SAM3 from Core;
   concrete SAM workflows now belong to `ofxGgmlSam`.
+- Hardened Core example Project Generator repair to strip stale split-addon
+  SAM/Llama include directories, library directories, libraries, and defines.
+- Updated Core docs to use the unified `ofxGgmlLlama` example runner commands.
 
 ## 1.0.1 - 2026-05-12
 

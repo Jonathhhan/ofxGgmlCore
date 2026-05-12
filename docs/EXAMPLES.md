@@ -27,18 +27,18 @@ Windows:
 
 ```powershell
 cd ..\ofxGgmlLlama
-scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
-scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
-scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
+scripts\run-example.bat text -Build -Model C:\path\to\model.gguf
+scripts\run-example.bat chat -Build -Model C:\path\to\model.gguf
+scripts\run-example.bat embedding -Build -Model C:\path\to\embedding-model.gguf
 ```
 
 macOS/Linux:
 
 ```sh
 cd ../ofxGgmlLlama
-./scripts/run-text-example.sh -Build -Model /path/to/model.gguf
-./scripts/run-chat-example.sh -Build -Model /path/to/model.gguf
-./scripts/run-embedding-example.sh -Build -Model /path/to/embedding-model.gguf
+./scripts/run-example.sh text -Build -Model /path/to/model.gguf
+./scripts/run-example.sh chat -Build -Model /path/to/model.gguf
+./scripts/run-example.sh embedding -Build -Model /path/to/embedding-model.gguf
 ```
 
 The Llama addon keeps the server lifecycle scripts, CLI fallback, and model

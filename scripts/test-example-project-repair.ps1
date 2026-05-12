@@ -42,11 +42,30 @@ function Test-GeneratedAddonPath {
 	$normalized = $Path -replace "/", "\"
 	return ($normalized -match '(^|\\)libs\\ggml\\\.source(\\|$)') -or
 		($normalized -match '(^|\\)libs\\ggml\\build[^\\]*(\\|$)') -or
+		($normalized -match '(^|\\)libs\\llama(\\|$)') -or
+		($normalized -match '(^|\\)libs\\llama\.cpp(\\|$)') -or
 		($normalized -match '(^|\\)libs\\llama\.cpp\\\.source(\\|$)') -or
 		($normalized -match '(^|\\)libs\\llama\.cpp\\build[^\\]*(\\|$)') -or
+		($normalized -match '(^|\\)libs\\sam3(\\|$)') -or
+		($normalized -match '(^|\\)libs\\sam3\.cpp(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\build[^\\]*(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\(ggml|examples|media|scripts|tests)(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\sam3\.cpp$')
+}
+
+function Test-StaleAddonLibrary {
+	param([string]$Library)
+	if ([string]::IsNullOrWhiteSpace($Library)) {
+		return $false
+	}
+
+	$name = [System.IO.Path]::GetFileName(($Library -replace '"', '').Trim())
+	return $name -in @(
+		"llama.lib",
+		"llama-common.lib",
+		"llama-common-base.lib",
+		"sam3.lib"
+	)
 }
 
 function New-MsBuildNamespace {
@@ -77,6 +96,43 @@ function Assert-ProjectMetadata {
 			if ($tag -eq "ClCompile" -and $extension -in @(".h", ".hpp")) {
 				throw "$Example project still compiles header as source: $include"
 			}
+		}
+	}
+
+	$includeDirNodes = @($projectDoc.SelectNodes("//msb:AdditionalIncludeDirectories", $projectNs))
+	foreach ($node in $includeDirNodes) {
+		$parts = @($node.InnerText -split ";" | Where-Object { $_ })
+		foreach ($part in $parts) {
+			if (Test-GeneratedAddonPath $part) {
+				throw "$Example project still references generated dependency include path: $part"
+			}
+		}
+	}
+
+	$libraryDirNodes = @($projectDoc.SelectNodes("//msb:AdditionalLibraryDirectories", $projectNs))
+	foreach ($node in $libraryDirNodes) {
+		$parts = @($node.InnerText -split ";" | Where-Object { $_ })
+		foreach ($part in $parts) {
+			if (Test-GeneratedAddonPath $part) {
+				throw "$Example project still references split-addon library path: $part"
+			}
+		}
+	}
+
+	$dependencyNodes = @($projectDoc.SelectNodes("//msb:AdditionalDependencies", $projectNs))
+	foreach ($node in $dependencyNodes) {
+		$parts = @($node.InnerText -split ";" | Where-Object { $_ })
+		foreach ($part in $parts) {
+			if (Test-StaleAddonLibrary $part) {
+				throw "$Example project still links split-addon library: $part"
+			}
+		}
+	}
+
+	$optionNodes = @($projectDoc.SelectNodes("//msb:ClCompile/msb:AdditionalOptions", $projectNs))
+	foreach ($node in $optionNodes) {
+		if ($node.InnerText -match '(^|\s)-DOFXGGML_ENABLE_SAM3_ADAPTER(?:\s|$)') {
+			throw "$Example project still defines OFXGGML_ENABLE_SAM3_ADAPTER"
 		}
 	}
 

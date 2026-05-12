@@ -6,8 +6,8 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `7451505` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
-| `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `624b7d2` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlLlama` | `v1.0.1` | `0c1a5ea` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `9aa8207` | audio stream helpers, Whisper lane, rolling chunk transcript GUI, transcription example |
 | `ofxGgmlMusic` | `v1.0.1` | `21f9d3d` | music request types, procedural generation, external MusicGen profile, manifests, MIDI/stem outputs |

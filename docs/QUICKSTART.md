@@ -92,9 +92,9 @@ Windows:
 ```powershell
 cd ..\ofxGgmlLlama
 .\scripts\build-llama-server.bat
-.\scripts\run-text-example.bat -Build -Model C:\path\to\model.gguf
-.\scripts\run-chat-example.bat -Build -Model C:\path\to\model.gguf
-.\scripts\run-embedding-example.bat -Build -Model C:\path\to\embedding-model.gguf
+.\scripts\run-example.bat text -Build -Model C:\path\to\model.gguf
+.\scripts\run-example.bat chat -Build -Model C:\path\to\model.gguf
+.\scripts\run-example.bat embedding -Build -Model C:\path\to\embedding-model.gguf
 ```
 
 macOS/Linux:
@@ -102,9 +102,9 @@ macOS/Linux:
 ```sh
 cd ../ofxGgmlLlama
 ./scripts/build-llama-server.sh
-./scripts/run-text-example.sh -Build -Model /path/to/model.gguf
-./scripts/run-chat-example.sh -Build -Model /path/to/model.gguf
-./scripts/run-embedding-example.sh -Build -Model /path/to/embedding-model.gguf
+./scripts/run-example.sh text -Build -Model /path/to/model.gguf
+./scripts/run-example.sh chat -Build -Model /path/to/model.gguf
+./scripts/run-example.sh embedding -Build -Model /path/to/embedding-model.gguf
 ```
 
 That addon owns llama.cpp tools, server lifecycle, CLI fallback, and Llama model

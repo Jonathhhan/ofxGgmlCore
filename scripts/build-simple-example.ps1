@@ -144,11 +144,30 @@ function Test-GeneratedAddonPath {
 	$normalized = $Path -replace "/", "\"
 	return ($normalized -match '(^|\\)libs\\ggml\\\.source(\\|$)') -or
 		($normalized -match '(^|\\)libs\\ggml\\build[^\\]*(\\|$)') -or
+		($normalized -match '(^|\\)libs\\llama(\\|$)') -or
+		($normalized -match '(^|\\)libs\\llama\.cpp(\\|$)') -or
 		($normalized -match '(^|\\)libs\\llama\.cpp\\\.source(\\|$)') -or
 		($normalized -match '(^|\\)libs\\llama\.cpp\\build[^\\]*(\\|$)') -or
+		($normalized -match '(^|\\)libs\\sam3(\\|$)') -or
+		($normalized -match '(^|\\)libs\\sam3\.cpp(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\build[^\\]*(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\(ggml|examples|media|scripts|tests)(\\|$)') -or
 		($normalized -match '(^|\\)libs\\sam3\.cpp\\sam3\.cpp$')
+}
+
+function Test-StaleAddonLibrary {
+	param([string]$Library)
+	if ([string]::IsNullOrWhiteSpace($Library)) {
+		return $false
+	}
+
+	$name = [System.IO.Path]::GetFileName(($Library -replace '"', '').Trim())
+	return $name -in @(
+		"llama.lib",
+		"llama-common.lib",
+		"llama-common-base.lib",
+		"sam3.lib"
+	)
 }
 
 function Get-RelativeProjectPath {
@@ -331,6 +350,26 @@ function Repair-VisualStudioProjectFile {
 		}
 	}
 
+	$libraryDirNodes = @($doc.SelectNodes("//msb:AdditionalLibraryDirectories", $namespace))
+	foreach ($node in $libraryDirNodes) {
+		$parts = @($node.InnerText -split ";" | Where-Object { $_ -and !(Test-GeneratedAddonPath $_) })
+		$updated = $parts -join ";"
+		if ($updated -ne $node.InnerText) {
+			$node.InnerText = $updated
+			$changed = $true
+		}
+	}
+
+	$dependencyNodes = @($doc.SelectNodes("//msb:AdditionalDependencies", $namespace))
+	foreach ($node in $dependencyNodes) {
+		$parts = @($node.InnerText -split ";" | Where-Object { $_ -and !(Test-StaleAddonLibrary $_) })
+		$updated = $parts -join ";"
+		if ($updated -ne $node.InnerText) {
+			$node.InnerText = $updated
+			$changed = $true
+		}
+	}
+
 	if ($AddonDefines.Count -gt 0 -and $Path.EndsWith(".vcxproj", [System.StringComparison]::OrdinalIgnoreCase)) {
 		$optionNodes = @($doc.SelectNodes("//msb:ClCompile/msb:AdditionalOptions", $namespace))
 		foreach ($node in $optionNodes) {
@@ -352,6 +391,7 @@ function Repair-VisualStudioProjectFile {
 				!($_ -match '^-D([^=\s]+)$' -and $valuedDefines.ContainsKey($matches[1]))
 			})
 			$staleOptions = @(
+				"OFXGGML_ENABLE_SAM3_ADAPTER",
 				"OFXIMGUI_DEBUG",
 				"IMGUI_IMPL_OPENGL_ES2",
 				"IMGUI_IMPL_OPENGL_ES3",
