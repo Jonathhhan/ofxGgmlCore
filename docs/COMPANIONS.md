@@ -86,7 +86,9 @@ embeddings, arrangement, and generation.
 `ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters
 and image GAN generation. Do not create `ofxGgmlPhotoMaker` unless identity
 personalization grows into a larger cross-addon layer with several
-non-diffusion consumers.
+non-diffusion consumers. The installed stable-diffusion.cpp PhotoMaker C API is
+now covered by a model-free native capability smoke; the next concrete step is
+loading reference images into the native request.
 
 Diffusers is a useful design reference for `ofxGgmlDiffusion` terminology:
 pipelines, schedulers, model families, and adapters. Treat it as inspiration
