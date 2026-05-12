@@ -1,5 +1,6 @@
 #include "test_harness.h"
 #include "../src/ofxGgmlEmbedding.h"
+#include "../src/inference/ofxGgmlLlamaServerEmbeddingBackend.h"
 
 #include <memory>
 #include <string>

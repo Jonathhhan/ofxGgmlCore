@@ -35,6 +35,7 @@ add_library(ofxGgml_public_header_includes OBJECT
 	public_headers/include_ofxGgml.cpp
 	public_headers/include_ofxGgmlCore.cpp
 	public_headers/include_ofxGgmlEmbedding.cpp
+	public_headers/include_ofxGgmlLlamaServerEmbeddingBackend.cpp
 	public_headers/include_ofxGgmlSam3.cpp
 	public_headers/include_ofxGgmlSegmentation.cpp
 	public_headers/include_ofxGgmlText.cpp)

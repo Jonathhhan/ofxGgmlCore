@@ -1,4 +1,4 @@
-#include "ofxGgmlEmbedding.h"
+#include "ofxGgmlLlamaServerEmbeddingBackend.h"
 
 #include <chrono>
 #include <cctype>
