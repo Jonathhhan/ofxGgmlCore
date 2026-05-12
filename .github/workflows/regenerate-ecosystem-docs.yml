@@ -1,0 +1,45 @@
+name: regenerate-ecosystem-docs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - scripts/*.py
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Regenerate ecosystem dashboard
+        run: |
+          python3 scripts/generate-ecosystem-dashboard.py
+
+      - name: Regenerate compatibility matrix
+        run: |
+          python3 scripts/generate-compatibility-matrix.py
+
+      - name: Regenerate release plan
+        run: |
+          python3 scripts/plan-release.py
+
+      - name: Regenerate PR fanout plan
+        run: |
+          python3 scripts/plan-pr-fanout.py
+
+      - name: Verify generated docs
+        run: |
+          test -f docs/ecosystem-dashboard.md
+          test -f docs/ecosystem-dependency-graph.md
+          test -f docs/compatibility-matrix.md
+          test -f docs/release-plan.md
+          test -f docs/pr-fanout-plan.md
