@@ -6,10 +6,10 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `cb86a2c` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `a2fec6f` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `3e4212e` | SAM request/result bridge and point example baseline |
-| `ofxGgmlAudio` | `v1.0.1` | `843da4d` | audio stream helpers, Whisper lane, transcription example |
+| `ofxGgmlAudio` | `v1.0.1` | `a0971c7` | audio stream helpers, Whisper lane, transcription example, headless transcription smoke |
 | `ofxGgmlMusic` | `v1.0.1` | `a46664c` | music request types, procedural generation, manifests, MIDI/stem outputs |
 | `ofxGgmlDiffusion` | `v1.0.1` | `f3889ba` | diffusion request types, native bridge boundary, GAN proof lane |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
@@ -38,14 +38,14 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlAudio`: verify and polish the Whisper transcription path end to end
-   with a tiny downloaded model and sample WAV.
-2. `ofxGgmlDiffusion`: finish the stable-diffusion.cpp text-to-image bridge and
+1. `ofxGgmlDiffusion`: finish the stable-diffusion.cpp text-to-image bridge and
    keep GAN work explicitly experimental.
-3. `ofxGgmlMusic`: choose the first real model-backed music generation bridge
+2. `ofxGgmlMusic`: choose the first real model-backed music generation bridge
    after the procedural generation baseline.
-4. `ofxGgmlSam`: wire the first concrete SAM/SAM2/SAM3 adapter after the point
+3. `ofxGgmlSam`: wire the first concrete SAM/SAM2/SAM3 adapter after the point
    prompt example can load an image and preview a mask.
+4. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
+   timestamps, and subtitle export.
 
 RAG, Agents, Vision, and Video should stay narrow until one lower-level runtime
 path is proven and reusable.
