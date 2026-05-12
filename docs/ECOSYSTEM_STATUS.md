@@ -6,11 +6,11 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `cdf7311` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `241108b` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `07bfedd` | audio stream helpers, Whisper lane, rolling chunk transcript smoke, transcription example |
-| `ofxGgmlMusic` | `v1.0.1` | `12b566e` | music request types, procedural generation, manifests, MIDI/stem outputs, external bridge contract |
+| `ofxGgmlMusic` | `v1.0.1` | `21f9d3d` | music request types, procedural generation, external MusicGen profile, manifests, MIDI/stem outputs |
 | `ofxGgmlDiffusion` | `v1.0.1` | `f1803f5` | diffusion request types, shared image backend interface, GAN proof lane, native bridge smoke |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
 | `ofxGgmlVideo` | `v1.0.1` | `431f436` | video/frame request/example baseline |
@@ -38,14 +38,14 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlMusic`: connect the tested external bridge to one concrete
-   model-backed local music generator and document its model/setup path.
-2. `ofxGgmlAudio`: connect rolling transcripts to the transcribe example GUI or
+1. `ofxGgmlAudio`: connect rolling transcripts to the transcribe example GUI or
    a dedicated live/streaming example.
-3. `ofxGgmlDiffusion`: test the shared native bridge with a tiny local model
+2. `ofxGgmlDiffusion`: test the shared native bridge with a tiny local model
    fixture, then wire PhotoMaker only if the installed C API supports it.
-4. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
+3. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
    setup/download notes against the tested multi-point adapter contract.
+4. `ofxGgmlMusic`: add a smoke mode for machines with a configured
+   Hugging Face MusicGen Python environment.
 
 RAG, Agents, Vision, and Video should stay narrow until one lower-level runtime
 path is proven and reusable.
