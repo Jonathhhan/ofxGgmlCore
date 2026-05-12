@@ -15,7 +15,7 @@ model/build artifacts committed to git.
 | --- | --- | --- |
 | [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embeddings | `v1.0.1`; usable companion with llama adapters and examples |
 | [`ofxGgmlSam`](../ofxGgmlSam) | SAM/SAM2/SAM3 segmentation | `v1.0.1`; bridge and point-prompt example baseline |
-| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation | `v1.0.1`; native-runtime lane with text-to-image, GAN boundaries, and PhotoMaker capability smoke |
+| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation | `v1.0.1`; native-runtime lane with text-to-image, GAN boundaries, and PhotoMaker reference-image bridge |
 | [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice, and stream inference | `v1.0.1`; audio lane with Whisper setup and transcribe example |
 | [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis, beat/key/chord workflows, stems, and generation | `v1.0.1`; procedural generation baseline with manifests and CLI |
 | [`ofxGgmlVision`](../ofxGgmlVision) | CLIP, image embeddings, captions, and image understanding | `v1.0.1`; image request/example baseline |

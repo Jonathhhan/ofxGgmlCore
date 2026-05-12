@@ -87,8 +87,9 @@ embeddings, arrangement, and generation.
 and image GAN generation. Do not create `ofxGgmlPhotoMaker` unless identity
 personalization grows into a larger cross-addon layer with several
 non-diffusion consumers. The installed stable-diffusion.cpp PhotoMaker C API is
-now covered by a model-free native capability smoke; the next concrete step is
-loading reference images into the native request.
+covered by a model-free native capability smoke, and decoded reference images
+now map into the native request params. The next concrete step is a real local
+SDXL/PhotoMaker asset smoke outside the committed test path.
 
 Diffusers is a useful design reference for `ofxGgmlDiffusion` terminology:
 pipelines, schedulers, model families, and adapters. Treat it as inspiration
