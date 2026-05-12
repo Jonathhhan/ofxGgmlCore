@@ -1,0 +1,45 @@
+name: release-check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  release-readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify release metadata
+        run: |
+          test -f README.md
+          test -f CHANGELOG.md
+          test -f addon_config.mk
+          test -f AGENTS.md
+
+      - name: Verify docs and scripts folders
+        run: |
+          test -d docs
+          test -d scripts
+
+      - name: Ensure addon metadata exists
+        run: |
+          grep -q "ADDON_NAME" addon_config.mk
+          grep -q "ADDON_DESCRIPTION" addon_config.mk
+          grep -q "ADDON_AUTHOR" addon_config.mk
+
+      - name: Check for forbidden artifacts
+        run: |
+          if find . \( -iname "*.gguf" -o -iname "*.dll" -o -iname "*.so" -o -iname "*.dylib" \) | grep -q .; then
+            echo "Forbidden release artifact detected"
+            exit 1
+          fi
+
+      - name: Validate Codex guidance presence
+        run: |
+          test -f .github/copilot-instructions.md
+          test -f .codex/skills/openframeworks-addon/SKILL.md
