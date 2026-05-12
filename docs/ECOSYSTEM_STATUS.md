@@ -6,10 +6,10 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `241108b` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `7451505` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
-| `ofxGgmlAudio` | `v1.0.1` | `07bfedd` | audio stream helpers, Whisper lane, rolling chunk transcript smoke, transcription example |
+| `ofxGgmlAudio` | `v1.0.1` | `9aa8207` | audio stream helpers, Whisper lane, rolling chunk transcript GUI, transcription example |
 | `ofxGgmlMusic` | `v1.0.1` | `21f9d3d` | music request types, procedural generation, external MusicGen profile, manifests, MIDI/stem outputs |
 | `ofxGgmlDiffusion` | `v1.0.1` | `f1803f5` | diffusion request types, shared image backend interface, GAN proof lane, native bridge smoke |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
@@ -38,12 +38,11 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlAudio`: connect rolling transcripts to the transcribe example GUI or
-   a dedicated live/streaming example.
-2. `ofxGgmlDiffusion`: test the shared native bridge with a tiny local model
+1. `ofxGgmlDiffusion`: test the shared native bridge with a tiny local model
    fixture, then wire PhotoMaker only if the installed C API supports it.
-3. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
+2. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
    setup/download notes against the tested multi-point adapter contract.
+3. `ofxGgmlAudio`: add a dedicated live microphone streaming example.
 4. `ofxGgmlMusic`: add a smoke mode for machines with a configured
    Hugging Face MusicGen Python environment.
 
