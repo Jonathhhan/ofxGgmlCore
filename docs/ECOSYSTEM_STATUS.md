@@ -6,12 +6,12 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `7461df6` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `b2c27d8` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `b9b7374` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `3e4212e` | SAM request/result bridge and point example baseline |
 | `ofxGgmlAudio` | `v1.0.1` | `a0971c7` | audio stream helpers, Whisper lane, transcription example, headless transcription smoke |
 | `ofxGgmlMusic` | `v1.0.1` | `a46664c` | music request types, procedural generation, manifests, MIDI/stem outputs |
-| `ofxGgmlDiffusion` | `v1.0.1` | `d153abd` | diffusion request types, native bridge boundary, GAN proof lane, Core-constrained backend setup |
+| `ofxGgmlDiffusion` | `v1.0.1` | `c3c1414` | diffusion request types, native bridge boundary, GAN proof lane, native bridge smoke |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
 | `ofxGgmlVideo` | `v1.0.1` | `431f436` | video/frame request/example baseline |
 | `ofxGgmlRag` | `v1.0.1` | `c0ac283` | citation search request/example baseline |
@@ -38,15 +38,14 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlDiffusion`: add an optional native bridge smoke test that compiles
-   against the generated `stable-diffusion.cpp` header/lib and fails clearly
-   when no model is configured.
-2. `ofxGgmlMusic`: choose the first real model-backed music generation bridge
+1. `ofxGgmlMusic`: choose the first real model-backed music generation bridge
    after the procedural generation baseline.
-3. `ofxGgmlSam`: wire the first concrete SAM/SAM2/SAM3 adapter after the point
+2. `ofxGgmlSam`: wire the first concrete SAM/SAM2/SAM3 adapter after the point
    prompt example can load an image and preview a mask.
-4. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
+3. `ofxGgmlAudio`: extend the verified Whisper path into streaming chunks,
    timestamps, and subtitle export.
+4. `ofxGgmlDiffusion`: connect the stable-diffusion.cpp bridge to the shared
+   image backend interface and then test with a tiny local model fixture.
 
 RAG, Agents, Vision, and Video should stay narrow until one lower-level runtime
 path is proven and reusable.
