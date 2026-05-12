@@ -25,10 +25,12 @@ Every active companion addon should keep the same boring project shape:
 - root-level README with clone/setup/run instructions
 - docs for architecture, roadmap, examples, and release notes when the addon
   has public workflow decisions
+- independent version metadata exposed through the public umbrella header
 - one or more root-level openFrameworks examples, with `ofxImGui` allowed for
   example UX
 - `scripts\validate-local.bat`, `scripts\validate-local.ps1`, and
   `scripts\validate-local.sh` where practical
+- `scripts\release-candidate.*` for pre-tag checks where practical
 - headless request/helper tests that do not need model downloads
 - no generated build output, model files, sample media dumps, or runtime caches
   committed to git
@@ -41,14 +43,14 @@ shape, fix the addon structure before widening the API.
 | Addon | Scope | Current state |
 | --- | --- | --- |
 | `ofxGgmlLlama` | llama.cpp server/CLI tools, text/chat/embedding examples, adapters, launch scripts | v1.0.1 companion |
-| `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI | seeded baseline |
-| `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows | seeded baseline |
-| `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, stems, music embeddings, generation workflows | hardened baseline |
-| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image workflows, GAN-style image generation, identity adapters such as PhotoMaker | active native bridge lane |
-| `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding | seeded baseline |
-| `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory | seeded baseline |
-| `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation | seeded baseline |
-| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, temporal GAN and video generation | seeded baseline |
+| `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI | v1.0.1 companion |
+| `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows | v1.0.1 companion |
+| `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, stems, music embeddings, generation workflows | v1.0.1 companion |
+| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image workflows, GAN-style image generation, identity adapters such as PhotoMaker | v1.0.1 companion |
+| `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding | v1.0.1 companion |
+| `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory | v1.0.1 companion |
+| `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation | v1.0.1 companion |
+| `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, temporal GAN and video generation | v1.0.1 companion |
 
 ## Candidate Lanes
 

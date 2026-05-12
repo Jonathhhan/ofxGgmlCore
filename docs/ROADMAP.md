@@ -136,11 +136,11 @@ If one becomes important, start it as a companion addon that depends on
 and llama-specific C++ adapter implementations. Core keeps backend-neutral
 request/result APIs only.
 
-`ofxGgmlDiffusion`, `ofxGgmlMusic`, `ofxGgmlAudio`, `ofxGgmlVision`,
-`ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlVideo` have initial skeletons with
-root-level smoke examples, local validation scripts, and headless
-request/helper tests. Next work should make one of them useful with a real
-backend rather than broadening every skeleton at once.
+All active companions now have `v1.0.1` release baselines with public version
+metadata, release notes, release-candidate scripts, root-level examples, local
+validation scripts, and headless request/helper tests. Next work should make one
+of them useful with a real backend rather than broadening every baseline at
+once.
 
 `ofxGgmlDiffusion` has started that migration by carrying over the useful typed
 request/result/config shape from `ofxStableDiffusion` while leaving the native

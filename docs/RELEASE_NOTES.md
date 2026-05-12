@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- No changes yet.
+- Updated the family map to reflect `v1.0.1` companion releases for Llama, SAM,
+  Audio, Music, Diffusion, Vision, Video, RAG, and Agents.
 
 ## 1.0.1 - 2026-05-12
 

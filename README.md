@@ -6,21 +6,22 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 
 ## Addon Family
 
-The active repos now share a common baseline: a README, docs, root-level
-openFrameworks examples, `scripts\validate-local.*`, headless tests, and no
-generated model/build artifacts committed to git.
+The active repos now share a tagged `v1.0.1` baseline: a README, docs,
+root-level openFrameworks examples, `scripts\validate-local.*`,
+`scripts\release-candidate.*`, headless tests, release notes, and no generated
+model/build artifacts committed to git.
 
 | Addon | Lane | Current state |
 | --- | --- | --- |
-| [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embeddings | usable companion; owns llama adapters and examples |
-| [`ofxGgmlSam`](../ofxGgmlSam) | SAM/SAM2/SAM3 segmentation | seeded companion with point-prompt example baseline |
-| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation | active native-runtime lane; first text-to-image and GAN boundaries |
-| [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice, and stream inference | seeded audio lane; Whisper belongs here first |
-| [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis, beat/key/chord workflows, stems, and generation | hardened baseline; next real model bridge should start here or Diffusion |
-| [`ofxGgmlVision`](../ofxGgmlVision) | CLIP, image embeddings, captions, and image understanding | seeded companion with image example baseline |
-| [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, web crawl, and local search | seeded companion for document/search workflows |
-| [`ofxGgmlAgents`](../ofxGgmlAgents) | tool-using local agents and planning loops | seeded companion for orchestration workflows |
-| [`ofxGgmlVideo`](../ofxGgmlVideo) | video understanding, frame pipelines, temporal analysis, and generation | seeded companion for temporal workflows |
+| [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI tools, text, chat, and embeddings | `v1.0.1`; usable companion with llama adapters and examples |
+| [`ofxGgmlSam`](../ofxGgmlSam) | SAM/SAM2/SAM3 segmentation | `v1.0.1`; bridge and point-prompt example baseline |
+| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, and image generation | `v1.0.1`; native-runtime lane with text-to-image and GAN boundaries |
+| [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, denoising, voice, and stream inference | `v1.0.1`; audio lane with Whisper setup and transcribe example |
+| [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis, beat/key/chord workflows, stems, and generation | `v1.0.1`; procedural generation baseline with manifests and CLI |
+| [`ofxGgmlVision`](../ofxGgmlVision) | CLIP, image embeddings, captions, and image understanding | `v1.0.1`; image request/example baseline |
+| [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, web crawl, and local search | `v1.0.1`; citation search request/example baseline |
+| [`ofxGgmlAgents`](../ofxGgmlAgents) | tool-using local agents and planning loops | `v1.0.1`; planning request/example baseline |
+| [`ofxGgmlVideo`](../ofxGgmlVideo) | video understanding, frame pipelines, temporal analysis, and generation | `v1.0.1`; video frame request/example baseline |
 
 ## Quick Start
 
