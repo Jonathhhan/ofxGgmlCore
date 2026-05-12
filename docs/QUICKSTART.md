@@ -61,6 +61,11 @@ macOS/Linux:
 
 `-Auto` is the default.
 
+`setup-ggml` rewrites the marked backend block in `addon_config.mk` to match
+the locally built ggml libraries. Seeing `addon_config.mk` as modified after a
+CUDA, Vulkan, or CPU-only setup is expected. Do not commit that local backend
+selection unless you are intentionally changing the repository default.
+
 ## 3. Run The Core Example
 
 Windows:

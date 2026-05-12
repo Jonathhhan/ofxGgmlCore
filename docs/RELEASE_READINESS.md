@@ -50,6 +50,8 @@ Companion addon checks should run in their own repositories.
 Before creating the `1.0.1` tag:
 
 - `main` is clean after validation.
+- generated `addon_config.mk` backend-selection edits are either intentionally
+  committed or left unstaged as local setup state.
 - README setup and validation commands match the actual scripts.
 - `docs/CORE_CONTRACT.md` matches the addon boundary.
 - generated binaries, model files, caches, and project files are not staged.

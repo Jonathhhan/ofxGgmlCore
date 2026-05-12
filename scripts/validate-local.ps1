@@ -57,6 +57,7 @@ foreach ($shellWrapper in Get-ChildItem -LiteralPath $scriptRoot -Filter "*.sh" 
 Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/first-run.sh" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/validate-local.sh" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/setup-ggml.sh -CpuOnly" "quickstart docs"
+Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "addon_config.mk" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/run-simple-example.sh -Build" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\EXAMPLES.md") "./scripts/run-simple-example.sh -Build" "examples docs"
 

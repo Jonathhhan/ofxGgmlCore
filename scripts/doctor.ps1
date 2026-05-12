@@ -30,6 +30,18 @@ function Test-CommandAvailable {
 	return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+function Get-GitStatusLine {
+	param([string]$RelativePath)
+	if (!(Test-CommandAvailable "git")) {
+		return ""
+	}
+	$output = & git -C $addonRoot status --short -- $RelativePath 2>$null
+	if ($LASTEXITCODE -ne 0) {
+		return ""
+	}
+	return (@($output) -join "`n").Trim()
+}
+
 function Test-WindowsHost {
 	return !($IsLinux -or $IsMacOS)
 }
@@ -103,6 +115,11 @@ if (Test-Path -LiteralPath $llamaSibling -PathType Container) {
 	Write-Check "OK" "ofxGgmlLlama companion" $llamaSibling
 } else {
 	Write-Check "WARN" "ofxGgmlLlama companion" "clone beside ofxGgmlCore for text, chat, and embedding examples"
+}
+
+$addonConfigStatus = Get-GitStatusLine -RelativePath "addon_config.mk"
+if (![string]::IsNullOrWhiteSpace($addonConfigStatus)) {
+	Write-Check "NOTE" "addon_config.mk" "local backend selection differs from git; this is expected after setup-ggml"
 }
 
 Write-Host ""
