@@ -5,11 +5,11 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 list_ps1="$script_dir/list-models.ps1"
 
 if command -v pwsh >/dev/null 2>&1; then
-	exec pwsh -NoProfile -File "$list_ps1" "$@"
+	exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$list_ps1" "$@"
 fi
 
 if command -v powershell >/dev/null 2>&1; then
-	exec powershell -NoProfile -File "$list_ps1" "$@"
+	exec powershell -NoProfile -ExecutionPolicy Bypass -File "$list_ps1" "$@"
 fi
 
 echo "Could not find pwsh or powershell." >&2

@@ -5,11 +5,11 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 test_ps1="$script_dir/test-setup-dry-run.ps1"
 
 if command -v pwsh >/dev/null 2>&1; then
-	exec pwsh -NoProfile -File "$test_ps1" "$@"
+	exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$test_ps1" "$@"
 fi
 
 if command -v powershell >/dev/null 2>&1; then
-	exec powershell -NoProfile -File "$test_ps1" "$@"
+	exec powershell -NoProfile -ExecutionPolicy Bypass -File "$test_ps1" "$@"
 fi
 
 printf '%s\n' "Could not find pwsh or powershell."

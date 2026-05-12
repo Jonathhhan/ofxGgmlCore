@@ -33,6 +33,14 @@ function Invoke-CheckedScript {
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+foreach ($shellWrapper in Get-ChildItem -LiteralPath $scriptRoot -Filter "*.sh" -File) {
+	$content = Get-Content -LiteralPath $shellWrapper.FullName -Raw
+	if ($content -match "exec (pwsh|powershell) -NoProfile -File" -or
+		$content -match "(^|`n)\s*(pwsh|powershell) -NoProfile -File") {
+		throw "Shell wrapper should use -ExecutionPolicy Bypass when launching PowerShell: $($shellWrapper.Name)"
+	}
+}
+
 if (!$SkipAddonTests) {
 	Invoke-CheckedScript `
 		-Label "Running headless addon tests" `
