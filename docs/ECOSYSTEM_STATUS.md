@@ -11,7 +11,7 @@ This tracks the current addon-family baseline after the first companion split.
 | `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `9aa8207` | audio stream helpers, Whisper lane, rolling chunk transcript GUI, transcription example |
 | `ofxGgmlMusic` | `v1.0.1` | `21f9d3d` | music request types, procedural generation, external MusicGen profile, manifests, MIDI/stem outputs |
-| `ofxGgmlDiffusion` | `v1.0.1` | `abc30e6` | diffusion request types, shared image backend interface, GAN proof lane, PhotoMaker reference-image bridge |
+| `ofxGgmlDiffusion` | `v1.0.1` | `ed02f00` | diffusion request types, shared image backend interface, GAN proof lane, PhotoMaker bridge, doctor, generated-project repair |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
 | `ofxGgmlVideo` | `v1.0.1` | `431f436` | video/frame request/example baseline |
 | `ofxGgmlRag` | `v1.0.1` | `c0ac283` | citation search request/example baseline |

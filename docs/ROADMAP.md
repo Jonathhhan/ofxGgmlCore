@@ -167,6 +167,10 @@ dry-run validation for the text-to-image example.
 async runner, with cancellation applied at the addon result boundary when the
 native call returns control.
 
+`ofxGgmlDiffusion` also has a local doctor and Windows example project repair
+path, so a clean checkout can diagnose missing model/runtime state and build the
+prompt example without committing generated Visual Studio files.
+
 ## Release Rule
 
 Before each release checkpoint:
