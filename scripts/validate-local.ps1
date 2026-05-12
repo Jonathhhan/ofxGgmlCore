@@ -118,6 +118,10 @@ if (!$SkipModelList) {
 
 if (!$SkipDoctor) {
 	Invoke-CheckedScript `
+		-Label "Checking doctor smoke output" `
+		-ScriptPath (Join-Path $scriptRoot "test-doctor.ps1")
+
+	Invoke-CheckedScript `
 		-Label "Checking local doctor" `
 		-ScriptPath (Join-Path $scriptRoot "doctor.ps1")
 }

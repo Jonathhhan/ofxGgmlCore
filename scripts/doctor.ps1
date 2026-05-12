@@ -30,9 +30,23 @@ function Test-CommandAvailable {
 	return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
-$isWindowsHost = !($IsLinux -or $IsMacOS)
+function Test-WindowsHost {
+	return !($IsLinux -or $IsMacOS)
+}
+
+function Get-PlatformScript {
+	param([string]$Name)
+	if (Test-WindowsHost) {
+		return "scripts\$Name.bat"
+	}
+	return "./scripts/$Name.sh"
+}
+
+$isWindowsHost = Test-WindowsHost
 $exeSuffix = if ($isWindowsHost) { ".exe" } else { "" }
 $addonParent = Split-Path -Parent $addonRoot
+$setupCommand = Get-PlatformScript -Name "setup-ggml"
+$runSimpleCommand = "$(Get-PlatformScript -Name 'run-simple-example') -Build"
 
 Write-Host "ofxGgmlCore doctor"
 Write-Host "Root  $addonRoot"
@@ -74,14 +88,14 @@ if ((Test-Path -LiteralPath $ggmlInclude -PathType Container) -and
 	(Test-Path -LiteralPath $ggmlLib -PathType Container)) {
 	Write-Check "OK" "ggml runtime" "include/lib are present"
 } else {
-	Write-Check "WARN" "ggml runtime" "run scripts\setup-ggml.bat"
+	Write-Check "WARN" "ggml runtime" "run $setupCommand"
 }
 
 $simpleExe = Join-Path $addonRoot "ofxGgmlSimpleExample\bin\ofxGgmlSimpleExample$exeSuffix"
 if (Test-Path -LiteralPath $simpleExe -PathType Leaf) {
 	Write-Check "OK" "ofxGgmlSimpleExample" "built"
 } else {
-	Write-Check "WARN" "ofxGgmlSimpleExample" "run scripts\run-simple-example.bat -Build"
+	Write-Check "WARN" "ofxGgmlSimpleExample" "run $runSimpleCommand"
 }
 
 $llamaSibling = Join-Path $addonParent "ofxGgmlLlama"
