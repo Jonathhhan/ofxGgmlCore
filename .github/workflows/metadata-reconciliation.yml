@@ -1,0 +1,12 @@
+name: metadata-reconciliation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - scripts/reconcile-ecosystem-metadata.py
+
+jobs:
+  metadata-reconciliation:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/metadata-reconciliation.yml@main
