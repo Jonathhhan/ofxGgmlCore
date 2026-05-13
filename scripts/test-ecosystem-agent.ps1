@@ -15,6 +15,7 @@ foreach ($expected in @(
 	"classified legacy/reference siblings",
 	"Agent Guardrails",
 	"Do not edit addon source",
+	"plan-doctor-rollout.bat",
 	"plan-agent-branch-cleanup.bat"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
