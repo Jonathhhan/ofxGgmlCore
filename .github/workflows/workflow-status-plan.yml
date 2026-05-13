@@ -1,0 +1,12 @@
+name: workflow-status-plan
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - scripts/generate-workflow-status-plan.py
+
+jobs:
+  workflow-status-plan:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/workflow-status-plan.yml@main
