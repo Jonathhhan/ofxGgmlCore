@@ -73,6 +73,12 @@ cd ../ofxGgmlLlama
 | `scripts\build-simple-example.bat` | Build the Core smoke example |
 | `scripts\run-simple-example.bat` | Launch the Core smoke example |
 | `scripts\validate-local.bat` | Run the local Core validation suite |
+| `scripts\release-candidate.bat` | Run the pre-release validation gate |
+| `scripts\get-ecosystem.ps1` | Shared auto-discovery helper for ofxGgml sibling repositories |
+| `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
+| `scripts\plan-ecosystem.bat` | Generate an agent-facing ecosystem planning handoff |
+| `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
+| `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
 
 Backend flags for `setup-ggml` and `first-run` include `-Auto` by default,
@@ -91,16 +97,36 @@ Core should stay small and boring:
 Core keeps shared request/result types and domain-neutral primitives. Concrete
 model adapters and user-facing model workflows belong in companion addons.
 
+For ecosystem planning agents, use `scripts\plan-ecosystem.bat` to summarize
+repository state and guardrails before changing addon source. The agent scripts
+load managed lane metadata from `docs\ECOSYSTEM_MANIFEST.json`, auto-detect
+sibling `ofxGgml*` repositories, and attach known lane metadata where
+available.
+Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
+agent instructions, reusable workflow coverage, validation, and release gates.
+
+For Hermes Agent, Codex, and GitHub Copilot support, use
+`scripts\write-agent-instructions.bat` to generate `HERMES.md`, `AGENTS.md`,
+and `.github\copilot-instructions.md` across the active addon and workflow
+repos.
+
 ## Validation
 
 ```powershell
 .\scripts\validate-local.bat
 ```
 
+Before tagging or publishing a release candidate:
+
+```powershell
+.\scripts\release-candidate.bat
+```
+
 On macOS/Linux:
 
 ```sh
 ./scripts/validate-local.sh
+./scripts/release-candidate.sh
 ```
 
 This checks addon headers, setup dry-runs, generated project repair, launch

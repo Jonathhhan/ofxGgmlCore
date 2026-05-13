@@ -120,6 +120,15 @@ ggml_backend_t createOpenCLBackend() {
 #endif
 }
 
+void applyThreadSettings(ggml_backend_t backend, const ofxGgmlRuntimeSettings & settings) {
+	if (!backend || settings.threads <= 0) {
+		return;
+	}
+	if (ggml_backend_is_cpu(backend)) {
+		ggml_backend_cpu_set_n_threads(backend, settings.threads);
+	}
+}
+
 #endif
 
 } // namespace
@@ -186,6 +195,7 @@ ofxGgmlResult<void> ofxGgmlRuntime::setup(const ofxGgmlRuntimeSettings & setting
 			std::string(ofxGgmlGetBackendName(settings.preferredBackend)) +
 			" backend");
 	}
+	applyThreadSettings(impl->backend, settings);
 	impl->state = ofxGgmlRuntimeState::Ready;
 	return ofxGgmlResult<void>::success();
 #else
