@@ -175,6 +175,8 @@ prompt example without committing generated Visual Studio files.
 
 Before each release checkpoint:
 
+- run `scripts\write-agent-instructions.ps1 -Check`
+- run `scripts\release-candidate.ps1`
 - run `scripts\validate-local.ps1`
 - build changed examples explicitly
 - update `docs\RELEASE_NOTES.md`

@@ -1,0 +1,91 @@
+# ofxGgml Ecosystem Agent
+
+This document defines the planning agent layer for the ofxGgml family. It is
+for Codex, GitHub Copilot, Hermes Agent, and similar coding assistants working
+across the addon ecosystem.
+
+The ecosystem agent is not an addon runtime. Its job is to improve planning,
+repository hygiene, release readiness, and cross-repository coordination before
+any source-code work starts.
+
+## Scope
+
+The agent layer owns:
+
+- repository instruction files: `HERMES.md`, `AGENTS.md`, and
+  `.github/copilot-instructions.md`
+- reusable GitHub Actions checks in `ofxGgmlWorkflows`
+- ecosystem status and planning scripts
+- documentation that explains addon boundaries, validation, and release gates
+
+The agent layer does not own:
+
+- C++ runtime behavior
+- addon public APIs
+- generated openFrameworks project files
+- model files, downloaded runtimes, caches, or media outputs
+
+Do not edit addon source from the agent layer unless the user explicitly asks
+for addon behavior.
+
+## Planning Loop
+
+Before changing addon code, an agent should:
+
+1. Read the repository instruction file for the active assistant.
+2. Run or inspect `scripts/status-family.*` from `ofxGgmlCore`.
+3. Generate an ecosystem plan with `scripts/plan-ecosystem.*`.
+4. Classify the work as documentation, automation, validation, or addon code.
+5. Touch addon source only when the user explicitly asks for addon behavior.
+6. Report the plan, touched repositories, and validation commands.
+
+## Commands
+
+From `ofxGgmlCore`:
+
+```powershell
+scripts\status-family.bat
+scripts\audit-ecosystem.bat
+scripts\plan-ecosystem.bat
+scripts\write-agent-instructions.bat -Check
+```
+
+On macOS/Linux:
+
+```sh
+./scripts/status-family.sh
+./scripts/audit-ecosystem.sh
+./scripts/plan-ecosystem.sh
+./scripts/write-agent-instructions.sh -Check
+```
+
+Use `scripts\plan-ecosystem.bat -OutputPath docs\ECOSYSTEM_PLAN.md` to write a
+handoff plan for review.
+
+Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
+repositories have current agent instructions, coding-agent workflow coverage,
+validation entry points, and release gates.
+
+## Auto-Discovery
+
+The managed repository map lives in `docs/ECOSYSTEM_MANIFEST.json`. The agent
+scripts use `scripts/get-ecosystem.ps1` to combine that known lane metadata
+with auto-detected sibling repositories named `ofxGgml*`. Known repos keep
+stable lane and scope text; new sibling repos are included with fallback
+metadata so agents can see them, but should classify them before broad
+automation changes.
+
+Instruction generation updates known repositories by default. Use
+`write-agent-instructions.* -IncludeDiscovered` only after confirming a new
+sibling belongs in the managed ecosystem.
+
+## Planning Priorities
+
+When priorities conflict, prefer work in this order:
+
+1. Keep repository boundaries explicit for agents.
+2. Keep validation cheap and repeatable.
+3. Improve one backend lane until it is useful before widening all lanes.
+4. Move shared helpers into `ofxGgmlCore` only after they are stable,
+   domain-neutral, dependency-light, and tested.
+5. Keep generated artifacts out of git.

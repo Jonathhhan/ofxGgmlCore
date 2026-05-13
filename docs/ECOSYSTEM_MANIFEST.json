@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "name": "ofxGgml ecosystem",
+  "managedInstructionGeneration": "known-repositories-only",
+  "repositories": [
+    {
+      "name": "ofxGgmlCore",
+      "kind": "core-addon",
+      "lane": "backend-neutral runtime base",
+      "scope": "ggml setup, runtime discovery, shared types, validation, and ecosystem coordination"
+    },
+    {
+      "name": "ofxGgmlLlama",
+      "kind": "companion-addon",
+      "lane": "text, chat, embeddings",
+      "scope": "llama.cpp tooling, text/chat/embedding examples, and local model adapters"
+    },
+    {
+      "name": "ofxGgmlSam",
+      "kind": "companion-addon",
+      "lane": "segmentation",
+      "scope": "SAM/SAM2/SAM3 segmentation requests, masks, prompts, and examples"
+    },
+    {
+      "name": "ofxGgmlAudio",
+      "kind": "companion-addon",
+      "lane": "audio and speech",
+      "scope": "real-time audio inference, Whisper, transcription, and speech workflows"
+    },
+    {
+      "name": "ofxGgmlMusic",
+      "kind": "companion-addon",
+      "lane": "music generation and analysis",
+      "scope": "music analysis, beat/key/chord helpers, stems, MIDI, and generation workflows"
+    },
+    {
+      "name": "ofxGgmlDiffusion",
+      "kind": "companion-addon",
+      "lane": "image generation",
+      "scope": "diffusion, GAN, PhotoMaker-style identity adapters, and native image backend bridges"
+    },
+    {
+      "name": "ofxGgmlVision",
+      "kind": "companion-addon",
+      "lane": "image understanding",
+      "scope": "CLIP, image embeddings, captions, and image understanding requests"
+    },
+    {
+      "name": "ofxGgmlVideo",
+      "kind": "companion-addon",
+      "lane": "video pipelines",
+      "scope": "video frame requests, temporal analysis, and video generation boundaries"
+    },
+    {
+      "name": "ofxGgmlRag",
+      "kind": "companion-addon",
+      "lane": "retrieval and citations",
+      "scope": "document ingestion, retrieval, citations, search, and project memory boundaries"
+    },
+    {
+      "name": "ofxGgmlAgents",
+      "kind": "companion-addon",
+      "lane": "tool-using local agents",
+      "scope": "agent planning loops, tool orchestration, and coding assistant workflow boundaries"
+    },
+    {
+      "name": "ofxGgmlWorkflows",
+      "kind": "workflow-repository",
+      "lane": "reusable ecosystem automation",
+      "scope": "GitHub Actions workflow_call templates, policy checks, and ecosystem automation docs"
+    }
+  ]
+}

@@ -56,10 +56,43 @@ foreach ($shellWrapper in Get-ChildItem -LiteralPath $scriptRoot -Filter "*.sh" 
 
 Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/first-run.sh" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/validate-local.sh" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\release-candidate.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\audit-ecosystem.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-ecosystem.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "auto-detected" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "AGENTS.md" "coding agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "HERMES.md" "coding agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "copilot-instructions.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/setup-ggml.sh -CpuOnly" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "addon_config.mk" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/run-simple-example.sh -Build" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\EXAMPLES.md") "./scripts/run-simple-example.sh -Build" "examples docs"
+
+foreach ($requiredScript in @(
+	"release-candidate.bat",
+	"release-candidate.ps1",
+	"release-candidate.sh",
+	"audit-ecosystem.bat",
+	"audit-ecosystem.ps1",
+	"audit-ecosystem.sh",
+	"plan-ecosystem.bat",
+	"plan-ecosystem.ps1",
+	"plan-ecosystem.sh",
+	"get-ecosystem.ps1",
+	"status-family.bat",
+	"status-family.ps1",
+	"status-family.sh",
+	"write-agent-instructions.bat",
+	"write-agent-instructions.ps1",
+	"write-agent-instructions.sh"
+)) {
+	if (!(Test-Path -LiteralPath (Join-Path $scriptRoot $requiredScript) -PathType Leaf)) {
+		throw "Missing expected script: scripts\$requiredScript"
+	}
+}
 
 if (!$SkipAddonTests) {
 	Invoke-CheckedScript `
@@ -126,6 +159,30 @@ if (!$SkipDoctor) {
 		-Label "Checking local doctor" `
 		-ScriptPath (Join-Path $scriptRoot "doctor.ps1")
 }
+
+Invoke-CheckedScript `
+	-Label "Checking ecosystem manifest" `
+	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-manifest.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking family status smoke output" `
+	-ScriptPath (Join-Path $scriptRoot "test-family-status.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking ecosystem auto-discovery" `
+	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-discovery.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking ecosystem audit" `
+	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-audit.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking ecosystem agent planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-agent.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking agent instruction generator" `
+	-ScriptPath (Join-Path $scriptRoot "test-agent-instructions.ps1")
 
 if (!$SkipArtifactHygiene) {
 	Invoke-CheckedScript `

@@ -1,49 +1,32 @@
-# Repository coding instructions
+# GitHub Copilot Repository Instructions
 
-This repository is `ofxGgmlCore`, the backend-neutral openFrameworks base addon for the ofxGgml addon family.
+ofxGgmlCore is part of the ofxGgml openFrameworks addon ecosystem.
 
-## Architectural boundaries
+- Scope: ggml setup, runtime discovery, shared types, validation, and ecosystem coordination
+- Keep changes inside this addon's lane unless a task explicitly asks for a cross-addon update.
+- For ecosystem planning tasks, prefer instruction, documentation, workflow, and validation changes before addon source changes.
+- Use ofxGgmlCore for shared runtime primitives and keep companion workflows out of Core.
+- Avoid committing generated outputs, local models, build directories, IDE metadata, downloaded runtimes, caches, or media dumps.
+- Add or update headless tests for public helper behavior.
+- Validation before handoff: scripts\release-candidate.ps1.
+- Keep explanations concise and include the files and checks that matter.
+## Core Contract
 
-Keep Core small, reusable, and model-agnostic. Core may contain shared ggml setup, runtime discovery, tensor/graph helpers, request/result primitives, lightweight diagnostics, validation scripts, and smoke-test examples.
+Keep Core small, boring, reusable, and model-agnostic.
 
-Do not add model-specific workflows here. Text/chat/embeddings belong in `ofxGgmlLlama`; Whisper/audio in `ofxGgmlAudio`; segmentation in `ofxGgmlSam`; diffusion/image generation in `ofxGgmlDiffusion`; CLIP/vision in `ofxGgmlVision`; retrieval in `ofxGgmlRag`; planning/tool loops in `ofxGgmlAgents`; video workflows in `ofxGgmlVideo`; music workflows in `ofxGgmlMusic`.
+Core may contain shared ggml setup, runtime discovery, tensor/graph helpers,
+request/result primitives, lightweight diagnostics, validation scripts, and
+smoke-test examples.
 
-## openFrameworks addon rules
+Do not add model-specific workflows here. Text/chat/embeddings belong in
+ofxGgmlLlama; audio and Whisper workflows in ofxGgmlAudio; segmentation in
+ofxGgmlSam; diffusion/image generation in ofxGgmlDiffusion; vision in
+ofxGgmlVision; retrieval in ofxGgmlRag; planning/tool loops in ofxGgmlAgents;
+video in ofxGgmlVideo; and music workflows in ofxGgmlMusic.
 
-- Preserve the standard addon layout: `addon_config.mk`, `src/`, `examples/`, `scripts/`, and `docs/`.
+## openFrameworks Addon Rules
+
+- Preserve the standard addon layout, root-level addon_config.mk, src, scripts, docs, and examples.
 - Keep examples projectGenerator-friendly.
-- Do not commit large models, generated projects, build folders, binaries, or downloaded upstream source caches.
-- Keep `addon_config.mk` source/include lists aligned with any moved or added files.
-- Preserve platform sections for Visual Studio, Linux, and macOS.
 - Avoid hardcoded absolute local paths.
-
-## C++ rules
-
-- Prefer C++17-compatible code.
-- Keep headers lightweight and APIs explicit.
-- Avoid hidden global state.
-- Prefer small request/result structs for shared primitives.
-- Avoid blocking the openFrameworks update/draw loop unless the example intentionally demonstrates a minimal synchronous path.
-
-## Script and validation rules
-
-When editing scripts, maintain parity between macOS/Linux shell scripts and Windows batch/PowerShell scripts where practical.
-
-Before completing a change, run the smallest relevant subset when possible:
-
-```sh
-./scripts/doctor.sh
-./scripts/validate-local.sh
-./scripts/build-simple-example.sh
-./scripts/run-simple-example.sh -Build
-```
-
-Windows equivalents:
-
-```bat
-scripts\\doctor.bat
-scripts\\validate-local.bat
-scripts\\build-simple-example.bat
-```
-
-If checks cannot be run, state exactly why.
+- Keep addon_config.mk source/include lists aligned with moved or added files.

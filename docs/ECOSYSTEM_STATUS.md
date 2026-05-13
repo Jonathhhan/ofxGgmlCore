@@ -6,7 +6,7 @@ This tracks the current addon-family baseline after the first companion split.
 
 | Addon | Current release | Current head | Scope |
 | --- | --- | --- | --- |
-| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `624b7d2` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
+| `ofxGgmlCore` | `v1.0.1` at `2171e8b` | `5d1aa8d` | backend-neutral ggml setup, runtime discovery, shared helper APIs |
 | `ofxGgmlLlama` | `v1.0.1` | `0c1a5ea` | llama.cpp server/CLI tools, text, chat, embeddings |
 | `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `9aa8207` | audio stream helpers, Whisper lane, rolling chunk transcript GUI, transcription example |
@@ -17,8 +17,8 @@ This tracks the current addon-family baseline after the first companion split.
 | `ofxGgmlRag` | `v1.0.1` | `c0ac283` | citation search request/example baseline |
 | `ofxGgmlAgents` | `v1.0.1` | `b81a5e0` | planning request/example baseline |
 
-Core `main` is ahead of the `v1.0.1` tag only for family-map documentation.
-Do not retag Core for documentation-only changes unless preparing a new patch
+Core `main` is ahead of the `v1.0.1` tag for family-map documentation and
+ecosystem agent tooling. Do not retag Core unless preparing a new patch
 release.
 
 ## Baseline Standard
@@ -56,3 +56,6 @@ local runtime state. They should remain ignored.
 
 `ofxGgmlCore/addon_config.mk` may differ locally after `setup-ggml`; that is an
 environment selection file, not a family-map change.
+
+Use `scripts\status-family.*` to print a fresh local snapshot before changing
+this file.

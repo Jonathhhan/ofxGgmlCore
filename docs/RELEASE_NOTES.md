@@ -11,6 +11,19 @@
 - Hardened Core example Project Generator repair to strip stale split-addon
   SAM/Llama include directories, library directories, libraries, and defines.
 - Updated Core docs to use the unified `ofxGgmlLlama` example runner commands.
+- Added release-candidate and family-status scripts, plus validation coverage
+  for the new release script surface.
+- Added family-wide Hermes/Codex/Copilot instruction generation for active
+  addon repos.
+- Added an ecosystem agent planning layer with `docs/ECOSYSTEM_AGENT.md` and
+  `scripts\plan-ecosystem.*` so agents plan cross-repo work before touching
+  addon source.
+- Added shared ecosystem auto-discovery for agent scripts, including fallback
+  metadata for new sibling `ofxGgml*` repositories.
+- Added an ecosystem audit script that reports agent instruction, workflow,
+  validation, release-gate, and detected-sibling readiness.
+- Added `docs\ECOSYSTEM_MANIFEST.json` as the structured source of truth for
+  managed repository lanes used by agent tooling.
 
 ## 1.0.1 - 2026-05-12
 

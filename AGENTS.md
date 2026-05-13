@@ -1,36 +1,52 @@
-# AGENTS.md
+# Codex Repository Instructions
 
-This repository is `ofxGgmlCore`, the backend-neutral openFrameworks base addon for the ofxGgml addon family.
+This repository is part of the ofxGgml openFrameworks addon ecosystem.
 
-Codex should treat this repo as the shared foundation for companion addons such as `ofxGgmlLlama`, `ofxGgmlSam`, `ofxGgmlDiffusion`, `ofxGgmlAudio`, `ofxGgmlMusic`, `ofxGgmlVision`, `ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlVideo`.
+## Addon Scope
 
-## Core contract
+- Addon: ofxGgmlCore
+- Lane: backend-neutral runtime base
+- Role: ggml setup, runtime discovery, shared types, validation, and ecosystem coordination
 
-Keep Core small, boring, and domain-neutral.
+## Working Rules
 
-Do:
+- Read the existing code and docs before changing behavior.
+- Keep edits scoped to this addon's lane and preserve the companion-addon split.
+- Start with an ecosystem plan when a task asks for cross-repo improvement or planning.
+- Keep ofxGgmlCore as the shared base; do not add reverse dependencies from Core to companion addons.
+- Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
+- Prefer focused tests and local validation over broad refactors.
+- Preserve openFrameworks-style public names and document intentional breaking changes.
+## Core Contract
 
-- maintain shared ggml setup, runtime discovery, request/result primitives, tensor/graph helpers, and lightweight smoke-test examples
-- preserve the openFrameworks addon layout and root-level `addon_config.mk`
-- keep examples runnable from the openFrameworks project generator
-- update docs and scripts when changing public behavior
-- keep model-specific workflows in companion addons
-- keep generated build outputs, models, caches, and downloaded upstream sources out of git
+Keep Core small, boring, reusable, and model-agnostic.
 
-Do not add:
+Core may contain shared ggml setup, runtime discovery, tensor/graph helpers,
+request/result primitives, lightweight diagnostics, validation scripts, and
+smoke-test examples.
 
-- model downloads
-- llama.cpp server lifecycle
-- text/chat/embedding UX
-- SAM, diffusion, audio, music, video, RAG, or agent-specific user workflows
-- large model files or generated binaries
-- hidden global runtime state
+Do not add model-specific workflows here. Text/chat/embeddings belong in
+ofxGgmlLlama; audio and Whisper workflows in ofxGgmlAudio; segmentation in
+ofxGgmlSam; diffusion/image generation in ofxGgmlDiffusion; vision in
+ofxGgmlVision; retrieval in ofxGgmlRag; planning/tool loops in ofxGgmlAgents;
+video in ofxGgmlVideo; and music workflows in ofxGgmlMusic.
 
-## Codex workflow
+## openFrameworks Addon Rules
 
-1. Inspect the existing README, docs, scripts, `addon_config.mk`, and relevant `src/` files first.
-2. Propose the smallest implementation plan before editing.
-3. Keep diffs focused and reversible.
-4. Update examples/docs/scripts together with code changes.
-5. Mention companion-addon boundaries explicitly if a request belongs outside Core.
-6. Summarize changed files, validation performed, and follow-up work.
+- Preserve the standard addon layout, root-level addon_config.mk, src, scripts, docs, and examples.
+- Keep examples projectGenerator-friendly.
+- Avoid hardcoded absolute local paths.
+- Keep addon_config.mk source/include lists aligned with moved or added files.
+
+## Validation
+
+Validation before handoff: scripts\release-candidate.ps1.
+
+For ecosystem planning work, run scripts\plan-ecosystem.ps1 from ofxGgmlCore
+before proposing addon-code changes.
+
+## Ecosystem Notes
+
+Model-specific UX belongs in companion addons. Shared code should move down into
+ofxGgmlCore only after it is stable, domain-neutral, dependency-light, and
+covered by focused tests.
