@@ -14,7 +14,8 @@ foreach ($expected in @(
 	"Snapshot",
 	"classified legacy/reference siblings",
 	"Agent Guardrails",
-	"Do not edit addon source"
+	"Do not edit addon source",
+	"plan-agent-branch-cleanup.bat"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
 		throw "ecosystem agent plan output did not contain expected text: $expected"
