@@ -11,12 +11,8 @@
 - Hardened Core example Project Generator repair to strip stale split-addon
   SAM/Llama include directories, library directories, libraries, and defines.
 - Updated Core docs to use the unified `ofxGgmlLlama` example runner commands.
-- Restored committed `addon_config.mk` to the portable CPU baseline while
-  keeping `setup-ggml -Auto` as the local backend detection path.
 - Added release-candidate and family-status scripts, plus validation coverage
   for the new release script surface.
-- Applied `ofxGgmlRuntimeSettings::threads` to the CPU backend during runtime
-  setup.
 - Added family-wide Hermes/Codex/Copilot instruction generation for active
   addon repos.
 - Added an ecosystem agent planning layer with `docs/ECOSYSTEM_AGENT.md` and

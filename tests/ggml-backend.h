@@ -7,7 +7,6 @@
 
 struct ggml_backend {
 	std::string name = "CPU";
-	int threads = 0;
 };
 
 struct ggml_backend_buffer {
@@ -23,11 +22,6 @@ inline int & ggml_test_backend_live_count() {
 }
 
 inline int & ggml_test_buffer_live_count() {
-	static int count = 0;
-	return count;
-}
-
-inline int & ggml_test_backend_last_thread_count() {
 	static int count = 0;
 	return count;
 }

@@ -18,8 +18,8 @@ This tracks the current addon-family baseline after the first companion split.
 | `ofxGgmlAgents` | `v1.0.1` | `b81a5e0` | planning request/example baseline |
 
 Core `main` is ahead of the `v1.0.1` tag for family-map documentation and
-generated project repair hardening. Do not retag Core unless preparing a new
-patch release.
+ecosystem agent tooling. Do not retag Core unless preparing a new patch
+release.
 
 ## Baseline Standard
 

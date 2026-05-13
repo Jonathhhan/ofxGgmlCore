@@ -39,19 +39,6 @@ OFXGGML_TEST(runtime_setup_explicit_cpu_backend) {
 	OFXGGML_REQUIRE(runtime.getBackendName() == "CPU");
 }
 
-OFXGGML_TEST(runtime_applies_cpu_thread_setting) {
-	ofxGgmlRuntime runtime;
-	ofxGgmlRuntimeSettings settings;
-	settings.preferredBackend = ofxGgmlBackend::CPU;
-	settings.threads = 3;
-	ggml_test_backend_last_thread_count() = 0;
-
-	auto result = runtime.setup(settings);
-
-	OFXGGML_REQUIRE(result.isOk());
-	OFXGGML_REQUIRE(ggml_test_backend_last_thread_count() == 3);
-}
-
 OFXGGML_TEST(runtime_requested_gpu_falls_back_or_errors) {
 	for (const ofxGgmlBackend backend : {
 		ofxGgmlBackend::CUDA,
