@@ -54,7 +54,7 @@ function ConvertTo-MarkdownPlan {
 		$lines.Add("- Review dirty repositories before cross-repo edits: $dirtyList.")
 	}
 	if ($missingDoctor.Count -gt 0) {
-		$lines.Add("- Consider doctor scripts for lanes that still lack quick local diagnostics: $(@($missingDoctor | ForEach-Object { $_.Name }) -join ', ').")
+		$lines.Add("- Use ``scripts\plan-doctor-rollout.bat`` for lanes that still lack quick local diagnostics: $(@($missingDoctor | ForEach-Object { $_.Name }) -join ', ').")
 	}
 	if ($missingRepos.Count -eq 0 -and $missingValidation.Count -eq 0) {
 		$lines.Add("- Keep agent and validation instructions current before widening any addon runtime behavior.")
@@ -75,6 +75,7 @@ function ConvertTo-MarkdownPlan {
 	$lines.Add("scripts\write-agent-instructions.bat -Check")
 	$lines.Add("scripts\audit-ecosystem.bat -Strict")
 	$lines.Add("scripts\plan-ecosystem.bat")
+	$lines.Add("scripts\plan-doctor-rollout.bat")
 	$lines.Add("scripts\plan-agent-branch-cleanup.bat")
 	$lines.Add("scripts\status-family.bat")
 	$lines.Add('```')
