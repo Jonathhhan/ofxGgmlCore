@@ -10,6 +10,8 @@ function ConvertTo-MarkdownPlan {
 
 	$managedStatuses = @($Statuses | Where-Object { $_.Known })
 	$detectedStatuses = @($Statuses | Where-Object { !$_.Known })
+	$unclassifiedDetected = @($detectedStatuses | Where-Object { !$_.Classified })
+	$classifiedDetected = @($detectedStatuses | Where-Object { $_.Classified })
 	$missingRepos = @($managedStatuses | Where-Object { !$_.Present })
 	$missingValidation = @($managedStatuses | Where-Object { $_.Present -and !$_.ValidateScript })
 	$dirtyRepos = @($managedStatuses | Where-Object { $_.Present -and $_.DirtyCount -gt 0 })
@@ -38,8 +40,11 @@ function ConvertTo-MarkdownPlan {
 	if ($missingRepos.Count -gt 0) {
 		$lines.Add("- Restore or intentionally remove missing repositories from the family map: $(@($missingRepos | ForEach-Object { $_.Name }) -join ', ').")
 	}
-	if ($detectedStatuses.Count -gt 0) {
-		$lines.Add("- Classify auto-detected repositories before enabling generated instructions: $(@($detectedStatuses | ForEach-Object { $_.Name }) -join ', ').")
+	if ($unclassifiedDetected.Count -gt 0) {
+		$lines.Add("- Classify auto-detected repositories before enabling generated instructions: $(@($unclassifiedDetected | ForEach-Object { $_.Name }) -join ', ').")
+	}
+	if ($classifiedDetected.Count -gt 0) {
+		$lines.Add("- Keep classified legacy/reference siblings out of managed automation unless explicitly promoted: $(@($classifiedDetected | ForEach-Object { $_.Name }) -join ', ').")
 	}
 	if ($missingValidation.Count -gt 0) {
 		$lines.Add("- Add local validation entry points before feature work: $(@($missingValidation | ForEach-Object { $_.Name }) -join ', ').")

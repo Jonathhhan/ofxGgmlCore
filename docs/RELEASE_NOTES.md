@@ -24,6 +24,8 @@
   validation, release-gate, and detected-sibling readiness.
 - Added `docs\ECOSYSTEM_MANIFEST.json` as the structured source of truth for
   managed repository lanes used by agent tooling.
+- Classified legacy `ofxGgml` sibling clones and scratch snapshots as
+  reference-only repositories outside managed automation.
 
 ## 1.0.1 - 2026-05-12
 

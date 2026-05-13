@@ -79,6 +79,12 @@ Instruction generation updates known repositories by default. Use
 `write-agent-instructions.* -IncludeDiscovered` only after confirming a new
 sibling belongs in the managed ecosystem.
 
+Detected legacy siblings are also classified in the manifest. The current
+classified set points at old `ofxGgml` monorepo clones and local scratch
+snapshots. Agents may use those directories as migration references, but should
+not generate instructions, workflows, release gates, or broad automation there
+unless a repository is intentionally promoted into the managed list.
+
 ## Planning Priorities
 
 When priorities conflict, prefer work in this order:
