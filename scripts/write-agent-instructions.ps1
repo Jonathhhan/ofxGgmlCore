@@ -77,8 +77,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Keep ofxGgmlCore as the shared base; do not add reverse dependencies from Core to companion addons.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
-- Preserve openFrameworks-style public names and document intentional breaking changes.
-$coreAppendix
+- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix
 
 ## Validation
 
@@ -114,8 +113,7 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 - Avoid committing generated outputs, local models, build directories, IDE metadata, downloaded runtimes, caches, or media dumps.
 - Add or update headless tests for public helper behavior.
 - Validation before handoff: $validation.
-- Keep explanations concise and include the files and checks that matter.
-$coreAppendix
+- Keep explanations concise and include the files and checks that matter.$coreAppendix
 "@
 }
 

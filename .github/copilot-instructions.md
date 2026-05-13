@@ -10,7 +10,6 @@ ofxGgmlCore is part of the ofxGgml openFrameworks addon ecosystem.
 - Add or update headless tests for public helper behavior.
 - Validation before handoff: scripts\release-candidate.ps1.
 - Keep explanations concise and include the files and checks that matter.
-
 ## Core Contract
 
 Keep Core small, boring, reusable, and model-agnostic.

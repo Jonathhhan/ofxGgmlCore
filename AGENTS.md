@@ -17,7 +17,6 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
 - Preserve openFrameworks-style public names and document intentional breaking changes.
-
 ## Core Contract
 
 Keep Core small, boring, reusable, and model-agnostic.
