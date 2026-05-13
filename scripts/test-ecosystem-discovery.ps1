@@ -32,6 +32,9 @@ try {
 	if ($experimental.Known) {
 		throw "auto-detected repository was marked as known."
 	}
+	if ($experimental.Classified) {
+		throw "unlisted auto-detected repository was marked as classified."
+	}
 } finally {
 	$resolvedTemp = Resolve-Path $tempRoot -ErrorAction SilentlyContinue
 	$tempBase = [System.IO.Path]::GetTempPath()

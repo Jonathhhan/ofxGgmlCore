@@ -37,6 +37,38 @@ function Get-OfxGgmlKnownMetadata {
 	return $known
 }
 
+function Get-OfxGgmlDetectedClassifications {
+	param([string]$ManifestPath = "")
+
+	if ([string]::IsNullOrWhiteSpace($ManifestPath)) {
+		$coreRoot = Resolve-Path (Join-Path $script:OfxGgmlEcosystemScriptRoot "..")
+		$ManifestPath = Join-Path $coreRoot "docs\ECOSYSTEM_MANIFEST.json"
+	}
+
+	if (!(Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
+		throw "Ecosystem manifest was not found: $ManifestPath"
+	}
+
+	$manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+	$classifications = @{}
+	foreach ($entry in @($manifest.detectedRepositoryClassifications)) {
+		foreach ($required in @("name", "kind", "lane", "scope")) {
+			if ([string]::IsNullOrWhiteSpace([string]$entry.$required)) {
+				throw "Ecosystem manifest detected repository classification is missing '$required': $ManifestPath"
+			}
+		}
+		$classifications[[string]$entry.name] = @{
+			Name = [string]$entry.name
+			Kind = [string]$entry.kind
+			Lane = [string]$entry.lane
+			Scope = [string]$entry.scope
+			Known = $false
+			Classified = $true
+		}
+	}
+	return $classifications
+}
+
 function New-OfxGgmlDiscoveredMetadata {
 	param([string]$Name)
 	return @{
@@ -45,6 +77,7 @@ function New-OfxGgmlDiscoveredMetadata {
 		Lane = "auto-detected ecosystem repository"
 		Scope = "auto-detected sibling repository; classify its lane before broad cross-repo automation"
 		Known = $false
+		Classified = $false
 	}
 }
 
@@ -58,6 +91,7 @@ function Get-OfxGgmlEcosystem {
 	}
 
 	$known = @(Get-OfxGgmlKnownMetadata)
+	$classifications = Get-OfxGgmlDetectedClassifications
 	$seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 	$family = New-Object System.Collections.Generic.List[hashtable]
 
@@ -74,7 +108,11 @@ function Get-OfxGgmlEcosystem {
 		foreach ($directory in $discovered) {
 			if (!$seen.Contains($directory.Name)) {
 				[void]$seen.Add($directory.Name)
-				$family.Add((New-OfxGgmlDiscoveredMetadata -Name $directory.Name))
+				if ($classifications.ContainsKey($directory.Name)) {
+					$family.Add($classifications[$directory.Name])
+				} else {
+					$family.Add((New-OfxGgmlDiscoveredMetadata -Name $directory.Name))
+				}
 			}
 		}
 	}

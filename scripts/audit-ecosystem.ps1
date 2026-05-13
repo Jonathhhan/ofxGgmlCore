@@ -50,7 +50,9 @@ function New-AuditEntry {
 	} else {
 		"missing"
 	}
-	$action = if (!$Status.Known) {
+	$action = if (!$Status.Known -and $Status.Classified) {
+		"reference only; keep out of managed automation"
+	} elseif (!$Status.Known) {
 		"classify detected repo before automation"
 	} elseif (!$Status.Present) {
 		"restore or remove from managed map"
@@ -103,7 +105,7 @@ function ConvertTo-MarkdownAudit {
 		$lines.Add("")
 		$lines.Add("## Detected Siblings")
 		$lines.Add("")
-		$lines.Add("Detected repositories are visible to planning but are not updated by instruction generation unless `-IncludeDiscovered` is used.")
+		$lines.Add("Detected repositories are visible to planning but are not updated by instruction generation unless `-IncludeDiscovered` is used. Classified legacy/reference siblings stay out of managed automation unless explicitly promoted.")
 		$lines.Add("")
 		$lines.Add("| Repository | Instructions | Validation | Dirty | Action |")
 		$lines.Add("| --- | --- | --- | --- | --- |")

@@ -2,6 +2,50 @@
   "schemaVersion": 1,
   "name": "ofxGgml ecosystem",
   "managedInstructionGeneration": "known-repositories-only",
+  "detectedRepositoryClassifications": [
+    {
+      "name": "ofxGgml",
+      "kind": "legacy-reference-repository",
+      "lane": "legacy root addon reference",
+      "scope": "historical ofxGgml root repository; use only as a migration/reference source, not as a managed companion"
+    },
+    {
+      "name": "ofxGgml##",
+      "kind": "local-legacy-snapshot",
+      "lane": "legacy monorepo scratch clone",
+      "scope": "local scratch snapshot of the legacy ofxGgml monorepo; do not include in managed automation"
+    },
+    {
+      "name": "ofxGgml___",
+      "kind": "local-legacy-snapshot",
+      "lane": "legacy monorepo scratch clone",
+      "scope": "local scratch snapshot of the legacy ofxGgml monorepo; do not include in managed automation"
+    },
+    {
+      "name": "ofxGgml______________",
+      "kind": "local-legacy-snapshot",
+      "lane": "legacy monorepo scratch clone",
+      "scope": "local scratch snapshot of the legacy ofxGgml monorepo with generated ggml headers; do not include in managed automation"
+    },
+    {
+      "name": "ofxGgml_X",
+      "kind": "local-legacy-snapshot",
+      "lane": "legacy monorepo scratch clone",
+      "scope": "large dirty local scratch snapshot of the legacy ofxGgml monorepo; do not include in managed automation"
+    },
+    {
+      "name": "ofxGgmlAAAA",
+      "kind": "local-legacy-snapshot",
+      "lane": "legacy creative-workflow snapshot",
+      "scope": "local scratch snapshot with older creative workflow examples; use only as migration/reference material"
+    },
+    {
+      "name": "ofxGgmlXXX",
+      "kind": "local-legacy-snapshot",
+      "lane": "legacy monorepo scratch clone",
+      "scope": "local scratch snapshot with generated/runtime artifacts; do not include in managed automation"
+    }
+  ],
   "repositories": [
     {
       "name": "ofxGgmlCore",

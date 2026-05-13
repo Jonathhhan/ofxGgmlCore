@@ -12,6 +12,7 @@ $text = $output -join "`n"
 foreach ($expected in @(
 	"ofxGgml Ecosystem Audit",
 	"Managed Repositories",
+	"reference only; keep out of managed automation",
 	"ready for planning"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {

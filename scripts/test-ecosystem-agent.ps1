@@ -12,6 +12,7 @@ $text = $output -join "`n"
 foreach ($expected in @(
 	"ofxGgml Ecosystem Agent Plan",
 	"Snapshot",
+	"classified legacy/reference siblings",
 	"Agent Guardrails",
 	"Do not edit addon source"
 )) {

@@ -44,6 +44,10 @@ until they are classified. `write-agent-instructions.*` updates known
 repositories by default; use `-IncludeDiscovered` only after confirming newly
 detected siblings should join the managed ecosystem.
 
+Classified detected siblings in `docs/ECOSYSTEM_MANIFEST.json` are reference or
+scratch repositories. They are visible in audits and plans, but remain outside
+managed instruction generation by default.
+
 The generated instructions are intentionally high-level. They tell agents,
 including Hermes Agent, to keep each companion addon inside its lane, avoid
 committing generated artifacts, preserve `ofxGgmlCore` as the shared base, and

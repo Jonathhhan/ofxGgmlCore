@@ -36,6 +36,7 @@ function Get-AddonStatus {
 	param([hashtable]$Addon)
 	$path = Join-Path $addonsRoot $Addon.Name
 	$known = if ($Addon.ContainsKey("Known")) { [bool]$Addon.Known } else { $false }
+	$classified = if ($Addon.ContainsKey("Classified")) { [bool]$Addon.Classified } else { $known }
 	$present = Test-Path -LiteralPath $path -PathType Container
 	$branch = ""
 	$head = ""
@@ -68,6 +69,7 @@ function Get-AddonStatus {
 		Lane = $Addon.Lane
 		Scope = $Addon.Scope
 		Known = $known
+		Classified = $classified
 		Path = $path
 		Present = $present
 		Branch = $branch
