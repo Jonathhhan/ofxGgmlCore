@@ -77,6 +77,7 @@ cd ../ofxGgmlLlama
 | `scripts\get-ecosystem.ps1` | Shared auto-discovery helper for ofxGgml sibling repositories |
 | `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
 | `scripts\plan-ecosystem.bat` | Generate an agent-facing ecosystem planning handoff |
+| `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
@@ -104,6 +105,9 @@ sibling `ofxGgml*` repositories, and attach known lane metadata where
 available.
 Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
+Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
+merged `codex/*` branches that can be reviewed for cleanup without touching
+classified legacy snapshots.
 
 For Hermes Agent, Codex, and GitHub Copilot support, use
 `scripts\write-agent-instructions.bat` to generate `HERMES.md`, `AGENTS.md`,

@@ -47,6 +47,7 @@ From `ofxGgmlCore`:
 scripts\status-family.bat
 scripts\audit-ecosystem.bat
 scripts\plan-ecosystem.bat
+scripts\plan-agent-branch-cleanup.bat
 scripts\write-agent-instructions.bat -Check
 ```
 
@@ -56,6 +57,7 @@ On macOS/Linux:
 ./scripts/status-family.sh
 ./scripts/audit-ecosystem.sh
 ./scripts/plan-ecosystem.sh
+./scripts/plan-agent-branch-cleanup.sh
 ./scripts/write-agent-instructions.sh -Check
 ```
 
@@ -65,6 +67,11 @@ handoff plan for review.
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,
 validation entry points, and release gates.
+
+Use `scripts\plan-agent-branch-cleanup.bat` after merged Codex, Copilot, or
+Hermes fanout PRs. It only writes a cleanup plan for merged agent branches in
+managed repositories; it does not delete branches or operate on classified
+legacy/reference siblings.
 
 ## Auto-Discovery
 

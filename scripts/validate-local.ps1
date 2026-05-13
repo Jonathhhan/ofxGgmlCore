@@ -59,10 +59,12 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "./scripts/validate-local
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\release-candidate.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\audit-ecosystem.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-ecosystem.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "auto-detected" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-agent-branch-cleanup" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "AGENTS.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "HERMES.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "copilot-instructions.md" "coding agent docs"
@@ -81,6 +83,9 @@ foreach ($requiredScript in @(
 	"plan-ecosystem.bat",
 	"plan-ecosystem.ps1",
 	"plan-ecosystem.sh",
+	"plan-agent-branch-cleanup.bat",
+	"plan-agent-branch-cleanup.ps1",
+	"plan-agent-branch-cleanup.sh",
 	"get-ecosystem.ps1",
 	"status-family.bat",
 	"status-family.ps1",
@@ -179,6 +184,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking ecosystem agent planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-agent.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking agent branch cleanup planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-agent-branch-cleanup.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking agent instruction generator" `
