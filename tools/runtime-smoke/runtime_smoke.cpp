@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 namespace {
 
@@ -12,18 +13,55 @@ bool nearlyEqual(float a, float b) {
     return std::fabs(a - b) < 1e-5f;
 }
 
+ofxGgmlBackend parseBackend(const std::string & value) {
+    if (value == "cpu") return ofxGgmlBackend::CPU;
+    if (value == "cuda") return ofxGgmlBackend::CUDA;
+    if (value == "vulkan") return ofxGgmlBackend::Vulkan;
+    if (value == "metal") return ofxGgmlBackend::Metal;
+    if (value == "opencl") return ofxGgmlBackend::OpenCL;
+    if (value == "auto") return ofxGgmlBackend::Auto;
+    std::cerr << "Unknown backend: " << value << std::endl;
+    std::exit(EXIT_FAILURE);
+}
+
+bool isOptionalBackend(ofxGgmlBackend backend) {
+    return backend != ofxGgmlBackend::CPU;
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char ** argv) {
+    std::string backendName = "cpu";
+    bool requireBackend = false;
+
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "--backend" && i + 1 < argc) {
+            backendName = argv[++i];
+        } else if (arg == "--require-backend") {
+            requireBackend = true;
+        } else {
+            std::cerr << "Usage: runtime_smoke [--backend cpu|cuda|vulkan|metal|opencl|auto] [--require-backend]" << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    const ofxGgmlBackend requestedBackend = parseBackend(backendName);
+
     ofxGgmlRuntime runtime;
 
     ofxGgmlRuntimeSettings settings;
-    settings.preferredBackend = ofxGgmlBackend::CPU;
+    settings.preferredBackend = requestedBackend;
     settings.allowCpuFallback = false;
 
     const auto setupResult = runtime.setup(settings);
     if (!setupResult) {
-        std::cerr << "CPU backend initialization failed: " << setupResult.error << std::endl;
+        std::cerr << ofxGgmlGetBackendName(requestedBackend)
+                  << " backend initialization failed: " << setupResult.error << std::endl;
+        if (isOptionalBackend(requestedBackend) && !requireBackend) {
+            std::cout << "Optional backend unavailable; skipping inference smoke test" << std::endl;
+            return EXIT_SUCCESS;
+        }
         return EXIT_FAILURE;
     }
 
