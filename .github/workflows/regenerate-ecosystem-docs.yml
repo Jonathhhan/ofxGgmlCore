@@ -1,0 +1,12 @@
+name: regenerate-ecosystem-docs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - scripts/*.py
+
+jobs:
+  ecosystem-docs:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/ecosystem-docs.yml@main

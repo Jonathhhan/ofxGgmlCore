@@ -1,0 +1,8 @@
+name: backend-runtime-check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backend-runtime-check:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/backend-runtime-check.yml@main

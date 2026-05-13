@@ -1,0 +1,11 @@
+name: release-check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  release-check:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/release-check.yml@main

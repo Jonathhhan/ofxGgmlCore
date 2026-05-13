@@ -1,0 +1,13 @@
+name: ecosystem-health
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - docs/**
+      - scripts/**
+
+jobs:
+  ecosystem-health:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/ecosystem-health.yml@main

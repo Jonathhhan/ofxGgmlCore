@@ -1,0 +1,27 @@
+{
+  "name": "ofxGgmlCore",
+  "lane": "core",
+  "role": "backend-neutral foundation",
+  "coreBaseline": "v1.0.1",
+  "requires": [],
+  "owns": [
+    "ggml setup",
+    "runtime discovery",
+    "tensor helpers",
+    "graph helpers",
+    "request/result primitives",
+    "validation scripts"
+  ],
+  "platforms": [
+    "windows",
+    "macos",
+    "linux"
+  ],
+  "backends": [
+    "cpu",
+    "cuda",
+    "metal",
+    "vulkan",
+    "opencl"
+  ]
+}

@@ -1,0 +1,8 @@
+name: release-gate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release-gate:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/release-gate.yml@main

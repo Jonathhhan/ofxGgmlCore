@@ -20,6 +20,36 @@ function ConvertTo-ValidationCommand {
 	return "scripts\validate-local.ps1"
 }
 
+function New-CoreAgentAppendix {
+	param([string]$AddonName)
+	if ($AddonName -ne "ofxGgmlCore") {
+		return ""
+	}
+	return @"
+
+## Core Contract
+
+Keep Core small, boring, reusable, and model-agnostic.
+
+Core may contain shared ggml setup, runtime discovery, tensor/graph helpers,
+request/result primitives, lightweight diagnostics, validation scripts, and
+smoke-test examples.
+
+Do not add model-specific workflows here. Text/chat/embeddings belong in
+ofxGgmlLlama; audio and Whisper workflows in ofxGgmlAudio; segmentation in
+ofxGgmlSam; diffusion/image generation in ofxGgmlDiffusion; vision in
+ofxGgmlVision; retrieval in ofxGgmlRag; planning/tool loops in ofxGgmlAgents;
+video in ofxGgmlVideo; and music workflows in ofxGgmlMusic.
+
+## openFrameworks Addon Rules
+
+- Preserve the standard addon layout, root-level addon_config.mk, src, scripts, docs, and examples.
+- Keep examples projectGenerator-friendly.
+- Avoid hardcoded absolute local paths.
+- Keep addon_config.mk source/include lists aligned with moved or added files.
+"@
+}
+
 function New-AgentInstructions {
 	param([hashtable]$Addon)
 
@@ -27,6 +57,7 @@ function New-AgentInstructions {
 	$lane = [string]$Addon["Lane"]
 	$scope = [string]$Addon["Scope"]
 	$validation = ConvertTo-ValidationCommand $name
+	$coreAppendix = New-CoreAgentAppendix $name
 	return @"
 # Codex Repository Instructions
 
@@ -47,6 +78,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
 - Preserve openFrameworks-style public names and document intentional breaking changes.
+$coreAppendix
 
 ## Validation
 
@@ -69,6 +101,7 @@ function New-CopilotInstructions {
 	$name = [string]$Addon["Name"]
 	$scope = [string]$Addon["Scope"]
 	$validation = ConvertTo-ValidationCommand $name
+	$coreAppendix = New-CoreAgentAppendix $name
 	return @"
 # GitHub Copilot Repository Instructions
 
@@ -82,6 +115,7 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 - Add or update headless tests for public helper behavior.
 - Validation before handoff: $validation.
 - Keep explanations concise and include the files and checks that matter.
+$coreAppendix
 "@
 }
 

@@ -1,0 +1,11 @@
+name: backend-capability-report
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/generate-backend-capability-report.py
+
+jobs:
+  backend-capability-report:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/backend-capability-report.yml@main

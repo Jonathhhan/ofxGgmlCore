@@ -1,0 +1,12 @@
+name: ecosystem-health-report
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - scripts/generate-health-report.py
+
+jobs:
+  health-report:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/ecosystem-health-report.yml@main

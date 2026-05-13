@@ -1,0 +1,13 @@
+name: cross-repo-capability-map
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ecosystem.json
+      - "**/ofxggml-addon.json"
+      - scripts/generate-cross-repo-capability-map.py
+
+jobs:
+  capability-map:
+    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/cross-repo-capability-map.yml@main
