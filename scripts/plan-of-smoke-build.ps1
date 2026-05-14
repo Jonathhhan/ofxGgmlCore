@@ -47,8 +47,80 @@ function Get-SmokeBuildAction {
 	}
 }
 
+function Format-PowerShellArgument {
+	param([string]$Value)
+
+	return "'" + ($Value -replace "'", "''") + "'"
+}
+
+function Find-ProjectGenerator {
+	param([string]$OfRoot)
+
+	foreach ($candidate in @(
+		"projectGenerator\projectGeneratorCmd.exe",
+		"projectGenerator\projectGenerator.exe",
+		"projectGenerator\projectGenerator",
+		"projectGenerator-jan2026\projectGeneratorCmd.exe",
+		"projectGenerator-jan2026\projectGenerator.exe",
+		"projectGenerator-jan2026\projectGenerator"
+	)) {
+		$path = Join-Path $OfRoot $candidate
+		if (Test-Path -LiteralPath $path -PathType Leaf) {
+			return $path
+		}
+	}
+
+	return ""
+}
+
+function Get-GeneratedProjectFiles {
+	param(
+		[string]$ExamplePath,
+		[string]$Example
+	)
+
+	$files = New-Object System.Collections.Generic.List[string]
+	foreach ($path in @(
+		(Join-Path $ExamplePath "$Example.vcxproj"),
+		(Join-Path $ExamplePath "Makefile")
+	)) {
+		if (Test-Path -LiteralPath $path -PathType Leaf) {
+			$files.Add($path)
+		}
+	}
+	foreach ($path in @(Get-ChildItem -LiteralPath $ExamplePath -Filter "*.xcodeproj" -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })) {
+		$files.Add($path)
+	}
+
+	return @($files)
+}
+
+function New-ProjectGeneratorCommand {
+	param(
+		[string]$ProjectGeneratorPath,
+		[string]$OfRoot,
+		[string]$ExamplePath,
+		[array]$Addons
+	)
+
+	if ([string]::IsNullOrWhiteSpace($ProjectGeneratorPath)) {
+		return ""
+	}
+
+	$addonList = $Addons -join ","
+	return "& {0} -o {1} -a {2} {3}" -f `
+		(Format-PowerShellArgument $ProjectGeneratorPath),
+		(Format-PowerShellArgument $OfRoot),
+		(Format-PowerShellArgument $addonList),
+		(Format-PowerShellArgument $ExamplePath)
+}
+
 function Get-ExampleMetadata {
-	param([object]$Status)
+	param(
+		[object]$Status,
+		[string]$OfRoot,
+		[string]$ProjectGeneratorPath
+	)
 
 	if (!$Status.Present -or !$Status.Examples -or $Status.Examples.Count -eq 0) {
 		return @()
@@ -75,14 +147,23 @@ function Get-ExampleMetadata {
 		if (!$addons.Contains("ofxGgmlCore")) {
 			$missing.Add("ofxGgmlCore")
 		}
+		$generatedProjectFiles = @(Get-GeneratedProjectFiles -ExamplePath $examplePath -Example $example)
 
 		[pscustomobject]@{
 			Example = $example
+			Path = $examplePath
 			HasAddonsMake = $hasAddonsMake
 			HasOwnerAddon = $addons.Contains([string]$Status.Name)
 			HasCoreAddon = $addons.Contains("ofxGgmlCore")
 			Addons = $addons
 			Missing = @($missing)
+			HasGeneratedProject = $generatedProjectFiles.Count -gt 0
+			GeneratedProjectFiles = $generatedProjectFiles
+			ProjectGeneratorCommand = New-ProjectGeneratorCommand `
+				-ProjectGeneratorPath $ProjectGeneratorPath `
+				-OfRoot $OfRoot `
+				-ExamplePath $examplePath `
+				-Addons $addons
 		}
 	})
 }
@@ -107,17 +188,21 @@ function Format-ExampleMetadataSummary {
 function ConvertTo-MarkdownSmokeBuildPlan {
 	param(
 		[array]$Records,
-		[string]$Root
+		[string]$Root,
+		[string]$ProjectGeneratorPath
 	)
 
 	$ready = @($Records | Where-Object { $_.Phase -eq "ready-for-project-generation-check" })
 	$exampleMetadata = @($Records | ForEach-Object { $_.ExampleMetadata })
+	$projectGeneratorCommands = @($exampleMetadata | Where-Object { ![string]::IsNullOrWhiteSpace($_.ProjectGeneratorCommand) })
+	$generatedProjects = @($exampleMetadata | Where-Object { $_.HasGeneratedProject })
 	$lines = New-Object System.Collections.Generic.List[string]
 	$lines.Add("# openFrameworks Smoke Build Plan")
 	$lines.Add("")
 	$lines.Add("Non-mutating rollout plan for moving the managed ofxGgml ecosystem from structural checks toward real openFrameworks project-generation and compile validation.")
 	$lines.Add("")
 	$lines.Add("Root: $Root")
+	$lines.Add("ProjectGenerator: $(if ([string]::IsNullOrWhiteSpace($ProjectGeneratorPath)) { 'not detected' } else { $ProjectGeneratorPath })")
 	$lines.Add("")
 	$lines.Add("## Summary")
 	$lines.Add("")
@@ -131,6 +216,8 @@ function ConvertTo-MarkdownSmokeBuildPlan {
 	$lines.Add("| Examples with addons.make | $(@($exampleMetadata | Where-Object { $_.HasAddonsMake }).Count) |")
 	$lines.Add("| Examples missing owner addon | $(@($exampleMetadata | Where-Object { !$_.HasOwnerAddon }).Count) |")
 	$lines.Add("| Examples missing ofxGgmlCore | $(@($exampleMetadata | Where-Object { !$_.HasCoreAddon }).Count) |")
+	$lines.Add("| Examples with projectGenerator commands | $($projectGeneratorCommands.Count) |")
+	$lines.Add("| Examples with generated project files | $($generatedProjects.Count) |")
 	$lines.Add("")
 	$lines.Add("## Repository Plan")
 	$lines.Add("")
@@ -140,6 +227,21 @@ function ConvertTo-MarkdownSmokeBuildPlan {
 		$examples = if ($record.Examples.Count -gt 0) { $record.Examples -join ", " } else { "-" }
 		$metadata = Format-ExampleMetadataSummary -Record $record
 		$lines.Add(('| `{0}` | `{1}` | `{2}` | `{3}` | `{4}` | {5} |' -f $record.Repository, $record.Lane, $examples, $metadata, $record.Phase, $record.Action))
+	}
+	if ($projectGeneratorCommands.Count -gt 0) {
+		$lines.Add("")
+		$lines.Add("## ProjectGenerator Command Plan")
+		$lines.Add("")
+		$lines.Add("These commands are for manual or CI verification planning. Do not commit generated project files unless an addon explicitly owns them.")
+		$lines.Add("")
+		$lines.Add("| Repository | Example | Generated project | Command |")
+		$lines.Add("| --- | --- | --- | --- |")
+		foreach ($record in $Records) {
+			foreach ($example in @($record.ExampleMetadata | Where-Object { ![string]::IsNullOrWhiteSpace($_.ProjectGeneratorCommand) })) {
+				$generatedProject = if ($example.HasGeneratedProject) { "present" } else { "missing" }
+				$lines.Add(('| `{0}` | `{1}` | `{2}` | `{3}` |' -f $record.Repository, $example.Example, $generatedProject, $example.ProjectGeneratorCommand))
+			}
+		}
 	}
 	$lines.Add("")
 	$lines.Add("## Guardrails")
@@ -159,9 +261,11 @@ if (!$?) {
 }
 
 $status = $statusJson | ConvertFrom-Json
+$ofRoot = Split-Path -Parent ([string]$status.Root)
+$projectGeneratorPath = Find-ProjectGenerator -OfRoot $ofRoot
 $managed = @($status.Addons | Where-Object { $_.Known })
 $records = @($managed | ForEach-Object {
-	$exampleMetadata = @(Get-ExampleMetadata -Status $_)
+	$exampleMetadata = @(Get-ExampleMetadata -Status $_ -OfRoot $ofRoot -ProjectGeneratorPath $projectGeneratorPath)
 	$phase = Get-SmokeBuildPhase -Status $_ -ExampleMetadata $exampleMetadata
 	[pscustomobject]@{
 		Repository = [string]$_.Name
@@ -176,10 +280,12 @@ $records = @($managed | ForEach-Object {
 if ($Json) {
 	$content = [pscustomobject]@{
 		Root = $status.Root
+		OfRoot = $ofRoot
+		ProjectGeneratorPath = $projectGeneratorPath
 		Records = $records
 	} | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownSmokeBuildPlan -Records $records -Root ([string]$status.Root)
+	$content = ConvertTo-MarkdownSmokeBuildPlan -Records $records -Root ([string]$status.Root) -ProjectGeneratorPath $projectGeneratorPath
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {
