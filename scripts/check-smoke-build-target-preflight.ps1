@@ -101,12 +101,35 @@ $preflights = @($selection.Targets | ForEach-Object {
 		Checks = @($checks)
 	}
 })
+$readyCommands = @($preflights |
+	Where-Object { $_.Ready -and ![string]::IsNullOrWhiteSpace([string]$_.Command) } |
+	ForEach-Object { [string]$_.Command })
+$postflightCommands = @($preflights |
+	Where-Object { $_.Ready } |
+	ForEach-Object { "scripts\check-smoke-build-target-postflight.bat -Stage $Stage -Repository $($_.Repository) -Example $($_.Example)" })
+$nextCommands = @()
+if ($readyCommands.Count -gt 0) {
+	$nextCommands = @($readyCommands + $postflightCommands + @(
+		"scripts\plan-of-smoke-build.bat",
+		"scripts\test-artifact-hygiene.ps1"
+	))
+} else {
+	$nextCommands = @(
+		"# Preflight is blocked. Fix BLOCKED checks before running projectGenerator.",
+		"scripts\check-smoke-build-target-preflight.bat -Stage $Stage -First $First"
+	)
+}
+$safetyNote = "Run projectGenerator commands only when every preflight check is OK. Use postflight immediately after acting on a target."
 
 if ($Json) {
 	[pscustomobject]@{
 		Root = $plan.Root
 		Stage = $Stage
 		Preflights = $preflights
+		ReadyCommands = $readyCommands
+		PostflightCommands = $postflightCommands
+		NextCommands = $nextCommands
+		SafetyNote = $safetyNote
 	} | ConvertTo-Json -Depth 8
 	return
 }
@@ -144,5 +167,15 @@ foreach ($preflight in $preflights) {
 	}
 	$lines.Add("")
 }
+
+$lines.Add("## Next Commands")
+$lines.Add("")
+$lines.Add('```powershell')
+foreach ($command in $nextCommands) {
+	$lines.Add($command)
+}
+$lines.Add('```')
+$lines.Add("")
+$lines.Add($safetyNote)
 
 Write-Output ($lines -join [Environment]::NewLine)

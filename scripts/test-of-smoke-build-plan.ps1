@@ -182,6 +182,7 @@ foreach ($expected in @(
 	"projectGenerator detected",
 	"owning repository clean",
 	"target stage matches filesystem",
+	"Next Commands",
 	"Ready:"
 )) {
 	if ($preflightText -notmatch [regex]::Escape($expected)) {
@@ -200,6 +201,22 @@ if (!$preflightParsed.Preflights -or $preflightParsed.Preflights.Count -ne 1) {
 }
 if (!$preflightParsed.Preflights[0].Checks -or $preflightParsed.Preflights[0].Checks.Count -eq 0) {
 	throw "smoke build target preflight JSON did not include checks."
+}
+if (!$preflightParsed.NextCommands -or $preflightParsed.NextCommands.Count -eq 0) {
+	throw "smoke build target preflight JSON did not include next commands."
+}
+if ([string]::IsNullOrWhiteSpace([string]$preflightParsed.SafetyNote)) {
+	throw "smoke build target preflight JSON did not include SafetyNote."
+}
+if ($preflightParsed.Preflights[0].Ready) {
+	if (!$preflightParsed.ReadyCommands -or $preflightParsed.ReadyCommands.Count -eq 0) {
+		throw "ready smoke build target preflight JSON did not include ready commands."
+	}
+	if (!$preflightParsed.PostflightCommands -or $preflightParsed.PostflightCommands.Count -eq 0) {
+		throw "ready smoke build target preflight JSON did not include postflight commands."
+	}
+} elseif ([string]@($preflightParsed.NextCommands)[0] -notmatch "Preflight is blocked") {
+	throw "blocked smoke build target preflight JSON did not start next commands with a blocked note."
 }
 
 $postflightOutput = & $postflightScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
