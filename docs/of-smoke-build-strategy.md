@@ -30,6 +30,9 @@ Use `scripts\select-smoke-build-target.bat` to read the next target from that
 queue without parsing the full plan output.
 Use `scripts\plan-smoke-build-target-handoff.bat` when Codex, Copilot, or
 Hermes needs the selected target plus validation and artifact hygiene steps.
+Use `scripts\check-smoke-build-target-preflight.bat` immediately before acting
+on a selected target to verify projectGenerator detection, example metadata,
+repository cleanliness, and generated-project state.
 
 ## Planned smoke-build phases
 

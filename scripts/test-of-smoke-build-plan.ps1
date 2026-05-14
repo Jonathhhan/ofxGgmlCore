@@ -4,6 +4,7 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-of-smoke-build.ps1"
 $selectScript = Join-Path $scriptRoot "select-smoke-build-target.ps1"
 $handoffScript = Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1"
+$preflightScript = Join-Path $scriptRoot "check-smoke-build-target-preflight.ps1"
 
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -148,4 +149,35 @@ if (!$handoffParsed.Targets -or $handoffParsed.Targets.Count -ne 1) {
 }
 if (!$handoffParsed.Validation -or $handoffParsed.Validation.Count -eq 0) {
 	throw "smoke build target handoff JSON did not include validation commands."
+}
+
+$preflightOutput = & $preflightScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-preflight.ps1 failed."
+}
+
+$preflightText = $preflightOutput -join "`n"
+foreach ($expected in @(
+	"Smoke Build Target Preflight",
+	"projectGenerator detected",
+	"owning repository clean",
+	"target stage matches filesystem",
+	"Ready:"
+)) {
+	if ($preflightText -notmatch [regex]::Escape($expected)) {
+		throw "smoke build target preflight output did not contain expected text: $expected"
+	}
+}
+
+$preflightJsonOutput = & $preflightScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-preflight.ps1 -Json failed."
+}
+
+$preflightParsed = ($preflightJsonOutput -join "`n") | ConvertFrom-Json
+if (!$preflightParsed.Preflights -or $preflightParsed.Preflights.Count -ne 1) {
+	throw "smoke build target preflight JSON did not include exactly one preflight."
+}
+if (!$preflightParsed.Preflights[0].Checks -or $preflightParsed.Preflights[0].Checks.Count -eq 0) {
+	throw "smoke build target preflight JSON did not include checks."
 }
