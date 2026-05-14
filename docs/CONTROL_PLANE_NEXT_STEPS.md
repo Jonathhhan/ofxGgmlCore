@@ -6,7 +6,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 
 - Keep `docs\CODING_AGENT_WORK.md` aligned with `scripts\plan-coding-agent-work.bat` after control-plane changes.
 - Treat stale generic lane-uplift rows as a regression when the target lane already has a workflow guide.
-- Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work.
+- Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work; it now includes a deterministic release-readiness planning pass.
 
 ## P2: Workflow Observability
 

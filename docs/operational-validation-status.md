@@ -24,6 +24,7 @@ scripts\check-ecosystem-readiness.bat -SkipDoctorTests
 scripts\audit-ecosystem.bat -Strict
 scripts\plan-ecosystem.bat
 scripts\plan-coding-agent-work.bat
+scripts\plan-release-readiness.bat -SkipWorkflowStatus
 ```
 
 The readiness pass currently verifies:
@@ -33,6 +34,7 @@ The readiness pass currently verifies:
 - strict ecosystem audit passes
 - ecosystem planning handoff runs
 - coding-agent work queue generation runs
+- release-readiness planning runs without requiring live workflow access
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs
 

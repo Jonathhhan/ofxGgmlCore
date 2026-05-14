@@ -18,6 +18,7 @@ foreach ($expected in @(
 	"ecosystem audit strict",
 	"doctor rollout plan",
 	"coding agent work queue",
+	"release readiness plan",
 	"agent branch cleanup plan",
 	"Readiness passed"
 )) {
@@ -42,4 +43,9 @@ if (!$parsed.Steps -or $parsed.Steps.Count -eq 0) {
 $workflowGuideStep = @($parsed.Steps | Where-Object { $_.Name -eq "workflow guide coverage" } | Select-Object -First 1)
 if ($workflowGuideStep.Count -eq 0 -or $workflowGuideStep[0].State -ne "OK") {
 	throw "ecosystem readiness JSON did not report workflow guide coverage as OK."
+}
+
+$releaseReadinessStep = @($parsed.Steps | Where-Object { $_.Name -eq "release readiness plan" } | Select-Object -First 1)
+if ($releaseReadinessStep.Count -eq 0 -or $releaseReadinessStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report release readiness plan as OK."
 }
