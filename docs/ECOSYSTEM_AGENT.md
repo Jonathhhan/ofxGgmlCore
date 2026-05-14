@@ -76,6 +76,9 @@ to write a prioritized, agent-safe work queue. It is designed for Codex,
 GitHub Copilot, and Hermes Agent sessions that need a next concrete task with
 suggested files and validation commands.
 
+The latest committed queue snapshot lives at `docs\CODING_AGENT_WORK.md`.
+Follow-up control-plane planning lives at `docs\CONTROL_PLANE_NEXT_STEPS.md`.
+
 The coding-agent queue auto-detects completed planning guides. Companion lanes
 with `docs\*_WORKFLOWS.md`, Core with `docs\ECOSYSTEM_AGENT.md`, and
 `ofxGgmlWorkflows` with `docs\workflow-adoption.md` are listed as completed

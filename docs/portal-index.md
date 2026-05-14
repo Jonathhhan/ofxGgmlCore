@@ -10,11 +10,16 @@
 
 ## Generated ecosystem documents
 
+- [coding agent work queue](./CODING_AGENT_WORK.md)
 - [ecosystem dashboard](./ecosystem-dashboard.md)
 - [dependency graph](./ecosystem-dependency-graph.md)
 - [compatibility matrix](./compatibility-matrix.md)
 - [release plan](./release-plan.md)
 - [PR fanout plan](./pr-fanout-plan.md)
+
+## Control plane planning
+
+- [control plane next steps](./CONTROL_PLANE_NEXT_STEPS.md)
 
 ## Automation scripts
 
