@@ -6,6 +6,7 @@ $selectScript = Join-Path $scriptRoot "select-smoke-build-target.ps1"
 $handoffScript = Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1"
 $preflightScript = Join-Path $scriptRoot "check-smoke-build-target-preflight.ps1"
 $postflightScript = Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1"
+$repairPlanScript = Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1"
 
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -177,6 +178,9 @@ if (!$handoffParsed.TargetCommands -or $handoffParsed.TargetCommands.Count -eq 0
 if (!$handoffParsed.PostflightCommands -or $handoffParsed.PostflightCommands.Count -eq 0) {
 	throw "smoke build target handoff JSON did not include postflight commands."
 }
+if (!$handoffParsed.RepairPlanCommands -or $handoffParsed.RepairPlanCommands.Count -eq 0) {
+	throw "smoke build target handoff JSON did not include repair plan commands."
+}
 if ([string]::IsNullOrWhiteSpace([string]$handoffParsed.SafetyNote)) {
 	throw "smoke build target handoff JSON did not include SafetyNote."
 }
@@ -283,6 +287,42 @@ if (@($postflightParsed.NextCommands) -notcontains "scripts\plan-of-smoke-build.
 $nullGeneratedProjectFiles = @($postflightParsed.Postflights[0].GeneratedProjectFiles | Where-Object { $null -eq $_ -or [string]::IsNullOrWhiteSpace([string]$_) })
 if ($nullGeneratedProjectFiles.Count -gt 0) {
 	throw "smoke build target postflight JSON included null or empty generated project file entries."
+}
+
+$repairPlanOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-project-repair.ps1 failed."
+}
+$repairPlanText = $repairPlanOutput -join "`n"
+foreach ($expected in @(
+	"Smoke Build Project Repair Plan",
+	"ready-for-compile-validation",
+	"Expected Addon References",
+	"Combined Next Commands",
+	"ofxGgmlCore",
+	"ofxImGui"
+)) {
+	if ($repairPlanText -notmatch [regex]::Escape($expected)) {
+		throw "smoke build project repair plan output did not contain expected text: $expected"
+	}
+}
+
+$repairPlanJsonOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-project-repair.ps1 -Json failed."
+}
+$repairPlanParsed = ($repairPlanJsonOutput -join "`n") | ConvertFrom-Json
+if (!$repairPlanParsed.Repairs -or $repairPlanParsed.Repairs.Count -ne 1) {
+	throw "smoke build project repair plan JSON did not include exactly one repair target."
+}
+if ($repairPlanParsed.Repairs[0].State -ne "ready-for-compile-validation") {
+	throw "Core smoke build project repair plan did not report compile-validation readiness."
+}
+if (!$repairPlanParsed.Repairs[0].ExpectedReferences -or $repairPlanParsed.Repairs[0].ExpectedReferences.Count -eq 0) {
+	throw "smoke build project repair plan JSON did not include expected addon references."
+}
+if (!$repairPlanParsed.NextCommands -or $repairPlanParsed.NextCommands.Count -eq 0) {
+	throw "smoke build project repair plan JSON did not include next commands."
 }
 
 $corePostflightJsonOutput = & $postflightScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }

@@ -38,6 +38,10 @@ to report generated project files, pending git impact, and the validation
 commands that should run before any handoff. The postflight distinguishes
 generated Visual Studio project files that merely exist from projects that
 actually reference the expected owner and companion addons.
+Use `scripts\plan-smoke-build-project-repair.bat` when postflight reports
+missing Visual Studio addon wiring; it produces a non-mutating repair plan with
+the expected owner and companion addon references plus the next validation
+commands.
 
 Current Windows projectGenerator evidence: Core now prefers the embedded
 command-line generator at `projectGenerator\resources\app\app\projectGenerator.exe`
@@ -47,7 +51,10 @@ but projectGenerator exited during addon processing before addon include and
 library settings were fully written. Core postflight now reports that case as
 incomplete addon wiring instead of treating the project as verified. Treat
 generated-project verification and compile gates as blocked until that
-addon-processing failure is fixed or worked around.
+addon-processing failure is fixed or worked around. The repair planner records
+the expected references for that case so agents can either retry
+projectGenerator or perform an explicit generated-project repair before compile
+validation.
 
 ## Planned smoke-build phases
 
@@ -71,6 +78,7 @@ Project generation validation:
 - run projectGenerator
 - generate example projects
 - verify generated project structure
+- plan generated-project repair when Visual Studio addon wiring is incomplete
 - keep generated project files out of git unless a repository explicitly owns them
 
 ### Phase 3
