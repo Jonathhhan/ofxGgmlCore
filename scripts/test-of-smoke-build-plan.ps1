@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-of-smoke-build.ps1"
+$selectScript = Join-Path $scriptRoot "select-smoke-build-target.ps1"
 
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -84,4 +85,34 @@ if (![string]::IsNullOrWhiteSpace([string]$parsed.ProjectGeneratorPath)) {
 	if ($generateTargets.Count -eq 0) {
 		throw "openFrameworks smoke build plan detected projectGenerator but did not identify project-generation targets."
 	}
+}
+
+$targetOutput = & $selectScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "select-smoke-build-target.ps1 failed."
+}
+
+$targetText = $targetOutput -join "`n"
+foreach ($expected in @(
+	"openFrameworks Smoke Build Target",
+	"Stage filter: generate-project",
+	"generate-project",
+	"Commands"
+)) {
+	if ($targetText -notmatch [regex]::Escape($expected)) {
+		throw "smoke build target selector output did not contain expected text: $expected"
+	}
+}
+
+$targetJsonOutput = & $selectScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "select-smoke-build-target.ps1 -Json failed."
+}
+
+$targetParsed = ($targetJsonOutput -join "`n") | ConvertFrom-Json
+if (!$targetParsed.Targets -or $targetParsed.Targets.Count -ne 1) {
+	throw "smoke build target selector JSON did not include exactly one target."
+}
+if ($targetParsed.Targets[0].Stage -ne "generate-project") {
+	throw "smoke build target selector returned the wrong target stage."
 }
