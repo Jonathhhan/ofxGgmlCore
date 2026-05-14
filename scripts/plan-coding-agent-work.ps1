@@ -192,8 +192,8 @@ if ($tasks.Count -eq 0 -and $managedReady.Count -gt 0) {
 			-Category "control-plane" `
 			-Task "Keep the ecosystem control plane current by refreshing queue, readiness, smoke-build, workflow observability, and release-evidence docs." `
 			-Rationale "When every managed repository is instruction-ready, the next safest work is improving shared planning, smoke-build, and release-readiness signals." `
-			-SuggestedFiles "docs/CODING_AGENT_WORK.md; docs/CONTROL_PLANE_NEXT_STEPS.md; docs/operational-validation-status.md; docs/of-smoke-build-strategy.md; scripts/check-ecosystem-readiness.ps1; scripts/plan-of-smoke-build.ps1; scripts/plan-release-readiness.ps1" `
-			-Validation "scripts/check-ecosystem-readiness.bat -SkipDoctorTests"))
+			-SuggestedFiles "docs/CODING_AGENT_WORK.md; docs/CONTROL_PLANE_NEXT_STEPS.md; docs/operational-validation-status.md; docs/of-smoke-build-strategy.md; scripts/check-ecosystem-readiness.ps1; scripts/plan-of-smoke-build.ps1; scripts/select-smoke-build-target.ps1; scripts/plan-smoke-build-target-handoff.ps1; scripts/check-smoke-build-target-preflight.ps1; scripts/check-smoke-build-target-postflight.ps1; scripts/plan-release-readiness.ps1" `
+			-Validation "scripts/check-ecosystem-readiness.bat -SkipDoctorTests; scripts/plan-smoke-build-target-handoff.bat -Stage generate-project; scripts/check-smoke-build-target-preflight.bat -Stage generate-project; scripts/check-smoke-build-target-postflight.bat -Stage generate-project"))
 	}
 
 	foreach ($laneRepo in @($managedReady | Where-Object { $_.Name -ne "ofxGgmlCore" -and $_.Name -ne "ofxGgmlWorkflows" -and !$_.AgentWorkflowGuide } | Sort-Object Name)) {
