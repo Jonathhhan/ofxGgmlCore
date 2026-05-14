@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-of-smoke-build.ps1"
 $selectScript = Join-Path $scriptRoot "select-smoke-build-target.ps1"
+$handoffScript = Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1"
 
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -115,4 +116,36 @@ if (!$targetParsed.Targets -or $targetParsed.Targets.Count -ne 1) {
 }
 if ($targetParsed.Targets[0].Stage -ne "generate-project") {
 	throw "smoke build target selector returned the wrong target stage."
+}
+
+$handoffOutput = & $handoffScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-target-handoff.ps1 failed."
+}
+
+$handoffText = $handoffOutput -join "`n"
+foreach ($expected in @(
+	"Smoke Build Target Handoff",
+	"Targets",
+	"Validation",
+	"Guardrails",
+	"test-artifact-hygiene.ps1",
+	"Do not commit generated openFrameworks project files"
+)) {
+	if ($handoffText -notmatch [regex]::Escape($expected)) {
+		throw "smoke build target handoff output did not contain expected text: $expected"
+	}
+}
+
+$handoffJsonOutput = & $handoffScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-target-handoff.ps1 -Json failed."
+}
+
+$handoffParsed = ($handoffJsonOutput -join "`n") | ConvertFrom-Json
+if (!$handoffParsed.Targets -or $handoffParsed.Targets.Count -ne 1) {
+	throw "smoke build target handoff JSON did not include exactly one target."
+}
+if (!$handoffParsed.Validation -or $handoffParsed.Validation.Count -eq 0) {
+	throw "smoke build target handoff JSON did not include validation commands."
 }

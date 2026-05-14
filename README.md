@@ -81,6 +81,7 @@ cd ../ofxGgmlLlama
 | `scripts\plan-coding-agent-work.bat` | Generate a prioritized Codex/Copilot/Hermes-safe work queue |
 | `scripts\plan-of-smoke-build.bat` | Plan openFrameworks project-generation and smoke-build rollout |
 | `scripts\select-smoke-build-target.bat` | Select the next smoke-build target from the generated rollout queue |
+| `scripts\plan-smoke-build-target-handoff.bat` | Generate an agent checklist for the selected smoke-build target |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-release-readiness.bat` | Generate release-readiness evidence from workflow status and policy metadata |
@@ -127,6 +128,9 @@ Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
 project-generation and smoke-build rollout before adding compile gates.
 Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an
 agent needs the next concrete smoke-build target without parsing the full plan.
+Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` when
+an agent needs the command, validation checklist, and artifact guardrails for
+that selected target.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.
