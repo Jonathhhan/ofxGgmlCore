@@ -13,7 +13,8 @@ The ecosystem currently provides:
 - baseline compatibility enforcement
 - live workflow observability scaffolding
 
-Current smoke workflows do not yet compile examples.
+Current smoke workflows now include pull-request gated smoke compile validation for generated
+projects via Core-owned generic compile handoff.
 
 Use `scripts\plan-of-smoke-build.bat` from Core to generate the current
 non-mutating rollout plan before adding project-generation or compile gates.
