@@ -47,3 +47,12 @@ foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteC
 		throw "agent branch cleanup summary did not include property: $property"
 	}
 }
+if (!$parsed.NextCommands -or $parsed.NextCommands.Count -eq 0) {
+	throw "agent branch cleanup JSON output did not include NextCommands."
+}
+if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Fetch") {
+	throw "agent branch cleanup JSON next commands did not include the fetch refresh command."
+}
+if ([string]::IsNullOrWhiteSpace([string]$parsed.SafetyNote)) {
+	throw "agent branch cleanup JSON output did not include SafetyNote."
+}

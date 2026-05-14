@@ -137,11 +137,34 @@ function Get-MergedBranches {
 	return @($candidates)
 }
 
+function Get-CleanupNextCommands {
+	param([array]$Candidates)
+
+	$commands = New-Object System.Collections.Generic.List[string]
+	if (!$Fetch) {
+		$commands.Add("scripts\plan-agent-branch-cleanup.bat -Fetch")
+	}
+
+	$deleteCommands = @($Candidates |
+		Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.DeleteCommand) } |
+		ForEach-Object { [string]$_.DeleteCommand })
+	if ($deleteCommands.Count -gt 0) {
+		foreach ($command in $deleteCommands) {
+			$commands.Add($command)
+		}
+	} else {
+		$commands.Add("# No delete commands were generated.")
+	}
+
+	return @($commands.ToArray())
+}
+
 function ConvertTo-MarkdownCleanupPlan {
 	param(
 		[array]$Candidates,
 		[object]$Summary,
-		[string]$Root
+		[string]$Root,
+		[string[]]$NextCommands
 	)
 
 	$lines = New-Object System.Collections.Generic.List[string]
@@ -183,16 +206,8 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("## Next Commands")
 	$lines.Add("")
 	$lines.Add('```powershell')
-	if (!$Fetch) {
-		$lines.Add("scripts\plan-agent-branch-cleanup.bat -Fetch")
-	}
-	$deleteCommands = @($Candidates | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.DeleteCommand) } | ForEach-Object { [string]$_.DeleteCommand })
-	if ($deleteCommands.Count -gt 0) {
-		foreach ($command in $deleteCommands) {
-			$lines.Add($command)
-		}
-	} else {
-		$lines.Add("# No delete commands were generated.")
+	foreach ($command in $NextCommands) {
+		$lines.Add($command)
 	}
 	$lines.Add('```')
 	$lines.Add("")
@@ -217,6 +232,8 @@ $summary = [pscustomobject]@{
 	RemoteDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "remote" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
 	CurrentBranchesSkipped = @($candidates | Where-Object { $_.Current }).Count
 }
+$nextCommands = Get-CleanupNextCommands -Candidates $candidates
+$safetyNote = "This script only writes a plan. Refresh refs with -Fetch before acting, review every command, and keep deletion as an explicit follow-up."
 
 if ($Json) {
 	$content = [pscustomobject]@{
@@ -225,9 +242,11 @@ if ($Json) {
 		Fetched = [bool]$Fetch
 		Summary = $summary
 		Candidates = $candidates
+		NextCommands = $nextCommands
+		SafetyNote = $safetyNote
 	} | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Summary $summary -Root ([string]$status.Root)
+	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {
