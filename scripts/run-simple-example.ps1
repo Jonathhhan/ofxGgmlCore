@@ -9,9 +9,9 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Split-Path -Parent $scriptRoot
-$exampleRoot = Join-Path $addonRoot "ofxGgmlSimpleExample"
+$exampleRoot = Join-Path $addonRoot "ofxGgmlCoreExample"
 $exeSuffix = if ($IsLinux -or $IsMacOS) { "" } else { ".exe" }
-$exampleExe = Join-Path $exampleRoot "bin\ofxGgmlSimpleExample$exeSuffix"
+$exampleExe = Join-Path $exampleRoot "bin\ofxGgmlCoreExample$exeSuffix"
 
 function Write-Step {
 	param([string]$Message)
@@ -32,9 +32,9 @@ if ($Build) {
 
 if (!(Test-Path -LiteralPath $exampleExe -PathType Leaf)) {
 	if ($DryRun) {
-		Write-Warning "Simple example executable was not found: $exampleExe"
+		Write-Warning "Core example executable was not found: $exampleExe"
 	} else {
-		throw "Simple example executable was not found: $exampleExe. Run scripts\run-simple-example.bat -Build or scripts\build-simple-example.bat first."
+		throw "Core example executable was not found: $exampleExe. Run scripts\run-simple-example.bat -Build or scripts\build-simple-example.bat first."
 	}
 }
 
@@ -43,6 +43,6 @@ if ($DryRun) {
 	return
 }
 
-Write-Step "Starting ofxGgmlSimpleExample"
+Write-Step "Starting ofxGgmlCoreExample"
 & $exampleExe
 exit $LASTEXITCODE

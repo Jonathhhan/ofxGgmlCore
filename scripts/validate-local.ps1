@@ -248,6 +248,10 @@ Invoke-CheckedScript `
 	-ScriptPath (Join-Path $scriptRoot "test-release-readiness-plan.ps1")
 
 Invoke-CheckedScript `
+	-Label "Checking backend verification planning" `
+	-ScriptPath (Join-Path $scriptRoot "test-backend-verification-plan.ps1")
+
+Invoke-CheckedScript `
 	-Label "Checking ecosystem readiness" `
 	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-readiness.ps1")
 

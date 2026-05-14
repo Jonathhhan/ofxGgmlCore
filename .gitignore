@@ -40,15 +40,15 @@ libs/llama.cpp/
 libs/llama/bin/*
 !libs/llama/bin/.gitkeep
 
-ofxGgmlSimpleExample/bin/
-ofxGgmlSimpleExample/config.make
-ofxGgmlSimpleExample/icon.rc
-ofxGgmlSimpleExample/*.sln
-ofxGgmlSimpleExample/*.vcxproj
-ofxGgmlSimpleExample/*.vcxproj.filters
-!ofxGgmlSimpleExample/bin/data/
-ofxGgmlSimpleExample/bin/data/*
-!ofxGgmlSimpleExample/bin/data/.gitkeep
+ofxGgmlCoreExample/bin/
+ofxGgmlCoreExample/config.make
+ofxGgmlCoreExample/icon.rc
+ofxGgmlCoreExample/*.sln
+ofxGgmlCoreExample/*.vcxproj
+ofxGgmlCoreExample/*.vcxproj.filters
+!ofxGgmlCoreExample/bin/data/
+ofxGgmlCoreExample/bin/data/*
+!ofxGgmlCoreExample/bin/data/.gitkeep
 
 ofxGgmlTextExample/bin/
 ofxGgmlTextExample/config.make

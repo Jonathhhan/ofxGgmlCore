@@ -39,7 +39,7 @@ if (!$?) {
 Assert-Contains $output "ofxGgmlCore doctor" "doctor output"
 Assert-Contains $output "addon root" "doctor output"
 Assert-Contains $output "ggml runtime" "doctor output"
-Assert-Contains $output "ofxGgmlSimpleExample" "doctor output"
+Assert-Contains $output "ofxGgmlCoreExample" "doctor output"
 Assert-Contains $output "ofxGgmlLlama companion" "doctor output"
 
 if (Test-WindowsHost) {

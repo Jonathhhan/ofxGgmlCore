@@ -1,6 +1,6 @@
 param(
 	[string[]]$Examples = @(
-		"ofxGgmlSimpleExample"
+		"ofxGgmlCoreExample"
 	),
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64"

@@ -146,11 +146,11 @@ $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target postflig
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build project repair plan" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1") -Parameters @{
 	Stage = "verify-generated-project"
 	Repository = "ofxGgmlCore"
-	Example = "ofxGgmlSimpleExample"
+	Example = "ofxGgmlCoreExample"
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build compile plan" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-compile.ps1") -Parameters @{
 	Repository = "ofxGgmlCore"
-	Example = "ofxGgmlSimpleExample"
+	Example = "ofxGgmlCoreExample"
 }
 $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters @{
 	OutputPath = $releaseReadinessOutput

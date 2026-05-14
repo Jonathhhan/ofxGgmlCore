@@ -46,7 +46,7 @@ function Get-CompileCommand {
 
 	switch ($Repository) {
 		"ofxGgmlCore" {
-			if ($Example -eq "ofxGgmlSimpleExample") {
+			if ($Example -eq "ofxGgmlCoreExample") {
 				return "scripts\build-simple-example.bat -Example $Example -Configuration $Configuration -Platform $Platform"
 			}
 		}

@@ -103,11 +103,11 @@ if ((Test-Path -LiteralPath $ggmlInclude -PathType Container) -and
 	Write-Check "WARN" "ggml runtime" "run $setupCommand"
 }
 
-$simpleExe = Join-Path $addonRoot "ofxGgmlSimpleExample\bin\ofxGgmlSimpleExample$exeSuffix"
+$simpleExe = Join-Path $addonRoot "ofxGgmlCoreExample\bin\ofxGgmlCoreExample$exeSuffix"
 if (Test-Path -LiteralPath $simpleExe -PathType Leaf) {
-	Write-Check "OK" "ofxGgmlSimpleExample" "built"
+	Write-Check "OK" "ofxGgmlCoreExample" "built"
 } else {
-	Write-Check "WARN" "ofxGgmlSimpleExample" "run $runSimpleCommand"
+	Write-Check "WARN" "ofxGgmlCoreExample" "run $runSimpleCommand"
 }
 
 $llamaSibling = Join-Path $addonParent "ofxGgmlLlama"

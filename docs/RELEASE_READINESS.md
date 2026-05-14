@@ -9,7 +9,7 @@ This is the pre-tag checklist for `ofxGgmlCore` after the companion-addon split.
 - ggml setup pinned to `v0.11.0`
 - backend selection through `setup-ggml` and `first-run`
 - runtime, tensor, graph, GGUF metadata, and result helpers
-- the `ofxGgmlSimpleExample` smoke example
+- the `ofxGgmlCoreExample` smoke example
 - generated Visual Studio project repair helpers
 - artifact hygiene for generated dependencies, binaries, models, and projects
 - documentation that points model-specific workflows to companion addons

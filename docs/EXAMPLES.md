@@ -4,7 +4,7 @@
 
 | Example | Purpose | Model |
 | --- | --- | --- |
-| `ofxGgmlSimpleExample` | Smoke-test the addon, ggml runtime discovery, and ofxImGui integration | none |
+| `ofxGgmlCoreExample` | Smoke-test the addon, ggml runtime discovery, and ofxImGui integration | none |
 
 Run it from the Core addon folder:
 

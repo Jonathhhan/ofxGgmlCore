@@ -63,7 +63,7 @@ try {
 
 	if (!$SkipExampleBuild) {
 		Invoke-CheckedScript `
-			-Label "Building simple example" `
+			-Label "Building Core example" `
 			-ScriptPath (Join-Path $scriptRoot "build-simple-example.ps1") `
 			-Parameters @{
 				Configuration = $Configuration

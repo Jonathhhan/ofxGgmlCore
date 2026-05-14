@@ -91,8 +91,8 @@ try {
 		"libs/sam3.cpp/CMakeLists.txt",
 		"libs/sam3/lib/sam3.lib",
 		"models/model.gguf",
-		"ofxGgmlSimpleExample/ofxGgmlSimpleExample.vcxproj",
-		"ofxGgmlSimpleExample/bin/ofxGgmlSimpleExample.exe"
+		"ofxGgmlCoreExample/ofxGgmlCoreExample.vcxproj",
+		"ofxGgmlCoreExample/bin/ofxGgmlCoreExample.exe"
 	)
 } finally {
 	Pop-Location
