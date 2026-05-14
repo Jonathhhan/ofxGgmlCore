@@ -13,6 +13,7 @@ foreach ($expected in @(
 	"ofxGgml Ecosystem Readiness Check",
 	"Control Plane",
 	"Doctor Smoke Tests",
+	"workflow guide coverage",
 	"agent instructions current",
 	"ecosystem audit strict",
 	"doctor rollout plan",
@@ -36,4 +37,9 @@ if (!$parsed.Passed) {
 }
 if (!$parsed.Steps -or $parsed.Steps.Count -eq 0) {
 	throw "ecosystem readiness JSON did not include steps."
+}
+
+$workflowGuideStep = @($parsed.Steps | Where-Object { $_.Name -eq "workflow guide coverage" } | Select-Object -First 1)
+if ($workflowGuideStep.Count -eq 0 -or $workflowGuideStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report workflow guide coverage as OK."
 }
