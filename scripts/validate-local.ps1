@@ -193,6 +193,10 @@ Invoke-CheckedScript `
 	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-audit.ps1")
 
 Invoke-CheckedScript `
+	-Label "Checking workflow status report" `
+	-ScriptPath (Join-Path $scriptRoot "test-workflow-status-report.ps1")
+
+Invoke-CheckedScript `
 	-Label "Checking ecosystem readiness" `
 	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-readiness.ps1")
 
