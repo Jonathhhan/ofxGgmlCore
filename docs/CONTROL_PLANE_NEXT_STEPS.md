@@ -40,7 +40,8 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Keep cleanup planning non-mutating by default; deletion should remain an explicit follow-up.
 - Use the generated next-commands section as the review checklist, starting with `-Fetch` before acting on stale local refs.
 - Use `scripts\plan-agent-branch-cleanup.bat -Json` when another agent needs machine-readable cleanup commands.
-- Review the summary counts before acting: scanned repositories, local and remote delete candidates, and current branches skipped.
+- Review the summary counts before acting: scanned repositories, local and remote delete candidates, current branches skipped, local and remote agent branches, and repositories that still carry matching branches.
+- Treat non-zero branch inventory with zero delete candidates as a stale-branch triage signal rather than a delete signal; inspect branch diffs before deciding whether old work is superseded.
 - Exclude classified legacy/reference siblings from cleanup suggestions unless they are promoted into the managed set.
 
 ## P2: Release Readiness

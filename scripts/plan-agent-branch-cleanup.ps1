@@ -137,6 +137,46 @@ function Get-MergedBranches {
 	return @($candidates)
 }
 
+function Get-AgentBranchInventory {
+	param([object]$Status)
+
+	$repo = [string]$Status.Path
+	$current = Invoke-Git -Repository $repo -Arguments @("branch", "--show-current")
+	$branches = @()
+
+	$localBranches = Invoke-Git -Repository $repo -Arguments @("branch", "--format", "%(refname:short)")
+	foreach ($branch in @($localBranches -split "`n" | Where-Object { $_ })) {
+		$branch = $branch.Trim()
+		if ($branch -notlike $BranchPattern) {
+			continue
+		}
+		$branches += [pscustomobject]@{
+			Repository = [string]$Status.Name
+			Path = $repo
+			Type = "local"
+			Branch = $branch
+			Current = ($branch -eq $current)
+		}
+	}
+
+	$remoteBranches = Invoke-Git -Repository $repo -Arguments @("branch", "-r", "--format", "%(refname:short)")
+	foreach ($branch in @($remoteBranches -split "`n" | Where-Object { $_ })) {
+		$branch = $branch.Trim()
+		if ($branch -eq "origin/HEAD" -or $branch -notlike "*/$BranchPattern") {
+			continue
+		}
+		$branches += [pscustomobject]@{
+			Repository = [string]$Status.Name
+			Path = $repo
+			Type = "remote"
+			Branch = $branch
+			Current = $false
+		}
+	}
+
+	return @($branches)
+}
+
 function Get-CleanupNextCommands {
 	param([array]$Candidates)
 
@@ -162,6 +202,7 @@ function Get-CleanupNextCommands {
 function ConvertTo-MarkdownCleanupPlan {
 	param(
 		[array]$Candidates,
+		[array]$Inventory,
 		[object]$Summary,
 		[string]$Root,
 		[string[]]$NextCommands
@@ -189,6 +230,24 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("| Local delete candidates | $($Summary.LocalDeleteCandidates) |")
 	$lines.Add("| Remote delete candidates | $($Summary.RemoteDeleteCandidates) |")
 	$lines.Add("| Current branches skipped | $($Summary.CurrentBranchesSkipped) |")
+	$lines.Add("| Local agent branches | $($Summary.LocalAgentBranches) |")
+	$lines.Add("| Remote agent branches | $($Summary.RemoteAgentBranches) |")
+	$lines.Add("| Repositories with agent branches | $($Summary.RepositoriesWithAgentBranches) |")
+	$lines.Add("")
+	$lines.Add("## Branch Inventory")
+	$lines.Add("")
+	$lines.Add("Inventory includes merged and unmerged matching branches. The candidate table only lists branches Git reports as merged into the default branch.")
+	$lines.Add("")
+	if ($Inventory.Count -eq 0) {
+		$lines.Add("No matching agent branches are present in managed repositories.")
+	} else {
+		$lines.Add("| Repository | Type | Branch | Current |")
+		$lines.Add("| --- | --- | --- | --- |")
+		foreach ($branch in $Inventory) {
+			$current = if ($branch.Current) { "yes" } else { "no" }
+			$lines.Add(("| {0} | {1} | ``{2}`` | {3} |" -f $branch.Repository, $branch.Type, $branch.Branch, $current))
+		}
+	}
 	$lines.Add("")
 	$lines.Add("## Candidates")
 	$lines.Add("")
@@ -225,12 +284,16 @@ if (!$?) {
 $status = $statusJson | ConvertFrom-Json
 $repositories = @($status.Addons | Where-Object { $_.Known -and $_.Present })
 $candidates = @($repositories | ForEach-Object { Get-MergedBranches -Status $_ })
+$inventory = @($repositories | ForEach-Object { Get-AgentBranchInventory -Status $_ })
 $summary = [pscustomobject]@{
 	RepositoriesScanned = $repositories.Count
 	DeleteCandidates = @($candidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
 	LocalDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "local" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
 	RemoteDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "remote" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
 	CurrentBranchesSkipped = @($candidates | Where-Object { $_.Current }).Count
+	LocalAgentBranches = @($inventory | Where-Object { $_.Type -eq "local" }).Count
+	RemoteAgentBranches = @($inventory | Where-Object { $_.Type -eq "remote" }).Count
+	RepositoriesWithAgentBranches = @($inventory | ForEach-Object { $_.Repository } | Sort-Object -Unique).Count
 }
 $nextCommands = Get-CleanupNextCommands -Candidates $candidates
 $safetyNote = "This script only writes a plan. Refresh refs with -Fetch before acting, review every command, and keep deletion as an explicit follow-up."
@@ -241,12 +304,13 @@ if ($Json) {
 		BranchPattern = $BranchPattern
 		Fetched = [bool]$Fetch
 		Summary = $summary
+		Inventory = $inventory
 		Candidates = $candidates
 		NextCommands = $nextCommands
 		SafetyNote = $safetyNote
 	} | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands
+	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Inventory $inventory -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {
