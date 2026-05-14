@@ -23,6 +23,8 @@ foreach ($expected in @(
 	"Workflow Status Report",
 	"## Summary",
 	"Missing optional workflows",
+	"Stale required workflows",
+	"Stale threshold",
 	"addon-hygiene.yml",
 	"coding-agent-instructions.yml",
 	"multi-platform-smoke.yml",

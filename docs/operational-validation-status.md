@@ -9,6 +9,7 @@ The ecosystem currently provides:
 - baseline compatibility checks
 - cross-repo metadata reconciliation
 - live workflow observability scaffolding
+- stale workflow run reporting
 - coding-agent work queue generation
 - workflow guide coverage detection
 - multi-platform smoke-build scaffolding
@@ -61,6 +62,7 @@ The current smoke-build workflow:
 
 - validates basic repository structure
 - validates cross-platform workflow execution
+- is visible in the workflow status report with latest-run age and stale-run markers
 - does not yet compile openFrameworks examples
 - does not yet validate CUDA/Metal/Vulkan runtimes
 - does not yet validate runtime inference
