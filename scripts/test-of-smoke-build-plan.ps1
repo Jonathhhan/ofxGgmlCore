@@ -7,6 +7,7 @@ $handoffScript = Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1"
 $preflightScript = Join-Path $scriptRoot "check-smoke-build-target-preflight.ps1"
 $postflightScript = Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1"
 $repairPlanScript = Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1"
+$compilePlanScript = Join-Path $scriptRoot "plan-smoke-build-compile.ps1"
 
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -342,4 +343,39 @@ if (!$coreWiringCheck -or $coreWiringCheck.State -ne "OK") {
 }
 if ($corePostflightParsed.Postflights[0].MissingProjectAddons.Count -gt 0) {
 	throw "Core generated project postflight reported missing addon wiring."
+}
+
+$compilePlanOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-compile.ps1 failed."
+}
+$compilePlanText = $compilePlanOutput -join "`n"
+foreach ($expected in @(
+	"Smoke Build Compile Plan",
+	"compile-example",
+	"Compile Commands",
+	"build-simple-example.bat",
+	"test-artifact-hygiene.ps1"
+)) {
+	if ($compilePlanText -notmatch [regex]::Escape($expected)) {
+		throw "smoke build compile plan output did not contain expected text: $expected"
+	}
+}
+
+$compilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-compile.ps1 -Json failed."
+}
+$compilePlanParsed = ($compilePlanJsonOutput -join "`n") | ConvertFrom-Json
+if (!$compilePlanParsed.Targets -or $compilePlanParsed.Targets.Count -ne 1) {
+	throw "smoke build compile plan JSON did not include exactly one target."
+}
+if ($compilePlanParsed.Targets[0].Stage -ne "compile-example") {
+	throw "Core smoke build compile plan did not report compile-example readiness."
+}
+if ([string]$compilePlanParsed.Targets[0].CompileCommand -notmatch [regex]::Escape("build-simple-example.bat")) {
+	throw "Core smoke build compile plan did not include the focused build command."
+}
+if (!$compilePlanParsed.NextCommands -or $compilePlanParsed.NextCommands.Count -eq 0) {
+	throw "smoke build compile plan JSON did not include next commands."
 }
