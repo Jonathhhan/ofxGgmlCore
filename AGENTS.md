@@ -37,6 +37,20 @@ video in ofxGgmlVideo; and music workflows in ofxGgmlMusic.
 - Keep examples projectGenerator-friendly.
 - Avoid hardcoded absolute local paths.
 - Keep addon_config.mk source/include lists aligned with moved or added files.
+## Smoke-Build Target Lifecycle
+
+For ecosystem smoke-build work, stay in the Core control plane first:
+
+1. Plan: scripts\plan-of-smoke-build.ps1
+2. Select: scripts\select-smoke-build-target.ps1 -Stage generate-project
+3. Handoff: scripts\plan-smoke-build-target-handoff.ps1 -Stage generate-project
+4. Preflight: scripts\check-smoke-build-target-preflight.ps1 -Stage generate-project
+5. Postflight: scripts\check-smoke-build-target-postflight.ps1 -Stage generate-project
+
+Run projectGenerator only after preflight reports the selected target is ready.
+Afterward, run postflight and artifact hygiene before deciding what belongs in
+git. Generated openFrameworks project files remain uncommitted unless the
+owning addon explicitly tracks them.
 
 ## Validation
 
