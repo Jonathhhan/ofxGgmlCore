@@ -60,9 +60,9 @@ if ($commands.Count -gt 0) {
 	$lines.Add("")
 	$lines.Add("## Commands")
 	$lines.Add("")
-foreach ($target in $commands) {
-	$lines.Add(('- `{0}`' -f $target.Command))
-}
+	foreach ($target in $commands) {
+		$lines.Add(('- `{0}`' -f $target.Command))
+	}
 }
 
 Write-Output ($lines -join [Environment]::NewLine)
