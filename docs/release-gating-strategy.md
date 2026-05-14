@@ -44,6 +44,7 @@ Operational workflow gates:
 - stale workflow detection
 - missing smoke-build detection
 - release-train blocking from failed workflows
+- release-readiness score generated with workflow status evidence
 
 ### Phase 3
 
