@@ -60,6 +60,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\release-candida
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\audit-ecosystem.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\check-ecosystem-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-ecosystem.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-coding-agent-work.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
@@ -67,6 +68,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGg
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "auto-detected" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "check-ecosystem-readiness" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-coding-agent-work" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-agent-branch-cleanup" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-doctor-rollout" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "AGENTS.md" "coding agent docs"
@@ -91,6 +93,9 @@ foreach ($requiredScript in @(
 	"plan-ecosystem.bat",
 	"plan-ecosystem.ps1",
 	"plan-ecosystem.sh",
+	"plan-coding-agent-work.bat",
+	"plan-coding-agent-work.ps1",
+	"plan-coding-agent-work.sh",
 	"plan-agent-branch-cleanup.bat",
 	"plan-agent-branch-cleanup.ps1",
 	"plan-agent-branch-cleanup.sh",
@@ -203,6 +208,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking ecosystem agent planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-ecosystem-agent.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking coding agent work planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-coding-agent-work-plan.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking agent branch cleanup planner" `

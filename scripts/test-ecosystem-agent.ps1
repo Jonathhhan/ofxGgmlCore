@@ -15,6 +15,7 @@ foreach ($expected in @(
 	"classified legacy/reference siblings",
 	"Agent Guardrails",
 	"Do not edit addon source",
+	"plan-coding-agent-work.bat",
 	"plan-doctor-rollout.bat",
 	"plan-agent-branch-cleanup.bat"
 )) {
