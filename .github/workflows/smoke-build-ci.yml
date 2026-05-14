@@ -41,3 +41,10 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\run-smoke-build-ci.ps1" -CloneAddonRepos
+
+      - name: Upload smoke build control-plane report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ofx-smoke-build-ci-report
+          path: ${{ github.workspace }}/.smoke-build-ci-report.json
