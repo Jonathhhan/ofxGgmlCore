@@ -230,7 +230,8 @@ foreach ($expected in @(
 	"generated project files",
 	"owning repository git impact",
 	"target stage completion",
-	"Next Validation"
+	"Next Validation",
+	"Next Commands"
 )) {
 	if ($postflightText -notmatch [regex]::Escape($expected)) {
 		throw "smoke build target postflight output did not contain expected text: $expected"
@@ -248,6 +249,21 @@ if (!$postflightParsed.Postflights -or $postflightParsed.Postflights.Count -ne 1
 }
 if (!$postflightParsed.Postflights[0].Checks -or $postflightParsed.Postflights[0].Checks.Count -eq 0) {
 	throw "smoke build target postflight JSON did not include checks."
+}
+if (!$postflightParsed.NextCommands -or $postflightParsed.NextCommands.Count -eq 0) {
+	throw "smoke build target postflight JSON did not include next commands."
+}
+if ([string]::IsNullOrWhiteSpace([string]$postflightParsed.SafetyNote)) {
+	throw "smoke build target postflight JSON did not include SafetyNote."
+}
+if ($null -eq $postflightParsed.IncompleteTargets) {
+	throw "smoke build target postflight JSON did not include IncompleteTargets."
+}
+if ($null -eq $postflightParsed.ReviewTargets) {
+	throw "smoke build target postflight JSON did not include ReviewTargets."
+}
+if (@($postflightParsed.NextCommands) -notcontains "scripts\plan-of-smoke-build.bat") {
+	throw "smoke build target postflight JSON next commands did not include smoke-build planning."
 }
 $nullGeneratedProjectFiles = @($postflightParsed.Postflights[0].GeneratedProjectFiles | Where-Object { $null -eq $_ -or [string]::IsNullOrWhiteSpace([string]$_) })
 if ($nullGeneratedProjectFiles.Count -gt 0) {

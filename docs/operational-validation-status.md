@@ -54,7 +54,7 @@ The readiness pass currently verifies:
 - smoke-build target selection returns the next filtered target without mutating addon worktrees
 - smoke-build target handoff emits validation, artifact-hygiene, and machine-readable next commands for the selected target
 - smoke-build preflight checks projectGenerator, metadata, repository cleanliness, generated-project state, and emits readiness-gated next commands
-- smoke-build postflight reports generated project files, git impact, and next validation after target work
+- smoke-build postflight reports generated project files, git impact, completion/review counts, and next commands after target work
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - doctor rollout planning runs
