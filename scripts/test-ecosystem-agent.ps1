@@ -17,7 +17,11 @@ foreach ($expected in @(
 	"Do not edit addon source",
 	"plan-coding-agent-work.bat",
 	"plan-doctor-rollout.bat",
-	"plan-agent-branch-cleanup.bat"
+	"plan-agent-branch-cleanup.bat",
+	"Smoke-Build Target Lifecycle",
+	"select-smoke-build-target.bat",
+	"check-smoke-build-target-preflight.bat",
+	"check-smoke-build-target-postflight.bat"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
 		throw "ecosystem agent plan output did not contain expected text: $expected"

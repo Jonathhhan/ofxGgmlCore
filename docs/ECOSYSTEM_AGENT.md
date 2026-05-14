@@ -91,6 +91,33 @@ ecosystem audit status, planning handoffs, coding-agent work queue generation,
 workflow guide coverage, doctor rollout status, branch cleanup planning, and
 managed doctor smoke tests.
 
+## Smoke-Build Target Lifecycle
+
+Use the Core smoke-build control plane before any agent runs projectGenerator:
+
+```powershell
+scripts\plan-of-smoke-build.bat
+scripts\select-smoke-build-target.bat -Stage generate-project
+scripts\plan-smoke-build-target-handoff.bat -Stage generate-project
+scripts\check-smoke-build-target-preflight.bat -Stage generate-project
+scripts\check-smoke-build-target-postflight.bat -Stage generate-project
+```
+
+On macOS/Linux:
+
+```sh
+./scripts/plan-of-smoke-build.sh
+./scripts/select-smoke-build-target.sh -Stage generate-project
+./scripts/plan-smoke-build-target-handoff.sh -Stage generate-project
+./scripts/check-smoke-build-target-preflight.sh -Stage generate-project
+./scripts/check-smoke-build-target-postflight.sh -Stage generate-project
+```
+
+Run projectGenerator only after preflight reports the selected target is ready.
+After acting on a target, run postflight with the selected repository and
+example if needed. Do not commit generated project files unless that addon
+intentionally tracks them.
+
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,
 validation entry points, and release gates.
