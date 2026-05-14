@@ -64,6 +64,18 @@ Prefer paired scripts for Windows and macOS/Linux:
 
 If parity is not possible, document the platform-specific limitation.
 
+## Logging policy
+
+Use openFrameworks logging for addon runtime and example status messages:
+
+- `ofLogNotice(...)` for normal state changes and completed operations
+- `ofLogWarning(...)` for recoverable configuration, loading, or validation issues
+- `ofLogError(...)` for failed operations that block the requested action
+- module names for examples and addon subsystems, for example `ofLogNotice("ofxGgmlSamPointExample")`
+
+Keep raw `stdout`/`stderr` only where the executable has a test, CLI, or
+machine-readable output contract.
+
 ## Documentation policy
 
 Update documentation when changing:

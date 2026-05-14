@@ -102,6 +102,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Keep ofxGgmlCore as the shared base; do not add reverse dependencies from Core to companion addons.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
+- Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix$coreSmokeBuildLifecycle
 
 ## Validation
@@ -137,6 +138,7 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 - For ecosystem planning tasks, prefer instruction, documentation, workflow, and validation changes before addon source changes.
 - Use ofxGgmlCore for shared runtime primitives and keep companion workflows out of Core.
 - Avoid committing generated outputs, local models, build directories, IDE metadata, downloaded runtimes, caches, or media dumps.
+- Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Add or update headless tests for public helper behavior.
 - Validation before handoff: $validation.
 - Keep explanations concise and include the files and checks that matter.$coreAppendix$coreSmokeBuildLifecycle
@@ -178,6 +180,7 @@ applyTo: "**"
 - Do not edit addon runtime behavior unless the user explicitly asks for addon behavior.
 - Keep companion changes inside this repository's lane and keep ofxGgmlCore as the shared base.
 - Preserve generated artifact hygiene: no binaries, build folders, IDE metadata, model weights, downloaded runtimes, caches, media dumps, or memory indexes.
+- Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.$coreSmokeBuildLifecycle
 "@
 }
@@ -209,6 +212,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - For ecosystem improvement work, create or update a plan before touching addon source.
 - Keep ofxGgmlCore as the shared base; companion addons may depend on Core, but Core must not depend on companions.
 - Do not commit generated binaries, model files, downloaded runtimes, build folders, IDE metadata, memory indexes, caches, or media dumps.
+- Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Prefer small, validated changes over broad refactors.
 - Validation before handoff: $validation.
 
