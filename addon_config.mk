@@ -58,15 +58,10 @@ common:
 
 vs:
 	# @OFXGGML_LIBS_START vs
-	ADDON_CFLAGS += -DOFXGGML_WITH_CUDA
 	ADDON_LIBS += libs/ggml/lib/ggml.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-base.lib
 	ADDON_LIBS += libs/ggml/lib/ggml-cpu.lib
-	ADDON_LIBS += libs/ggml/lib/ggml-cuda.lib
 	ADDON_LIBS += Advapi32.lib
-	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cublas.lib
-	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cudart.lib
-	ADDON_LIBS += $(CUDA_PATH)/lib/x64/cuda.lib
 	# @OFXGGML_LIBS_END vs
 	# @OFXGGML_SAM3_LIBS_START vs
 	# SAM3 support moved to ofxGgmlSam.

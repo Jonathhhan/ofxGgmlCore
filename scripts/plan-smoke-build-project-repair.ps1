@@ -229,6 +229,98 @@ function Add-AdditionalIncludeDirectory {
 	return $changed
 }
 
+function Add-SemicolonNodeValue {
+	param(
+		[xml]$Doc,
+		[System.Xml.XmlNamespaceManager]$Namespace,
+		[string]$NodeName,
+		[string]$Value,
+		[switch]$Apply
+	)
+
+	if ([string]::IsNullOrWhiteSpace($Value)) {
+		return $false
+	}
+	$nodes = @($Doc.SelectNodes("//msb:$NodeName", $Namespace))
+	$changed = $false
+	foreach ($node in $nodes) {
+		$parts = New-Object System.Collections.Generic.List[string]
+		foreach ($part in @($node.InnerText -split ";" | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })) {
+			$parts.Add([string]$part)
+		}
+		if (!$parts.Contains($Value)) {
+			$changed = $true
+			if ($Apply) {
+				$parts.Add($Value)
+				$node.InnerText = ($parts.ToArray() -join ";")
+			}
+		}
+	}
+	return $changed
+}
+
+function Add-AdditionalOption {
+	param(
+		[xml]$Doc,
+		[System.Xml.XmlNamespaceManager]$Namespace,
+		[string]$Option,
+		[switch]$Apply
+	)
+
+	if ([string]::IsNullOrWhiteSpace($Option)) {
+		return $false
+	}
+	$nodes = @($Doc.SelectNodes("//msb:ClCompile/msb:AdditionalOptions", $Namespace))
+	$changed = $false
+	foreach ($node in $nodes) {
+		$options = New-Object System.Collections.Generic.List[string]
+		foreach ($part in @($node.InnerText -split "\s+" | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })) {
+			$options.Add([string]$part)
+		}
+		if (!$options.Contains($Option)) {
+			$changed = $true
+			if ($Apply) {
+				$options.Add($Option)
+				$node.InnerText = ($options.ToArray() -join " ")
+			}
+		}
+	}
+	return $changed
+}
+
+function ConvertTo-ProjectLibraryReference {
+	param(
+		[string]$AddonRoot,
+		[string]$ProjectDir,
+		[string]$Library
+	)
+
+	$value = ([string]$Library).Trim().Trim('"')
+	if ([string]::IsNullOrWhiteSpace($value)) {
+		return $null
+	}
+	$normalized = $value -replace "/", "\"
+	$name = [System.IO.Path]::GetFileName($normalized)
+	$parent = Split-Path -Parent $normalized
+	$directory = ""
+	if (![string]::IsNullOrWhiteSpace($parent)) {
+		if ($parent -match '^\$\(' -or [System.IO.Path]::IsPathRooted($parent)) {
+			$directory = $parent
+		} else {
+			$path = Join-Path $AddonRoot $parent
+			if (Test-Path -LiteralPath $path) {
+				$directory = Get-RelativeProjectPath -ProjectDir $ProjectDir -FilePath $path
+			} else {
+				$directory = $parent
+			}
+		}
+	}
+	return [pscustomobject]@{
+		Dependency = $name
+		Directory = $directory
+	}
+}
+
 function Get-AddonRepairMetadata {
 	param(
 		[string]$Addon,
@@ -332,6 +424,8 @@ function Get-AddonRepairMetadata {
 		IncludeRoots = @($includeRoots)
 		SourceFiles = @($sourceFiles)
 		HeaderFiles = @($headerFiles)
+		CFlags = @($config["ADDON_CFLAGS"])
+		Libs = @($config["ADDON_LIBS"])
 	}
 }
 
@@ -370,11 +464,42 @@ function Invoke-VisualStudioProjectRepair {
 
 	$plannedIncludeDirs = New-Object System.Collections.Generic.List[string]
 	$plannedItems = New-Object System.Collections.Generic.List[string]
+	$plannedLibraries = New-Object System.Collections.Generic.List[string]
+	$plannedLibraryDirs = New-Object System.Collections.Generic.List[string]
+	$plannedOptions = New-Object System.Collections.Generic.List[string]
 	$changed = $false
 	foreach ($reference in @($ExpectedReferences)) {
 		$metadata = Get-AddonRepairMetadata -Addon ([string]$reference.Addon) -OwnerAddon $OwnerAddon -ExamplePath $ExamplePath -AddonsRoot $AddonsRoot
 		if (!$metadata) {
 			continue
+		}
+		foreach ($cflag in @($metadata.CFlags)) {
+			$option = [string]$cflag
+			if (Add-AdditionalOption -Doc $projectDoc -Namespace $projectNs -Option $option -Apply:$Apply) {
+				$changed = $true
+				if (!$plannedOptions.Contains($option)) {
+					$plannedOptions.Add($option)
+				}
+			}
+		}
+		foreach ($library in @($metadata.Libs)) {
+			$referenceInfo = ConvertTo-ProjectLibraryReference -AddonRoot ([string]$metadata.Root) -ProjectDir $projectDir -Library ([string]$library)
+			if (!$referenceInfo) {
+				continue
+			}
+			if (Add-SemicolonNodeValue -Doc $projectDoc -Namespace $projectNs -NodeName "AdditionalDependencies" -Value ([string]$referenceInfo.Dependency) -Apply:$Apply) {
+				$changed = $true
+				if (!$plannedLibraries.Contains([string]$referenceInfo.Dependency)) {
+					$plannedLibraries.Add([string]$referenceInfo.Dependency)
+				}
+			}
+			if (![string]::IsNullOrWhiteSpace([string]$referenceInfo.Directory) -and
+				(Add-SemicolonNodeValue -Doc $projectDoc -Namespace $projectNs -NodeName "AdditionalLibraryDirectories" -Value ([string]$referenceInfo.Directory) -Apply:$Apply)) {
+				$changed = $true
+				if (!$plannedLibraryDirs.Contains([string]$referenceInfo.Directory)) {
+					$plannedLibraryDirs.Add([string]$referenceInfo.Directory)
+				}
+			}
 		}
 		foreach ($includeRoot in @($metadata.IncludeRoots)) {
 			$includePath = Get-RelativeProjectPath -ProjectDir $projectDir -FilePath (Join-Path $metadata.Root $includeRoot)
@@ -421,6 +546,9 @@ function Invoke-VisualStudioProjectRepair {
 		Changed = $changed
 		PlannedIncludeDirectories = @($plannedIncludeDirs)
 		PlannedProjectItems = @($plannedItems)
+		PlannedLibraries = @($plannedLibraries)
+		PlannedLibraryDirectories = @($plannedLibraryDirs)
+		PlannedOptions = @($plannedOptions)
 		Detail = if ($Apply) { "generated Visual Studio project repair applied" } else { "generated Visual Studio project repair dry run" }
 	}
 }
@@ -571,6 +699,9 @@ foreach ($repair in $repairs) {
 		$lines.Add("Repair mode: $(if ($repair.RepairResult.Applied) { 'apply' } else { 'dry-run' })")
 		$lines.Add("Planned include directories: $(@($repair.RepairResult.PlannedIncludeDirectories).Count)")
 		$lines.Add("Planned project items: $(@($repair.RepairResult.PlannedProjectItems).Count)")
+		$lines.Add("Planned libraries: $(@($repair.RepairResult.PlannedLibraries).Count)")
+		$lines.Add("Planned library directories: $(@($repair.RepairResult.PlannedLibraryDirectories).Count)")
+		$lines.Add("Planned compiler options: $(@($repair.RepairResult.PlannedOptions).Count)")
 	}
 	$lines.Add("")
 	$lines.Add("## Expected Addon References")

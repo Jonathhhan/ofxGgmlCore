@@ -73,7 +73,7 @@ function Get-CompileCommand {
 		}
 	}
 
-	return ""
+	return "scripts\build-smoke-example.bat -Repository $Repository -Example $Example -Configuration $Configuration -Platform $Platform"
 }
 
 function Get-CompileTargetState {
