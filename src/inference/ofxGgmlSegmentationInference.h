@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <mutex>
 #include <utility>
 #include <vector>
 
@@ -88,6 +89,7 @@ public:
 private:
 	SegmentFunction segmentCallback;
 	std::string displayName;
+	mutable std::mutex callbackMutex;
 };
 
 class ofxGgmlSegmentationInference {
@@ -113,4 +115,5 @@ public:
 
 private:
 	std::shared_ptr<ofxGgmlSegmentationBackend> backendPtr;
+	mutable std::mutex backendMutex;
 };
