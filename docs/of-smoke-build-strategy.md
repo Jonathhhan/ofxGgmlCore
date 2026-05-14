@@ -41,7 +41,8 @@ actually reference the expected owner and companion addons.
 Use `scripts\plan-smoke-build-project-repair.bat` when postflight reports
 missing Visual Studio addon wiring; it produces a non-mutating repair plan with
 the expected owner and companion addon references plus the next validation
-commands.
+commands. After reviewing that dry-run, `-Apply` can update generated Visual
+Studio project metadata, followed by postflight and artifact hygiene.
 
 Current Windows projectGenerator evidence: Core now prefers the embedded
 command-line generator at `projectGenerator\resources\app\app\projectGenerator.exe`
@@ -54,7 +55,12 @@ generated-project verification and compile gates as blocked until that
 addon-processing failure is fixed or worked around. The repair planner records
 the expected references for that case so agents can either retry
 projectGenerator or perform an explicit generated-project repair before compile
-validation.
+validation. A local `-Apply` repair of the Audio generated project restored the
+expected Core, owner-addon, and ofxImGui Visual Studio references while leaving
+the owning addon worktree clean because generated project files remain ignored.
+After that repair, `ofxGgmlAudioTranscribeExample` built successfully through
+the Audio addon's focused Visual Studio build script with warnings but no
+errors.
 
 ## Planned smoke-build phases
 

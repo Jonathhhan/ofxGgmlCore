@@ -318,6 +318,12 @@ if (!$repairPlanParsed.Repairs -or $repairPlanParsed.Repairs.Count -ne 1) {
 if ($repairPlanParsed.Repairs[0].State -ne "ready-for-compile-validation") {
 	throw "Core smoke build project repair plan did not report compile-validation readiness."
 }
+if ($repairPlanParsed.Applied) {
+	throw "smoke build project repair plan dry-run JSON incorrectly reported Applied."
+}
+if (!$repairPlanParsed.Repairs[0].RepairResult) {
+	throw "smoke build project repair plan JSON did not include repair result details."
+}
 if (!$repairPlanParsed.Repairs[0].ExpectedReferences -or $repairPlanParsed.Repairs[0].ExpectedReferences.Count -eq 0) {
 	throw "smoke build project repair plan JSON did not include expected addon references."
 }

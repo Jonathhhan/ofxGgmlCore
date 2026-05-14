@@ -118,8 +118,9 @@ On macOS/Linux:
 Run projectGenerator only after preflight reports the selected target is ready.
 After acting on a target, run postflight with the selected repository and
 example if needed. When postflight reports missing Visual Studio addon wiring,
-run the repair planner before compile validation. Do not commit generated
-project files unless that addon intentionally tracks them.
+run the repair planner before compile validation. Review the dry-run first, then
+use `-Apply` only for generated Visual Studio project metadata. Do not commit
+generated project files unless that addon intentionally tracks them.
 
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,
