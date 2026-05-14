@@ -76,10 +76,17 @@ to write a prioritized, agent-safe work queue. It is designed for Codex,
 GitHub Copilot, and Hermes Agent sessions that need a next concrete task with
 suggested files and validation commands.
 
+The coding-agent queue auto-detects completed planning guides. Companion lanes
+with `docs\*_WORKFLOWS.md`, Core with `docs\ECOSYSTEM_AGENT.md`, and
+`ofxGgmlWorkflows` with `docs\workflow-adoption.md` are listed as completed
+planning coverage instead of being repeatedly proposed as generic lane-uplift
+tasks.
+
 Use `scripts\check-ecosystem-readiness.bat` for a single non-mutating pass
 before broad ecosystem work. It checks generated agent instructions, strict
 ecosystem audit status, planning handoffs, coding-agent work queue generation,
-doctor rollout status, branch cleanup planning, and managed doctor smoke tests.
+workflow guide coverage, doctor rollout status, branch cleanup planning, and
+managed doctor smoke tests.
 
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,

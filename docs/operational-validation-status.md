@@ -10,6 +10,7 @@ The ecosystem currently provides:
 - cross-repo metadata reconciliation
 - live workflow observability scaffolding
 - coding-agent work queue generation
+- workflow guide coverage detection
 - multi-platform smoke-build scaffolding
 
 ## Current agent readiness
@@ -26,6 +27,7 @@ scripts\plan-coding-agent-work.bat
 
 The readiness pass currently verifies:
 
+- workflow planning guides are present across managed repositories
 - generated agent instructions are current
 - strict ecosystem audit passes
 - ecosystem planning handoff runs
@@ -33,9 +35,10 @@ The readiness pass currently verifies:
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs
 
-The current queue reports all managed repositories as ready and proposes
-repository-scoped planning, documentation, validation, or workflow tasks before
-any addon runtime/source changes.
+The current queue reports all managed repositories as ready, detects planning
+guides for all 11 managed repositories, and suppresses stale generic lane-uplift
+tasks once those guides exist. The remaining default task is Core control-plane
+maintenance before any addon runtime/source changes.
 
 ## Current smoke-build coverage
 
@@ -71,6 +74,7 @@ The current smoke-build workflow:
 - release gating from CI truth
 - compatibility enforcement from actual builds
 - recurring review of the generated coding-agent work queue
+- periodic review that each managed lane still exposes an agent workflow guide
 
 ## Long-term direction
 

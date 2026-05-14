@@ -85,6 +85,24 @@ function ConvertTo-MarkdownReadiness {
 	return $lines -join [Environment]::NewLine
 }
 
+function Test-WorkflowGuideCoverage {
+	param([array]$Statuses)
+
+	$managed = @($Statuses | Where-Object { $_.Known })
+	$missing = @($managed | Where-Object { !$_.Present -or !$_.AgentWorkflowGuide })
+	if ($missing.Count -gt 0) {
+		return New-StepResult `
+			-Name "workflow guide coverage" `
+			-State "FAIL" `
+			-Detail ("missing guides: {0}" -f (@($missing | ForEach-Object { $_.Name }) -join ", "))
+	}
+
+	return New-StepResult `
+		-Name "workflow guide coverage" `
+		-State "OK" `
+		-Detail ("{0} managed workflow guides detected" -f $managed.Count)
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $coreRoot = Split-Path -Parent $scriptRoot
 $statusScript = Join-Path $scriptRoot "status-family.ps1"
@@ -97,6 +115,7 @@ $status = $statusJson | ConvertFrom-Json
 
 $managedNames = @($status.Addons | Where-Object { $_.Known } | ForEach-Object { [string]$_.Name })
 $steps = @()
+$steps += Test-WorkflowGuideCoverage -Statuses @($status.Addons)
 $steps += Invoke-ReadinessStep -Name "agent instructions current" -ScriptPath (Join-Path $scriptRoot "write-agent-instructions.ps1") -Parameters @{
 	Check = $true
 	Addons = $managedNames
