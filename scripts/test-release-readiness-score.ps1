@@ -15,7 +15,21 @@ $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readi
 	'- Missing required workflows: `0`',
 	'- Required workflows with no runs: `1`',
 	'- Unavailable required statuses: `0`',
-	'- Stale required workflows: `2`'
+	'- Stale required workflows: `2`',
+	'',
+	'## Action Required',
+	'',
+	'### Required Workflow Blockers',
+	'',
+	'- `Jonathhhan/ofxGgmlCore` / `multi-platform-smoke.yml`: latest run is stale (45d).',
+	'',
+	'### Optional Workflow Rollout Gaps',
+	'',
+	'- `Jonathhhan/ofxGgmlVision` / `release-check.yml`: workflow file missing.',
+	'',
+	'## Notes',
+	'',
+	'- Set `GITHUB_TOKEN` for higher API limits and private-repo access.'
 ) | Set-Content -LiteralPath $workflowReport
 
 if (Test-Path -LiteralPath $outputPath) {
@@ -32,11 +46,20 @@ if (!(Test-Path -LiteralPath $outputPath -PathType Leaf)) {
 }
 
 $content = Get-Content -LiteralPath $outputPath -Raw
+$notesPattern = [regex]::Escape("- Set `GITHUB_TOKEN` for higher API limits and private-repo access.")
+if ($content -match $notesPattern) {
+	throw "release readiness score copied workflow report notes into action evidence."
+}
+
 foreach ($expected in @(
 	"Release Readiness Score",
 	"Evidence inputs",
 	"Workflow status evidence",
 	"blocked by 3 required workflow signal",
+	"Required workflow blockers",
+	"latest run is stale (45d)",
+	"Optional workflow rollout gaps",
+	"workflow file missing",
 	"Stale required workflows",
 	"Repository readiness checklist"
 )) {

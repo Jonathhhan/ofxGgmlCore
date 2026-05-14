@@ -13,6 +13,7 @@ The ecosystem currently provides:
 - cross-repo metadata reconciliation
 - release-readiness scoring
 - live workflow observability scaffolding
+- workflow action summaries folded into release-readiness evidence
 - multi-platform smoke-build scaffolding
 
 ## Current limitations
@@ -43,6 +44,7 @@ Operational workflow gates:
 - required workflow success
 - stale workflow detection
 - missing smoke-build detection
+- required blocker and optional rollout-gap evidence in release-readiness reports
 - release-train blocking from failed workflows
 - release-readiness score generated with workflow status evidence
 

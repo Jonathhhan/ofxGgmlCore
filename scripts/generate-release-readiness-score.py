@@ -28,13 +28,32 @@ def parse_workflow_status_report(path):
         raise FileNotFoundError(f"workflow status report was not found: {report}")
 
     metrics = {}
+    required_blockers = []
+    optional_gaps = []
+    section = ""
     for line in report.read_text(encoding="utf-8").splitlines():
         match = re.match(r"- (.+): `(\d+)`", line)
         if match:
             metrics[match.group(1)] = int(match.group(2))
+            continue
+
+        if line.startswith("#"):
+            section = line.strip("# ")
+            continue
+
+        if not line.startswith("- ") or line == "- None.":
+            continue
+
+        if section == "Required Workflow Blockers":
+            required_blockers.append(line)
+        elif section == "Optional Workflow Rollout Gaps":
+            optional_gaps.append(line)
+
     return {
         "path": str(report),
         "metrics": metrics,
+        "required_blockers": required_blockers,
+        "optional_gaps": optional_gaps,
     }
 
 
@@ -106,6 +125,26 @@ def main():
             "Stale required workflows",
         ):
             lines.append(f"| {key} | {workflow_report['metrics'].get(key, 0)} |")
+        lines.append("")
+        lines.extend([
+            "#### Required workflow blockers",
+            "",
+        ])
+        required_blockers = workflow_report.get("required_blockers", [])
+        if required_blockers:
+            lines.extend(required_blockers)
+        else:
+            lines.append("- None.")
+        lines.extend([
+            "",
+            "#### Optional workflow rollout gaps",
+            "",
+        ])
+        optional_gaps = workflow_report.get("optional_gaps", [])
+        if optional_gaps:
+            lines.extend(optional_gaps)
+        else:
+            lines.append("- None.")
         lines.append("")
 
     lines.extend([
