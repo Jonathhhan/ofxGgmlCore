@@ -15,6 +15,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\plan-of-smoke-build.bat` before adding real openFrameworks project-generation or compile validation gates.
 - Treat missing example `addons.make`, owner-addon references, or `ofxGgmlCore` references as blockers before projectGenerator checks.
 - Use the smoke-build command plan to choose the next focused example-generation target without committing generated files.
+- Prefer the smoke-build target queue order when moving from project generation to generated-project repair or compile validation.
 - Keep reusable workflow expectations in `ofxGgmlWorkflows`, and keep caller-addon documentation in Core.
 - Prefer reporting gaps over adding new automation until the current workflow state is easy to inspect.
 

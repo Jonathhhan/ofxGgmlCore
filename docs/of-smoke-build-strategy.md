@@ -23,6 +23,9 @@ owning addon and `ofxGgmlCore`.
 When projectGenerator is available in the openFrameworks checkout, the planner
 also emits a non-mutating command plan and reports which examples already have
 generated project files.
+It also emits a prioritized target queue so agents can work through metadata
+repair, project generation, and generated-project verification in a deterministic
+order.
 
 ## Planned smoke-build phases
 
@@ -42,6 +45,7 @@ Project generation validation:
 - install openFrameworks
 - verify root-level example `addons.make` metadata before project generation
 - generate a command plan for each root-level smoke example
+- follow the generated target queue for one focused example at a time
 - run projectGenerator
 - generate example projects
 - verify generated project structure
