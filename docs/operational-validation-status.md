@@ -9,7 +9,33 @@ The ecosystem currently provides:
 - baseline compatibility checks
 - cross-repo metadata reconciliation
 - live workflow observability scaffolding
+- coding-agent work queue generation
 - multi-platform smoke-build scaffolding
+
+## Current agent readiness
+
+The Codex, GitHub Copilot, and Hermes planning layer is active. From
+`ofxGgmlCore`, agents can run:
+
+```powershell
+scripts\check-ecosystem-readiness.bat -SkipDoctorTests
+scripts\audit-ecosystem.bat -Strict
+scripts\plan-ecosystem.bat
+scripts\plan-coding-agent-work.bat
+```
+
+The readiness pass currently verifies:
+
+- generated agent instructions are current
+- strict ecosystem audit passes
+- ecosystem planning handoff runs
+- coding-agent work queue generation runs
+- doctor rollout planning runs
+- merged agent branch cleanup planning runs
+
+The current queue reports all managed repositories as ready and proposes
+repository-scoped planning, documentation, validation, or workflow tasks before
+any addon runtime/source changes.
 
 ## Current smoke-build coverage
 
@@ -44,6 +70,7 @@ The current smoke-build workflow:
 - inference smoke tests
 - release gating from CI truth
 - compatibility enforcement from actual builds
+- recurring review of the generated coding-agent work queue
 
 ## Long-term direction
 

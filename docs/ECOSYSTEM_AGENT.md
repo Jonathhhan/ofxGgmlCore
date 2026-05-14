@@ -78,8 +78,8 @@ suggested files and validation commands.
 
 Use `scripts\check-ecosystem-readiness.bat` for a single non-mutating pass
 before broad ecosystem work. It checks generated agent instructions, strict
-ecosystem audit status, planning handoffs, doctor rollout status, branch cleanup
-planning, and managed doctor smoke tests.
+ecosystem audit status, planning handoffs, coding-agent work queue generation,
+doctor rollout status, branch cleanup planning, and managed doctor smoke tests.
 
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,
