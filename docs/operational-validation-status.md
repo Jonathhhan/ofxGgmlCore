@@ -32,6 +32,10 @@ scripts\audit-ecosystem.bat -Strict
 scripts\plan-ecosystem.bat
 scripts\plan-coding-agent-work.bat
 scripts\plan-of-smoke-build.bat
+scripts\select-smoke-build-target.bat -Stage generate-project
+scripts\plan-smoke-build-target-handoff.bat -Stage generate-project
+scripts\check-smoke-build-target-preflight.bat -Stage generate-project
+scripts\check-smoke-build-target-postflight.bat -Stage generate-project
 scripts\plan-release-readiness.bat -SkipWorkflowStatus
 ```
 

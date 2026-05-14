@@ -127,6 +127,22 @@ $steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-
 $steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
 $steps += Invoke-ReadinessStep -Name "coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1")
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build plan" -ScriptPath (Join-Path $scriptRoot "plan-of-smoke-build.ps1")
+$steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target selection" -ScriptPath (Join-Path $scriptRoot "select-smoke-build-target.ps1") -Parameters @{
+	Stage = "generate-project"
+	First = 1
+}
+$steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target handoff" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1") -Parameters @{
+	Stage = "generate-project"
+	First = 1
+}
+$steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target preflight" -ScriptPath (Join-Path $scriptRoot "check-smoke-build-target-preflight.ps1") -Parameters @{
+	Stage = "generate-project"
+	First = 1
+}
+$steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target postflight" -ScriptPath (Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1") -Parameters @{
+	Stage = "generate-project"
+	First = 1
+}
 $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters @{
 	OutputPath = $releaseReadinessOutput
 	SkipWorkflowStatus = $true
