@@ -94,8 +94,9 @@ The current smoke-build workflow:
 
 - validates basic repository structure
 - plans projectGenerator readiness from root-level example `addons.make` metadata
-- reports projectGenerator command candidates without generating project files
+- plans projectGenerator command candidates in non-mutating mode for CI stage entry
 - ranks next smoke-build targets without mutating companion addon worktrees
+- executes all generate-repair-compile stage targets per CI run when `run-smoke-build-ci` is configured for full pass
 - validates cross-platform workflow execution
 - is visible in the workflow status report with latest-run age and stale-run markers
 - is summarized in workflow-status reports as required blockers and optional rollout gaps
@@ -106,15 +107,14 @@ The current smoke-build workflow:
 - provides a generic local focused compile command for generated projects that do not own addon-local build scripts
 - locally generated, repaired, and postflight-verified Visual Studio projects for all 14 managed addon examples while keeping owning addon worktrees clean
 - locally built all 14 managed addon examples on Windows Release x64 with 0 errors
-- compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow
+- compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow (Windows Release x64)
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - does not yet validate CUDA/Metal/Vulkan runtimes
 - does not yet validate runtime inference
 
 ## Next operational milestones
 
-- real openFrameworks smoke builds
-- example project generation checks
+- Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
 - backend runtime verification
 - inference smoke tests
 - release gating from CI truth

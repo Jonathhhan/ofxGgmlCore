@@ -40,7 +40,7 @@ jobs:
       - name: Run smoke build control plane compile loop
         shell: pwsh
         run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\run-smoke-build-ci.ps1" -CloneAddonRepos
+          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\run-smoke-build-ci.ps1" -CloneAddonRepos -TargetsPerStage 0
 
       - name: Upload smoke build control-plane report
         if: always()

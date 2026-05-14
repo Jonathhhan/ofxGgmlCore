@@ -2,6 +2,7 @@ param(
 	[switch]$CloneAddonRepos,
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
+	[int]$TargetsPerStage = 0,
 	[int]$MaxCommandOutputLines = 2000,
 	[string]$ReportPath = ""
 )
@@ -9,6 +10,10 @@ param(
 $ErrorView = "ConciseView"
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+if ($TargetsPerStage -lt 0) {
+	throw "TargetsPerStage must be 0 (all targets) or a positive integer."
+}
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-smoke-build-compile.ps1"
@@ -58,9 +63,22 @@ function Get-MaybeClonedRepos {
 }
 
 function Get-StageTargets {
-	param([string]$Stage)
+	param(
+		[string]$Stage,
+		[int]$First = 0
+	)
 
-	$planOutput = & $planScript -Stage $Stage -Configuration $Configuration -Platform $Platform -Json
+	$planParams = @{
+		Stage = $Stage
+		Configuration = $Configuration
+		Platform = $Platform
+		Json = $true
+	}
+	if ($First -gt 0) {
+		$planParams.First = $First
+	}
+
+	$planOutput = & $planScript @planParams
 	if (!$?) {
 		throw "plan-smoke-build-compile.ps1 failed for stage: $Stage"
 	}
@@ -226,7 +244,7 @@ $stages = @("generate-project", "repair-generated-project", "compile-example")
 
 try {
 	foreach ($stage in $stages) {
-		$targets = Get-StageTargets -Stage $stage
+		$targets = Get-StageTargets -Stage $stage -First $TargetsPerStage
 		if ($targets.Count -eq 0) {
 			Write-Host "==> No targets currently require stage: $stage"
 			continue
