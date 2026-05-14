@@ -83,6 +83,7 @@ cd ../ofxGgmlLlama
 | `scripts\select-smoke-build-target.bat` | Select the next smoke-build target from the generated rollout queue |
 | `scripts\plan-smoke-build-target-handoff.bat` | Generate an agent checklist for the selected smoke-build target |
 | `scripts\check-smoke-build-target-preflight.bat` | Check whether the selected smoke-build target is safe to act on |
+| `scripts\check-smoke-build-target-postflight.bat` | Report generated project and git impact after acting on a smoke-build target |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-release-readiness.bat` | Generate release-readiness evidence from workflow status and policy metadata |
@@ -135,6 +136,9 @@ that selected target.
 Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project`
 before running projectGenerator to confirm the selected repo is clean and the
 target still matches filesystem state.
+Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>`
+after running projectGenerator to report generated files, git impact, and next
+validation without staging anything.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.

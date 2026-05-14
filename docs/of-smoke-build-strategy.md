@@ -33,6 +33,9 @@ Hermes needs the selected target plus validation and artifact hygiene steps.
 Use `scripts\check-smoke-build-target-preflight.bat` immediately before acting
 on a selected target to verify projectGenerator detection, example metadata,
 repository cleanliness, and generated-project state.
+Use `scripts\check-smoke-build-target-postflight.bat` after acting on a target
+to report generated project files, pending git impact, and the validation
+commands that should run before any handoff.
 
 ## Planned smoke-build phases
 
