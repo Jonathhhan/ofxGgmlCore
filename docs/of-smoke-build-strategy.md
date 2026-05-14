@@ -26,6 +26,8 @@ generated project files.
 It also emits a prioritized target queue so agents can work through metadata
 repair, project generation, and generated-project verification in a deterministic
 order.
+Use `scripts\select-smoke-build-target.bat` to read the next target from that
+queue without parsing the full plan output.
 
 ## Planned smoke-build phases
 

@@ -16,6 +16,7 @@ The ecosystem currently provides:
 - root-level example `addons.make` readiness planning
 - projectGenerator command planning for managed root-level examples
 - prioritized smoke-build target queue generation
+- one-command smoke-build target selection
 
 ## Current agent readiness
 
@@ -42,6 +43,7 @@ The readiness pass currently verifies:
 - smoke-build planning verifies root-level example addon metadata before projectGenerator rollout
 - smoke-build planning reports projectGenerator command candidates and existing generated project files
 - smoke-build planning orders next targets by metadata repair, project generation, then generated-project verification
+- smoke-build target selection returns the next filtered target without mutating addon worktrees
 - release-readiness planning runs without requiring live workflow access
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs
