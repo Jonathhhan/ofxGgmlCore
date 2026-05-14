@@ -293,7 +293,7 @@ if ($nullGeneratedProjectFiles.Count -gt 0) {
 	throw "smoke build target postflight JSON included null or empty generated project file entries."
 }
 
-$repairPlanOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" *>&1 | ForEach-Object { $_.ToString() }
+$repairPlanOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-project-repair.ps1 failed."
 }
@@ -312,7 +312,7 @@ foreach ($expected in @(
 	}
 }
 
-$repairPlanJsonOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+$repairPlanJsonOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-project-repair.ps1 -Json failed."
 }
@@ -336,7 +336,7 @@ if (!$repairPlanParsed.NextCommands -or $repairPlanParsed.NextCommands.Count -eq
 	throw "smoke build project repair plan JSON did not include next commands."
 }
 
-$corePostflightJsonOutput = & $postflightScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+$corePostflightJsonOutput = & $postflightScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-postflight.ps1 -Json failed for the Core generated project."
 }
@@ -349,7 +349,7 @@ if ($corePostflightParsed.Postflights[0].MissingProjectAddons.Count -gt 0) {
 	throw "Core generated project postflight reported missing addon wiring."
 }
 
-$compilePlanOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" *>&1 | ForEach-Object { $_.ToString() }
+$compilePlanOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-compile.ps1 failed."
 }
@@ -366,7 +366,7 @@ foreach ($expected in @(
 	}
 }
 
-$compilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+$compilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-compile.ps1 -Json failed."
 }

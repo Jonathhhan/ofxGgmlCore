@@ -39,7 +39,7 @@ On macOS/Linux:
 ./scripts/run-simple-example.sh -Build
 ```
 
-`first-run` sets up ggml and runs the Core doctor. The simple example verifies
+`first-run` sets up ggml and runs the Core doctor. The Core example verifies
 that openFrameworks can include the addon, see the ggml runtime, and render a
 small ofxImGui UI.
 

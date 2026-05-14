@@ -16,6 +16,10 @@ The ecosystem currently provides:
 
 Current workflows do not yet validate runtime backend availability.
 
+Core now generates a phase-1 backend capability report from declared metadata and
+local ggml runtime artifacts. This report is discovery evidence only; it does
+not replace runtime initialization or inference smoke checks.
+
 ## Planned verification phases
 
 ### Phase 1

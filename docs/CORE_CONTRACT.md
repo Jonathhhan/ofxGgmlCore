@@ -9,7 +9,7 @@ small, predictable, and backend-neutral.
 - shared C++ utility types
 - generated project repair helpers
 - artifact hygiene checks
-- the `ofxGgmlSimpleExample` smoke test
+- the `ofxGgmlCoreExample` smoke test
 - family documentation links
 
 ## Core Does Not Own

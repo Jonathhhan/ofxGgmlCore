@@ -61,14 +61,14 @@ function Assert-NotContains {
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $simpleOutput = Invoke-DryRun `
-	-Label "Simple example dry-run" `
+	-Label "Core example dry-run" `
 	-Script (Join-Path $scriptRoot "run-simple-example.ps1") `
 	-Parameters @{
 		DryRun = $true
 		Configuration = $Configuration
 		Platform = $Platform
 	}
-Assert-Contains $simpleOutput "Executable:" "Simple dry-run"
-Assert-NotContains $simpleOutput "Starting ofxGgmlSimpleExample" "Simple dry-run"
+Assert-Contains $simpleOutput "Executable:" "Core dry-run"
+Assert-NotContains $simpleOutput "Starting ofxGgmlCoreExample" "Core dry-run"
 
 Write-Step "Launch dry-run smoke coverage passed"
