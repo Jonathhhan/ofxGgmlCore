@@ -58,9 +58,11 @@ function Find-ProjectGenerator {
 
 	foreach ($candidate in @(
 		"projectGenerator\projectGeneratorCmd.exe",
+		"projectGenerator\resources\app\app\projectGenerator.exe",
 		"projectGenerator\projectGenerator.exe",
 		"projectGenerator\projectGenerator",
 		"projectGenerator-jan2026\projectGeneratorCmd.exe",
+		"projectGenerator-jan2026\resources\app\app\projectGenerator.exe",
 		"projectGenerator-jan2026\projectGenerator.exe",
 		"projectGenerator-jan2026\projectGenerator"
 	)) {
@@ -108,8 +110,9 @@ function New-ProjectGeneratorCommand {
 	}
 
 	$addonList = $Addons -join ","
-	return "& {0} -o {1} -a {2} {3}" -f `
+	return "& {0} -p{1} -o{2} -a{3} {4}" -f `
 		(Format-PowerShellArgument $ProjectGeneratorPath),
+		(Format-PowerShellArgument "vs"),
 		(Format-PowerShellArgument $OfRoot),
 		(Format-PowerShellArgument $addonList),
 		(Format-PowerShellArgument $ExamplePath)
