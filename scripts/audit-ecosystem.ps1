@@ -29,12 +29,13 @@ function New-AuditEntry {
 	$hasHermes = Test-RepoPath -Status $Status -RelativePath "HERMES.md"
 	$hasAgents = Test-RepoPath -Status $Status -RelativePath "AGENTS.md"
 	$hasCopilot = Test-RepoPath -Status $Status -RelativePath ".github\copilot-instructions.md"
+	$hasCopilotEcosystem = Test-RepoPath -Status $Status -RelativePath ".github\instructions\ofxggml-ecosystem.instructions.md"
 	$hasInstructionWorkflow = Test-RepoPath -Status $Status -RelativePath ".github\workflows\coding-agent-instructions.yml"
 	$hasReleaseCandidate = Test-RepoPath -Status $Status -RelativePath "scripts\release-candidate.ps1"
 	$hasDocs = Test-RepoPath -Status $Status -RelativePath "docs" -Directory
 
-	$instructionCount = @(@($hasHermes, $hasAgents, $hasCopilot) | Where-Object { $_ }).Count
-	$instructionState = if ($instructionCount -eq 3) { "complete" } elseif ($instructionCount -gt 0) { "partial" } else { "missing" }
+	$instructionCount = @(@($hasHermes, $hasAgents, $hasCopilot, $hasCopilotEcosystem) | Where-Object { $_ }).Count
+	$instructionState = if ($instructionCount -eq 4) { "complete" } elseif ($instructionCount -gt 0) { "partial" } else { "missing" }
 	$workflowState = if ($Status.Name -eq "ofxGgmlWorkflows") {
 		if (Test-RepoPath -Status $Status -RelativePath ".github\workflows\coding-agent-instructions.yml") { "owner" } else { "missing-owner" }
 	} elseif ($hasInstructionWorkflow) {
@@ -74,6 +75,10 @@ function New-AuditEntry {
 		Lane = $Status.Lane
 		Present = [bool]$Status.Present
 		Instructions = $instructionState
+		AgentsInstructions = if ($hasAgents) { "yes" } else { "missing" }
+		HermesInstructions = if ($hasHermes) { "yes" } else { "missing" }
+		CopilotInstructions = if ($hasCopilot) { "yes" } else { "missing" }
+		CopilotEcosystemInstructions = if ($hasCopilotEcosystem) { "yes" } else { "missing" }
 		CodingAgentWorkflow = $workflowState
 		Validation = $validationState
 		ReleaseCandidate = $releaseState
@@ -95,10 +100,10 @@ function ConvertTo-MarkdownAudit {
 	$lines.Add("")
 	$lines.Add("## Managed Repositories")
 	$lines.Add("")
-	$lines.Add("| Repository | Instructions | Agent Workflow | Validation | Release | Dirty | Action |")
-	$lines.Add("| --- | --- | --- | --- | --- | --- | --- |")
+	$lines.Add("| Repository | Instructions | AGENTS | HERMES | Copilot | Copilot Ecosystem | Agent Workflow | Validation | Release | Dirty | Action |")
+	$lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 	foreach ($entry in $managed) {
-		$lines.Add("| $($entry.Name) | $($entry.Instructions) | $($entry.CodingAgentWorkflow) | $($entry.Validation) | $($entry.ReleaseCandidate) | $($entry.DirtyCount) | $($entry.Action) |")
+		$lines.Add("| $($entry.Name) | $($entry.Instructions) | $($entry.AgentsInstructions) | $($entry.HermesInstructions) | $($entry.CopilotInstructions) | $($entry.CopilotEcosystemInstructions) | $($entry.CodingAgentWorkflow) | $($entry.Validation) | $($entry.ReleaseCandidate) | $($entry.DirtyCount) | $($entry.Action) |")
 	}
 
 	if ($detected.Count -gt 0) {
