@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime as dt
 import json
 import os
 import urllib.error
@@ -85,13 +86,24 @@ def latest_workflow_status(repo, workflow):
         "state": conclusion,
         "summary": conclusion,
         "url": run.get("html_url", ""),
+        "updated_at": run.get("updated_at", ""),
     }
+
+
+def parse_github_time(value):
+    if not value:
+        return None
+    try:
+        return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Fetch latest GitHub Actions status for the ofxGgml ecosystem.")
     parser.add_argument("--strict", action="store_true", help="Exit nonzero when required workflows are missing, unavailable, have no runs, or last ended in a blocking conclusion.")
     parser.add_argument("--output", default=str(OUTPUT), help="Markdown report path.")
+    parser.add_argument("--stale-days", type=int, default=30, help="Mark latest workflow runs older than this many days as stale.")
     return parser.parse_args()
 
 
@@ -108,7 +120,10 @@ def main():
         "no_runs_optional": 0,
         "unavailable_required": 0,
         "unavailable_optional": 0,
+        "stale_required": 0,
+        "stale_optional": 0,
     }
+    now = dt.datetime.now(dt.timezone.utc)
 
     for repo in repos_from_manifest(ecosystem):
         for workflow_spec in WORKFLOWS:
@@ -116,6 +131,18 @@ def main():
             required = workflow_spec["required"]
             status = latest_workflow_status(repo, workflow)
             state = status["state"]
+            updated_at = parse_github_time(status.get("updated_at", ""))
+            stale = False
+            if updated_at is not None:
+                age_days = (now - updated_at).days
+                stale = age_days > args.stale_days
+                status["age_days"] = age_days
+                if stale:
+                    counts["stale_required" if required else "stale_optional"] += 1
+            else:
+                status["age_days"] = None
+            status["stale"] = stale
+
             if state == "success":
                 counts["success"] += 1
             elif state in BLOCKING_CONCLUSIONS:
@@ -138,7 +165,8 @@ def main():
         record for record in records
         if record["required"] and (
             record["status"]["state"] in BLOCKING_CONCLUSIONS or
-            record["status"]["state"] in {"missing", "no-runs", "unavailable"}
+            record["status"]["state"] in {"missing", "no-runs", "unavailable"} or
+            record["status"].get("stale", False)
         )
     ]
 
@@ -158,18 +186,25 @@ def main():
         f"- Optional workflows with no runs: `{counts['no_runs_optional']}`",
         f"- Unavailable required statuses: `{counts['unavailable_required']}`",
         f"- Unavailable optional statuses: `{counts['unavailable_optional']}`",
+        f"- Stale required workflows: `{counts['stale_required']}`",
+        f"- Stale optional workflows: `{counts['stale_optional']}`",
+        f"- Stale threshold: `{args.stale_days}` days",
         "",
         "## Workflows",
         "",
-        "| Repository | Workflow | Required | Latest status | Run |",
-        "| --- | --- | --- | --- | --- |",
+        "| Repository | Workflow | Required | Latest status | Age | Run |",
+        "| --- | --- | --- | --- | ---: | --- |",
     ]
     for record in records:
         required = "yes" if record["required"] else "optional"
         status = record["status"]
         url = status["url"]
         run = f"[run]({url})" if url else "-"
-        lines.append(f"| `{record['repo']}` | `{record['workflow']}` | {required} | {status['summary']} | {run} |")
+        age_days = status.get("age_days")
+        age = "-" if age_days is None else f"{age_days}d"
+        if status.get("stale", False):
+            age = f"{age} stale"
+        lines.append(f"| `{record['repo']}` | `{record['workflow']}` | {required} | {status['summary']} | {age} | {run} |")
 
     lines.extend([
         "",
@@ -177,7 +212,7 @@ def main():
         "",
         "- Set `GITHUB_TOKEN` for higher API limits and private-repo access.",
         "- Missing optional workflows are rollout gaps, not command failures.",
-        "- Required workflow gaps fail only in `--strict` mode.",
+        "- Stale workflow runs are visible by default and fail required workflows only in `--strict` mode.",
         "- Release gating should consume this report after required workflow coverage is complete.",
     ])
 
