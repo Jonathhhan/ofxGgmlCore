@@ -47,6 +47,12 @@ if (!$parsed.Records -or $parsed.Records.Count -eq 0) {
 if ($null -eq $parsed.ProjectGeneratorPath) {
 	throw "openFrameworks smoke build plan JSON did not include projectGenerator detection state."
 }
+$ofRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $scriptRoot))
+if (![string]::IsNullOrWhiteSpace([string]$parsed.ProjectGeneratorPath) -and
+	(Test-Path -LiteralPath (Join-Path $ofRoot "projectGenerator\resources\app\app\projectGenerator.exe") -PathType Leaf) -and
+	([string]$parsed.ProjectGeneratorPath -notmatch [regex]::Escape("projectGenerator\resources\app\app\projectGenerator.exe"))) {
+	throw "openFrameworks smoke build plan did not prefer the command-line projectGenerator executable."
+}
 
 if (!$parsed.Targets -or $parsed.Targets.Count -eq 0) {
 	throw "openFrameworks smoke build plan JSON did not include a target queue."
@@ -83,6 +89,10 @@ if (![string]::IsNullOrWhiteSpace([string]$parsed.ProjectGeneratorPath)) {
 	$commands = @($examples | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.ProjectGeneratorCommand) })
 	if ($commands.Count -eq 0) {
 		throw "openFrameworks smoke build plan detected projectGenerator but did not emit example commands."
+	}
+	$missingVsPlatform = @($commands | Where-Object { [string]$_.ProjectGeneratorCommand -notmatch [regex]::Escape("-p'vs'") })
+	if ($missingVsPlatform.Count -gt 0) {
+		throw "openFrameworks smoke build plan emitted projectGenerator commands without the Visual Studio platform."
 	}
 	$generateTargets = @($parsed.Targets | Where-Object { $_.Stage -eq "generate-project" })
 	if ($generateTargets.Count -eq 0) {

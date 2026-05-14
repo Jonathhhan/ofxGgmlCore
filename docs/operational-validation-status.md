@@ -91,7 +91,9 @@ The current smoke-build workflow:
 - validates cross-platform workflow execution
 - is visible in the workflow status report with latest-run age and stale-run markers
 - is summarized in workflow-status reports as required blockers and optional rollout gaps
+- detects the embedded command-line projectGenerator before the GUI wrapper on Windows
 - does not yet compile openFrameworks examples
+- does not yet complete Visual Studio generated-project verification after projectGenerator crashes during addon processing
 - does not yet validate CUDA/Metal/Vulkan runtimes
 - does not yet validate runtime inference
 
