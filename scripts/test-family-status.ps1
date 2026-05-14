@@ -24,3 +24,7 @@ $parsed = $json | ConvertFrom-Json
 if (!$parsed.Addons -or $parsed.Addons.Count -lt 11) {
 	throw "family status JSON did not contain the expected addon list."
 }
+$core = @($parsed.Addons | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
+if (!$core -or !$core.CopilotEcosystemInstructions) {
+	throw "family status JSON did not report Core Copilot ecosystem instructions."
+}

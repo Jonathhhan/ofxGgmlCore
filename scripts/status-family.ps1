@@ -44,6 +44,10 @@ function Get-AddonStatus {
 	$dirtyCount = 0
 	$validate = $false
 	$doctor = $false
+	$agentsInstructions = $false
+	$hermesInstructions = $false
+	$copilotInstructions = $false
+	$copilotEcosystemInstructions = $false
 	$examples = @()
 
 	if ($present) {
@@ -55,6 +59,10 @@ function Get-AddonStatus {
 		}
 		$validate = Test-Path -LiteralPath (Join-Path $path "scripts\validate-local.ps1") -PathType Leaf
 		$doctor = $null -ne (Get-ChildItem -LiteralPath (Join-Path $path "scripts") -Filter "*doctor*.ps1" -File -ErrorAction SilentlyContinue | Select-Object -First 1)
+		$agentsInstructions = Test-Path -LiteralPath (Join-Path $path "AGENTS.md") -PathType Leaf
+		$hermesInstructions = Test-Path -LiteralPath (Join-Path $path "HERMES.md") -PathType Leaf
+		$copilotInstructions = Test-Path -LiteralPath (Join-Path $path ".github\copilot-instructions.md") -PathType Leaf
+		$copilotEcosystemInstructions = Test-Path -LiteralPath (Join-Path $path ".github\instructions\ofxggml-ecosystem.instructions.md") -PathType Leaf
 		$examples = @(
 			Get-ChildItem -LiteralPath $path -Directory -ErrorAction SilentlyContinue |
 				Where-Object { $_.Name -like "*Example" } |
@@ -77,6 +85,10 @@ function Get-AddonStatus {
 		DirtyCount = $dirtyCount
 		ValidateScript = $validate
 		DoctorScript = $doctor
+		AgentsInstructions = $agentsInstructions
+		HermesInstructions = $hermesInstructions
+		CopilotInstructions = $copilotInstructions
+		CopilotEcosystemInstructions = $copilotEcosystemInstructions
 		Examples = $examples
 	}
 }

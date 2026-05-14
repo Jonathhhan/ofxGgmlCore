@@ -12,6 +12,7 @@ $text = $output -join "`n"
 foreach ($expected in @(
 	"ofxGgml Ecosystem Audit",
 	"Managed Repositories",
+	"Copilot Ecosystem",
 	"reference only; keep out of managed automation",
 	"ready for planning"
 )) {
@@ -33,6 +34,9 @@ if (!$parsed.Repositories -or $parsed.Repositories.Count -lt 11) {
 $core = @($parsed.Repositories | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
 if (!$core -or $core.Instructions -ne "complete") {
 	throw "ecosystem audit did not report complete Core instructions."
+}
+if ($core.CopilotEcosystemInstructions -ne "yes") {
+	throw "ecosystem audit did not report Core Copilot ecosystem instructions."
 }
 
 & $auditScript -Strict | Out-Null
