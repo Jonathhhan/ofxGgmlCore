@@ -62,6 +62,24 @@ function Get-MaybeClonedRepos {
 	}
 }
 
+function ConvertTo-ExecutableCommand {
+	param([string]$Command)
+
+	$trimmed = [string]$Command.Trim()
+	if ($trimmed -match "^(?<script>.+?\.ps1)(?<arguments>\s.*)?$") {
+		$scriptPath = $Matches.script
+		$arguments = if ($Matches.ContainsKey("arguments")) { [string]$Matches.arguments } else { "" }
+		$powerShellExe = if (Get-Command "pwsh" -ErrorAction SilentlyContinue) {
+			"pwsh"
+		} else {
+			"powershell"
+		}
+		return "$powerShellExe -NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"$arguments"
+	}
+
+	return $trimmed
+}
+
 function Get-StageTargets {
 	param(
 		[string]$Stage,
@@ -89,11 +107,16 @@ function Get-StageTargets {
 	}
 
 	$plan = $planText | ConvertFrom-Json
-	if (!$plan.AllTargets) {
+	if (!$plan.PSObject.Properties["AllTargets"]) {
 		throw "plan-smoke-build-compile.ps1 JSON did not include AllTargets for stage: $Stage"
 	}
 
-	return @($plan.AllTargets | Where-Object { $_.Stage -eq $Stage })
+	$targetSource = if ($First -gt 0 -and $plan.PSObject.Properties["Targets"]) {
+		@($plan.Targets)
+	} else {
+		@($plan.AllTargets)
+	}
+	return @($targetSource | Where-Object { $_.Stage -eq $Stage })
 }
 
 function Get-ExecutableCommands {
@@ -166,10 +189,11 @@ function Invoke-TargetCommands {
 		}
 
 		Write-Host ("==> Running [{0} / {1}]: {2}" -f $Target.Repository, $Target.Example, $command)
+		$executableCommand = ConvertTo-ExecutableCommand -Command $command
 		$commandStartedUtc = (Get-Date).ToUniversalTime().ToString("o")
 		$outputLines = New-Object System.Collections.Generic.List[string]
 		$capturedLineCount = 0
-		cmd /c $command 2>&1 | ForEach-Object {
+		cmd /c $executableCommand 2>&1 | ForEach-Object {
 			$line = [string]$_
 			Write-Host $line
 			if ($capturedLineCount -lt $MaxCommandOutputLines) {
@@ -244,7 +268,7 @@ $stages = @("generate-project", "repair-generated-project", "compile-example")
 
 try {
 	foreach ($stage in $stages) {
-		$targets = Get-StageTargets -Stage $stage -First $TargetsPerStage
+		$targets = @(Get-StageTargets -Stage $stage -First $TargetsPerStage)
 		if ($targets.Count -eq 0) {
 			Write-Host "==> No targets currently require stage: $stage"
 			continue

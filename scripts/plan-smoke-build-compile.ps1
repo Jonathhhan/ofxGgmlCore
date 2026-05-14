@@ -86,7 +86,12 @@ function Get-CompileTargetState {
 	if (!$ExampleMetadata.HasGeneratedProject) {
 		return "generate-project"
 	}
-	if (!$Postflight -or !$Postflight.Complete) {
+	$complete = if ($Postflight) {
+		[bool](Get-ObjectPropertyValue -Object $Postflight -Name "Complete")
+	} else {
+		$false
+	}
+	if (!$complete) {
 		return "repair-generated-project"
 	}
 	if ([string]::IsNullOrWhiteSpace($CompileCommand)) {
@@ -119,6 +124,22 @@ function ConvertTo-StringArray {
 	return @($Value | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
 }
 
+function Get-ObjectPropertyValue {
+	param(
+		[object]$Object,
+		[string]$Name
+	)
+
+	if ($null -eq $Object) {
+		return $null
+	}
+	$property = $Object.PSObject.Properties[$Name]
+	if (!$property) {
+		return $null
+	}
+	return $property.Value
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-of-smoke-build.ps1"
 $postflightScript = Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1"
@@ -146,7 +167,7 @@ foreach ($record in @($plan.Records)) {
 				throw "check-smoke-build-target-postflight.ps1 -Json failed for $($record.Repository) / $($exampleMetadata.Example)."
 			}
 			$postflightResult = ($postflightJson -join [Environment]::NewLine) | ConvertFrom-Json
-			$postflight = @($postflightResult.Postflights | Select-Object -First 1)
+			$postflight = $postflightResult.Postflights | Select-Object -First 1
 		}
 
 		$compileCommand = Get-CompileCommand `
@@ -173,9 +194,14 @@ foreach ($record in @($plan.Records)) {
 		}
 		$missingProjectAddons = New-Object System.Collections.Generic.List[string]
 		if ($postflight) {
-			foreach ($missingAddon in @(ConvertTo-StringArray -Value $postflight.MissingProjectAddons)) {
+			foreach ($missingAddon in @(ConvertTo-StringArray -Value (Get-ObjectPropertyValue -Object $postflight -Name "MissingProjectAddons"))) {
 				$missingProjectAddons.Add($missingAddon)
 			}
+		}
+		$completeGeneratedProject = if ($postflight) {
+			[bool](Get-ObjectPropertyValue -Object $postflight -Name "Complete")
+		} else {
+			$false
 		}
 
 		$targets.Add([pscustomobject]@{
@@ -191,8 +217,8 @@ foreach ($record in @($plan.Records)) {
 			Example = [string]$exampleMetadata.Example
 			Stage = $state
 			Action = Get-CompileTargetAction -State $state
-			CompleteGeneratedProject = if ($postflight) { [bool]$postflight.Complete } else { $false }
-			GeneratedProjectFiles = @($exampleMetadata.GeneratedProjectFiles)
+			CompleteGeneratedProject = $completeGeneratedProject
+			GeneratedProjectFiles = @(Get-ObjectPropertyValue -Object $exampleMetadata -Name "GeneratedProjectFiles")
 			MissingProjectAddons = $missingProjectAddons
 			CompileCommand = $compileCommand
 			NextCommands = @($nextCommands.ToArray())

@@ -140,7 +140,9 @@ focused rollout order.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged Codex, Copilot, or
 Hermes fanout PRs. It only writes a cleanup plan for merged agent branches in
 managed repositories; it does not delete branches or operate on classified
-legacy/reference siblings.
+legacy/reference siblings. The plan also reports matching local and remote
+agent branch inventory so stale unmerged branches are visible before deletion
+is considered.
 
 ## Auto-Discovery
 

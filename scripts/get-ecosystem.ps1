@@ -1,5 +1,11 @@
-if ([string]::IsNullOrWhiteSpace($script:OfxGgmlEcosystemScriptRoot)) {
-	$script:OfxGgmlEcosystemScriptRoot = Split-Path -Parent $PSCommandPath
+$scriptRootVariable = Get-Variable -Name OfxGgmlEcosystemScriptRoot -Scope Script -ErrorAction SilentlyContinue
+if (!$scriptRootVariable -or [string]::IsNullOrWhiteSpace([string]$scriptRootVariable.Value)) {
+	$currentScriptPath = if (![string]::IsNullOrWhiteSpace([string]$PSCommandPath)) {
+		$PSCommandPath
+	} else {
+		$MyInvocation.MyCommand.Path
+	}
+	$script:OfxGgmlEcosystemScriptRoot = Split-Path -Parent $currentScriptPath
 }
 
 function Get-OfxGgmlKnownMetadata {

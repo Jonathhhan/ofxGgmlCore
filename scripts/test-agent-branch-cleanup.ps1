@@ -16,6 +16,11 @@ foreach ($expected in @(
 	"## Summary",
 	"Managed repositories scanned",
 	"Delete candidates",
+	"Local agent branches",
+	"Remote agent branches",
+	"Repositories with agent branches",
+	"## Branch Inventory",
+	"Inventory includes merged and unmerged matching branches.",
 	"## Candidates",
 	"## Next Commands",
 	"scripts\plan-agent-branch-cleanup.bat -Fetch",
@@ -46,6 +51,14 @@ foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteC
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "agent branch cleanup summary did not include property: $property"
 	}
+}
+foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "RepositoriesWithAgentBranches")) {
+	if (!$parsed.Summary.PSObject.Properties[$property]) {
+		throw "agent branch cleanup inventory summary did not include property: $property"
+	}
+}
+if (!$parsed.PSObject.Properties["Inventory"]) {
+	throw "agent branch cleanup JSON output did not include Inventory."
 }
 if (!$parsed.NextCommands -or $parsed.NextCommands.Count -eq 0) {
 	throw "agent branch cleanup JSON output did not include NextCommands."
