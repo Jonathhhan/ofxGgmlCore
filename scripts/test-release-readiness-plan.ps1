@@ -4,6 +4,8 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-release-readiness.ps1"
 $workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-plan-evidence.md"
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-plan.md"
+$defaultOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
+$repoDefaultOutputPath = Resolve-Path (Join-Path $scriptRoot "..\docs\release-readiness-score.md") -ErrorAction SilentlyContinue
 
 @(
 	'# Workflow Status Report',
@@ -31,6 +33,23 @@ $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readi
 if (Test-Path -LiteralPath $outputPath) {
 	Remove-Item -LiteralPath $outputPath -Force
 }
+if (Test-Path -LiteralPath $defaultOutputPath) {
+	Remove-Item -LiteralPath $defaultOutputPath -Force
+}
+if ($repoDefaultOutputPath) {
+	Remove-Item -LiteralPath $repoDefaultOutputPath.Path -Force
+}
+
+& $planScript -SkipWorkflowStatus
+if (!$?) {
+	throw "plan-release-readiness.ps1 default run failed."
+}
+if (!(Test-Path -LiteralPath $defaultOutputPath -PathType Leaf)) {
+	throw "default release readiness plan was not written to temp: $defaultOutputPath"
+}
+if (Test-Path -LiteralPath (Join-Path $scriptRoot "..\docs\release-readiness-score.md") -PathType Leaf) {
+	throw "default release readiness plan should not write into docs without -OutputPath."
+}
 
 & $planScript -WorkflowStatusReport $workflowReport -OutputPath $outputPath
 if (!$?) {
@@ -57,3 +76,4 @@ foreach ($expected in @(
 
 Remove-Item -LiteralPath $workflowReport -Force
 Remove-Item -LiteralPath $outputPath -Force
+Remove-Item -LiteralPath $defaultOutputPath -Force
