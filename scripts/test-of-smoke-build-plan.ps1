@@ -5,6 +5,7 @@ $planScript = Join-Path $scriptRoot "plan-of-smoke-build.ps1"
 $selectScript = Join-Path $scriptRoot "select-smoke-build-target.ps1"
 $handoffScript = Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1"
 $preflightScript = Join-Path $scriptRoot "check-smoke-build-target-preflight.ps1"
+$postflightScript = Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1"
 
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -180,4 +181,39 @@ if (!$preflightParsed.Preflights -or $preflightParsed.Preflights.Count -ne 1) {
 }
 if (!$preflightParsed.Preflights[0].Checks -or $preflightParsed.Preflights[0].Checks.Count -eq 0) {
 	throw "smoke build target preflight JSON did not include checks."
+}
+
+$postflightOutput = & $postflightScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-postflight.ps1 failed."
+}
+
+$postflightText = $postflightOutput -join "`n"
+foreach ($expected in @(
+	"Smoke Build Target Postflight",
+	"generated project files",
+	"owning repository git impact",
+	"target stage completion",
+	"Next Validation"
+)) {
+	if ($postflightText -notmatch [regex]::Escape($expected)) {
+		throw "smoke build target postflight output did not contain expected text: $expected"
+	}
+}
+
+$postflightJsonOutput = & $postflightScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-postflight.ps1 -Json failed."
+}
+
+$postflightParsed = ($postflightJsonOutput -join "`n") | ConvertFrom-Json
+if (!$postflightParsed.Postflights -or $postflightParsed.Postflights.Count -ne 1) {
+	throw "smoke build target postflight JSON did not include exactly one postflight."
+}
+if (!$postflightParsed.Postflights[0].Checks -or $postflightParsed.Postflights[0].Checks.Count -eq 0) {
+	throw "smoke build target postflight JSON did not include checks."
+}
+$nullGeneratedProjectFiles = @($postflightParsed.Postflights[0].GeneratedProjectFiles | Where-Object { $null -eq $_ -or [string]::IsNullOrWhiteSpace([string]$_) })
+if ($nullGeneratedProjectFiles.Count -gt 0) {
+	throw "smoke build target postflight JSON included null or empty generated project file entries."
 }

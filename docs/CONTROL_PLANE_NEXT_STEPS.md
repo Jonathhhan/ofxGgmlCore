@@ -19,6 +19,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an agent needs the next concrete smoke-build target.
 - Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` before handing a target to Codex, Copilot, or Hermes.
 - Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project` before any agent runs projectGenerator.
+- Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>` after projectGenerator to inspect generated files and git impact.
 - Keep reusable workflow expectations in `ofxGgmlWorkflows`, and keep caller-addon documentation in Core.
 - Prefer reporting gaps over adding new automation until the current workflow state is easy to inspect.
 
