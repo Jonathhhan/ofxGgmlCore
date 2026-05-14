@@ -63,6 +63,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-ecosystem.
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-coding-agent-work.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Auto-Detected Completed Planning Guides" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Workflow guides detected" "coding agent work snapshot"
@@ -103,6 +104,9 @@ foreach ($requiredScript in @(
 	"plan-agent-branch-cleanup.bat",
 	"plan-agent-branch-cleanup.ps1",
 	"plan-agent-branch-cleanup.sh",
+	"plan-release-readiness.bat",
+	"plan-release-readiness.ps1",
+	"plan-release-readiness.sh",
 	"plan-doctor-rollout.bat",
 	"plan-doctor-rollout.ps1",
 	"plan-doctor-rollout.sh",
@@ -208,6 +212,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking release readiness score" `
 	-ScriptPath (Join-Path $scriptRoot "test-release-readiness-score.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking release readiness planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-release-readiness-plan.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking ecosystem readiness" `

@@ -25,6 +25,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 ## P2: Release Readiness
 
 - Connect release readiness to actual validation evidence: local validation, strict ecosystem audit, readiness check, and workflow status.
+- Prefer `scripts\plan-release-readiness.bat` for a one-command release evidence pass.
 - Use `scripts\generate-release-readiness-score.py --workflow-status-report <report>` after generating a workflow status report for release planning.
 - Keep generated artifacts, local models, build output, and IDE state out of release planning.
 - Favor one repository-scoped readiness improvement per PR so agent-authored changes remain reviewable.

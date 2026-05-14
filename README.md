@@ -81,6 +81,7 @@ cd ../ofxGgmlLlama
 | `scripts\plan-coding-agent-work.bat` | Generate a prioritized Codex/Copilot/Hermes-safe work queue |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
+| `scripts\plan-release-readiness.bat` | Generate release-readiness evidence from workflow status and policy metadata |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
@@ -118,6 +119,8 @@ Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
 need a focused doctor entry point, wrapper, smoke test, or validation hook.
+Use `scripts\plan-release-readiness.bat` to generate a release-readiness score
+with workflow-status evidence when planning release gates.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.
