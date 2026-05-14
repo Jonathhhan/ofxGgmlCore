@@ -22,6 +22,7 @@ The ecosystem currently provides:
 - non-mutating smoke-build target preflight checks
 - non-mutating smoke-build target postflight reports
 - dry-run and explicit-apply generated-project repair planning
+- non-mutating focused compile-target planning
 
 ## Current agent readiness
 
@@ -39,6 +40,7 @@ scripts\plan-smoke-build-target-handoff.bat -Stage generate-project
 scripts\check-smoke-build-target-preflight.bat -Stage generate-project
 scripts\check-smoke-build-target-postflight.bat -Stage generate-project
 scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
+scripts\plan-smoke-build-compile.bat -Stage compile-example
 scripts\plan-release-readiness.bat -SkipWorkflowStatus
 ```
 
@@ -58,6 +60,7 @@ The readiness pass currently verifies:
 - smoke-build preflight checks projectGenerator, metadata, repository cleanliness, generated-project state, and emits readiness-gated next commands
 - smoke-build postflight reports generated project files, Visual Studio addon wiring, git impact, completion/review counts, and next commands after target work
 - smoke-build project repair planning reports missing Visual Studio addon references, supports explicit generated-metadata repair with `-Apply`, and emits next commands for postflight and hygiene checks
+- smoke-build compile planning emits focused build commands only after generated-project postflight is complete
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - doctor rollout planning runs
@@ -97,6 +100,7 @@ The current smoke-build workflow:
 - detects the embedded command-line projectGenerator before the GUI wrapper on Windows
 - detects generated Visual Studio project files that are present but missing expected addon wiring
 - plans and explicitly applies generated Visual Studio addon-wiring repair steps
+- plans focused compile targets for generated projects that pass postflight
 - locally repaired and built `ofxGgmlAudioTranscribeExample` through the Audio addon's Visual Studio build script with 0 errors
 - does not yet compile openFrameworks examples in CI across the managed ecosystem
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it

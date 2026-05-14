@@ -43,6 +43,9 @@ missing Visual Studio addon wiring; it produces a non-mutating repair plan with
 the expected owner and companion addon references plus the next validation
 commands. After reviewing that dry-run, `-Apply` can update generated Visual
 Studio project metadata, followed by postflight and artifact hygiene.
+Use `scripts\plan-smoke-build-compile.bat` after postflight is OK to turn
+generated-project verification into focused example build commands without
+running those builds automatically.
 
 Current Windows projectGenerator evidence: Core now prefers the embedded
 command-line generator at `projectGenerator\resources\app\app\projectGenerator.exe`
@@ -85,6 +88,7 @@ Project generation validation:
 - generate example projects
 - verify generated project structure
 - plan generated-project repair when Visual Studio addon wiring is incomplete
+- plan focused compile targets after generated-project postflight is OK
 - keep generated project files out of git unless a repository explicitly owns them
 
 ### Phase 3
