@@ -19,6 +19,29 @@ if (!$?) {
 
 $selection = ($selectionJson -join [Environment]::NewLine) | ConvertFrom-Json
 $targets = @($selection.Targets)
+$validationCommands = @(
+	"scripts\plan-of-smoke-build.bat",
+	"scripts\select-smoke-build-target.bat -Stage $Stage -First $First",
+	"scripts\test-of-smoke-build-plan.ps1",
+	"scripts\test-artifact-hygiene.ps1"
+)
+$guardrails = @(
+	"Do not commit generated openFrameworks project files unless the owning addon explicitly tracks them.",
+	"Keep model files, build output, IDE state, caches, and downloaded runtimes out of git.",
+	"Work one selected example at a time and re-run the smoke-build planner afterward."
+)
+$targetCommands = @($targets |
+	Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.Command) } |
+	ForEach-Object { [string]$_.Command })
+$preflightCommand = "scripts\check-smoke-build-target-preflight.bat -Stage $Stage -First $First"
+$postflightCommands = @($targets |
+	Where-Object {
+		![string]::IsNullOrWhiteSpace([string]$_.Repository) -and
+		![string]::IsNullOrWhiteSpace([string]$_.Example)
+	} |
+	ForEach-Object { "scripts\check-smoke-build-target-postflight.bat -Stage $Stage -Repository $($_.Repository) -Example $($_.Example)" })
+$nextCommands = @($preflightCommand) + $targetCommands + $postflightCommands + $validationCommands
+$safetyNote = "This handoff is non-mutating. Run projectGenerator only after preflight reports the selected target is ready, then use postflight to review generated files and git impact."
 
 if ($Json) {
 	[pscustomobject]@{
@@ -27,17 +50,12 @@ if ($Json) {
 		ProjectGeneratorPath = $selection.ProjectGeneratorPath
 		Stage = $Stage
 		Targets = $targets
-		Validation = @(
-			"scripts\plan-of-smoke-build.bat",
-			"scripts\select-smoke-build-target.bat -Stage $Stage -First $First",
-			"scripts\test-of-smoke-build-plan.ps1",
-			"scripts\test-artifact-hygiene.ps1"
-		)
-		Guardrails = @(
-			"Do not commit generated openFrameworks project files unless the owning addon explicitly tracks them.",
-			"Keep model files, build output, IDE state, caches, and downloaded runtimes out of git.",
-			"Work one selected example at a time and re-run the smoke-build planner afterward."
-		)
+		TargetCommands = $targetCommands
+		PostflightCommands = $postflightCommands
+		Validation = $validationCommands
+		Guardrails = $guardrails
+		NextCommands = $nextCommands
+		SafetyNote = $safetyNote
 	} | ConvertTo-Json -Depth 6
 	return
 }
@@ -77,15 +95,24 @@ if ($commands.Count -gt 0) {
 $lines.Add("")
 $lines.Add("## Validation")
 $lines.Add("")
-$lines.Add('- `scripts\plan-of-smoke-build.bat`')
-$lines.Add(('- `scripts\select-smoke-build-target.bat -Stage {0} -First {1}`' -f $Stage, $First))
-$lines.Add('- `scripts\test-of-smoke-build-plan.ps1`')
-$lines.Add('- `scripts\test-artifact-hygiene.ps1`')
+foreach ($command in $validationCommands) {
+	$lines.Add(('- `{0}`' -f $command))
+}
 $lines.Add("")
 $lines.Add("## Guardrails")
 $lines.Add("")
-$lines.Add("- Do not commit generated openFrameworks project files unless the owning addon explicitly tracks them.")
-$lines.Add("- Keep model files, build output, IDE state, caches, and downloaded runtimes out of git.")
-$lines.Add("- Work one selected example at a time and re-run the smoke-build planner afterward.")
+foreach ($guardrail in $guardrails) {
+	$lines.Add(("- $guardrail"))
+}
+$lines.Add("")
+$lines.Add("## Next Commands")
+$lines.Add("")
+$lines.Add('```powershell')
+foreach ($command in $nextCommands) {
+	$lines.Add($command)
+}
+$lines.Add('```')
+$lines.Add("")
+$lines.Add($safetyNote)
 
 Write-Output ($lines -join [Environment]::NewLine)
