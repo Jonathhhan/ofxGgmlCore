@@ -140,6 +140,7 @@ function Get-MergedBranches {
 function ConvertTo-MarkdownCleanupPlan {
 	param(
 		[array]$Candidates,
+		[object]$Summary,
 		[string]$Root
 	)
 
@@ -155,6 +156,18 @@ function ConvertTo-MarkdownCleanupPlan {
 	} else {
 		$lines.Add("Remote refs were not fetched. Use ``-Fetch`` to refresh before acting.")
 	}
+	$lines.Add("")
+	$lines.Add("## Summary")
+	$lines.Add("")
+	$lines.Add("| Metric | Count |")
+	$lines.Add("| --- | ---: |")
+	$lines.Add("| Managed repositories scanned | $($Summary.RepositoriesScanned) |")
+	$lines.Add("| Delete candidates | $($Summary.DeleteCandidates) |")
+	$lines.Add("| Local delete candidates | $($Summary.LocalDeleteCandidates) |")
+	$lines.Add("| Remote delete candidates | $($Summary.RemoteDeleteCandidates) |")
+	$lines.Add("| Current branches skipped | $($Summary.CurrentBranchesSkipped) |")
+	$lines.Add("")
+	$lines.Add("## Candidates")
 	$lines.Add("")
 	if ($Candidates.Count -eq 0) {
 		$lines.Add("No merged agent branches were found.")
@@ -181,16 +194,24 @@ if (!$?) {
 $status = $statusJson | ConvertFrom-Json
 $repositories = @($status.Addons | Where-Object { $_.Known -and $_.Present })
 $candidates = @($repositories | ForEach-Object { Get-MergedBranches -Status $_ })
+$summary = [pscustomobject]@{
+	RepositoriesScanned = $repositories.Count
+	DeleteCandidates = @($candidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
+	LocalDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "local" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
+	RemoteDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "remote" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
+	CurrentBranchesSkipped = @($candidates | Where-Object { $_.Current }).Count
+}
 
 if ($Json) {
 	$content = [pscustomobject]@{
 		Root = $status.Root
 		BranchPattern = $BranchPattern
 		Fetched = [bool]$Fetch
+		Summary = $summary
 		Candidates = $candidates
 	} | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Root ([string]$status.Root)
+	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Summary $summary -Root ([string]$status.Root)
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {
