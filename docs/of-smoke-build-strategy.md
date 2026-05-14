@@ -35,16 +35,19 @@ on a selected target to verify projectGenerator detection, example metadata,
 repository cleanliness, and generated-project state.
 Use `scripts\check-smoke-build-target-postflight.bat` after acting on a target
 to report generated project files, pending git impact, and the validation
-commands that should run before any handoff.
+commands that should run before any handoff. The postflight distinguishes
+generated Visual Studio project files that merely exist from projects that
+actually reference the expected owner and companion addons.
 
 Current Windows projectGenerator evidence: Core now prefers the embedded
 command-line generator at `projectGenerator\resources\app\app\projectGenerator.exe`
 when present and emits Visual Studio commands with `-p'vs'`. A local run against
 `ofxGgmlAudioTranscribeExample` generated ignored Visual Studio project files,
 but projectGenerator exited during addon processing before addon include and
-library settings were fully written. Treat generated-project verification and
-compile gates as blocked until that addon-processing failure is fixed or worked
-around.
+library settings were fully written. Core postflight now reports that case as
+incomplete addon wiring instead of treating the project as verified. Treat
+generated-project verification and compile gates as blocked until that
+addon-processing failure is fixed or worked around.
 
 ## Planned smoke-build phases
 

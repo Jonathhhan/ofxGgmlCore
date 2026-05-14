@@ -238,6 +238,7 @@ $postflightText = $postflightOutput -join "`n"
 foreach ($expected in @(
 	"Smoke Build Target Postflight",
 	"generated project files",
+	"generated project addon wiring",
 	"owning repository git impact",
 	"target stage completion",
 	"Next Validation",
@@ -260,6 +261,10 @@ if (!$postflightParsed.Postflights -or $postflightParsed.Postflights.Count -ne 1
 if (!$postflightParsed.Postflights[0].Checks -or $postflightParsed.Postflights[0].Checks.Count -eq 0) {
 	throw "smoke build target postflight JSON did not include checks."
 }
+$projectWiringCheck = @($postflightParsed.Postflights[0].Checks | Where-Object { $_.Name -eq "generated project addon wiring" } | Select-Object -First 1)
+if (!$projectWiringCheck) {
+	throw "smoke build target postflight JSON did not include generated project addon wiring."
+}
 if (!$postflightParsed.NextCommands -or $postflightParsed.NextCommands.Count -eq 0) {
 	throw "smoke build target postflight JSON did not include next commands."
 }
@@ -278,4 +283,17 @@ if (@($postflightParsed.NextCommands) -notcontains "scripts\plan-of-smoke-build.
 $nullGeneratedProjectFiles = @($postflightParsed.Postflights[0].GeneratedProjectFiles | Where-Object { $null -eq $_ -or [string]::IsNullOrWhiteSpace([string]$_) })
 if ($nullGeneratedProjectFiles.Count -gt 0) {
 	throw "smoke build target postflight JSON included null or empty generated project file entries."
+}
+
+$corePostflightJsonOutput = & $postflightScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlSimpleExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-postflight.ps1 -Json failed for the Core generated project."
+}
+$corePostflightParsed = ($corePostflightJsonOutput -join "`n") | ConvertFrom-Json
+$coreWiringCheck = @($corePostflightParsed.Postflights[0].Checks | Where-Object { $_.Name -eq "generated project addon wiring" } | Select-Object -First 1)
+if (!$coreWiringCheck -or $coreWiringCheck.State -ne "OK") {
+	throw "Core generated project postflight did not verify expected addon wiring."
+}
+if ($corePostflightParsed.Postflights[0].MissingProjectAddons.Count -gt 0) {
+	throw "Core generated project postflight reported missing addon wiring."
 }
