@@ -126,6 +126,7 @@ $steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-
 }
 $steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
 $steps += Invoke-ReadinessStep -Name "coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1")
+$steps += Invoke-ReadinessStep -Name "openFrameworks smoke build plan" -ScriptPath (Join-Path $scriptRoot "plan-of-smoke-build.ps1")
 $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters @{
 	OutputPath = $releaseReadinessOutput
 	SkipWorkflowStatus = $true

@@ -15,6 +15,9 @@ The ecosystem currently provides:
 
 Current smoke workflows do not yet compile examples.
 
+Use `scripts\plan-of-smoke-build.bat` from Core to generate the current
+non-mutating rollout plan before adding project-generation or compile gates.
+
 ## Planned smoke-build phases
 
 ### Phase 1
@@ -34,6 +37,7 @@ Project generation validation:
 - run projectGenerator
 - generate example projects
 - verify generated project structure
+- keep generated project files out of git unless a repository explicitly owns them
 
 ### Phase 3
 

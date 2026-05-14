@@ -76,4 +76,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 	if ($snapshot -notmatch [regex]::Escape("plan-release-readiness.ps1")) {
 		throw "committed coding agent work snapshot did not reference plan-release-readiness.ps1."
 	}
+	if ($snapshot -notmatch [regex]::Escape("plan-of-smoke-build.ps1")) {
+		throw "committed coding agent work snapshot did not reference plan-of-smoke-build.ps1."
+	}
 }

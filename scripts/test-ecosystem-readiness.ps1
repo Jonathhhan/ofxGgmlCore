@@ -18,6 +18,7 @@ foreach ($expected in @(
 	"ecosystem audit strict",
 	"doctor rollout plan",
 	"coding agent work queue",
+	"openFrameworks smoke build plan",
 	"release readiness plan",
 	"agent branch cleanup plan",
 	"Readiness passed"
@@ -48,4 +49,9 @@ if ($workflowGuideStep.Count -eq 0 -or $workflowGuideStep[0].State -ne "OK") {
 $releaseReadinessStep = @($parsed.Steps | Where-Object { $_.Name -eq "release readiness plan" } | Select-Object -First 1)
 if ($releaseReadinessStep.Count -eq 0 -or $releaseReadinessStep[0].State -ne "OK") {
 	throw "ecosystem readiness JSON did not report release readiness plan as OK."
+}
+
+$smokeBuildStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build plan" } | Select-Object -First 1)
+if ($smokeBuildStep.Count -eq 0 -or $smokeBuildStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report openFrameworks smoke build plan as OK."
 }

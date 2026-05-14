@@ -12,6 +12,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 
 - Expand workflow status reporting so missing optional workflows, failed required workflows, and stale workflow runs are visible from Core.
 - Use `scripts\fetch-workflow-status.py --stale-days 30` when checking whether latest workflow runs are still fresh enough to trust for release planning.
+- Use `scripts\plan-of-smoke-build.bat` before adding real openFrameworks project-generation or compile validation gates.
 - Keep reusable workflow expectations in `ofxGgmlWorkflows`, and keep caller-addon documentation in Core.
 - Prefer reporting gaps over adding new automation until the current workflow state is easy to inspect.
 
