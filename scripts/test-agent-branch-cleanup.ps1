@@ -17,6 +17,9 @@ foreach ($expected in @(
 	"Managed repositories scanned",
 	"Delete candidates",
 	"## Candidates",
+	"## Next Commands",
+	"scripts\plan-agent-branch-cleanup.bat -Fetch",
+	"# No delete commands were generated.",
 	"This script only writes a plan"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
