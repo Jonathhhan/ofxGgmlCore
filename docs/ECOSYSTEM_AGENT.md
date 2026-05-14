@@ -46,6 +46,7 @@ From `ofxGgmlCore`:
 ```powershell
 scripts\status-family.bat
 scripts\audit-ecosystem.bat
+scripts\check-ecosystem-readiness.bat
 scripts\plan-ecosystem.bat
 scripts\plan-doctor-rollout.bat
 scripts\plan-agent-branch-cleanup.bat
@@ -57,6 +58,7 @@ On macOS/Linux:
 ```sh
 ./scripts/status-family.sh
 ./scripts/audit-ecosystem.sh
+./scripts/check-ecosystem-readiness.sh
 ./scripts/plan-ecosystem.sh
 ./scripts/plan-doctor-rollout.sh
 ./scripts/plan-agent-branch-cleanup.sh
@@ -65,6 +67,11 @@ On macOS/Linux:
 
 Use `scripts\plan-ecosystem.bat -OutputPath docs\ECOSYSTEM_PLAN.md` to write a
 handoff plan for review.
+
+Use `scripts\check-ecosystem-readiness.bat` for a single non-mutating pass
+before broad ecosystem work. It checks generated agent instructions, strict
+ecosystem audit status, planning handoffs, doctor rollout status, branch cleanup
+planning, and managed doctor smoke tests.
 
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,

@@ -1,0 +1,160 @@
+param(
+	[string]$OutputPath = "",
+	[switch]$SkipDoctorTests,
+	[switch]$Json
+)
+
+$ErrorActionPreference = "Stop"
+
+function New-StepResult {
+	param(
+		[string]$Name,
+		[string]$State,
+		[string]$Detail = "",
+		[string[]]$Output = @()
+	)
+	return [pscustomobject]@{
+		Name = $Name
+		State = $State
+		Detail = $Detail
+		Output = @($Output)
+	}
+}
+
+function Invoke-ReadinessStep {
+	param(
+		[string]$Name,
+		[string]$ScriptPath,
+		[hashtable]$Parameters = @{}
+	)
+
+	if (!(Test-Path -LiteralPath $ScriptPath -PathType Leaf)) {
+		return New-StepResult -Name $Name -State "FAIL" -Detail "missing script: $ScriptPath"
+	}
+
+	$output = & $ScriptPath @Parameters *>&1 | ForEach-Object { $_.ToString() }
+	if (!$?) {
+		return New-StepResult -Name $Name -State "FAIL" -Detail "exit code $LASTEXITCODE" -Output $output
+	}
+	return New-StepResult -Name $Name -State "OK" -Detail $ScriptPath -Output $output
+}
+
+function ConvertTo-MarkdownReadiness {
+	param(
+		[string]$Root,
+		[array]$Steps,
+		[array]$DoctorTests
+	)
+
+	$lines = New-Object System.Collections.Generic.List[string]
+	$lines.Add("# ofxGgml Ecosystem Readiness Check")
+	$lines.Add("")
+	$lines.Add("Non-mutating readiness pass for Codex, GitHub Copilot, Hermes Agent, and similar coding assistants.")
+	$lines.Add("")
+	$lines.Add("Root: $Root")
+	$lines.Add("")
+	$lines.Add("## Control Plane")
+	$lines.Add("")
+	$lines.Add("| Check | State | Detail |")
+	$lines.Add("| --- | --- | --- |")
+	foreach ($step in $Steps) {
+		$lines.Add("| $($step.Name) | $($step.State) | $($step.Detail) |")
+	}
+
+	$lines.Add("")
+	$lines.Add("## Doctor Smoke Tests")
+	$lines.Add("")
+	if ($SkipDoctorTests) {
+		$lines.Add("Doctor smoke tests were skipped.")
+	} else {
+		$lines.Add("| Repository | State | Detail |")
+		$lines.Add("| --- | --- | --- |")
+		foreach ($test in $DoctorTests) {
+			$lines.Add("| $($test.Name) | $($test.State) | $($test.Detail) |")
+		}
+	}
+
+	$failed = @(@($Steps + $DoctorTests) | Where-Object { $_.State -ne "OK" })
+	$lines.Add("")
+	if ($failed.Count -eq 0) {
+		$lines.Add("Readiness passed.")
+	} else {
+		$lines.Add("Readiness failed for: $(@($failed | ForEach-Object { $_.Name }) -join ', ').")
+	}
+
+	return $lines -join [Environment]::NewLine
+}
+
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$coreRoot = Split-Path -Parent $scriptRoot
+$statusScript = Join-Path $scriptRoot "status-family.ps1"
+
+$statusJson = & $statusScript -Json
+if (!$?) {
+	throw "status-family.ps1 failed."
+}
+$status = $statusJson | ConvertFrom-Json
+
+$managedNames = @($status.Addons | Where-Object { $_.Known } | ForEach-Object { [string]$_.Name })
+$steps = @()
+$steps += Invoke-ReadinessStep -Name "agent instructions current" -ScriptPath (Join-Path $scriptRoot "write-agent-instructions.ps1") -Parameters @{
+	Check = $true
+	Addons = $managedNames
+}
+$steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-Path $scriptRoot "audit-ecosystem.ps1") -Parameters @{
+	Strict = $true
+}
+$steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
+$steps += Invoke-ReadinessStep -Name "doctor rollout plan" -ScriptPath (Join-Path $scriptRoot "plan-doctor-rollout.ps1")
+$steps += Invoke-ReadinessStep -Name "agent branch cleanup plan" -ScriptPath (Join-Path $scriptRoot "plan-agent-branch-cleanup.ps1")
+
+$doctorTests = @()
+if (!$SkipDoctorTests) {
+	foreach ($repo in @($status.Addons | Where-Object { $_.Known -and $_.Present -and $_.DoctorScript -and $_.Name -ne "ofxGgmlWorkflows" })) {
+		$tests = @(
+			Get-ChildItem -LiteralPath (Join-Path $repo.Path "scripts") -Filter "test-doctor*.ps1" -File -ErrorAction SilentlyContinue |
+				Where-Object { $_.Name -ne "test-doctor-rollout-plan.ps1" } |
+				Sort-Object Name
+		)
+		if ($tests.Count -eq 0) {
+			$doctorTests += New-StepResult -Name $repo.Name -State "FAIL" -Detail "missing test-doctor*.ps1"
+			continue
+		}
+		foreach ($test in $tests) {
+			$doctorTests += Invoke-ReadinessStep -Name $repo.Name -ScriptPath $test.FullName
+		}
+	}
+}
+
+$failed = @(@($steps + $doctorTests) | Where-Object { $_.State -ne "OK" })
+
+if ($Json) {
+	$content = [pscustomobject]@{
+		Root = [string]$status.Root
+		Passed = ($failed.Count -eq 0)
+		Steps = $steps
+		DoctorTests = $doctorTests
+	} | ConvertTo-Json -Depth 6
+} else {
+	$content = ConvertTo-MarkdownReadiness -Root ([string]$status.Root) -Steps $steps -DoctorTests $doctorTests
+}
+
+if (![string]::IsNullOrWhiteSpace($OutputPath)) {
+	$target = if ([System.IO.Path]::IsPathRooted($OutputPath)) {
+		$OutputPath
+	} else {
+		Join-Path $coreRoot $OutputPath
+	}
+	$directory = Split-Path -Parent $target
+	if (!(Test-Path -LiteralPath $directory -PathType Container)) {
+		New-Item -ItemType Directory -Path $directory -Force | Out-Null
+	}
+	Set-Content -LiteralPath $target -Value $content
+	Write-Host "Wrote $target"
+} else {
+	Write-Output $content
+}
+
+if ($failed.Count -gt 0) {
+	exit 1
+}
