@@ -1,5 +1,5 @@
 param(
-	[string]$OutputPath = "docs\release-readiness-score.md",
+	[string]$OutputPath = "",
 	[string]$WorkflowStatusReport = "",
 	[int]$StaleDays = 30,
 	[switch]$SkipWorkflowStatus
@@ -17,6 +17,14 @@ $addonRoot = Split-Path -Parent $scriptRoot
 $releaseScript = Join-Path $scriptRoot "generate-release-readiness-score.py"
 $workflowScript = Join-Path $scriptRoot "fetch-workflow-status.py"
 
+$resolvedOutputPath = if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+	Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
+} elseif ([System.IO.Path]::IsPathRooted($OutputPath)) {
+	$OutputPath
+} else {
+	Join-Path $addonRoot $OutputPath
+}
+
 $workflowReport = $WorkflowStatusReport
 if ([string]::IsNullOrWhiteSpace($workflowReport) -and !$SkipWorkflowStatus) {
 	$workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-release-evidence.md"
@@ -27,7 +35,7 @@ if ([string]::IsNullOrWhiteSpace($workflowReport) -and !$SkipWorkflowStatus) {
 	}
 }
 
-$arguments = @($releaseScript, "--output", $OutputPath)
+$arguments = @($releaseScript, "--output", $resolvedOutputPath)
 if (![string]::IsNullOrWhiteSpace($workflowReport)) {
 	$arguments += @("--workflow-status-report", $workflowReport)
 }
@@ -38,9 +46,4 @@ if (!$?) {
 	throw "generate-release-readiness-score.py failed."
 }
 
-$target = if ([System.IO.Path]::IsPathRooted($OutputPath)) {
-	$OutputPath
-} else {
-	Join-Path $addonRoot $OutputPath
-}
-Write-Host "Release readiness plan: $target"
+Write-Host "Release readiness plan: $resolvedOutputPath"
