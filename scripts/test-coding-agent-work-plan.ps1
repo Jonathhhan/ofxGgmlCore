@@ -69,3 +69,11 @@ if ($managedWithGuides.Count -gt 0) {
 		throw "coding agent work plan proposed stale lane-uplift work for guided repositories: $(@($staleLaneTasks | ForEach-Object { $_.Repository }) -join ', ')"
 	}
 }
+
+$snapshotPath = Join-Path (Split-Path -Parent $scriptRoot) "docs\CODING_AGENT_WORK.md"
+if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
+	$snapshot = Get-Content -LiteralPath $snapshotPath -Raw
+	if ($snapshot -notmatch [regex]::Escape("plan-release-readiness.ps1")) {
+		throw "committed coding agent work snapshot did not reference plan-release-readiness.ps1."
+	}
+}

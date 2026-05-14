@@ -190,9 +190,9 @@ if ($tasks.Count -eq 0 -and $managedReady.Count -gt 0) {
 			-Repository "ofxGgmlCore" `
 			-Lane $core[0].Lane `
 			-Category "control-plane" `
-			-Task "Keep the ecosystem control plane current by refreshing audit, readiness, and workflow observability docs." `
-			-Rationale "When every managed repository is instruction-ready, the next safest work is improving shared planning signals." `
-			-SuggestedFiles "docs/ECOSYSTEM_AGENT.md; docs/operational-validation-status.md; scripts/check-ecosystem-readiness.ps1" `
+			-Task "Keep the ecosystem control plane current by refreshing queue, readiness, workflow observability, and release-evidence docs." `
+			-Rationale "When every managed repository is instruction-ready, the next safest work is improving shared planning and release-readiness signals." `
+			-SuggestedFiles "docs/CODING_AGENT_WORK.md; docs/CONTROL_PLANE_NEXT_STEPS.md; docs/operational-validation-status.md; scripts/check-ecosystem-readiness.ps1; scripts/plan-release-readiness.ps1" `
 			-Validation "scripts/check-ecosystem-readiness.bat -SkipDoctorTests"))
 	}
 

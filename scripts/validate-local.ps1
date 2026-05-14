@@ -67,6 +67,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-re
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Auto-Detected Completed Planning Guides" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Workflow guides detected" "coding agent work snapshot"
+Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "plan-release-readiness.ps1" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "Workflow Observability" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"

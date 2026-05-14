@@ -16,7 +16,7 @@ Generated from local ecosystem status. This queue is intended for Codex, GitHub 
 
 | Priority | Repository | Lane | Category | Task | Suggested files | Validation |
 | --- | --- | --- | --- | --- | --- | --- |
-| P1 | `ofxGgmlCore` | `backend-neutral runtime base` | control-plane | Keep the ecosystem control plane current by refreshing audit, readiness, and workflow observability docs. | `docs/ECOSYSTEM_AGENT.md; docs/operational-validation-status.md; scripts/check-ecosystem-readiness.ps1` | `scripts/check-ecosystem-readiness.bat -SkipDoctorTests` |
+| P1 | `ofxGgmlCore` | `backend-neutral runtime base` | control-plane | Keep the ecosystem control plane current by refreshing queue, readiness, workflow observability, and release-evidence docs. | `docs/CODING_AGENT_WORK.md; docs/CONTROL_PLANE_NEXT_STEPS.md; docs/operational-validation-status.md; scripts/check-ecosystem-readiness.ps1; scripts/plan-release-readiness.ps1` | `scripts/check-ecosystem-readiness.bat -SkipDoctorTests` |
 
 ## Auto-Detected Completed Planning Guides
 
