@@ -13,6 +13,10 @@ foreach ($expected in @(
 	"ofxGgml Agent Branch Cleanup Plan",
 	"Dry-run cleanup plan",
 	"Branch pattern",
+	"## Summary",
+	"Managed repositories scanned",
+	"Delete candidates",
+	"## Candidates",
 	"This script only writes a plan"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
@@ -31,4 +35,12 @@ if ([string]::IsNullOrWhiteSpace([string]$parsed.Root)) {
 }
 if ([string]$parsed.BranchPattern -ne "codex/*") {
 	throw "agent branch cleanup JSON output did not include the default branch pattern."
+}
+if (!$parsed.Summary) {
+	throw "agent branch cleanup JSON output did not include Summary."
+}
+foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteCandidates", "RemoteDeleteCandidates", "CurrentBranchesSkipped")) {
+	if (!$parsed.Summary.PSObject.Properties[$property]) {
+		throw "agent branch cleanup summary did not include property: $property"
+	}
 }
