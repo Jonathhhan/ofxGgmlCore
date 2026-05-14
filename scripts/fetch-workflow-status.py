@@ -99,6 +99,32 @@ def parse_github_time(value):
         return None
 
 
+def workflow_issue(record):
+    status = record["status"]
+    state = status["state"]
+    if state in BLOCKING_CONCLUSIONS:
+        return f"latest run {status['summary']}"
+    if state == "missing":
+        return "workflow file missing"
+    if state == "no-runs":
+        return "workflow has no runs"
+    if state == "unavailable":
+        return status["summary"]
+    if status.get("stale", False):
+        age_days = status.get("age_days")
+        if age_days is None:
+            return "latest run is stale"
+        return f"latest run is stale ({age_days}d)"
+    return ""
+
+
+def workflow_issue_line(record):
+    issue = workflow_issue(record)
+    if not issue:
+        return ""
+    return f"- `{record['repo']}` / `{record['workflow']}`: {issue}."
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Fetch latest GitHub Actions status for the ofxGgml ecosystem.")
     parser.add_argument("--strict", action="store_true", help="Exit nonzero when required workflows are missing, unavailable, have no runs, or last ended in a blocking conclusion.")
@@ -169,6 +195,10 @@ def main():
             record["status"].get("stale", False)
         )
     ]
+    optional_gaps = [
+        record for record in records
+        if not record["required"] and workflow_issue(record)
+    ]
 
     lines = [
         "# Workflow Status Report",
@@ -190,11 +220,33 @@ def main():
         f"- Stale optional workflows: `{counts['stale_optional']}`",
         f"- Stale threshold: `{args.stale_days}` days",
         "",
+        "## Action Required",
+        "",
+        "### Required Workflow Blockers",
+        "",
+    ]
+    if strict_failures:
+        lines.extend(workflow_issue_line(record) for record in strict_failures)
+    else:
+        lines.append("- None.")
+
+    lines.extend([
+        "",
+        "### Optional Workflow Rollout Gaps",
+        "",
+    ])
+    if optional_gaps:
+        lines.extend(workflow_issue_line(record) for record in optional_gaps)
+    else:
+        lines.append("- None.")
+
+    lines.extend([
+        "",
         "## Workflows",
         "",
         "| Repository | Workflow | Required | Latest status | Age | Run |",
         "| --- | --- | --- | --- | ---: | --- |",
-    ]
+    ])
     for record in records:
         required = "yes" if record["required"] else "optional"
         status = record["status"]
