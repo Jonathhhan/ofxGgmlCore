@@ -180,7 +180,23 @@ function ConvertTo-MarkdownCleanupPlan {
 		}
 	}
 	$lines.Add("")
-	$lines.Add("This script only writes a plan. Review the commands before deleting branches.")
+	$lines.Add("## Next Commands")
+	$lines.Add("")
+	$lines.Add('```powershell')
+	if (!$Fetch) {
+		$lines.Add("scripts\plan-agent-branch-cleanup.bat -Fetch")
+	}
+	$deleteCommands = @($Candidates | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.DeleteCommand) } | ForEach-Object { [string]$_.DeleteCommand })
+	if ($deleteCommands.Count -gt 0) {
+		foreach ($command in $deleteCommands) {
+			$lines.Add($command)
+		}
+	} else {
+		$lines.Add("# No delete commands were generated.")
+	}
+	$lines.Add('```')
+	$lines.Add("")
+	$lines.Add('This script only writes a plan. Refresh refs with `-Fetch` before acting, review every command, and keep deletion as an explicit follow-up.')
 
 	return $lines -join [Environment]::NewLine
 }

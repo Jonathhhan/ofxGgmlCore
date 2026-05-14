@@ -28,6 +28,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 
 - Use `scripts\plan-agent-branch-cleanup.bat` after merged Codex, Copilot, or Hermes PRs.
 - Keep cleanup planning non-mutating by default; deletion should remain an explicit follow-up.
+- Use the generated next-commands section as the review checklist, starting with `-Fetch` before acting on stale local refs.
 - Review the summary counts before acting: scanned repositories, local and remote delete candidates, and current branches skipped.
 - Exclude classified legacy/reference siblings from cleanup suggestions unless they are promoted into the managed set.
 
