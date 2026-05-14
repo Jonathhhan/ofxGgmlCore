@@ -45,25 +45,32 @@ commands. After reviewing that dry-run, `-Apply` can update generated Visual
 Studio project metadata, followed by postflight and artifact hygiene.
 Use `scripts\plan-smoke-build-compile.bat` after postflight is OK to turn
 generated-project verification into focused example build commands without
-running those builds automatically.
+running those builds automatically. For examples without an addon-owned build
+script, the planner falls back to `scripts\build-smoke-example.bat`, a Core-owned
+generic builder that refuses to run until generated-project postflight is
+complete.
 
 Current Windows projectGenerator evidence: Core now prefers the embedded
 command-line generator at `projectGenerator\resources\app\app\projectGenerator.exe`
-when present and emits Visual Studio commands with `-p'vs'`. A local run against
-`ofxGgmlAudioTranscribeExample` generated ignored Visual Studio project files,
-but projectGenerator exited during addon processing before addon include and
-library settings were fully written. Core postflight now reports that case as
-incomplete addon wiring instead of treating the project as verified. Treat
-generated-project verification and compile gates as blocked until that
-addon-processing failure is fixed or worked around. The repair planner records
-the expected references for that case so agents can either retry
-projectGenerator or perform an explicit generated-project repair before compile
-validation. A local `-Apply` repair of the Audio generated project restored the
-expected Core, owner-addon, and ofxImGui Visual Studio references while leaving
-the owning addon worktree clean because generated project files remain ignored.
-After that repair, `ofxGgmlAudioTranscribeExample` built successfully through
-the Audio addon's focused Visual Studio build script with warnings but no
-errors.
+when present and emits Visual Studio commands with `-p'vs'`. Local project
+generation writes usable Visual Studio files but returns a crash-style process
+exit during addon processing, before addon include and library settings are
+fully written. Core postflight reports those projects as incomplete until the
+generated-project repair planner is applied.
+
+The generated-project repair planner now restores expected owner, Core, and
+ofxImGui Visual Studio references, plus addon `ADDON_CFLAGS` and `ADDON_LIBS`
+metadata needed for linking Core ggml symbols from companion examples. Local
+validation has generated and repaired all 14 managed addon examples while
+leaving every owning addon worktree clean because generated project files remain
+ignored.
+
+Focused local compile evidence now covers all 14 managed examples on Windows
+Release x64: Core simple; Llama text/chat/embedding; Audio transcribe; Sam point;
+Vision image; Rag search; Video frame; Music analysis/generation; Diffusion
+GAN/prompt; and Agents planner. Each completed with 0 errors; current warning
+counts are ordinary openFrameworks/ofxImGui/compiler warnings and remain outside
+the release gate.
 
 ## Planned smoke-build phases
 
@@ -89,6 +96,7 @@ Project generation validation:
 - verify generated project structure
 - plan generated-project repair when Visual Studio addon wiring is incomplete
 - plan focused compile targets after generated-project postflight is OK
+- run generic focused compile validation for complete generated projects that do not yet own addon-local build scripts
 - keep generated project files out of git unless a repository explicitly owns them
 
 ### Phase 3

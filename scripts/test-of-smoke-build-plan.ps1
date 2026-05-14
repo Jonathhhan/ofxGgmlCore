@@ -97,12 +97,15 @@ if (![string]::IsNullOrWhiteSpace([string]$parsed.ProjectGeneratorPath)) {
 		throw "openFrameworks smoke build plan emitted projectGenerator commands without the Visual Studio platform."
 	}
 	$generateTargets = @($parsed.Targets | Where-Object { $_.Stage -eq "generate-project" })
-	if ($generateTargets.Count -eq 0) {
-		throw "openFrameworks smoke build plan detected projectGenerator but did not identify project-generation targets."
+	$verifyTargets = @($parsed.Targets | Where-Object { $_.Stage -eq "verify-generated-project" })
+	if ($generateTargets.Count -eq 0 -and $verifyTargets.Count -eq 0) {
+		throw "openFrameworks smoke build plan detected projectGenerator but did not identify project-generation or verification targets."
 	}
 }
 
-$targetOutput = & $selectScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+$targetStage = if (@($parsed.Targets | Where-Object { $_.Stage -eq "generate-project" }).Count -gt 0) { "generate-project" } else { "verify-generated-project" }
+
+$targetOutput = & $selectScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "select-smoke-build-target.ps1 failed."
 }
@@ -110,8 +113,8 @@ if (!$?) {
 $targetText = $targetOutput -join "`n"
 foreach ($expected in @(
 	"openFrameworks Smoke Build Target",
-	"Stage filter: generate-project",
-	"generate-project",
+	"Stage filter: $targetStage",
+	$targetStage,
 	"Commands"
 )) {
 	if ($targetText -notmatch [regex]::Escape($expected)) {
@@ -119,7 +122,7 @@ foreach ($expected in @(
 	}
 }
 
-$targetJsonOutput = & $selectScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+$targetJsonOutput = & $selectScript -Stage $targetStage -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "select-smoke-build-target.ps1 -Json failed."
 }
@@ -128,11 +131,11 @@ $targetParsed = ($targetJsonOutput -join "`n") | ConvertFrom-Json
 if (!$targetParsed.Targets -or $targetParsed.Targets.Count -ne 1) {
 	throw "smoke build target selector JSON did not include exactly one target."
 }
-if ($targetParsed.Targets[0].Stage -ne "generate-project") {
+if ($targetParsed.Targets[0].Stage -ne $targetStage) {
 	throw "smoke build target selector returned the wrong target stage."
 }
 
-$handoffOutput = & $handoffScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+$handoffOutput = & $handoffScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-target-handoff.ps1 failed."
 }
@@ -152,7 +155,7 @@ foreach ($expected in @(
 	}
 }
 
-$handoffJsonOutput = & $handoffScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+$handoffJsonOutput = & $handoffScript -Stage $targetStage -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-target-handoff.ps1 -Json failed."
 }
@@ -167,7 +170,7 @@ if (!$handoffParsed.Validation -or $handoffParsed.Validation.Count -eq 0) {
 if (!$handoffParsed.NextCommands -or $handoffParsed.NextCommands.Count -eq 0) {
 	throw "smoke build target handoff JSON did not include next commands."
 }
-if ([string]@($handoffParsed.NextCommands)[0] -ne "scripts\check-smoke-build-target-preflight.bat -Stage generate-project -First 1") {
+if ([string]@($handoffParsed.NextCommands)[0] -ne "scripts\check-smoke-build-target-preflight.bat -Stage $targetStage -First 1") {
 	throw "smoke build target handoff JSON next commands did not start with preflight."
 }
 if (@($handoffParsed.NextCommands) -notcontains "scripts\test-of-smoke-build-plan.ps1") {
@@ -186,7 +189,7 @@ if ([string]::IsNullOrWhiteSpace([string]$handoffParsed.SafetyNote)) {
 	throw "smoke build target handoff JSON did not include SafetyNote."
 }
 
-$preflightOutput = & $preflightScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+$preflightOutput = & $preflightScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-preflight.ps1 failed."
 }
@@ -205,7 +208,7 @@ foreach ($expected in @(
 	}
 }
 
-$preflightJsonOutput = & $preflightScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+$preflightJsonOutput = & $preflightScript -Stage $targetStage -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-preflight.ps1 -Json failed."
 }
@@ -234,7 +237,7 @@ if ($preflightParsed.Preflights[0].Ready) {
 	throw "blocked smoke build target preflight JSON did not start next commands with a blocked note."
 }
 
-$postflightOutput = & $postflightScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
+$postflightOutput = & $postflightScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-postflight.ps1 failed."
 }
@@ -254,7 +257,7 @@ foreach ($expected in @(
 	}
 }
 
-$postflightJsonOutput = & $postflightScript -Stage "generate-project" -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
+$postflightJsonOutput = & $postflightScript -Stage $targetStage -First 1 -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-postflight.ps1 -Json failed."
 }
@@ -299,6 +302,7 @@ foreach ($expected in @(
 	"Smoke Build Project Repair Plan",
 	"ready-for-compile-validation",
 	"Expected Addon References",
+	"Planned libraries",
 	"Combined Next Commands",
 	"ofxGgmlCore",
 	"ofxImGui"
@@ -378,4 +382,21 @@ if ([string]$compilePlanParsed.Targets[0].CompileCommand -notmatch [regex]::Esca
 }
 if (!$compilePlanParsed.NextCommands -or $compilePlanParsed.NextCommands.Count -eq 0) {
 	throw "smoke build compile plan JSON did not include next commands."
+}
+
+$genericCompilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlSam" -Example "ofxGgmlSamPointExample" -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-compile.ps1 -Json failed for a generic smoke example target."
+}
+$genericCompilePlanParsed = ($genericCompilePlanJsonOutput -join "`n") | ConvertFrom-Json
+if (!$genericCompilePlanParsed.Targets -or $genericCompilePlanParsed.Targets.Count -ne 1) {
+	throw "generic smoke build compile plan JSON did not include exactly one target."
+}
+if ($genericCompilePlanParsed.Targets[0].CompleteGeneratedProject -and
+	$genericCompilePlanParsed.Targets[0].Stage -ne "compile-example") {
+	throw "generic smoke build compile plan did not promote a complete generated project to compile-example."
+}
+if ($genericCompilePlanParsed.Targets[0].CompleteGeneratedProject -and
+	[string]$genericCompilePlanParsed.Targets[0].CompileCommand -notmatch [regex]::Escape("build-smoke-example.bat")) {
+	throw "generic smoke build compile plan did not include the generic build command."
 }

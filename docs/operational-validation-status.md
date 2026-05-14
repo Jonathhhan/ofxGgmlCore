@@ -23,6 +23,7 @@ The ecosystem currently provides:
 - non-mutating smoke-build target postflight reports
 - dry-run and explicit-apply generated-project repair planning
 - non-mutating focused compile-target planning
+- generic focused smoke-example build handoff for generated projects that pass postflight
 
 ## Current agent readiness
 
@@ -41,6 +42,7 @@ scripts\check-smoke-build-target-preflight.bat -Stage generate-project
 scripts\check-smoke-build-target-postflight.bat -Stage generate-project
 scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 scripts\plan-smoke-build-compile.bat -Stage compile-example
+scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 scripts\plan-release-readiness.bat -SkipWorkflowStatus
 ```
 
@@ -60,7 +62,7 @@ The readiness pass currently verifies:
 - smoke-build preflight checks projectGenerator, metadata, repository cleanliness, generated-project state, and emits readiness-gated next commands
 - smoke-build postflight reports generated project files, Visual Studio addon wiring, git impact, completion/review counts, and next commands after target work
 - smoke-build project repair planning reports missing Visual Studio addon references, supports explicit generated-metadata repair with `-Apply`, and emits next commands for postflight and hygiene checks
-- smoke-build compile planning emits focused build commands only after generated-project postflight is complete
+- smoke-build compile planning emits focused build commands only after generated-project postflight is complete, using addon-owned build scripts when present and the Core generic smoke builder otherwise
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - doctor rollout planning runs
@@ -101,7 +103,9 @@ The current smoke-build workflow:
 - detects generated Visual Studio project files that are present but missing expected addon wiring
 - plans and explicitly applies generated Visual Studio addon-wiring repair steps
 - plans focused compile targets for generated projects that pass postflight
-- locally repaired and built `ofxGgmlAudioTranscribeExample` through the Audio addon's Visual Studio build script with 0 errors
+- provides a generic local focused compile command for generated projects that do not own addon-local build scripts
+- locally generated, repaired, and postflight-verified Visual Studio projects for all 14 managed addon examples while keeping owning addon worktrees clean
+- locally built all 14 managed addon examples on Windows Release x64 with 0 errors
 - does not yet compile openFrameworks examples in CI across the managed ecosystem
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - does not yet validate CUDA/Metal/Vulkan runtimes

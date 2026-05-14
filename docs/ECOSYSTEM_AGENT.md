@@ -103,6 +103,7 @@ scripts\check-smoke-build-target-preflight.bat -Stage generate-project
 scripts\check-smoke-build-target-postflight.bat -Stage generate-project
 scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 scripts\plan-smoke-build-compile.bat -Stage compile-example
+scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 ```
 
 On macOS/Linux:
@@ -115,6 +116,7 @@ On macOS/Linux:
 ./scripts/check-smoke-build-target-postflight.sh -Stage generate-project
 ./scripts/plan-smoke-build-project-repair.sh -Stage verify-generated-project
 ./scripts/plan-smoke-build-compile.sh -Stage compile-example
+./scripts/build-smoke-example.sh -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 ```
 
 Run projectGenerator only after preflight reports the selected target is ready.
@@ -122,7 +124,8 @@ After acting on a target, run postflight with the selected repository and
 example if needed. When postflight reports missing Visual Studio addon wiring,
 run the repair planner before compile validation. Review the dry-run first, then
 use `-Apply` only for generated Visual Studio project metadata. Use the compile
-planner for focused build handoff after postflight is OK. Do not commit generated
+planner for focused build handoff after postflight is OK, then run the emitted
+addon-owned or generic build command for the selected target. Do not commit generated
 project files unless that addon intentionally tracks them.
 
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
