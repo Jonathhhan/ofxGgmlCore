@@ -45,6 +45,8 @@ jobs:
       - name: Upload smoke build control-plane report
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: ofx-smoke-build-ci-report
-          path: ${{ github.workspace }}/.smoke-build-ci-report.json
+          path: .smoke-build-ci-report.json
+          if-no-files-found: ignore

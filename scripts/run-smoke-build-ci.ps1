@@ -146,14 +146,19 @@ function Invoke-TargetCommands {
 
 		Write-Host ("==> Running [{0} / {1}]: {2}" -f $Target.Repository, $Target.Example, $command)
 		$commandStartedUtc = (Get-Date).ToUniversalTime().ToString("o")
-		$commandOutput = cmd /c $command 2>&1
+		$commandOutput = New-Object System.Collections.Generic.List[string]
+		cmd /c $command 2>&1 | ForEach-Object {
+			$line = [string]$_
+			Write-Host $line
+			$commandOutput.Add($line)
+		}
 		$exitCode = [int]$LASTEXITCODE
 		$commandCompletedUtc = (Get-Date).ToUniversalTime().ToString("o")
 		$commandResults.Add((New-CommandResult `
 			-Command ([string]$command) `
 			-Status ($(if ($exitCode -eq 0) { "passed" } else { "failed" })) `
 			-ExitCode $exitCode `
-			-Output @($commandOutput | ForEach-Object { [string]$_ }) `
+			-Output @($commandOutput.ToArray()) `
 			-StartedUtc $commandStartedUtc `
 			-CompletedUtc $commandCompletedUtc))
 
