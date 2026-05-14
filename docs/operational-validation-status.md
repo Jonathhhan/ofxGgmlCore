@@ -106,7 +106,7 @@ The current smoke-build workflow:
 - provides a generic local focused compile command for generated projects that do not own addon-local build scripts
 - locally generated, repaired, and postflight-verified Visual Studio projects for all 14 managed addon examples while keeping owning addon worktrees clean
 - locally built all 14 managed addon examples on Windows Release x64 with 0 errors
-- does not yet compile openFrameworks examples in CI across the managed ecosystem
+- compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - does not yet validate CUDA/Metal/Vulkan runtimes
 - does not yet validate runtime inference

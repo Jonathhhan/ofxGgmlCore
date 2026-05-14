@@ -1,0 +1,43 @@
+name: ofx-smoke-build-ci
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  smoke-build-ci:
+    runs-on: windows-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout core repository
+        uses: actions/checkout@v4
+
+      - name: Prepare sibling ofxGgml addons for managed compile checks
+        shell: pwsh
+        run: |
+          $addonsRoot = Split-Path -Parent $env:GITHUB_WORKSPACE
+          $repositories = @(
+            "ofxGgmlLlama",
+            "ofxGgmlSam",
+            "ofxGgmlAudio",
+            "ofxGgmlVision",
+            "ofxGgmlRag",
+            "ofxGgmlVideo",
+            "ofxGgmlMusic",
+            "ofxGgmlDiffusion",
+            "ofxGgmlAgents"
+          )
+          foreach ($repo in $repositories) {
+            $path = Join-Path $addonsRoot $repo
+            if (Test-Path -LiteralPath $path -PathType Container) {
+              continue
+            }
+            git clone --depth 1 "https://github.com/Jonathhhan/$repo.git" $path
+          }
+
+      - name: Run smoke build control plane compile loop
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\run-smoke-build-ci.ps1" -CloneAddonRepos
