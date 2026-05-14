@@ -185,9 +185,66 @@ function Format-ExampleMetadataSummary {
 	}) -join "; ")
 }
 
+function Get-RepositorySmokeBuildOrder {
+	param([string]$Repository)
+
+	switch ($Repository) {
+		"ofxGgmlCore" { 10 }
+		"ofxGgmlLlama" { 20 }
+		"ofxGgmlSam" { 30 }
+		"ofxGgmlAudio" { 40 }
+		"ofxGgmlVision" { 50 }
+		"ofxGgmlRag" { 60 }
+		"ofxGgmlVideo" { 70 }
+		"ofxGgmlMusic" { 80 }
+		"ofxGgmlDiffusion" { 90 }
+		"ofxGgmlAgents" { 100 }
+		default { 900 }
+	}
+}
+
+function Get-SmokeBuildTargets {
+	param([array]$Records)
+
+	$targets = New-Object System.Collections.Generic.List[object]
+	foreach ($record in $Records) {
+		foreach ($example in @($record.ExampleMetadata)) {
+			$stage = "verify-generated-project"
+			$priority = 40
+			$action = "verify generated project repair/build readiness before compile gates"
+			if ($example.Missing.Count -gt 0) {
+				$stage = "repair-example-metadata"
+				$priority = 10
+				$action = "repair example metadata before project generation"
+			} elseif ([string]::IsNullOrWhiteSpace([string]$example.ProjectGeneratorCommand)) {
+				$stage = "detect-projectGenerator"
+				$priority = 20
+				$action = "install or expose projectGenerator before generating projects"
+			} elseif (!$example.HasGeneratedProject) {
+				$stage = "generate-project"
+				$priority = 30
+				$action = "run projectGenerator command and keep generated outputs out of commits"
+			}
+
+			$targets.Add([pscustomobject]@{
+				Priority = $priority
+				Order = Get-RepositorySmokeBuildOrder -Repository ([string]$record.Repository)
+				Repository = $record.Repository
+				Example = $example.Example
+				Stage = $stage
+				Action = $action
+				Command = [string]$example.ProjectGeneratorCommand
+			})
+		}
+	}
+
+	return @($targets | Sort-Object Priority, Order, Example)
+}
+
 function ConvertTo-MarkdownSmokeBuildPlan {
 	param(
 		[array]$Records,
+		[array]$Targets,
 		[string]$Root,
 		[string]$ProjectGeneratorPath
 	)
@@ -196,6 +253,8 @@ function ConvertTo-MarkdownSmokeBuildPlan {
 	$exampleMetadata = @($Records | ForEach-Object { $_.ExampleMetadata })
 	$projectGeneratorCommands = @($exampleMetadata | Where-Object { ![string]::IsNullOrWhiteSpace($_.ProjectGeneratorCommand) })
 	$generatedProjects = @($exampleMetadata | Where-Object { $_.HasGeneratedProject })
+	$generateTargets = @($Targets | Where-Object { $_.Stage -eq "generate-project" })
+	$verifyTargets = @($Targets | Where-Object { $_.Stage -eq "verify-generated-project" })
 	$lines = New-Object System.Collections.Generic.List[string]
 	$lines.Add("# openFrameworks Smoke Build Plan")
 	$lines.Add("")
@@ -218,6 +277,8 @@ function ConvertTo-MarkdownSmokeBuildPlan {
 	$lines.Add("| Examples missing ofxGgmlCore | $(@($exampleMetadata | Where-Object { !$_.HasCoreAddon }).Count) |")
 	$lines.Add("| Examples with projectGenerator commands | $($projectGeneratorCommands.Count) |")
 	$lines.Add("| Examples with generated project files | $($generatedProjects.Count) |")
+	$lines.Add("| Generate-project targets | $($generateTargets.Count) |")
+	$lines.Add("| Verify-generated-project targets | $($verifyTargets.Count) |")
 	$lines.Add("")
 	$lines.Add("## Repository Plan")
 	$lines.Add("")
@@ -241,6 +302,16 @@ function ConvertTo-MarkdownSmokeBuildPlan {
 				$generatedProject = if ($example.HasGeneratedProject) { "present" } else { "missing" }
 				$lines.Add(('| `{0}` | `{1}` | `{2}` | `{3}` |' -f $record.Repository, $example.Example, $generatedProject, $example.ProjectGeneratorCommand))
 			}
+		}
+	}
+	if ($Targets.Count -gt 0) {
+		$lines.Add("")
+		$lines.Add("## Next Targets")
+		$lines.Add("")
+		$lines.Add("| Priority | Repository | Example | Stage | Action |")
+		$lines.Add("| ---: | --- | --- | --- | --- |")
+		foreach ($target in $Targets) {
+			$lines.Add(('| {0} | `{1}` | `{2}` | `{3}` | {4} |' -f $target.Priority, $target.Repository, $target.Example, $target.Stage, $target.Action))
 		}
 	}
 	$lines.Add("")
@@ -276,6 +347,7 @@ $records = @($managed | ForEach-Object {
 		Action = Get-SmokeBuildAction -Phase $phase
 	}
 })
+$targets = @(Get-SmokeBuildTargets -Records $records)
 
 if ($Json) {
 	$content = [pscustomobject]@{
@@ -283,9 +355,10 @@ if ($Json) {
 		OfRoot = $ofRoot
 		ProjectGeneratorPath = $projectGeneratorPath
 		Records = $records
+		Targets = $targets
 	} | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownSmokeBuildPlan -Records $records -Root ([string]$status.Root) -ProjectGeneratorPath $projectGeneratorPath
+	$content = ConvertTo-MarkdownSmokeBuildPlan -Records $records -Targets $targets -Root ([string]$status.Root) -ProjectGeneratorPath $projectGeneratorPath
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {

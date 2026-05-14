@@ -17,6 +17,8 @@ foreach ($expected in @(
 	"Examples with addons.make",
 	"Examples missing owner addon",
 	"Examples with projectGenerator commands",
+	"Generate-project targets",
+	"Next Targets",
 	"Example metadata",
 	"ready-for-project-generation-check",
 	"ofxGgmlCore",
@@ -40,6 +42,10 @@ if (!$parsed.Records -or $parsed.Records.Count -eq 0) {
 
 if ($null -eq $parsed.ProjectGeneratorPath) {
 	throw "openFrameworks smoke build plan JSON did not include projectGenerator detection state."
+}
+
+if (!$parsed.Targets -or $parsed.Targets.Count -eq 0) {
+	throw "openFrameworks smoke build plan JSON did not include a target queue."
 }
 
 $ready = @($parsed.Records | Where-Object { $_.Phase -eq "ready-for-project-generation-check" })
@@ -73,5 +79,9 @@ if (![string]::IsNullOrWhiteSpace([string]$parsed.ProjectGeneratorPath)) {
 	$commands = @($examples | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.ProjectGeneratorCommand) })
 	if ($commands.Count -eq 0) {
 		throw "openFrameworks smoke build plan detected projectGenerator but did not emit example commands."
+	}
+	$generateTargets = @($parsed.Targets | Where-Object { $_.Stage -eq "generate-project" })
+	if ($generateTargets.Count -eq 0) {
+		throw "openFrameworks smoke build plan detected projectGenerator but did not identify project-generation targets."
 	}
 }
