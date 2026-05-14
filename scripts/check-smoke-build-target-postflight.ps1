@@ -137,17 +137,39 @@ $postflights = @($targets | ForEach-Object {
 		Checks = @($checks)
 		NextValidation = @(
 			"scripts\plan-of-smoke-build.bat",
-			"scripts\check-smoke-build-target-postflight.bat -Repository $($target.Repository) -Example $($target.Example)",
+			"scripts\check-smoke-build-target-postflight.bat -Stage $($target.Stage) -Repository $($target.Repository) -Example $($target.Example)",
 			"scripts\test-artifact-hygiene.ps1"
 		)
 	}
 })
+$incompletePostflights = @($postflights | Where-Object { !$_.Complete })
+$reviewPostflights = @($postflights | Where-Object { $_.GitStatus.Count -gt 0 })
+$nextCommands = New-Object System.Collections.Generic.List[string]
+if ($incompletePostflights.Count -gt 0) {
+	$nextCommands.Add("# Postflight is pending. Review generated project files before moving to the next target.")
+}
+if ($reviewPostflights.Count -gt 0) {
+	$nextCommands.Add("# Git impact requires review before committing or switching targets.")
+}
+foreach ($postflight in $postflights) {
+	foreach ($command in $postflight.NextValidation) {
+		if (!$nextCommands.Contains($command)) {
+			$nextCommands.Add($command)
+		}
+	}
+}
+$nextCommandArray = @($nextCommands.ToArray())
+$safetyNote = "This postflight is non-mutating. Review generated files and git impact before committing, deleting, or moving to another smoke-build target."
 
 if ($Json) {
 	[pscustomobject]@{
 		Root = $plan.Root
 		Stage = $Stage
 		Postflights = $postflights
+		IncompleteTargets = $incompletePostflights.Count
+		ReviewTargets = $reviewPostflights.Count
+		NextCommands = $nextCommandArray
+		SafetyNote = $safetyNote
 	} | ConvertTo-Json -Depth 8
 	return
 }
@@ -193,5 +215,15 @@ foreach ($postflight in $postflights) {
 	}
 	$lines.Add("")
 }
+
+$lines.Add("## Next Commands")
+$lines.Add("")
+$lines.Add('```powershell')
+foreach ($command in $nextCommandArray) {
+	$lines.Add($command)
+}
+$lines.Add('```')
+$lines.Add("")
+$lines.Add($safetyNote)
 
 Write-Output ($lines -join [Environment]::NewLine)
