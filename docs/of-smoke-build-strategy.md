@@ -17,6 +17,9 @@ Current smoke workflows do not yet compile examples.
 
 Use `scripts\plan-of-smoke-build.bat` from Core to generate the current
 non-mutating rollout plan before adding project-generation or compile gates.
+The planner now verifies that managed root-level examples expose the minimal
+`addons.make` metadata needed by projectGenerator: the example must list its
+owning addon and `ofxGgmlCore`.
 
 ## Planned smoke-build phases
 
@@ -34,6 +37,7 @@ Structural validation only:
 Project generation validation:
 
 - install openFrameworks
+- verify root-level example `addons.make` metadata before project generation
 - run projectGenerator
 - generate example projects
 - verify generated project structure

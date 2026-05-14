@@ -13,6 +13,7 @@ The ecosystem currently provides:
 - coding-agent work queue generation
 - workflow guide coverage detection
 - multi-platform smoke-build scaffolding
+- root-level example `addons.make` readiness planning
 
 ## Current agent readiness
 
@@ -36,6 +37,7 @@ The readiness pass currently verifies:
 - ecosystem planning handoff runs
 - coding-agent work queue generation runs
 - openFrameworks smoke-build rollout planning runs
+- smoke-build planning verifies root-level example addon metadata before projectGenerator rollout
 - release-readiness planning runs without requiring live workflow access
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs
@@ -65,6 +67,7 @@ maintenance before any addon runtime/source changes.
 The current smoke-build workflow:
 
 - validates basic repository structure
+- plans projectGenerator readiness from root-level example `addons.make` metadata
 - validates cross-platform workflow execution
 - is visible in the workflow status report with latest-run age and stale-run markers
 - does not yet compile openFrameworks examples
