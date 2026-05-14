@@ -1,0 +1,43 @@
+# ofxGgml Coding Agent Work Queue
+
+Generated from local ecosystem status. This queue is intended for Codex, GitHub Copilot, Hermes Agent, and similar coding assistants.
+
+## Snapshot
+
+| Metric | Count |
+| --- | ---: |
+| Managed repositories | 11 |
+| Ready managed repositories | 11 |
+| Workflow guides detected | 11 |
+| Detected reference repositories | 7 |
+| Proposed tasks | 1 |
+
+## Queue
+
+| Priority | Repository | Lane | Category | Task | Suggested files | Validation |
+| --- | --- | --- | --- | --- | --- | --- |
+| P1 | `ofxGgmlCore` | `backend-neutral runtime base` | control-plane | Keep the ecosystem control plane current by refreshing audit, readiness, and workflow observability docs. | `docs/ECOSYSTEM_AGENT.md; docs/operational-validation-status.md; scripts/check-ecosystem-readiness.ps1` | `scripts/check-ecosystem-readiness.bat -SkipDoctorTests` |
+
+## Auto-Detected Completed Planning Guides
+
+| Repository | Guide |
+| --- | --- |
+| `ofxGgmlAgents` | `docs\AGENT_WORKFLOWS.md` |
+| `ofxGgmlAudio` | `docs\AUDIO_WORKFLOWS.md` |
+| `ofxGgmlCore` | `docs\ECOSYSTEM_AGENT.md` |
+| `ofxGgmlDiffusion` | `docs\DIFFUSION_WORKFLOWS.md` |
+| `ofxGgmlLlama` | `docs\LLAMA_WORKFLOWS.md` |
+| `ofxGgmlMusic` | `docs\MUSIC_WORKFLOWS.md` |
+| `ofxGgmlRag` | `docs\RAG_WORKFLOWS.md` |
+| `ofxGgmlSam` | `docs\SAM_WORKFLOWS.md` |
+| `ofxGgmlVideo` | `docs\VIDEO_WORKFLOWS.md` |
+| `ofxGgmlVision` | `docs\VISION_WORKFLOWS.md` |
+| `ofxGgmlWorkflows` | `docs\workflow-adoption.md` |
+
+## Guardrails
+
+- Work on planning, instructions, workflow, validation, and documentation first.
+- Do not edit addon runtime/source behavior unless the user explicitly asks for that repository and behavior.
+- Keep classified reference repositories out of generated automation unless they are intentionally promoted.
+- Prefer one small repository-scoped pull request over broad cross-repo edits.
+- Run the suggested validation before pushing.

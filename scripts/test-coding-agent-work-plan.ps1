@@ -15,6 +15,7 @@ foreach ($expected in @(
 	"Snapshot",
 	"Queue",
 	"Workflow guides detected",
+	"Auto-Detected Completed Planning Guides",
 	"Guardrails",
 	"Do not edit addon runtime/source behavior"
 )) {
@@ -55,5 +56,16 @@ if ($vision.Count -gt 0 -and $vision[0].Present -and $vision[0].AgentWorkflowGui
 	$staleVisionTasks = @($parsed.Tasks | Where-Object { $_.Repository -eq "ofxGgmlVision" -and $_.Category -eq "lane-uplift" })
 	if ($staleVisionTasks.Count -gt 0) {
 		throw "coding agent work plan should not propose stale Vision lane-uplift work after detecting a workflow guide."
+	}
+}
+
+$managedWithGuides = @($status.Addons | Where-Object { $_.Known -and $_.Present -and $_.AgentWorkflowGuide })
+if ($managedWithGuides.Count -gt 0) {
+	$guidedLaneNames = @($managedWithGuides |
+		Where-Object { $_.Name -ne "ofxGgmlCore" -and $_.Name -ne "ofxGgmlWorkflows" } |
+		ForEach-Object { $_.Name })
+	$staleLaneTasks = @($parsed.Tasks | Where-Object { $_.Category -eq "lane-uplift" -and $guidedLaneNames -contains $_.Repository })
+	if ($staleLaneTasks.Count -gt 0) {
+		throw "coding agent work plan proposed stale lane-uplift work for guided repositories: $(@($staleLaneTasks | ForEach-Object { $_.Repository }) -join ', ')"
 	}
 }
