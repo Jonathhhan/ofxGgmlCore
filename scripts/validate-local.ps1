@@ -72,6 +72,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-docto
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "AGENTS.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "HERMES.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "copilot-instructions.md" "coding agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") ".github/instructions" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/setup-ggml.sh -CpuOnly" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "addon_config.mk" "quickstart docs"
 Assert-FileContains (Join-Path $addonRoot "docs\QUICKSTART.md") "./scripts/run-simple-example.sh -Build" "quickstart docs"

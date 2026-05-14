@@ -117,6 +117,44 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 "@
 }
 
+function New-CopilotEcosystemInstructions {
+	param([hashtable]$Addon)
+
+	$name = [string]$Addon["Name"]
+	$lane = [string]$Addon["Lane"]
+	$scope = [string]$Addon["Scope"]
+	$validation = ConvertTo-ValidationCommand $name
+	$coreReadiness = if ($name -eq "ofxGgmlCore") {
+		"scripts\check-ecosystem-readiness.ps1"
+	} else {
+		"..\ofxGgmlCore\scripts\check-ecosystem-readiness.ps1"
+	}
+	$corePlan = if ($name -eq "ofxGgmlCore") {
+		"scripts\plan-ecosystem.ps1"
+	} else {
+		"..\ofxGgmlCore\scripts\plan-ecosystem.ps1"
+	}
+	return @"
+---
+applyTo: "**"
+---
+
+# ofxGgml Ecosystem Instructions
+
+- Repository: $name.
+- Lane: $lane.
+- Scope: $scope.
+- Treat this file as a focused Copilot cloud agent and code review guardrail for ecosystem work.
+- For Codex, Copilot, or Hermes integration tasks, start with the Core readiness pass: $coreReadiness.
+- If the readiness pass is too broad for the task, generate a planning handoff first: $corePlan.
+- Work in instruction, documentation, workflow, validation, or planning files before addon source when the task is about the ecosystem or coding agents.
+- Do not edit addon runtime behavior unless the user explicitly asks for addon behavior.
+- Keep companion changes inside this repository's lane and keep ofxGgmlCore as the shared base.
+- Preserve generated artifact hygiene: no binaries, build folders, IDE metadata, model weights, downloaded runtimes, caches, media dumps, or memory indexes.
+- Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.
+"@
+}
+
 function New-HermesInstructions {
 	param([hashtable]$Addon)
 
@@ -239,6 +277,10 @@ foreach ($addon in $family) {
 		@{
 			Path = Join-Path $addonRoot ".github\copilot-instructions.md"
 			Content = New-CopilotInstructions $addon
+		},
+		@{
+			Path = Join-Path $addonRoot ".github\instructions\ofxggml-ecosystem.instructions.md"
+			Content = New-CopilotEcosystemInstructions $addon
 		},
 		@{
 			Path = Join-Path $addonRoot "HERMES.md"
