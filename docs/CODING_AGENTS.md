@@ -22,6 +22,8 @@ repository:
 - `HERMES.md` for Hermes Agent project context.
 - `AGENTS.md` for Codex-style agent guidance.
 - `.github/copilot-instructions.md` for GitHub Copilot repository instructions.
+- `.github/instructions/ofxggml-ecosystem.instructions.md` for focused
+  Copilot cloud agent and code review guardrails on ecosystem work.
 
 For addon repositories, it also writes
 `.github/workflows/coding-agent-instructions.yml`, a small caller workflow that

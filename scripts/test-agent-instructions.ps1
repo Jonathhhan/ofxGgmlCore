@@ -21,6 +21,7 @@ foreach ($expectedPath in @(
 	"AGENTS.md",
 	"HERMES.md",
 	".github\copilot-instructions.md",
+	".github\instructions\ofxggml-ecosystem.instructions.md",
 	".github\workflows\coding-agent-instructions.yml"
 )) {
 	$path = Join-Path $repoRoot $expectedPath
