@@ -79,6 +79,7 @@ cd ../ofxGgmlLlama
 | `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
 | `scripts\plan-ecosystem.bat` | Generate an agent-facing ecosystem planning handoff |
 | `scripts\plan-coding-agent-work.bat` | Generate a prioritized Codex/Copilot/Hermes-safe work queue |
+| `scripts\plan-of-smoke-build.bat` | Plan openFrameworks project-generation and smoke-build rollout |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-release-readiness.bat` | Generate release-readiness evidence from workflow status and policy metadata |
@@ -121,6 +122,8 @@ Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
 need a focused doctor entry point, wrapper, smoke test, or validation hook.
 Use `scripts\plan-release-readiness.bat` to generate a release-readiness score
 with workflow-status evidence when planning release gates.
+Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
+project-generation and smoke-build rollout before adding compile gates.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.

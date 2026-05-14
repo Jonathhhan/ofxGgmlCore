@@ -61,12 +61,14 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\audit-ecosystem
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\check-ecosystem-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-ecosystem.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-coding-agent-work.bat" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-of-smoke-build.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Auto-Detected Completed Planning Guides" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Workflow guides detected" "coding agent work snapshot"
+Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "plan-of-smoke-build.ps1" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "plan-release-readiness.ps1" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "Workflow Observability" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
@@ -102,6 +104,9 @@ foreach ($requiredScript in @(
 	"plan-coding-agent-work.bat",
 	"plan-coding-agent-work.ps1",
 	"plan-coding-agent-work.sh",
+	"plan-of-smoke-build.bat",
+	"plan-of-smoke-build.ps1",
+	"plan-of-smoke-build.sh",
 	"plan-agent-branch-cleanup.bat",
 	"plan-agent-branch-cleanup.ps1",
 	"plan-agent-branch-cleanup.sh",
@@ -229,6 +234,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking coding agent work planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-coding-agent-work-plan.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking openFrameworks smoke build planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-of-smoke-build-plan.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking agent branch cleanup planner" `
