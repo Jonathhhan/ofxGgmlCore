@@ -18,6 +18,7 @@ The ecosystem currently provides:
 - prioritized smoke-build target queue generation
 - one-command smoke-build target selection
 - smoke-build target handoff generation
+- non-mutating smoke-build target preflight checks
 
 ## Current agent readiness
 
@@ -46,6 +47,7 @@ The readiness pass currently verifies:
 - smoke-build planning orders next targets by metadata repair, project generation, then generated-project verification
 - smoke-build target selection returns the next filtered target without mutating addon worktrees
 - smoke-build target handoff emits validation and artifact-hygiene steps for the selected target
+- smoke-build preflight checks projectGenerator, metadata, repository cleanliness, and generated-project state
 - release-readiness planning runs without requiring live workflow access
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs
