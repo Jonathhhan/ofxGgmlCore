@@ -56,6 +56,7 @@ The readiness pass currently verifies:
 - smoke-build preflight checks projectGenerator, metadata, repository cleanliness, and generated-project state
 - smoke-build postflight reports generated project files, git impact, and next validation after target work
 - release-readiness planning runs without requiring live workflow access
+- release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs
 
