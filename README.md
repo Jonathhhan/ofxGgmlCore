@@ -78,6 +78,7 @@ cd ../ofxGgmlLlama
 | `scripts\check-ecosystem-readiness.bat` | Run the non-mutating agent readiness pass across the managed ecosystem |
 | `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
 | `scripts\plan-ecosystem.bat` | Generate an agent-facing ecosystem planning handoff |
+| `scripts\plan-coding-agent-work.bat` | Generate a prioritized Codex/Copilot/Hermes-safe work queue |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
@@ -105,6 +106,9 @@ repository state and guardrails before changing addon source. The agent scripts
 load managed lane metadata from `docs\ECOSYSTEM_MANIFEST.json`, auto-detect
 sibling `ofxGgml*` repositories, and attach known lane metadata where
 available.
+Use `scripts\plan-coding-agent-work.bat` when an agent needs the next concrete
+Codex, Copilot, or Hermes-safe task. It turns local family status into a
+prioritized queue with suggested files and validation commands.
 Use `scripts\check-ecosystem-readiness.bat` when you need a single
 non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,

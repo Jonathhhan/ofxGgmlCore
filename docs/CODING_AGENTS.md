@@ -56,9 +56,10 @@ committing generated artifacts, preserve `ofxGgmlCore` as the shared base, and
 run the local validation script before handoff.
 
 For ecosystem improvement work, use `docs/ECOSYSTEM_AGENT.md` and
-`scripts/plan-ecosystem.*` first. The planning agent layer should improve
-instructions, reusable workflows, status reporting, and validation before it
-touches addon source code.
+`scripts/plan-ecosystem.*` first, then use `scripts/plan-coding-agent-work.*`
+to select a concrete repository-scoped task. The planning agent layer should
+improve instructions, reusable workflows, status reporting, and validation
+before it touches addon source code.
 
 `ofxGgmlWorkflows` is included as the reusable GitHub Actions workflow repo. It
 owns `.github/workflows/coding-agent-instructions.yml`; companion addons consume

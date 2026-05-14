@@ -105,6 +105,7 @@ $steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-
 	Strict = $true
 }
 $steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
+$steps += Invoke-ReadinessStep -Name "coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1")
 $steps += Invoke-ReadinessStep -Name "doctor rollout plan" -ScriptPath (Join-Path $scriptRoot "plan-doctor-rollout.ps1")
 $steps += Invoke-ReadinessStep -Name "agent branch cleanup plan" -ScriptPath (Join-Path $scriptRoot "plan-agent-branch-cleanup.ps1")
 

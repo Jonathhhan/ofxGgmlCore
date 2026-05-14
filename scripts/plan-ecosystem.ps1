@@ -75,6 +75,7 @@ function ConvertTo-MarkdownPlan {
 	$lines.Add("scripts\write-agent-instructions.bat -Check")
 	$lines.Add("scripts\audit-ecosystem.bat -Strict")
 	$lines.Add("scripts\plan-ecosystem.bat")
+	$lines.Add("scripts\plan-coding-agent-work.bat")
 	$lines.Add("scripts\plan-doctor-rollout.bat")
 	$lines.Add("scripts\plan-agent-branch-cleanup.bat")
 	$lines.Add("scripts\status-family.bat")

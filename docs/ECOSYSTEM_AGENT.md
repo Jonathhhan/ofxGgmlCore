@@ -35,9 +35,10 @@ Before changing addon code, an agent should:
 1. Read the repository instruction file for the active assistant.
 2. Run or inspect `scripts/status-family.*` from `ofxGgmlCore`.
 3. Generate an ecosystem plan with `scripts/plan-ecosystem.*`.
-4. Classify the work as documentation, automation, validation, or addon code.
-5. Touch addon source only when the user explicitly asks for addon behavior.
-6. Report the plan, touched repositories, and validation commands.
+4. Generate a prioritized work queue with `scripts/plan-coding-agent-work.*`.
+5. Classify the work as documentation, automation, validation, or addon code.
+6. Touch addon source only when the user explicitly asks for addon behavior.
+7. Report the plan, touched repositories, and validation commands.
 
 ## Commands
 
@@ -48,6 +49,7 @@ scripts\status-family.bat
 scripts\audit-ecosystem.bat
 scripts\check-ecosystem-readiness.bat
 scripts\plan-ecosystem.bat
+scripts\plan-coding-agent-work.bat
 scripts\plan-doctor-rollout.bat
 scripts\plan-agent-branch-cleanup.bat
 scripts\write-agent-instructions.bat -Check
@@ -60,6 +62,7 @@ On macOS/Linux:
 ./scripts/audit-ecosystem.sh
 ./scripts/check-ecosystem-readiness.sh
 ./scripts/plan-ecosystem.sh
+./scripts/plan-coding-agent-work.sh
 ./scripts/plan-doctor-rollout.sh
 ./scripts/plan-agent-branch-cleanup.sh
 ./scripts/write-agent-instructions.sh -Check
@@ -67,6 +70,11 @@ On macOS/Linux:
 
 Use `scripts\plan-ecosystem.bat -OutputPath docs\ECOSYSTEM_PLAN.md` to write a
 handoff plan for review.
+
+Use `scripts\plan-coding-agent-work.bat -OutputPath docs\CODING_AGENT_WORK.md`
+to write a prioritized, agent-safe work queue. It is designed for Codex,
+GitHub Copilot, and Hermes Agent sessions that need a next concrete task with
+suggested files and validation commands.
 
 Use `scripts\check-ecosystem-readiness.bat` for a single non-mutating pass
 before broad ecosystem work. It checks generated agent instructions, strict

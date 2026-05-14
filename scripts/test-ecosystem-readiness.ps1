@@ -16,6 +16,7 @@ foreach ($expected in @(
 	"agent instructions current",
 	"ecosystem audit strict",
 	"doctor rollout plan",
+	"coding agent work queue",
 	"agent branch cleanup plan",
 	"Readiness passed"
 )) {
