@@ -114,6 +114,7 @@ if (!$?) {
 $status = $statusJson | ConvertFrom-Json
 
 $managedNames = @($status.Addons | Where-Object { $_.Known } | ForEach-Object { [string]$_.Name })
+$releaseReadinessOutput = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-check.md"
 $steps = @()
 $steps += Test-WorkflowGuideCoverage -Statuses @($status.Addons)
 $steps += Invoke-ReadinessStep -Name "agent instructions current" -ScriptPath (Join-Path $scriptRoot "write-agent-instructions.ps1") -Parameters @{
@@ -125,6 +126,10 @@ $steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-
 }
 $steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
 $steps += Invoke-ReadinessStep -Name "coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1")
+$steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters @{
+	OutputPath = $releaseReadinessOutput
+	SkipWorkflowStatus = $true
+}
 $steps += Invoke-ReadinessStep -Name "doctor rollout plan" -ScriptPath (Join-Path $scriptRoot "plan-doctor-rollout.ps1")
 $steps += Invoke-ReadinessStep -Name "agent branch cleanup plan" -ScriptPath (Join-Path $scriptRoot "plan-agent-branch-cleanup.ps1")
 
