@@ -50,6 +50,30 @@ video in ofxGgmlVideo; and music workflows in ofxGgmlMusic.
 "@
 }
 
+function New-CoreSmokeBuildLifecycleAppendix {
+	param([string]$AddonName)
+	if ($AddonName -ne "ofxGgmlCore") {
+		return ""
+	}
+	return @"
+
+## Smoke-Build Target Lifecycle
+
+For ecosystem smoke-build work, stay in the Core control plane first:
+
+1. Plan: `scripts\plan-of-smoke-build.ps1`
+2. Select: `scripts\select-smoke-build-target.ps1 -Stage generate-project`
+3. Handoff: `scripts\plan-smoke-build-target-handoff.ps1 -Stage generate-project`
+4. Preflight: `scripts\check-smoke-build-target-preflight.ps1 -Stage generate-project`
+5. Postflight: `scripts\check-smoke-build-target-postflight.ps1 -Stage generate-project`
+
+Run projectGenerator only after preflight reports the selected target is ready.
+Afterward, run postflight and artifact hygiene before deciding what belongs in
+git. Generated openFrameworks project files remain uncommitted unless the
+owning addon explicitly tracks them.
+"@
+}
+
 function New-AgentInstructions {
 	param([hashtable]$Addon)
 
@@ -58,6 +82,7 @@ function New-AgentInstructions {
 	$scope = [string]$Addon["Scope"]
 	$validation = ConvertTo-ValidationCommand $name
 	$coreAppendix = New-CoreAgentAppendix $name
+	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	return @"
 # Codex Repository Instructions
 
@@ -77,7 +102,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Keep ofxGgmlCore as the shared base; do not add reverse dependencies from Core to companion addons.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
-- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix
+- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix$coreSmokeBuildLifecycle
 
 ## Validation
 
@@ -101,6 +126,7 @@ function New-CopilotInstructions {
 	$scope = [string]$Addon["Scope"]
 	$validation = ConvertTo-ValidationCommand $name
 	$coreAppendix = New-CoreAgentAppendix $name
+	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	return @"
 # GitHub Copilot Repository Instructions
 
@@ -113,7 +139,7 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 - Avoid committing generated outputs, local models, build directories, IDE metadata, downloaded runtimes, caches, or media dumps.
 - Add or update headless tests for public helper behavior.
 - Validation before handoff: $validation.
-- Keep explanations concise and include the files and checks that matter.$coreAppendix
+- Keep explanations concise and include the files and checks that matter.$coreAppendix$coreSmokeBuildLifecycle
 "@
 }
 
@@ -134,6 +160,7 @@ function New-CopilotEcosystemInstructions {
 	} else {
 		"..\ofxGgmlCore\scripts\plan-ecosystem.ps1"
 	}
+	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	return @"
 ---
 applyTo: "**"
@@ -151,7 +178,7 @@ applyTo: "**"
 - Do not edit addon runtime behavior unless the user explicitly asks for addon behavior.
 - Keep companion changes inside this repository's lane and keep ofxGgmlCore as the shared base.
 - Preserve generated artifact hygiene: no binaries, build folders, IDE metadata, model weights, downloaded runtimes, caches, media dumps, or memory indexes.
-- Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.
+- Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.$coreSmokeBuildLifecycle
 "@
 }
 
@@ -162,6 +189,7 @@ function New-HermesInstructions {
 	$lane = [string]$Addon["Lane"]
 	$scope = [string]$Addon["Scope"]
 	$validation = ConvertTo-ValidationCommand $name
+	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	return @"
 # Hermes Project Context
 
@@ -189,7 +217,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Use `scripts\status-family.ps1` and `scripts\plan-ecosystem.ps1` from ofxGgmlCore for cross-repo planning.
 - Classify each task as documentation, automation, validation, or addon-code work.
 - Work in the agent layer first when the goal is better Codex, Copilot, or Hermes planning.
-- Touch addon source only when the user explicitly asks for addon behavior.
+- Touch addon source only when the user explicitly asks for addon behavior.$coreSmokeBuildLifecycle
 
 ## Ecosystem Split
 
@@ -234,6 +262,15 @@ function Set-TextFile {
 		New-Item -ItemType Directory -Path $directory -Force | Out-Null
 	}
 	Set-Content -LiteralPath $Path -Value $Content
+}
+
+function Normalize-InstructionText {
+	param([string]$Content)
+
+	if ($null -eq $Content) {
+		return ""
+	}
+	return (($Content -replace "`r`n", "`n") -replace "`r", "`n").TrimEnd()
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -302,7 +339,7 @@ foreach ($addon in $family) {
 			""
 		}
 		$expected = $file.Content.TrimEnd() + [Environment]::NewLine
-		if ($existing -ne $expected) {
+		if ((Normalize-InstructionText $existing) -ne (Normalize-InstructionText $expected)) {
 			$changed++
 			if ($Check) {
 				$missingOrOutdated.Add($file.Path)

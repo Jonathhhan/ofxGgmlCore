@@ -29,3 +29,23 @@ foreach ($expectedPath in @(
 		throw "expected generated agent instruction file was missing: $expectedPath"
 	}
 }
+
+foreach ($expectedPath in @(
+	"AGENTS.md",
+	"HERMES.md",
+	".github\copilot-instructions.md",
+	".github\instructions\ofxggml-ecosystem.instructions.md"
+)) {
+	$path = Join-Path $repoRoot $expectedPath
+	$content = Get-Content -LiteralPath $path -Raw
+	foreach ($expected in @(
+		"Smoke-Build Target Lifecycle",
+		"select-smoke-build-target.ps1",
+		"check-smoke-build-target-preflight.ps1",
+		"check-smoke-build-target-postflight.ps1"
+	)) {
+		if ($content -notmatch [regex]::Escape($expected)) {
+			throw "generated Core agent instruction file $expectedPath did not contain expected smoke-build lifecycle text: $expected"
+		}
+	}
+}
