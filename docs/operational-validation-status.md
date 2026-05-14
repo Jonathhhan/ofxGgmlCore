@@ -9,6 +9,7 @@ The ecosystem currently provides:
 - baseline compatibility checks
 - cross-repo metadata reconciliation
 - live workflow observability scaffolding
+- actionable workflow blocker and rollout-gap summaries
 - stale workflow run reporting
 - coding-agent work queue generation
 - workflow guide coverage detection
@@ -88,6 +89,7 @@ The current smoke-build workflow:
 - ranks next smoke-build targets without mutating companion addon worktrees
 - validates cross-platform workflow execution
 - is visible in the workflow status report with latest-run age and stale-run markers
+- is summarized in workflow-status reports as required blockers and optional rollout gaps
 - does not yet compile openFrameworks examples
 - does not yet validate CUDA/Metal/Vulkan runtimes
 - does not yet validate runtime inference

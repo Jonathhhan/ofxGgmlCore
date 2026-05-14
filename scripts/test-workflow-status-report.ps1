@@ -22,6 +22,9 @@ $content = Get-Content -LiteralPath $outputPath -Raw
 foreach ($expected in @(
 	"Workflow Status Report",
 	"## Summary",
+	"## Action Required",
+	"Required Workflow Blockers",
+	"Optional Workflow Rollout Gaps",
 	"Missing optional workflows",
 	"Stale required workflows",
 	"Stale threshold",
