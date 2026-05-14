@@ -131,6 +131,7 @@ foreach ($expected in @(
 	"Targets",
 	"Validation",
 	"Guardrails",
+	"Next Commands",
 	"test-artifact-hygiene.ps1",
 	"Do not commit generated openFrameworks project files"
 )) {
@@ -150,6 +151,24 @@ if (!$handoffParsed.Targets -or $handoffParsed.Targets.Count -ne 1) {
 }
 if (!$handoffParsed.Validation -or $handoffParsed.Validation.Count -eq 0) {
 	throw "smoke build target handoff JSON did not include validation commands."
+}
+if (!$handoffParsed.NextCommands -or $handoffParsed.NextCommands.Count -eq 0) {
+	throw "smoke build target handoff JSON did not include next commands."
+}
+if ([string]@($handoffParsed.NextCommands)[0] -ne "scripts\check-smoke-build-target-preflight.bat -Stage generate-project -First 1") {
+	throw "smoke build target handoff JSON next commands did not start with preflight."
+}
+if (@($handoffParsed.NextCommands) -notcontains "scripts\test-of-smoke-build-plan.ps1") {
+	throw "smoke build target handoff JSON next commands did not include smoke-build plan validation."
+}
+if (!$handoffParsed.TargetCommands -or $handoffParsed.TargetCommands.Count -eq 0) {
+	throw "smoke build target handoff JSON did not include target commands."
+}
+if (!$handoffParsed.PostflightCommands -or $handoffParsed.PostflightCommands.Count -eq 0) {
+	throw "smoke build target handoff JSON did not include postflight commands."
+}
+if ([string]::IsNullOrWhiteSpace([string]$handoffParsed.SafetyNote)) {
+	throw "smoke build target handoff JSON did not include SafetyNote."
 }
 
 $preflightOutput = & $preflightScript -Stage "generate-project" -First 1 *>&1 | ForEach-Object { $_.ToString() }
