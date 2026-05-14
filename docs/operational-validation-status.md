@@ -58,7 +58,7 @@ The readiness pass currently verifies:
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - doctor rollout planning runs
-- merged agent branch cleanup planning runs and emits explicit next commands
+- merged agent branch cleanup planning runs and emits explicit next commands in Markdown and JSON
 
 The current queue reports all managed repositories as ready, detects planning
 guides for all 11 managed repositories, and suppresses stale generic lane-uplift
