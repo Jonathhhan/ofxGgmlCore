@@ -13,10 +13,12 @@ ofxGgmlEmbeddingBridgeBackend::ofxGgmlEmbeddingBridgeBackend(
 
 void ofxGgmlEmbeddingBridgeBackend::setEmbedFunction(
 	EmbedFunction embedFunction) {
+	std::lock_guard<std::mutex> lock(callbackMutex);
 	embedCallback = std::move(embedFunction);
 }
 
 bool ofxGgmlEmbeddingBridgeBackend::isConfigured() const {
+	std::lock_guard<std::mutex> lock(callbackMutex);
 	return static_cast<bool>(embedCallback);
 }
 
@@ -26,9 +28,15 @@ std::string ofxGgmlEmbeddingBridgeBackend::getBackendName() const {
 
 ofxGgmlEmbeddingResult ofxGgmlEmbeddingBridgeBackend::embed(
 	const ofxGgmlEmbeddingRequest & request) const {
+	EmbedFunction callback;
+	{
+		std::lock_guard<std::mutex> lock(callbackMutex);
+		callback = embedCallback;
+	}
+
 	ofxGgmlEmbeddingResult result;
 	result.backendName = getBackendName();
-	if (!embedCallback) {
+	if (!callback) {
 		result.error =
 			"embedding bridge backend is not configured. Attach an embedding "
 			"adapter callback before calling embed().";
@@ -36,7 +44,7 @@ ofxGgmlEmbeddingResult ofxGgmlEmbeddingBridgeBackend::embed(
 	}
 
 	const auto started = std::chrono::steady_clock::now();
-	result = embedCallback(request);
+	result = callback(request);
 	if (result.backendName.empty()) {
 		result.backendName = getBackendName();
 	}
@@ -62,21 +70,23 @@ ofxGgmlEmbeddingGenerator::createEmbeddingBridgeBackend(
 
 void ofxGgmlEmbeddingGenerator::setBackend(
 	std::shared_ptr<ofxGgmlEmbeddingBackend> backend) {
-	backendPtr = backend
-		? std::move(backend)
-		: createEmbeddingBridgeBackend();
+	std::lock_guard<std::mutex> lock(backendMutex);
+	backendPtr = backend ? std::move(backend) : createEmbeddingBridgeBackend();
 }
 
 std::shared_ptr<ofxGgmlEmbeddingBackend>
 ofxGgmlEmbeddingGenerator::getBackend() const {
+	std::lock_guard<std::mutex> lock(backendMutex);
 	return backendPtr;
 }
 
 ofxGgmlEmbeddingResult ofxGgmlEmbeddingGenerator::embed(
 	const ofxGgmlEmbeddingRequest & request) const {
-	const auto backend = backendPtr
-		? backendPtr
-		: createEmbeddingBridgeBackend();
+	std::shared_ptr<ofxGgmlEmbeddingBackend> backend;
+	{
+		std::lock_guard<std::mutex> lock(backendMutex);
+		backend = backendPtr ? backendPtr : createEmbeddingBridgeBackend();
+	}
 	return backend->embed(request);
 }
 

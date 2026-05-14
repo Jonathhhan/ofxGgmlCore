@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <mutex>
 #include <utility>
 #include <vector>
 
@@ -100,6 +101,7 @@ public:
 private:
 	GenerateFunction generateCallback;
 	std::string displayName;
+	mutable std::mutex callbackMutex;
 };
 
 class ofxGgmlTextGenerator {
@@ -124,4 +126,5 @@ public:
 
 private:
 	std::shared_ptr<ofxGgmlTextBackend> backendPtr;
+	mutable std::mutex backendMutex;
 };

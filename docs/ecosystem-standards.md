@@ -20,6 +20,10 @@ Every addon should provide:
 - `.codex/skills/openframeworks-addon/SKILL.md`
 - `CHANGELOG.md`
 
+Template baseline:
+
+- Start from the upstream `openframeworks/ofxAddonTemplate` structure when bootstrapping new addons, then normalize it for this ecosystem (notably removing legacy CI files like `.travis.yml` / `.appveyor.yml` and replacing template-specific READMEs as needed).
+
 ## Addon boundaries
 
 `ofxGgmlCore` owns backend-neutral primitives only.
@@ -59,6 +63,18 @@ Prefer paired scripts for Windows and macOS/Linux:
 - release-candidate
 
 If parity is not possible, document the platform-specific limitation.
+
+## Logging policy
+
+Use openFrameworks logging for addon runtime and example status messages:
+
+- `ofLogNotice(...)` for normal state changes and completed operations
+- `ofLogWarning(...)` for recoverable configuration, loading, or validation issues
+- `ofLogError(...)` for failed operations that block the requested action
+- module names for examples and addon subsystems, for example `ofLogNotice("ofxGgmlSamPointExample")`
+
+Keep raw `stdout`/`stderr` only where the executable has a test, CLI, or
+machine-readable output contract.
 
 ## Documentation policy
 

@@ -12,10 +12,12 @@ ofxGgmlSegmentationBridgeBackend::ofxGgmlSegmentationBridgeBackend(
 
 void ofxGgmlSegmentationBridgeBackend::setSegmentFunction(
 	SegmentFunction segmentFunction) {
+	std::lock_guard<std::mutex> lock(callbackMutex);
 	segmentCallback = std::move(segmentFunction);
 }
 
 bool ofxGgmlSegmentationBridgeBackend::isConfigured() const {
+	std::lock_guard<std::mutex> lock(callbackMutex);
 	return static_cast<bool>(segmentCallback);
 }
 
@@ -25,10 +27,16 @@ std::string ofxGgmlSegmentationBridgeBackend::getBackendName() const {
 
 ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 	const ofxGgmlSegmentationRequest & request) const {
+	SegmentFunction callback;
+	{
+		std::lock_guard<std::mutex> lock(callbackMutex);
+		callback = segmentCallback;
+	}
+
 	ofxGgmlSegmentationResult result;
 	result.backendName = getBackendName();
 	result.imagePath = request.imagePath;
-	if (!segmentCallback) {
+	if (!callback) {
 		result.error =
 			"segmentation bridge backend is not configured. Attach a "
 			"segmentation adapter callback before calling segment().";
@@ -36,7 +44,7 @@ ofxGgmlSegmentationResult ofxGgmlSegmentationBridgeBackend::segment(
 	}
 
 	const auto started = std::chrono::steady_clock::now();
-	result = segmentCallback(request);
+	result = callback(request);
 	if (result.backendName.empty()) {
 		result.backendName = getBackendName();
 	}
@@ -65,6 +73,7 @@ ofxGgmlSegmentationInference::createSegmentationBridgeBackend(
 
 void ofxGgmlSegmentationInference::setBackend(
 	std::shared_ptr<ofxGgmlSegmentationBackend> backend) {
+	std::lock_guard<std::mutex> lock(backendMutex);
 	backendPtr = backend
 		? std::move(backend)
 		: createSegmentationBridgeBackend();
@@ -72,14 +81,17 @@ void ofxGgmlSegmentationInference::setBackend(
 
 std::shared_ptr<ofxGgmlSegmentationBackend>
 ofxGgmlSegmentationInference::getBackend() const {
+	std::lock_guard<std::mutex> lock(backendMutex);
 	return backendPtr;
 }
 
 ofxGgmlSegmentationResult ofxGgmlSegmentationInference::segment(
 	const ofxGgmlSegmentationRequest & request) const {
-	const auto backend = backendPtr
-		? backendPtr
-		: createSegmentationBridgeBackend();
+	std::shared_ptr<ofxGgmlSegmentationBackend> backend;
+	{
+		std::lock_guard<std::mutex> lock(backendMutex);
+		backend = backendPtr ? backendPtr : createSegmentationBridgeBackend();
+	}
 	return backend->segment(request);
 }
 

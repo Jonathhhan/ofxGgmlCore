@@ -12,10 +12,12 @@ ofxGgmlTextBridgeBackend::ofxGgmlTextBridgeBackend(
 
 void ofxGgmlTextBridgeBackend::setGenerateFunction(
 	GenerateFunction generateFunction) {
+	std::lock_guard<std::mutex> lock(callbackMutex);
 	generateCallback = std::move(generateFunction);
 }
 
 bool ofxGgmlTextBridgeBackend::isConfigured() const {
+	std::lock_guard<std::mutex> lock(callbackMutex);
 	return static_cast<bool>(generateCallback);
 }
 
@@ -26,9 +28,15 @@ std::string ofxGgmlTextBridgeBackend::getBackendName() const {
 ofxGgmlTextResult ofxGgmlTextBridgeBackend::generate(
 	const ofxGgmlTextRequest & request,
 	ofxGgmlTextChunkCallback onChunk) const {
+	GenerateFunction callback;
+	{
+		std::lock_guard<std::mutex> lock(callbackMutex);
+		callback = generateCallback;
+	}
+
 	ofxGgmlTextResult result;
 	result.backendName = getBackendName();
-	if (!generateCallback) {
+	if (!callback) {
 		result.error =
 			"text bridge backend is not configured. Attach a text generation "
 			"adapter callback before calling generate().";
@@ -36,7 +44,7 @@ ofxGgmlTextResult ofxGgmlTextBridgeBackend::generate(
 	}
 
 	const auto started = std::chrono::steady_clock::now();
-	result = generateCallback(request, onChunk);
+	result = callback(request, onChunk);
 	if (result.backendName.empty()) {
 		result.backendName = getBackendName();
 	}
@@ -61,21 +69,23 @@ ofxGgmlTextGenerator::createTextBridgeBackend(
 }
 
 void ofxGgmlTextGenerator::setBackend(std::shared_ptr<ofxGgmlTextBackend> backend) {
-	backendPtr = backend
-		? std::move(backend)
-		: createTextBridgeBackend();
+	std::lock_guard<std::mutex> lock(backendMutex);
+	backendPtr = backend ? std::move(backend) : createTextBridgeBackend();
 }
 
 std::shared_ptr<ofxGgmlTextBackend> ofxGgmlTextGenerator::getBackend() const {
+	std::lock_guard<std::mutex> lock(backendMutex);
 	return backendPtr;
 }
 
 ofxGgmlTextResult ofxGgmlTextGenerator::generate(
 	const ofxGgmlTextRequest & request,
 	ofxGgmlTextChunkCallback onChunk) const {
-	const auto backend = backendPtr
-		? backendPtr
-		: createTextBridgeBackend();
+	std::shared_ptr<ofxGgmlTextBackend> backend;
+	{
+		std::lock_guard<std::mutex> lock(backendMutex);
+		backend = backendPtr ? backendPtr : createTextBridgeBackend();
+	}
 	return backend->generate(request, std::move(onChunk));
 }
 

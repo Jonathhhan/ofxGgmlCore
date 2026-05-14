@@ -5,6 +5,8 @@
 
 namespace {
 
+constexpr const char * LogModule = "ofxGgmlSimpleExample";
+
 std::string backendLabel(ofxGgmlBackend backend) {
 	return ofxGgmlGetBackendName(backend);
 }
@@ -27,6 +29,15 @@ std::string formatVector(const std::array<float, 4> & values) {
 	return stream.str();
 }
 
+void appendLine(std::vector<std::string> & lines, const std::string & line, bool warning = false) {
+	lines.push_back(line);
+	if (warning) {
+		ofLogWarning(LogModule) << line;
+	} else {
+		ofLogNotice(LogModule) << line;
+	}
+}
+
 } // namespace
 
 void ofApp::setup() {
@@ -36,12 +47,15 @@ void ofApp::setup() {
 
 	auto result = runtime.setup();
 	lines.clear();
-	lines.push_back("ofxGgml rewrite main");
-	lines.push_back(result ? "runtime ready: " + runtime.getBackendName() : "runtime error: " + result.error().message);
-	lines.push_back("preferred backend: Auto");
-	lines.push_back("devices:");
+	appendLine(lines, "ofxGgml rewrite main");
+	appendLine(
+		lines,
+		result ? "runtime ready: " + runtime.getBackendName() : "runtime error: " + result.error().message,
+		!result);
+	appendLine(lines, "preferred backend: Auto");
+	appendLine(lines, "devices:");
 	for (const auto & device : runtime.getDevices()) {
-		lines.push_back("  " + backendLabel(device.backend) + ": " + device.name + formatBytes(device.memoryBytes));
+		appendLine(lines, "  " + backendLabel(device.backend) + ": " + device.name + formatBytes(device.memoryBytes));
 	}
 	if (result) {
 		graph = ofxGgmlGraph();
@@ -76,13 +90,13 @@ void ofApp::setup() {
 			: ofxGgmlResult<void>::failure(graphError);
 
 		if (readResult) {
-			lines.push_back("graph: [" + formatVector(left) + "] + [" + formatVector(right) + "]");
-			lines.push_back("result: [" + formatVector(output) + "]");
+			appendLine(lines, "graph: [" + formatVector(left) + "] + [" + formatVector(right) + "]");
+			appendLine(lines, "result: [" + formatVector(output) + "]");
 		} else {
-			lines.push_back("graph error: " + readResult.error().message);
+			appendLine(lines, "graph error: " + readResult.error().message, true);
 		}
 	}
-	lines.push_back("legacy-full keeps the previous broad framework.");
+	appendLine(lines, "legacy-full keeps the previous broad framework.");
 }
 
 void ofApp::draw() {

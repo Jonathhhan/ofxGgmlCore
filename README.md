@@ -91,6 +91,19 @@ cd ../ofxGgmlLlama
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
 
+## Threading Notes
+
+- `ofxGgmlCore` API calls are synchronous by design, but are intended to be used
+  from worker-thread workflows when heavy inference would block the main loop.
+- Keep OpenGL object work (for example `ofTexture`/`ofImage` updates and drawing)
+  in the GL thread.
+- Use locking around shared buffers when background threads and OF event callbacks
+  both touch state.
+- For background inference in openFrameworks apps, prefer `ofThread` patterns
+  for lifecycle + signaling. See [docs/THREADING.md](docs/THREADING.md) and
+  the ofBook thread chapter:
+  <https://openframeworks.cc/ofBook/chapters/threads.html>.
+
 Backend flags for `setup-ggml` and `first-run` include `-Auto` by default,
 `-CpuOnly`, `-Cuda`, `-Vulkan`, `-Metal`, `-OpenCL`, and `-AllBackends`.
 

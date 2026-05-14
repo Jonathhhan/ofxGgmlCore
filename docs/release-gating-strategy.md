@@ -20,11 +20,10 @@ The ecosystem currently provides:
 
 Current release gates do not yet:
 
-- validate real openFrameworks compilation
+- validate cross-platform openFrameworks compilation and execution (Windows only in current CI smoke loop)
 - validate runtime inference
 - validate CUDA/Metal/Vulkan runtime availability
-- validate generated project execution
-- block releases from actual failed CI state
+- fully enforce build failures from the smoke-build CI control-plane in the release approval decision
 
 ## Planned release-gating phases
 
@@ -55,7 +54,7 @@ Compilation gates:
 - example project generation
 - example compilation
 - addon_config.mk verification
-- platform-specific compile validation
+- cross-platform compile validation
 
 ### Phase 4
 

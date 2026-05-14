@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <mutex>
 #include <utility>
 #include <vector>
 
@@ -68,6 +69,7 @@ public:
 private:
 	EmbedFunction embedCallback;
 	std::string displayName;
+	mutable std::mutex callbackMutex;
 };
 
 class ofxGgmlEmbeddingGenerator {
@@ -89,6 +91,7 @@ public:
 
 private:
 	std::shared_ptr<ofxGgmlEmbeddingBackend> backendPtr;
+	mutable std::mutex backendMutex;
 };
 
 namespace ofxGgmlEmbeddingUtils {
