@@ -75,6 +75,7 @@ cd ../ofxGgmlLlama
 | `scripts\validate-local.bat` | Run the local Core validation suite |
 | `scripts\release-candidate.bat` | Run the pre-release validation gate |
 | `scripts\get-ecosystem.ps1` | Shared auto-discovery helper for ofxGgml sibling repositories |
+| `scripts\check-ecosystem-readiness.bat` | Run the non-mutating agent readiness pass across the managed ecosystem |
 | `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
 | `scripts\plan-ecosystem.bat` | Generate an agent-facing ecosystem planning handoff |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
@@ -104,6 +105,11 @@ repository state and guardrails before changing addon source. The agent scripts
 load managed lane metadata from `docs\ECOSYSTEM_MANIFEST.json`, auto-detect
 sibling `ofxGgml*` repositories, and attach known lane metadata where
 available.
+Use `scripts\check-ecosystem-readiness.bat` when you need a single
+non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
+agent instruction freshness, strict ecosystem audit status, planning handoffs,
+doctor rollout status, merged branch cleanup planning, and managed doctor smoke
+tests.
 Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
