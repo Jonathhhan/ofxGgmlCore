@@ -24,6 +24,8 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json` when an agent needs readiness-gated projectGenerator and postflight commands.
 - Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>` after projectGenerator to inspect generated files and git impact.
 - Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json` when an agent needs completion counts, review counts, and next validation commands.
+- Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example>` when postflight reports missing Visual Studio addon wiring.
+- Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Json` when an agent needs expected addon references and repair next commands as structured data.
 - Keep reusable workflow expectations in `ofxGgmlWorkflows`, and keep caller-addon documentation in Core.
 - Prefer reporting gaps over adding new automation until the current workflow state is easy to inspect.
 

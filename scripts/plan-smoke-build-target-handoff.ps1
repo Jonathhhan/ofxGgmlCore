@@ -40,8 +40,14 @@ $postflightCommands = @($targets |
 		![string]::IsNullOrWhiteSpace([string]$_.Example)
 	} |
 	ForEach-Object { "scripts\check-smoke-build-target-postflight.bat -Stage $Stage -Repository $($_.Repository) -Example $($_.Example)" })
-$nextCommands = @($preflightCommand) + $targetCommands + $postflightCommands + $validationCommands
-$safetyNote = "This handoff is non-mutating. Run projectGenerator only after preflight reports the selected target is ready, then use postflight to review generated files and git impact."
+$repairPlanCommands = @($targets |
+	Where-Object {
+		![string]::IsNullOrWhiteSpace([string]$_.Repository) -and
+		![string]::IsNullOrWhiteSpace([string]$_.Example)
+	} |
+	ForEach-Object { "scripts\plan-smoke-build-project-repair.bat -Stage $Stage -Repository $($_.Repository) -Example $($_.Example)" })
+$nextCommands = @($preflightCommand) + $targetCommands + $postflightCommands + $repairPlanCommands + $validationCommands
+$safetyNote = "This handoff is non-mutating. Run projectGenerator only after preflight reports the selected target is ready, then use postflight to review generated files, addon wiring, and git impact."
 
 if ($Json) {
 	[pscustomobject]@{
@@ -52,6 +58,7 @@ if ($Json) {
 		Targets = $targets
 		TargetCommands = $targetCommands
 		PostflightCommands = $postflightCommands
+		RepairPlanCommands = $repairPlanCommands
 		Validation = $validationCommands
 		Guardrails = $guardrails
 		NextCommands = $nextCommands
@@ -97,6 +104,14 @@ $lines.Add("## Validation")
 $lines.Add("")
 foreach ($command in $validationCommands) {
 	$lines.Add(('- `{0}`' -f $command))
+}
+if ($repairPlanCommands.Count -gt 0) {
+	$lines.Add("")
+	$lines.Add("## Repair Planning")
+	$lines.Add("")
+	foreach ($command in $repairPlanCommands) {
+		$lines.Add(('- `{0}`' -f $command))
+	}
 }
 $lines.Add("")
 $lines.Add("## Guardrails")

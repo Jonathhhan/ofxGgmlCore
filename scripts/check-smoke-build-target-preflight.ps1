@@ -1,6 +1,8 @@
 param(
 	[string]$Stage = "generate-project",
 	[int]$First = 1,
+	[string]$Repository = "",
+	[string]$Example = "",
 	[switch]$Json
 )
 
@@ -9,17 +11,21 @@ $ErrorActionPreference = "Stop"
 if ($First -lt 1) {
 	throw "-First must be at least 1."
 }
+if (([string]::IsNullOrWhiteSpace($Repository) -and ![string]::IsNullOrWhiteSpace($Example)) -or
+	(![string]::IsNullOrWhiteSpace($Repository) -and [string]::IsNullOrWhiteSpace($Example))) {
+	throw "-Repository and -Example must be provided together."
+}
 
 function New-Check {
 	param(
 		[string]$Name,
-		[bool]$Ok,
+		$Ok,
 		[string]$Detail
 	)
 
 	[pscustomobject]@{
 		Name = $Name
-		State = if ($Ok) { "OK" } else { "BLOCKED" }
+		State = if ([bool]$Ok) { "OK" } else { "BLOCKED" }
 		Detail = $Detail
 	}
 }
@@ -38,9 +44,51 @@ function Get-GitDirtyCount {
 	return $output.Count
 }
 
+function Get-SelectedTargets {
+	param(
+		[object]$Plan,
+		[string]$Stage,
+		[int]$First,
+		[string]$Repository,
+		[string]$Example,
+		[string]$ScriptRoot
+	)
+
+	if (![string]::IsNullOrWhiteSpace($Repository)) {
+		$record = @($Plan.Records | Where-Object { $_.Repository -eq $Repository } | Select-Object -First 1)[0]
+		if (!$record) {
+			throw "Repository was not found in smoke-build plan: $Repository"
+		}
+		$exampleMetadata = @($record.ExampleMetadata | Where-Object { $_.Example -eq $Example } | Select-Object -First 1)[0]
+		if (!$exampleMetadata) {
+			throw "Example was not found in smoke-build plan: $Repository / $Example"
+		}
+		$target = @($Plan.Targets | Where-Object { $_.Repository -eq $Repository -and $_.Example -eq $Example } | Select-Object -First 1)
+		if ($target) {
+			return @($target)
+		}
+		return @([pscustomobject]@{
+			Priority = 0
+			Order = 0
+			Repository = $Repository
+			Example = $Example
+			Stage = $Stage
+			Action = "review smoke-build target preflight"
+			Command = [string]$exampleMetadata.ProjectGeneratorCommand
+		})
+	}
+
+	$selectScript = Join-Path $ScriptRoot "select-smoke-build-target.ps1"
+	$selectionJson = & $selectScript -Stage $Stage -First $First -Json
+	if (!$?) {
+		throw "select-smoke-build-target.ps1 -Json failed."
+	}
+	$selection = ($selectionJson -join [Environment]::NewLine) | ConvertFrom-Json
+	return @($selection.Targets)
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-of-smoke-build.ps1"
-$selectScript = Join-Path $scriptRoot "select-smoke-build-target.ps1"
 
 $planJson = & $planScript -Json
 if (!$?) {
@@ -48,17 +96,13 @@ if (!$?) {
 }
 $plan = ($planJson -join [Environment]::NewLine) | ConvertFrom-Json
 
-$selectionJson = & $selectScript -Stage $Stage -First $First -Json
-if (!$?) {
-	throw "select-smoke-build-target.ps1 -Json failed."
-}
-$selection = ($selectionJson -join [Environment]::NewLine) | ConvertFrom-Json
+$targets = @(Get-SelectedTargets -Plan $plan -Stage $Stage -First $First -Repository $Repository -Example $Example -ScriptRoot $scriptRoot)
 
-$preflights = @($selection.Targets | ForEach-Object {
+$preflights = @($targets | ForEach-Object {
 	$target = $_
-	$record = @($plan.Records | Where-Object { $_.Repository -eq $target.Repository } | Select-Object -First 1)
-	$example = @($record.ExampleMetadata | Where-Object { $_.Example -eq $target.Example } | Select-Object -First 1)
-	$examplePath = [string]$example.Path
+	$record = @($plan.Records | Where-Object { $_.Repository -eq $target.Repository } | Select-Object -First 1)[0]
+	$exampleMetadata = @($record.ExampleMetadata | Where-Object { $_.Example -eq $target.Example } | Select-Object -First 1)[0]
+	$examplePath = [string]$exampleMetadata.Path
 	$repoPath = if (![string]::IsNullOrWhiteSpace($examplePath)) { Split-Path -Parent $examplePath } else { "" }
 	$dirtyCount = Get-GitDirtyCount -Path $repoPath
 	$checks = @()
@@ -71,7 +115,7 @@ $preflights = @($selection.Targets | ForEach-Object {
 	$exampleDetail = if ($exampleExists) { $examplePath } else { "example directory was not found" }
 	$checks += New-Check -Name "example directory" -Ok $exampleExists -Detail $exampleDetail
 
-	$metadataOk = $example.HasAddonsMake -and $example.HasOwnerAddon -and $example.HasCoreAddon
+	$metadataOk = $exampleMetadata.HasAddonsMake -and $exampleMetadata.HasOwnerAddon -and $exampleMetadata.HasCoreAddon
 	$metadataDetail = if ($metadataOk) { "addons.make includes owner addon and ofxGgmlCore" } else { "example metadata is incomplete" }
 	$checks += New-Check -Name "example addon metadata" -Ok $metadataOk -Detail $metadataDetail
 
@@ -82,10 +126,10 @@ $preflights = @($selection.Targets | ForEach-Object {
 	$stageStateOk = $true
 	$stageDetail = "stage does not require generated project state"
 	if ($target.Stage -eq "generate-project") {
-		$stageStateOk = !$example.HasGeneratedProject
+		$stageStateOk = !$exampleMetadata.HasGeneratedProject
 		$stageDetail = if ($stageStateOk) { "generated project files are currently missing" } else { "generated project files already exist" }
 	} elseif ($target.Stage -eq "verify-generated-project") {
-		$stageStateOk = $example.HasGeneratedProject
+		$stageStateOk = $exampleMetadata.HasGeneratedProject
 		$stageDetail = if ($stageStateOk) { "generated project files are present" } else { "generated project files are missing" }
 	}
 	$checks += New-Check -Name "target stage matches filesystem" -Ok $stageStateOk -Detail $stageDetail
@@ -114,10 +158,12 @@ if ($readyCommands.Count -gt 0) {
 		"scripts\test-artifact-hygiene.ps1"
 	))
 } else {
-	$nextCommands = @(
-		"# Preflight is blocked. Fix BLOCKED checks before running projectGenerator.",
-		"scripts\check-smoke-build-target-preflight.bat -Stage $Stage -First $First"
-	)
+	$blockedCommands = if (![string]::IsNullOrWhiteSpace($Repository)) {
+		@($preflights | ForEach-Object { "scripts\check-smoke-build-target-preflight.bat -Stage $($_.Stage) -Repository $($_.Repository) -Example $($_.Example)" })
+	} else {
+		@("scripts\check-smoke-build-target-preflight.bat -Stage $Stage -First $First")
+	}
+	$nextCommands = @("# Preflight is blocked. Fix BLOCKED checks before running projectGenerator.") + $blockedCommands
 }
 $safetyNote = "Run projectGenerator commands only when every preflight check is OK. Use postflight immediately after acting on a target."
 

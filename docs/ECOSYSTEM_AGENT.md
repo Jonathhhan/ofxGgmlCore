@@ -101,6 +101,7 @@ scripts\select-smoke-build-target.bat -Stage generate-project
 scripts\plan-smoke-build-target-handoff.bat -Stage generate-project
 scripts\check-smoke-build-target-preflight.bat -Stage generate-project
 scripts\check-smoke-build-target-postflight.bat -Stage generate-project
+scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 ```
 
 On macOS/Linux:
@@ -111,12 +112,14 @@ On macOS/Linux:
 ./scripts/plan-smoke-build-target-handoff.sh -Stage generate-project
 ./scripts/check-smoke-build-target-preflight.sh -Stage generate-project
 ./scripts/check-smoke-build-target-postflight.sh -Stage generate-project
+./scripts/plan-smoke-build-project-repair.sh -Stage verify-generated-project
 ```
 
 Run projectGenerator only after preflight reports the selected target is ready.
 After acting on a target, run postflight with the selected repository and
-example if needed. Do not commit generated project files unless that addon
-intentionally tracks them.
+example if needed. When postflight reports missing Visual Studio addon wiring,
+run the repair planner before compile validation. Do not commit generated
+project files unless that addon intentionally tracks them.
 
 Use `scripts\audit-ecosystem.bat` to inspect whether managed and detected
 repositories have current agent instructions, coding-agent workflow coverage,

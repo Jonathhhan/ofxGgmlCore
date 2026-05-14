@@ -206,6 +206,14 @@ $postflights = @($targets | ForEach-Object {
 	}
 	$checks += New-PostflightCheck -Name "target stage completion" -State $(if ($stageComplete) { "OK" } else { "PENDING" }) -Detail $stageDetail
 
+	$nextValidation = New-Object System.Collections.Generic.List[string]
+	$nextValidation.Add("scripts\plan-of-smoke-build.bat")
+	if ($projectWiring.State -eq "PENDING") {
+		$nextValidation.Add("scripts\plan-smoke-build-project-repair.bat -Stage $($target.Stage) -Repository $($target.Repository) -Example $($target.Example)")
+	}
+	$nextValidation.Add("scripts\check-smoke-build-target-postflight.bat -Stage $($target.Stage) -Repository $($target.Repository) -Example $($target.Example)")
+	$nextValidation.Add("scripts\test-artifact-hygiene.ps1")
+
 	[pscustomobject]@{
 		Repository = $target.Repository
 		Example = $target.Example
@@ -218,11 +226,7 @@ $postflights = @($targets | ForEach-Object {
 		MissingProjectAddons = @($projectWiring.MissingAddons)
 		GitStatus = $gitStatus
 		Checks = @($checks)
-		NextValidation = @(
-			"scripts\plan-of-smoke-build.bat",
-			"scripts\check-smoke-build-target-postflight.bat -Stage $($target.Stage) -Repository $($target.Repository) -Example $($target.Example)",
-			"scripts\test-artifact-hygiene.ps1"
-		)
+		NextValidation = @($nextValidation.ToArray())
 	}
 })
 $incompletePostflights = @($postflights | Where-Object { !$_.Complete })
