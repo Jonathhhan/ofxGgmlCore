@@ -14,6 +14,7 @@ foreach ($expected in @(
 	"Generated from local ecosystem status",
 	"Snapshot",
 	"Queue",
+	"Workflow guides detected",
 	"Guardrails",
 	"Do not edit addon runtime/source behavior"
 )) {
@@ -39,5 +40,20 @@ $firstTask = @($parsed.Tasks)[0]
 foreach ($property in @("Priority", "Repository", "Category", "Task", "Validation")) {
 	if (!$firstTask.PSObject.Properties[$property]) {
 		throw "coding agent work plan task did not include property: $property"
+	}
+}
+
+$statusScript = Join-Path $scriptRoot "status-family.ps1"
+$statusJson = & $statusScript -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "status-family.ps1 -Json failed."
+}
+
+$status = ($statusJson -join "`n") | ConvertFrom-Json
+$vision = @($status.Addons | Where-Object { $_.Name -eq "ofxGgmlVision" } | Select-Object -First 1)
+if ($vision.Count -gt 0 -and $vision[0].Present -and $vision[0].AgentWorkflowGuide) {
+	$staleVisionTasks = @($parsed.Tasks | Where-Object { $_.Repository -eq "ofxGgmlVision" -and $_.Category -eq "lane-uplift" })
+	if ($staleVisionTasks.Count -gt 0) {
+		throw "coding agent work plan should not propose stale Vision lane-uplift work after detecting a workflow guide."
 	}
 }

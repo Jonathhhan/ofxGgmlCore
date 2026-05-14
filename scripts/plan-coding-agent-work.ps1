@@ -37,6 +37,7 @@ function ConvertTo-MarkdownQueue {
 
 	$managed = @($Statuses | Where-Object { $_.Known })
 	$detected = @($Statuses | Where-Object { !$_.Known })
+	$workflowGuides = @($managed | Where-Object { $_.AgentWorkflowGuide })
 	$readyManaged = @($managed | Where-Object {
 		$_.Present -and
 		$_.DirtyCount -eq 0 -and
@@ -58,6 +59,7 @@ function ConvertTo-MarkdownQueue {
 	$lines.Add("| --- | ---: |")
 	$lines.Add("| Managed repositories | $($managed.Count) |")
 	$lines.Add("| Ready managed repositories | $($readyManaged.Count) |")
+	$lines.Add("| Workflow guides detected | $($workflowGuides.Count) |")
 	$lines.Add("| Detected reference repositories | $($detected.Count) |")
 	$lines.Add("| Proposed tasks | $($Tasks.Count) |")
 	$lines.Add("")
@@ -69,6 +71,16 @@ function ConvertTo-MarkdownQueue {
 		$lines.Add(('| {0} | `{1}` | `{2}` | {3} | {4} | `{5}` | `{6}` |' -f $task.Priority, $task.Repository, $task.Lane, $task.Category, $task.Task, $task.SuggestedFiles, $task.Validation))
 	}
 	$lines.Add("")
+	if ($workflowGuides.Count -gt 0) {
+		$lines.Add("## Auto-Detected Completed Planning Guides")
+		$lines.Add("")
+		$lines.Add("| Repository | Guide |")
+		$lines.Add("| --- | --- |")
+		foreach ($repo in @($workflowGuides | Sort-Object Name)) {
+			$lines.Add(('| `{0}` | `{1}` |' -f $repo.Name, $repo.AgentWorkflowGuidePath))
+		}
+		$lines.Add("")
+	}
 	$lines.Add("## Guardrails")
 	$lines.Add("")
 	$lines.Add("- Work on planning, instructions, workflow, validation, and documentation first.")
@@ -184,7 +196,7 @@ if ($tasks.Count -eq 0 -and $managedReady.Count -gt 0) {
 			-Validation "scripts/check-ecosystem-readiness.bat -SkipDoctorTests"))
 	}
 
-	foreach ($laneRepo in @($managedReady | Where-Object { $_.Name -ne "ofxGgmlCore" -and $_.Name -ne "ofxGgmlWorkflows" } | Sort-Object Name)) {
+	foreach ($laneRepo in @($managedReady | Where-Object { $_.Name -ne "ofxGgmlCore" -and $_.Name -ne "ofxGgmlWorkflows" -and !$_.AgentWorkflowGuide } | Sort-Object Name)) {
 		$tasks.Add((New-AgentTask `
 			-Priority "P2" `
 			-Repository $laneRepo.Name `
@@ -197,7 +209,7 @@ if ($tasks.Count -eq 0 -and $managedReady.Count -gt 0) {
 	}
 
 	$workflow = @($managedReady | Where-Object { $_.Name -eq "ofxGgmlWorkflows" } | Select-Object -First 1)
-	if ($workflow.Count -gt 0) {
+	if ($workflow.Count -gt 0 -and !$workflow[0].AgentWorkflowGuide) {
 		$tasks.Add((New-AgentTask `
 			-Priority "P2" `
 			-Repository "ofxGgmlWorkflows" `
