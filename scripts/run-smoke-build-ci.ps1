@@ -2,10 +2,13 @@ param(
 	[switch]$CloneAddonRepos,
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
+	[int]$MaxCommandOutputLines = 2000,
 	[string]$ReportPath = ""
 )
 
+$ErrorView = "ConciseView"
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-smoke-build-compile.ps1"
@@ -116,7 +119,7 @@ function New-CommandResult {
 		[string]$Command,
 		[string]$Status,
 		[int]$ExitCode,
-		[string[]]$Output,
+		[string]$Output,
 		[string]$StartedUtc,
 		[string]$CompletedUtc
 	)
@@ -125,7 +128,7 @@ function New-CommandResult {
 		Command = $Command
 		Status = $Status
 		ExitCode = $ExitCode
-		Output = [string]::Join([Environment]::NewLine, @($Output))
+		Output = $Output
 		StartedUtc = $StartedUtc
 		CompletedUtc = $CompletedUtc
 	}
@@ -146,19 +149,31 @@ function Invoke-TargetCommands {
 
 		Write-Host ("==> Running [{0} / {1}]: {2}" -f $Target.Repository, $Target.Example, $command)
 		$commandStartedUtc = (Get-Date).ToUniversalTime().ToString("o")
-		$commandOutput = New-Object System.Collections.Generic.List[string]
+		$outputLines = New-Object System.Collections.Generic.List[string]
+		$capturedLineCount = 0
 		cmd /c $command 2>&1 | ForEach-Object {
 			$line = [string]$_
 			Write-Host $line
-			$commandOutput.Add($line)
+			if ($capturedLineCount -lt $MaxCommandOutputLines) {
+				$outputLines.Add($line)
+			}
+			$capturedLineCount++
 		}
 		$exitCode = [int]$LASTEXITCODE
 		$commandCompletedUtc = (Get-Date).ToUniversalTime().ToString("o")
+		$commandOutput = if ($outputLines.Count -gt 0) {
+			[string]::Join([Environment]::NewLine, @($outputLines))
+		} else {
+			[string]::Empty
+		}
+		if ($capturedLineCount -gt $MaxCommandOutputLines) {
+			$commandOutput = $commandOutput + [Environment]::NewLine + "... output truncated to $MaxCommandOutputLines lines"
+		}
 		$commandResults.Add((New-CommandResult `
 			-Command ([string]$command) `
 			-Status ($(if ($exitCode -eq 0) { "passed" } else { "failed" })) `
 			-ExitCode $exitCode `
-			-Output @($commandOutput.ToArray()) `
+			-Output $commandOutput `
 			-StartedUtc $commandStartedUtc `
 			-CompletedUtc $commandCompletedUtc))
 
@@ -229,7 +244,7 @@ try {
 			Outcome = "passed"
 		}
 
-		$orderedTargets = @($targets | Sort-Object @{Expression = "Order"; Descending = $false }, @{Expression = "Priority"; Descending = $false }, @{Expression = "Repository"; Descending = $false }, @{Expression = "Example"; Descending = $false })
+		$orderedTargets = @($targets | Sort-Object Order, Priority, Repository, Example)
 		$index = 0
 		foreach ($target in $orderedTargets) {
 			$index++
