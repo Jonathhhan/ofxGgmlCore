@@ -20,6 +20,10 @@ Every addon should provide:
 - `.codex/skills/openframeworks-addon/SKILL.md`
 - `CHANGELOG.md`
 
+Template baseline:
+
+- Start from the upstream `openframeworks/ofxAddonTemplate` structure when bootstrapping new addons, then normalize it for this ecosystem (notably removing legacy CI files like `.travis.yml` / `.appveyor.yml` and replacing template-specific READMEs as needed).
+
 ## Addon boundaries
 
 `ofxGgmlCore` owns backend-neutral primitives only.
