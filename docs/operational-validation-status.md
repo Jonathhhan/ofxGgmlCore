@@ -54,7 +54,7 @@ The readiness pass currently verifies:
 - smoke-build target selection returns the next filtered target without mutating addon worktrees
 - smoke-build target handoff emits validation, artifact-hygiene, and machine-readable next commands for the selected target
 - smoke-build preflight checks projectGenerator, metadata, repository cleanliness, generated-project state, and emits readiness-gated next commands
-- smoke-build postflight reports generated project files, git impact, completion/review counts, and next commands after target work
+- smoke-build postflight reports generated project files, Visual Studio addon wiring, git impact, completion/review counts, and next commands after target work
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - doctor rollout planning runs
@@ -92,6 +92,7 @@ The current smoke-build workflow:
 - is visible in the workflow status report with latest-run age and stale-run markers
 - is summarized in workflow-status reports as required blockers and optional rollout gaps
 - detects the embedded command-line projectGenerator before the GUI wrapper on Windows
+- detects generated Visual Studio project files that are present but missing expected addon wiring
 - does not yet compile openFrameworks examples
 - does not yet complete Visual Studio generated-project verification after projectGenerator crashes during addon processing
 - does not yet validate CUDA/Metal/Vulkan runtimes

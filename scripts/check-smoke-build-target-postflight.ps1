@@ -44,6 +44,83 @@ function Get-GitStatusLines {
 	return @($output)
 }
 
+function Test-GeneratedProjectAddonReference {
+	param(
+		[string]$ProjectText,
+		[string]$Addon,
+		[string]$OwnerAddon
+	)
+
+	if ([string]::IsNullOrWhiteSpace($ProjectText) -or [string]::IsNullOrWhiteSpace($Addon)) {
+		return $false
+	}
+
+	$escapedAddon = [regex]::Escape($Addon)
+	if ($Addon -eq $OwnerAddon) {
+		return $ProjectText -match "\.\.[\\/]+src([\\/;`"'<]|$)" -or
+			$ProjectText -match "\.\.[\\/]+$escapedAddon([\\/;`"'<]|$)"
+	}
+
+	return $ProjectText -match "\.\.[\\/]+\.\.[\\/]+$escapedAddon([\\/;`"'<]|$)" -or
+		$ProjectText -match "\$\(OF_ROOT\)[\\/]+addons[\\/]+$escapedAddon([\\/;`"'<]|$)"
+}
+
+function Get-GeneratedProjectWiring {
+	param(
+		[array]$GeneratedFiles,
+		[array]$Addons,
+		[string]$OwnerAddon
+	)
+
+	$vcxproj = @($GeneratedFiles | Where-Object { [string]$_ -match "\.vcxproj$" } | Select-Object -First 1)
+	$expectedAddons = @($Addons | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
+
+	if ($GeneratedFiles.Count -eq 0) {
+		return [pscustomobject]@{
+			State = "PENDING"
+			Detail = "generated project files are not present yet"
+			ProjectFile = ""
+			MissingAddons = @($expectedAddons)
+		}
+	}
+	if (!$vcxproj) {
+		return [pscustomobject]@{
+			State = "NOT_APPLICABLE"
+			Detail = "no Visual Studio project file was found for addon wiring inspection"
+			ProjectFile = ""
+			MissingAddons = @()
+		}
+	}
+	if ($expectedAddons.Count -eq 0) {
+		return [pscustomobject]@{
+			State = "NOT_APPLICABLE"
+			Detail = "example metadata did not declare expected addons"
+			ProjectFile = [string]$vcxproj
+			MissingAddons = @()
+		}
+	}
+
+	$projectText = Get-Content -LiteralPath ([string]$vcxproj) -Raw
+	$missingAddons = @($expectedAddons | Where-Object {
+		!(Test-GeneratedProjectAddonReference -ProjectText $projectText -Addon $_ -OwnerAddon $OwnerAddon)
+	})
+	if ($missingAddons.Count -gt 0) {
+		return [pscustomobject]@{
+			State = "PENDING"
+			Detail = "Visual Studio project is missing addon wiring for: $($missingAddons -join ', ')"
+			ProjectFile = [string]$vcxproj
+			MissingAddons = @($missingAddons)
+		}
+	}
+
+	return [pscustomobject]@{
+		State = "OK"
+		Detail = "Visual Studio project references expected addons: $($expectedAddons -join ', ')"
+		ProjectFile = [string]$vcxproj
+		MissingAddons = @()
+	}
+}
+
 function Get-SelectedTargets {
 	param(
 		[object]$Plan,
@@ -110,18 +187,22 @@ $postflights = @($targets | ForEach-Object {
 	$generatedDetail = if ($generatedFiles.Count -gt 0) { $generatedFiles -join "; " } else { "generated project files are not present yet" }
 	$checks += New-PostflightCheck -Name "generated project files" -State $generatedState -Detail $generatedDetail
 
+	$projectWiring = Get-GeneratedProjectWiring -GeneratedFiles $generatedFiles -Addons @($exampleMetadata.Addons) -OwnerAddon ([string]$target.Repository)
+	$checks += New-PostflightCheck -Name "generated project addon wiring" -State $projectWiring.State -Detail $projectWiring.Detail
+
 	$gitState = if ($gitStatus.Count -gt 0) { "REVIEW" } else { "OK" }
 	$gitDetail = if ($gitStatus.Count -gt 0) { "$($gitStatus.Count) pending git changes in $repoPath" } else { "0 pending git changes in $repoPath" }
 	$checks += New-PostflightCheck -Name "owning repository git impact" -State $gitState -Detail $gitDetail
 
 	$stageComplete = $true
 	$stageDetail = "stage does not require generated project files"
+	$wiringComplete = $projectWiring.State -eq "OK" -or $projectWiring.State -eq "NOT_APPLICABLE"
 	if ($target.Stage -eq "generate-project") {
-		$stageComplete = $generatedFiles.Count -gt 0
-		$stageDetail = if ($stageComplete) { "project generation appears complete" } else { "project generation still appears pending" }
+		$stageComplete = $generatedFiles.Count -gt 0 -and $wiringComplete
+		$stageDetail = if ($stageComplete) { "project generation appears complete" } else { "project generation still appears pending or incomplete" }
 	} elseif ($target.Stage -eq "verify-generated-project") {
-		$stageComplete = $generatedFiles.Count -gt 0
-		$stageDetail = if ($stageComplete) { "generated project verification can proceed" } else { "generated project files are missing" }
+		$stageComplete = $generatedFiles.Count -gt 0 -and $wiringComplete
+		$stageDetail = if ($stageComplete) { "generated project verification can proceed" } else { "generated project files are missing or addon wiring is incomplete" }
 	}
 	$checks += New-PostflightCheck -Name "target stage completion" -State $(if ($stageComplete) { "OK" } else { "PENDING" }) -Detail $stageDetail
 
@@ -133,6 +214,8 @@ $postflights = @($targets | ForEach-Object {
 		ExamplePath = $examplePath
 		RepositoryPath = $repoPath
 		GeneratedProjectFiles = $generatedFiles
+		GeneratedProjectFile = [string]$projectWiring.ProjectFile
+		MissingProjectAddons = @($projectWiring.MissingAddons)
 		GitStatus = $gitStatus
 		Checks = @($checks)
 		NextValidation = @(
