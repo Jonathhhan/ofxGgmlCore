@@ -32,6 +32,39 @@ function Invoke-Git {
 	return (@($output) -join "`n").Trim()
 }
 
+function Get-AgentWorkflowGuide {
+	param(
+		[string]$Repository,
+		[string]$Name
+	)
+
+	if ($Name -eq "ofxGgmlCore") {
+		return "docs\ECOSYSTEM_AGENT.md"
+	}
+
+	if ($Name -eq "ofxGgmlWorkflows") {
+		$workflowAdoption = Join-Path $Repository "docs\workflow-adoption.md"
+		if (Test-Path -LiteralPath $workflowAdoption -PathType Leaf) {
+			return "docs\workflow-adoption.md"
+		}
+		return ""
+	}
+
+	$docsRoot = Join-Path $Repository "docs"
+	if (!(Test-Path -LiteralPath $docsRoot -PathType Container)) {
+		return ""
+	}
+
+	$guide = Get-ChildItem -LiteralPath $docsRoot -Filter "*_WORKFLOWS.md" -File -ErrorAction SilentlyContinue |
+		Sort-Object Name |
+		Select-Object -First 1
+	if ($guide) {
+		return "docs\$($guide.Name)"
+	}
+
+	return ""
+}
+
 function Get-AddonStatus {
 	param([hashtable]$Addon)
 	$path = Join-Path $addonsRoot $Addon.Name
@@ -48,6 +81,7 @@ function Get-AddonStatus {
 	$hermesInstructions = $false
 	$copilotInstructions = $false
 	$copilotEcosystemInstructions = $false
+	$agentWorkflowGuidePath = ""
 	$examples = @()
 
 	if ($present) {
@@ -63,6 +97,7 @@ function Get-AddonStatus {
 		$hermesInstructions = Test-Path -LiteralPath (Join-Path $path "HERMES.md") -PathType Leaf
 		$copilotInstructions = Test-Path -LiteralPath (Join-Path $path ".github\copilot-instructions.md") -PathType Leaf
 		$copilotEcosystemInstructions = Test-Path -LiteralPath (Join-Path $path ".github\instructions\ofxggml-ecosystem.instructions.md") -PathType Leaf
+		$agentWorkflowGuidePath = Get-AgentWorkflowGuide -Repository $path -Name $Addon.Name
 		$examples = @(
 			Get-ChildItem -LiteralPath $path -Directory -ErrorAction SilentlyContinue |
 				Where-Object { $_.Name -like "*Example" } |
@@ -89,6 +124,8 @@ function Get-AddonStatus {
 		HermesInstructions = $hermesInstructions
 		CopilotInstructions = $copilotInstructions
 		CopilotEcosystemInstructions = $copilotEcosystemInstructions
+		AgentWorkflowGuide = ![string]::IsNullOrWhiteSpace($agentWorkflowGuidePath)
+		AgentWorkflowGuidePath = $agentWorkflowGuidePath
 		Examples = $examples
 	}
 }
