@@ -142,7 +142,9 @@ Hermes fanout PRs. It only writes a cleanup plan for merged agent branches in
 managed repositories; it does not delete branches or operate on classified
 legacy/reference siblings. The plan also reports matching local and remote
 agent branch inventory so stale unmerged branches are visible before deletion
-is considered.
+is considered. Cleanup candidates can be directly `merged` or
+`patch-equivalent` when a squash merge already put the same patch on the
+default branch.
 
 ## Auto-Discovery
 
