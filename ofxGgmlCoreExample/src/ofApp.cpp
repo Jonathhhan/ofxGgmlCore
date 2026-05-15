@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <sstream>
 
 namespace {
@@ -42,6 +43,16 @@ std::string formatSample(const std::vector<float> & values) {
 		stream << values[i];
 	}
 	return stream.str();
+}
+
+float expectedValue(int index) {
+	const float left = static_cast<float>((index % 97) + 1);
+	const float right = static_cast<float>((index % 31) + 1) * 0.25f;
+	const float sum = left + right;
+	const float mixed = sum * right;
+	const float boosted = mixed + left;
+	const float scaled = boosted * sum;
+	return scaled + mixed;
 }
 
 void appendLine(std::vector<std::string> & lines, const std::string & line, bool warning = false) {
@@ -110,18 +121,23 @@ void ofApp::runBackendCheck() {
 		appendLine(lines, "  " + backendLabel(device.backend) + ": " + device.name + formatBytes(device.memoryBytes));
 	}
 
-	graph = ofxGgmlGraph();
+	constexpr int graphOpCount = 5;
+	graph = ofxGgmlGraph(64u * 1024u * 1024u);
 	ofxGgmlTensor a = graph.tensor1d(ofxGgmlType::F32, elementCount);
 	ofxGgmlTensor b = graph.tensor1d(ofxGgmlType::F32, elementCount);
 	ofxGgmlTensor sum = graph.add(a, b);
-	graph.build(sum);
+	ofxGgmlTensor mixed = graph.mul(sum, b);
+	ofxGgmlTensor boosted = graph.add(mixed, a);
+	ofxGgmlTensor scaled = graph.mul(boosted, sum);
+	ofxGgmlTensor resultTensor = graph.add(scaled, mixed);
+	graph.build({ sum, mixed, boosted, scaled, resultTensor });
 
 	std::vector<float> left(static_cast<std::size_t>(elementCount));
 	std::vector<float> right(static_cast<std::size_t>(elementCount));
 	std::vector<float> output(static_cast<std::size_t>(elementCount));
 	for (int i = 0; i < elementCount; ++i) {
 		left[static_cast<std::size_t>(i)] = static_cast<float>((i % 97) + 1);
-		right[static_cast<std::size_t>(i)] = static_cast<float>((i % 31) * 0.5f);
+		right[static_cast<std::size_t>(i)] = static_cast<float>((i % 31) + 1) * 0.25f;
 	}
 
 	std::string graphError;
@@ -153,7 +169,7 @@ void ofApp::runBackendCheck() {
 	const double wallMs = std::chrono::duration<double, std::milli>(wallEnd - wallStart).count();
 
 	auto readResult = graphError.empty()
-		? runtime.getData(sum, output.data(), output.size() * sizeof(float))
+		? runtime.getData(resultTensor, output.data(), output.size() * sizeof(float))
 		: ofxGgmlResult<void>::failure(graphError);
 
 	if (!readResult) {
@@ -162,10 +178,20 @@ void ofApp::runBackendCheck() {
 		return;
 	}
 
-	appendLine(lines, "workload: " + std::to_string(elementCount) + " F32 additions x " + std::to_string(iterationCount));
-	appendLine(lines, "backend compute time: " + formatMs(computeMs));
+	float maxAbsError = 0.0f;
+	for (int i = 0; i < elementCount; ++i) {
+		const float expected = expectedValue(i);
+		maxAbsError = std::max(maxAbsError, std::abs(output[static_cast<std::size_t>(i)] - expected));
+	}
+
+	const double averageComputeMs = iterationCount > 0 ? computeMs / static_cast<double>(iterationCount) : 0.0;
+	const double elementOps = static_cast<double>(elementCount) * static_cast<double>(graphOpCount) * static_cast<double>(iterationCount);
+	appendLine(lines, "workload: " + std::to_string(elementCount) + " F32 elements x " + std::to_string(graphOpCount) + " graph ops x " + std::to_string(iterationCount) + " iterations");
+	appendLine(lines, "approx element ops: " + std::to_string(static_cast<long long>(elementOps)));
+	appendLine(lines, "backend compute time: " + formatMs(computeMs) + " total, " + formatMs(averageComputeMs) + " average");
 	appendLine(lines, "wall time: " + formatMs(wallMs));
-	appendLine(lines, "result sample: [" + formatSample(output) + "]");
+	appendLine(lines, "correctness check: max abs error " + std::to_string(maxAbsError));
+	appendLine(lines, "first output values: [" + formatSample(output) + "]");
 }
 
 void ofApp::draw() {
@@ -192,8 +218,8 @@ void ofApp::draw() {
 			ImGui::EndCombo();
 		}
 		ImGui::Checkbox("Allow CPU fallback", &allowCpuFallback);
-		ImGui::SliderInt("Elements", &workloadElements, 1024, 131072);
-		ImGui::SliderInt("Iterations", &workloadIterations, 1, 1024);
+		ImGui::SliderInt("Vector elements", &workloadElements, 4096, 1048576);
+		ImGui::SliderInt("Benchmark iterations", &workloadIterations, 1, 2048);
 		if (ImGui::Button("Run", ImVec2(96.0f, 0.0f))) {
 			runBackendCheck();
 		}

@@ -23,8 +23,8 @@ private:
 	std::vector<ofxGgmlBackend> backendOptions;
 	int selectedBackendIndex = 0;
 	bool allowCpuFallback = true;
-	int workloadElements = 32768;
-	int workloadIterations = 256;
+	int workloadElements = 262144;
+	int workloadIterations = 512;
 	bool lastRunHadError = false;
 	std::string lastBackendName = "not run";
 	std::vector<std::string> lines;
