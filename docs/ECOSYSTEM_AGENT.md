@@ -83,6 +83,9 @@ Use `scripts\plan-coding-agent-work.bat -Json` when an agent needs structured
 queue summary data plus per-task `SuggestedFileList` and `ValidationCommands`
 arrays instead of parsing the Markdown table. The JSON output also includes the
 same `Guardrails` list shown in Markdown.
+Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact audit
+`Summary` counts plus per-repository readiness actions before deciding whether
+to run the broader readiness pass.
 
 The latest committed queue snapshot lives at `docs\CODING_AGENT_WORK.md`.
 Follow-up control-plane planning lives at `docs\CONTROL_PLANE_NEXT_STEPS.md`.

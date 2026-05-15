@@ -93,10 +93,22 @@ function ConvertTo-MarkdownAudit {
 
 	$managed = @($Entries | Where-Object { $_.Known })
 	$detected = @($Entries | Where-Object { !$_.Known })
+	$summary = Get-AuditSummary -Entries $Entries
 	$lines = New-Object System.Collections.Generic.List[string]
 	$lines.Add("# ofxGgml Ecosystem Audit")
 	$lines.Add("")
 	$lines.Add("Agent-facing readiness audit for managed repositories and auto-detected siblings.")
+	$lines.Add("")
+	$lines.Add("## Summary")
+	$lines.Add("")
+	$lines.Add("| Metric | Count |")
+	$lines.Add("| --- | --- |")
+	$lines.Add("| Managed repositories | $($summary.ManagedRepositories) |")
+	$lines.Add("| Ready managed repositories | $($summary.ReadyManagedRepositories) |")
+	$lines.Add("| Managed repositories with blockers | $($summary.BlockedManagedRepositories) |")
+	$lines.Add("| Detected reference repositories | $($summary.DetectedReferenceRepositories) |")
+	$lines.Add("| Dirty managed repositories | $($summary.DirtyManagedRepositories) |")
+	$lines.Add("| Dirty detected repositories | $($summary.DirtyDetectedRepositories) |")
 	$lines.Add("")
 	$lines.Add("## Managed Repositories")
 	$lines.Add("")
@@ -120,6 +132,33 @@ function ConvertTo-MarkdownAudit {
 	}
 
 	return $lines -join [Environment]::NewLine
+}
+
+function Get-AuditSummary {
+	param([array]$Entries)
+
+	$managed = @($Entries | Where-Object { $_.Known })
+	$detected = @($Entries | Where-Object { !$_.Known })
+	$blockedManaged = @($managed | Where-Object {
+		!$_.Present -or
+		$_.Instructions -ne "complete" -or
+		$_.CodingAgentWorkflow -eq "missing" -or
+		$_.CodingAgentWorkflow -eq "missing-owner" -or
+		$_.Validation -eq "missing"
+	})
+
+	return [pscustomobject]@{
+		ManagedRepositories = $managed.Count
+		ReadyManagedRepositories = @($managed | Where-Object { $_.Action -eq "ready for planning" }).Count
+		BlockedManagedRepositories = $blockedManaged.Count
+		DetectedReferenceRepositories = $detected.Count
+		DirtyManagedRepositories = @($managed | Where-Object { $_.DirtyCount -gt 0 }).Count
+		DirtyDetectedRepositories = @($detected | Where-Object { $_.DirtyCount -gt 0 }).Count
+		MissingInstructionManagedRepositories = @($managed | Where-Object { $_.Instructions -ne "complete" }).Count
+		MissingWorkflowManagedRepositories = @($managed | Where-Object { $_.CodingAgentWorkflow -eq "missing" -or $_.CodingAgentWorkflow -eq "missing-owner" }).Count
+		MissingValidationManagedRepositories = @($managed | Where-Object { $_.Validation -eq "missing" }).Count
+		BlockingManagedRepositoryNames = @($blockedManaged | ForEach-Object { [string]$_.Name })
+	}
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -150,6 +189,7 @@ if ($Strict) {
 if ($Json) {
 	$content = [pscustomobject]@{
 		Root = $status.Root
+		Summary = Get-AuditSummary -Entries $entries
 		Repositories = $entries
 	} | ConvertTo-Json -Depth 6
 } else {
