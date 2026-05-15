@@ -244,6 +244,38 @@ function Get-SmokeBuildTargets {
 	return @($targets | Sort-Object Priority, Order, Example)
 }
 
+function Get-SmokeBuildPlanSummary {
+	param(
+		[array]$Records,
+		[array]$Targets
+	)
+
+	$exampleMetadata = @($Records | ForEach-Object { $_.ExampleMetadata })
+	return [pscustomobject]@{
+		ManagedRecords = @($Records).Count
+		ReadyForProjectGenerationChecks = @($Records | Where-Object { $_.Phase -eq "ready-for-project-generation-check" }).Count
+		WorkflowOnlyRecords = @($Records | Where-Object { $_.Phase -eq "workflow-owner" }).Count
+		MissingLocalValidation = @($Records | Where-Object { $_.Phase -eq "needs-local-validation" }).Count
+		MissingRootExampleInventory = @($Records | Where-Object { $_.Phase -eq "needs-root-example-inventory" }).Count
+		ExamplesWithAddonsMake = @($exampleMetadata | Where-Object { $_.HasAddonsMake }).Count
+		ExamplesMissingOwnerAddon = @($exampleMetadata | Where-Object { !$_.HasOwnerAddon }).Count
+		ExamplesMissingCoreAddon = @($exampleMetadata | Where-Object { !$_.HasCoreAddon }).Count
+		ExamplesWithProjectGeneratorCommands = @($exampleMetadata | Where-Object { ![string]::IsNullOrWhiteSpace($_.ProjectGeneratorCommand) }).Count
+		ExamplesWithGeneratedProjectFiles = @($exampleMetadata | Where-Object { $_.HasGeneratedProject }).Count
+		GenerateProjectTargets = @($Targets | Where-Object { $_.Stage -eq "generate-project" }).Count
+		VerifyGeneratedProjectTargets = @($Targets | Where-Object { $_.Stage -eq "verify-generated-project" }).Count
+	}
+}
+
+function Get-SmokeBuildPlanNextCommands {
+	$commands = New-Object System.Collections.Generic.List[string]
+	$commands.Add("scripts\select-smoke-build-target.bat -Stage generate-project")
+	$commands.Add("scripts\plan-smoke-build-target-handoff.bat -Stage generate-project")
+	$commands.Add("scripts\check-smoke-build-target-preflight.bat -Stage generate-project")
+	$commands.Add("scripts\test-of-smoke-build-plan.ps1")
+	return @($commands.ToArray())
+}
+
 function ConvertTo-MarkdownSmokeBuildPlan {
 	param(
 		[array]$Records,
@@ -351,12 +383,16 @@ $records = @($managed | ForEach-Object {
 	}
 })
 $targets = @(Get-SmokeBuildTargets -Records $records)
+$summary = Get-SmokeBuildPlanSummary -Records $records -Targets $targets
+$nextCommands = Get-SmokeBuildPlanNextCommands
 
 if ($Json) {
 	$content = [pscustomobject]@{
 		Root = $status.Root
 		OfRoot = $ofRoot
 		ProjectGeneratorPath = $projectGeneratorPath
+		Summary = $summary
+		NextCommands = $nextCommands
 		Records = $records
 		Targets = $targets
 	} | ConvertTo-Json -Depth 6

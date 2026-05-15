@@ -42,6 +42,39 @@ if (!$?) {
 }
 
 $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
+if (!$parsed.Summary) {
+	throw "openFrameworks smoke build plan JSON did not include Summary."
+}
+foreach ($property in @(
+	"ManagedRecords",
+	"ReadyForProjectGenerationChecks",
+	"WorkflowOnlyRecords",
+	"MissingLocalValidation",
+	"MissingRootExampleInventory",
+	"ExamplesWithAddonsMake",
+	"ExamplesMissingOwnerAddon",
+	"ExamplesMissingCoreAddon",
+	"ExamplesWithProjectGeneratorCommands",
+	"ExamplesWithGeneratedProjectFiles",
+	"GenerateProjectTargets",
+	"VerifyGeneratedProjectTargets"
+)) {
+	if (!$parsed.Summary.PSObject.Properties[$property]) {
+		throw "openFrameworks smoke build plan JSON Summary did not include $property."
+	}
+}
+if ($parsed.Summary.ManagedRecords -lt 11) {
+	throw "openFrameworks smoke build plan JSON Summary did not count managed records."
+}
+if ($parsed.Summary.ReadyForProjectGenerationChecks -eq 0) {
+	throw "openFrameworks smoke build plan JSON Summary did not report project-generation candidates."
+}
+if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
+	throw "openFrameworks smoke build plan JSON did not include NextCommands."
+}
+if (@($parsed.NextCommands) -notcontains "scripts\plan-smoke-build-target-handoff.bat -Stage generate-project") {
+	throw "openFrameworks smoke build plan JSON NextCommands did not include target handoff."
+}
 if (!$parsed.Records -or $parsed.Records.Count -eq 0) {
 	throw "openFrameworks smoke build plan JSON did not include records."
 }

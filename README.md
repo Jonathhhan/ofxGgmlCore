@@ -155,6 +155,8 @@ release gates. By default it writes to a temporary report path and folds in
 intentionally want to persist evidence in the repository.
 Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
 project-generation and smoke-build rollout before adding compile gates.
+Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke
+build `Summary` counts, next commands, records, and target queues.
 Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an
 agent needs the next concrete smoke-build target without parsing the full plan.
 Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` when

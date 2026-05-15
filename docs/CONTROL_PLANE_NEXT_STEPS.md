@@ -17,6 +17,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Keep workflow status action summaries readable so required blockers are distinct from optional rollout gaps.
 - Use `scripts\fetch-workflow-status.py --stale-days 30` when checking whether latest workflow runs are still fresh enough to trust for release planning.
 - Use `scripts\plan-of-smoke-build.bat` before adding real openFrameworks project-generation or compile validation gates.
+- Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke-build summary counts, next commands, records, and target queues.
 - Treat missing example `addons.make`, owner-addon references, or `ofxGgmlCore` references as blockers before projectGenerator checks.
 - Use the smoke-build command plan to choose the next focused example-generation target without committing generated files.
 - Prefer the smoke-build target queue order when moving from project generation to generated-project repair or compile validation.
