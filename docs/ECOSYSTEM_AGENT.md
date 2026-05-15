@@ -124,8 +124,10 @@ compact `Summary` counts plus detailed `Steps` and `DoctorTests` evidence.
 Use `scripts\check-ecosystem-readiness.bat -Json -SummaryOnly` when another
 agent needs pass/fail counts and step states without successful step logs.
 Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
-evidence `Summary` counts, generated report paths, and next commands before
-deciding whether CI truth is strong enough for a release gate.
+evidence `Summary` counts, generated report paths, evidence paths, and next
+commands before deciding whether CI truth is strong enough for a release gate.
+Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent
+needs compact release evidence summaries without generated report paths.
 Use `scripts\plan-release-readiness.bat -SmokeBuildCiReport <path>` when an
 agent has downloaded `.smoke-build-ci-report.json` from GitHub Actions and needs
 generated-project compile evidence in the release readiness report.

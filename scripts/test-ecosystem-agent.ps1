@@ -85,6 +85,9 @@ if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-doctor-rollout.bat
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-ecosystem.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact ecosystem plan validation command."
 }
+if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
+	throw "ecosystem agent JSON output did not include the compact release readiness validation command."
+}
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact smoke-build handoff validation command."
 }

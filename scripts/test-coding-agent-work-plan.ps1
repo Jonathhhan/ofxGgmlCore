@@ -138,6 +138,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		"plan-doctor-rollout.bat -Json -SummaryOnly",
 		"test-doctor-rollout-plan.ps1",
 		"plan-ecosystem.bat -Json -SummaryOnly",
+		"plan-release-readiness.bat -Json -SummaryOnly",
 		"plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly",
 		"check-smoke-build-target-preflight.bat -Stage generate-project -Json -SummaryOnly",
 		"check-smoke-build-target-postflight.bat -Stage generate-project -Json -SummaryOnly",
