@@ -68,6 +68,7 @@ The readiness pass currently verifies:
 - smoke-build compile planning emits focused build commands only after generated-project postflight is complete, using addon-owned build scripts when present and the Core generic smoke builder otherwise
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
+- release-readiness evidence folds in backend capability reports when available
 - backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
 - doctor rollout planning runs

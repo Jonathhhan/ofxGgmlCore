@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $scriptPath = Join-Path $scriptRoot "generate-release-readiness-score.py"
 $workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-evidence.md"
+$backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-capability-evidence.md"
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
 
 @(
@@ -32,11 +33,21 @@ $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readi
 	'- Set `GITHUB_TOKEN` for higher API limits and private-repo access.'
 ) | Set-Content -LiteralPath $workflowReport
 
+@(
+	'# Backend Capability Report',
+	'',
+	'| Backend | Declared support | Local runtime evidence | Inference smoke | Status |',
+	'| --- | --- | --- | --- | --- |',
+	'| `cpu` | yes | runtime smoke passed | passed | verified |',
+	'| `cuda` | yes | local library present | not checked | ready for runtime init smoke |',
+	'| `metal` | yes | not installed locally | not checked | optional backend absent |'
+) | Set-Content -LiteralPath $backendReport
+
 if (Test-Path -LiteralPath $outputPath) {
 	Remove-Item -LiteralPath $outputPath -Force
 }
 
-python $scriptPath --workflow-status-report $workflowReport --output $outputPath
+python $scriptPath --workflow-status-report $workflowReport --backend-capability-report $backendReport --output $outputPath
 if (!$?) {
 	throw "generate-release-readiness-score.py failed."
 }
@@ -60,6 +71,10 @@ foreach ($expected in @(
 	"latest run is stale (45d)",
 	"Optional workflow rollout gaps",
 	"workflow file missing",
+	"Backend capability report",
+	"Backend capability evidence",
+	"1 backend(s) runtime-smoke checked",
+	"runtime smoke passed",
 	"Stale required workflows",
 	"Repository readiness checklist"
 )) {
@@ -69,4 +84,5 @@ foreach ($expected in @(
 }
 
 Remove-Item -LiteralPath $workflowReport -Force
+Remove-Item -LiteralPath $backendReport -Force
 Remove-Item -LiteralPath $outputPath -Force

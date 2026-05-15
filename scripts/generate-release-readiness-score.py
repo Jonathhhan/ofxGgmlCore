@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Generate an ofxGgml ecosystem release-readiness score.")
     parser.add_argument("--output", default=str(OUTPUT), help="Markdown report path.")
     parser.add_argument("--workflow-status-report", default="", help="Optional workflow status markdown report to fold into release evidence.")
+    parser.add_argument("--backend-capability-report", default="", help="Optional backend capability markdown report to fold into release evidence.")
     return parser.parse_args()
 
 
@@ -74,12 +75,65 @@ def workflow_evidence_status(workflow_report):
     return "no required workflow blockers reported"
 
 
+def parse_backend_capability_report(path):
+    if not path:
+        return None
+
+    report = Path(path)
+    if not report.is_absolute():
+        report = ROOT / report
+    if not report.exists():
+        raise FileNotFoundError(f"backend capability report was not found: {report}")
+
+    rows = []
+    for line in report.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| `"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) != 5:
+            continue
+        rows.append({
+            "backend": cells[0],
+            "declared": cells[1],
+            "runtime": cells[2],
+            "smoke": cells[3],
+            "status": cells[4],
+        })
+
+    return {
+        "path": str(report),
+        "rows": rows,
+    }
+
+
+def backend_evidence_status(backend_report):
+    if not backend_report:
+        return "not provided"
+
+    rows = backend_report.get("rows", [])
+    if not rows:
+        return "no backend rows found"
+
+    runtime_smoke = sum(1 for row in rows if row["runtime"] == "runtime smoke passed")
+    local_ready = sum(1 for row in rows if row["runtime"] == "local library present")
+    optional_absent = sum(1 for row in rows if row["status"] == "optional backend absent")
+
+    if runtime_smoke > 0:
+        return f"{runtime_smoke} backend(s) runtime-smoke checked"
+    if local_ready > 0:
+        return f"{local_ready} backend(s) ready for runtime smoke"
+    if optional_absent == len(rows):
+        return "only optional backend absence reported"
+    return "backend capability evidence reported"
+
+
 def main():
     args = parse_args()
     ecosystem = json.loads(MANIFEST.read_text(encoding="utf-8"))
     baseline = ecosystem.get("baseline", "unknown")
     required_files = ecosystem.get("required_files", [])
     workflow_report = parse_workflow_status_report(args.workflow_status_report)
+    backend_report = parse_backend_capability_report(args.backend_capability_report)
 
     repos = []
     core = ecosystem.get("core", {})
@@ -106,6 +160,7 @@ def main():
         "- Strict ecosystem audit: expected before release",
         "- Ecosystem readiness check: expected before release",
         f"- Workflow status report: `{workflow_evidence_status(workflow_report)}`",
+        f"- Backend capability report: `{backend_evidence_status(backend_report)}`",
         "",
     ]
 
@@ -146,6 +201,27 @@ def main():
         else:
             lines.append("- None.")
         lines.append("")
+
+    if backend_report:
+        lines.extend([
+            "### Backend capability evidence",
+            "",
+            "| Backend | Declared support | Local runtime evidence | Smoke status | Release status |",
+            "| --- | --- | --- | --- | --- |",
+        ])
+        rows = backend_report.get("rows", [])
+        if rows:
+            for row in rows:
+                lines.append(
+                    f"| {row['backend']} | {row['declared']} | {row['runtime']} | {row['smoke']} | {row['status']} |"
+                )
+        else:
+            lines.append("| - | - | - | - | no backend capability rows found |")
+        lines.extend([
+            "",
+            "Backend capability evidence is runtime-discovery evidence unless a row reports `runtime smoke passed`.",
+            "",
+        ])
 
     lines.extend([
         "## Repository readiness checklist",
