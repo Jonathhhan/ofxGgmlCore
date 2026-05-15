@@ -78,9 +78,10 @@ Use `scripts\plan-ecosystem.bat -Json` when Codex, GitHub Copilot, Hermes Agent,
 or another automation needs machine-readable `Summary`, `PlanningPriorities`,
 `AgentGuardrails`, `SmokeBuildLifecycle`, and `SuggestedValidation` fields
 without parsing Markdown.
-The `SuggestedValidation` list uses the compact branch-cleanup JSON command so
-agents get cleanup Summary counts and next commands without embedding the full
-branch inventory in routine handoffs.
+Use `scripts\plan-ecosystem.bat -Json -SummaryOnly` when another agent needs
+those fields plus compact repository summaries without embedding the full addon
+inventory. The `SuggestedValidation` list uses compact ecosystem and branch
+cleanup JSON commands so routine handoffs stay small.
 
 Use `scripts\plan-coding-agent-work.bat -OutputPath docs\CODING_AGENT_WORK.md`
 to write a prioritized, agent-safe work queue. It is designed for Codex,

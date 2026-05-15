@@ -11,6 +11,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly` when another agent needs compact readiness evidence without successful step logs.
 - Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor coverage summary counts and next commands.
 - Use `scripts\plan-ecosystem.bat -Json` when another agent needs summary counts, planning priorities, guardrails, smoke-build lifecycle commands, and validation commands as structured data.
+- Use `scripts\plan-ecosystem.bat -Json -SummaryOnly` when another agent needs compact ecosystem summary evidence without full addon records.
 - Use `scripts\plan-coding-agent-work.bat -Json` when another agent needs queue summary data, guardrails, and per-task suggested-file and validation-command arrays.
 
 ## P2: Workflow Observability
