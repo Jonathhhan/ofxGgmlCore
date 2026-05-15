@@ -36,12 +36,40 @@ $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
 if (!$parsed.Tasks -or $parsed.Tasks.Count -eq 0) {
 	throw "coding agent work plan JSON did not include tasks."
 }
+foreach ($property in @("Summary", "Tasks")) {
+	if (!$parsed.PSObject.Properties[$property]) {
+		throw "coding agent work plan JSON did not include $property."
+	}
+}
+foreach ($property in @(
+	"ManagedRepositories",
+	"ReadyManagedRepositories",
+	"WorkflowGuidesDetected",
+	"DetectedReferenceRepositories",
+	"ProposedTasks"
+)) {
+	if (!$parsed.Summary.PSObject.Properties[$property]) {
+		throw "coding agent work plan JSON summary did not include $property."
+	}
+}
+if ($parsed.Summary.ProposedTasks -ne @($parsed.Tasks).Count) {
+	throw "coding agent work plan JSON summary task count did not match tasks."
+}
 
 $firstTask = @($parsed.Tasks)[0]
-foreach ($property in @("Priority", "Repository", "Category", "Task", "Validation")) {
+foreach ($property in @("Priority", "Repository", "Category", "Task", "Validation", "SuggestedFileList", "ValidationCommands")) {
 	if (!$firstTask.PSObject.Properties[$property]) {
 		throw "coding agent work plan task did not include property: $property"
 	}
+}
+if (@($firstTask.SuggestedFileList).Count -eq 0) {
+	throw "coding agent work plan task did not include structured suggested files."
+}
+if (@($firstTask.ValidationCommands).Count -eq 0) {
+	throw "coding agent work plan task did not include structured validation commands."
+}
+if (($jsonOutput -join "`n") -notmatch '"ValidationCommands":\s+\[') {
+	throw "coding agent work plan JSON output did not preserve ValidationCommands as an array."
 }
 
 $statusScript = Join-Path $scriptRoot "status-family.ps1"

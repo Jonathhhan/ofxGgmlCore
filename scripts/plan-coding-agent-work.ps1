@@ -5,6 +5,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Split-AgentTaskList {
+	param([string]$Value)
+
+	if ([string]::IsNullOrWhiteSpace($Value)) {
+		return @()
+	}
+
+	@($Value -split ";" |
+		ForEach-Object { $_.Trim() } |
+		Where-Object { ![string]::IsNullOrWhiteSpace($_) })
+}
+
 function New-AgentTask {
 	param(
 		[string]$Priority,
@@ -25,7 +37,37 @@ function New-AgentTask {
 		Task = $Task
 		Rationale = $Rationale
 		SuggestedFiles = $SuggestedFiles
+		SuggestedFileList = @(Split-AgentTaskList -Value $SuggestedFiles)
 		Validation = $Validation
+		ValidationCommands = @(Split-AgentTaskList -Value $Validation)
+	}
+}
+
+function Get-CodingAgentQueueSummary {
+	param(
+		[array]$Tasks,
+		[array]$Statuses
+	)
+
+	$managed = @($Statuses | Where-Object { $_.Known })
+	$detected = @($Statuses | Where-Object { !$_.Known })
+	$workflowGuides = @($managed | Where-Object { $_.AgentWorkflowGuide })
+	$readyManaged = @($managed | Where-Object {
+		$_.Present -and
+		$_.DirtyCount -eq 0 -and
+		$_.ValidateScript -and
+		$_.AgentsInstructions -and
+		$_.HermesInstructions -and
+		$_.CopilotInstructions -and
+		$_.CopilotEcosystemInstructions
+	})
+
+	[pscustomobject]@{
+		ManagedRepositories = $managed.Count
+		ReadyManagedRepositories = $readyManaged.Count
+		WorkflowGuidesDetected = $workflowGuides.Count
+		DetectedReferenceRepositories = $detected.Count
+		ProposedTasks = @($Tasks).Count
 	}
 }
 
@@ -227,6 +269,7 @@ $taskArray = @($tasks.ToArray())
 $result = [pscustomobject]@{
 	Root = $status.Root
 	GeneratedFrom = "scripts/status-family.ps1 -Json"
+	Summary = Get-CodingAgentQueueSummary -Tasks $taskArray -Statuses $statuses
 	Tasks = $taskArray
 }
 
