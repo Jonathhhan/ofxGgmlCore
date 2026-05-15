@@ -11,6 +11,7 @@ The ecosystem currently provides:
 - live workflow observability scaffolding
 - actionable workflow blocker and rollout-gap summaries
 - stale workflow run reporting
+- structured JSON handoff checks for Codex, GitHub Copilot, and Hermes
 - coding-agent work queue generation
 - workflow guide coverage detection
 - multi-platform smoke-build scaffolding
@@ -55,7 +56,9 @@ The readiness pass currently verifies:
 - generated agent instructions are current
 - strict ecosystem audit passes
 - ecosystem planning handoff runs
+- structured ecosystem planning JSON handoff runs
 - coding-agent work queue generation runs
+- structured coding-agent work queue JSON handoff runs
 - openFrameworks smoke-build rollout planning runs
 - smoke-build planning verifies root-level example addon metadata before projectGenerator rollout
 - smoke-build planning reports projectGenerator command candidates and existing generated project files

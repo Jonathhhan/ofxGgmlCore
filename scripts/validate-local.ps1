@@ -81,6 +81,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "not a co
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "Workflow Observability" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-ecosystem.bat -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-coding-agent-work.bat -Json" "control plane next steps"
+Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "structured JSON handoff" "operational validation status"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"

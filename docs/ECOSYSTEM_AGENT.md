@@ -96,8 +96,8 @@ tasks.
 Use `scripts\check-ecosystem-readiness.bat` for a single non-mutating pass
 before broad ecosystem work. It checks generated agent instructions, strict
 ecosystem audit status, planning handoffs, coding-agent work queue generation,
-workflow guide coverage, doctor rollout status, branch cleanup planning, and
-managed doctor smoke tests.
+structured JSON handoffs, workflow guide coverage, doctor rollout status,
+branch cleanup planning, and managed doctor smoke tests.
 
 ## Smoke-Build Target Lifecycle
 
