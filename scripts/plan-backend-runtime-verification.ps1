@@ -203,10 +203,10 @@ function New-BackendRuntimeEntry {
 		"missing-repository"
 	} elseif ($Status.Name -eq "ofxGgmlCore" -and $runtimeEvidence.State -ne "missing") {
 		"core-runtime-smoke-seeded"
-	} elseif ($Status.Name -eq "ofxGgmlSam" -and $modelEvidence.State -eq "available" -and $buildEvidence.BuiltExamples -gt 0) {
-		"reference-lane-ready-for-runtime-smoke"
 	} elseif ($runtimeEvidence.State -ne "missing") {
 		"runtime-smoke-entrypoint-present"
+	} elseif ($Status.Name -eq "ofxGgmlSam" -and $modelEvidence.State -eq "available" -and $buildEvidence.BuiltExamples -gt 0) {
+		"reference-lane-ready-for-runtime-smoke"
 	} else {
 		"needs-runtime-smoke-plan"
 	}
@@ -216,7 +216,7 @@ function New-BackendRuntimeEntry {
 		"missing-repository" { "restore repository before planning runtime verification" }
 		"core-runtime-smoke-seeded" { "keep Core CPU graph smoke active and require reports as release evidence" }
 		"reference-lane-ready-for-runtime-smoke" { "add SAM3 CPU/CUDA runtime-smoke handoff before broadening other lanes" }
-		"runtime-smoke-entrypoint-present" { "wire runtime smoke into validation and release evidence" }
+		"runtime-smoke-entrypoint-present" { "use runtime smoke as validation and release evidence" }
 		default { "add lane-owned runtime-smoke planner after the reference SAM lane is gated" }
 	}
 
@@ -269,7 +269,8 @@ function Get-BackendRuntimeNextCommands {
 	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")
 	$reference = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlSam" } | Select-Object -First 1)
 	if ($reference.Count -gt 0) {
-		$commands.Add("cd ..\ofxGgmlSam && scripts\doctor.bat")
+		$commands.Add("cd ..\ofxGgmlSam && scripts\doctor-sam.bat")
+		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun")
 		$commands.Add("cd ..\ofxGgmlSam && scripts\validate-local.bat")
 	}
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
