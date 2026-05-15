@@ -204,7 +204,7 @@ if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Js
 if (@($parsed.NextCommands) -notcontains "scripts\fetch-smoke-build-ci-report.bat -Force") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI artifact fetch."
 }
-if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0") {
+if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI report generation."
 }
 if (!$parsed.EvidenceSummaries -or @($parsed.EvidenceSummaries).Count -ne 4) {

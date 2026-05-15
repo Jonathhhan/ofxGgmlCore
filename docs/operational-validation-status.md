@@ -49,7 +49,7 @@ scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 scripts\plan-smoke-build-compile.bat -Stage compile-example
 scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly
-scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0
+scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0
 scripts\plan-release-readiness.bat -Json -SummaryOnly
 scripts\build-runtime-smoke.bat -Backend cpu
 ```
@@ -141,7 +141,7 @@ The current smoke-build workflow:
 ## Next operational milestones
 
 - Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
-- generate and persist smoke-build CI evidence for release readiness with `scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0`
+- generate and persist smoke-build CI evidence for release readiness with `scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0`
 - keep lane-owned runtime-smoke evidence fresh as model-backed and GPU-backed lanes mature
 - GPU backend runtime verification from suitable runners
 - model-backed inference smoke tests

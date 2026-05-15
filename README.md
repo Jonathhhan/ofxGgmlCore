@@ -87,6 +87,7 @@ cd ../ofxGgmlLlama
 | `scripts\plan-smoke-build-project-repair.bat` | Plan generated Visual Studio project addon-wiring repairs |
 | `scripts\plan-smoke-build-compile.bat` | Plan focused compile commands for generated examples |
 | `scripts\build-smoke-example.bat` | Build a generated example that passed smoke-build postflight |
+| `scripts\run-smoke-build-ci.bat` | Run the full smoke-build generate-repair-compile control-plane loop |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |

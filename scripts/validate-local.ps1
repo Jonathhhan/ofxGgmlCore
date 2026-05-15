@@ -76,6 +76,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-smoke-buil
 Assert-FileContains (Join-Path $addonRoot "README.md") "Plan generated Visual Studio project addon-wiring repairs" "README command table"
 Assert-FileContains (Join-Path $addonRoot "README.md") "Plan focused compile commands for generated examples" "README command table"
 Assert-FileContains (Join-Path $addonRoot "README.md") "Build a generated example that passed smoke-build postflight" "README command table"
+Assert-FileContains (Join-Path $addonRoot "README.md") "Run the full smoke-build generate-repair-compile control-plane loop" "README command table"
 Assert-FileContains (Join-Path $addonRoot "README.md") ".smoke-build-ci-report.json" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat" "README"
@@ -115,6 +116,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "r
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "compile-readiness Summary counts" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "top-level Summary counts for release evidence" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly" "control plane next steps"
+Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\fetch-smoke-build-ci-report.bat -Force" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\assert-release-readiness.bat -SmokeBuildCiReport .smoke-build-ci-report.json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "release-gate" "control plane next steps"
@@ -208,6 +210,9 @@ foreach ($requiredScript in @(
 	"build-smoke-example.bat",
 	"build-smoke-example.ps1",
 	"build-smoke-example.sh",
+	"run-smoke-build-ci.bat",
+	"run-smoke-build-ci.ps1",
+	"run-smoke-build-ci.sh",
 	"build-runtime-smoke.bat",
 	"build-runtime-smoke.ps1",
 	"build-runtime-smoke.sh",
