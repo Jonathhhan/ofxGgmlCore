@@ -31,6 +31,10 @@ foreach ($expected in @(
 	"Expected workflow",
 	"Scope",
 	"Core release control",
+	"scripts\fetch-workflow-status.py --stale-days 30",
+	"Live report path",
+	"plan-release-readiness.bat",
+	"offline-friendly",
 	'| `Jonathhhan/ofxGgmlCore` | `core` | `release-gate` | Core release control | GitHub Actions |',
 	'| `Jonathhhan/ofxGgmlLlama` | `text-chat-embeddings` | `addon-hygiene` | all managed repositories | GitHub Actions |'
 )) {

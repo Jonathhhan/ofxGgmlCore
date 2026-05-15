@@ -37,7 +37,8 @@ def main():
     lines = [
         "# Workflow Status Plan",
         "",
-        "This document defines the workflow status signals that should eventually feed ecosystem health and release readiness.",
+        "This document defines the workflow status signals that feed ecosystem health and release readiness.",
+        "Use `scripts\\fetch-workflow-status.py --stale-days 30` for the live GitHub Actions report.",
         "",
         "| Repository | Lane | Expected workflow | Scope | Status source |",
         "| --- | --- | --- | --- | --- |",
@@ -54,17 +55,17 @@ def main():
 
     lines.extend([
         "",
-        "## Future live checks",
+        "## Live report path",
         "",
-        "- query latest workflow runs per repository",
-        "- distinguish skipped, failed, cancelled, and successful runs",
-        "- block release trains on failed required workflows",
-        "- surface stale repositories with no recent workflow runs",
-        "- combine live CI status with metadata reconciliation reports",
+        "- query latest workflow runs per repository with `scripts\\fetch-workflow-status.py`",
+        "- distinguish skipped, failed, cancelled, and successful runs in the generated workflow status report",
+        "- block release trains on failed, missing, unavailable, or stale required workflows when `--strict` is used",
+        "- surface stale repositories with no recent workflow runs using the configured stale-day threshold",
+        "- fold live CI status into release readiness through `scripts\\plan-release-readiness.bat`",
         "",
         "## Current status",
         "",
-        "This is a planning scaffold. It does not yet query GitHub Actions APIs.",
+        "The live workflow-status report is implemented separately so this plan can stay deterministic and offline-friendly.",
     ])
 
     output = Path(args.output)
