@@ -55,6 +55,7 @@ def main():
         "",
         "- Core runs `backend-runtime-check` on relevant pull requests and pushes to `main`.",
         "- The reusable workflow initializes the CPU backend and runs a lightweight ggml graph compute/readback smoke on Windows and Ubuntu.",
+        "- Core exposes `scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly` so agents can see compact CPU/CUDA/Metal/Vulkan declaration, model-path, build, and runtime-smoke readiness before selecting a companion lane.",
         "- The macOS lane currently verifies the runtime-smoke scaffold without compiling the local ggml runtime.",
         "- Local Windows validation can require CUDA with `scripts\\build-runtime-smoke.ps1 -Backend cpu,cuda -RequireBackend`.",
         "",
@@ -72,6 +73,7 @@ def main():
         "- Metal runtime initialization and graph smoke on macOS",
         "- Vulkan runtime discovery where available",
         "- backend capability report uploaded as release evidence from CI",
+        "- backend runtime verification plan included as release-readiness evidence",
     ])
 
     OUTPUT.write_text("\n".join(lines), encoding="utf-8")

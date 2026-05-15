@@ -5,6 +5,7 @@ $scriptPath = Join-Path $scriptRoot "generate-release-readiness-score.py"
 $testId = [guid]::NewGuid().ToString("N")
 $workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-evidence-$testId.md"
 $backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-capability-evidence-$testId.md"
+$backendRuntimePlan = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-runtime-evidence-$testId.md"
 $smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-evidence-$testId.json"
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score-$testId.md"
 
@@ -45,6 +46,30 @@ $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readi
 	'| `metal` | yes | not installed locally | not checked | optional backend absent |'
 ) | Set-Content -LiteralPath $backendReport
 
+@(
+	'# Backend Runtime Verification Plan',
+	'',
+	'## Summary',
+	'',
+	'| Metric | Count |',
+	'| --- | ---: |',
+	'| Managed repositories | 11 |',
+	'| Runtime-applicable repositories | 10 |',
+	'| Core runtime-smoke seeded | 1 |',
+	'| Reference lanes ready | 1 |',
+	'| Runtime-smoke entrypoints | 1 |',
+	'| Repositories with models | 8 |',
+	'| Repositories with built examples | 4 |',
+	'| Repositories needing runtime-smoke plans | 8 |',
+	'',
+	'## Repository Evidence',
+	'',
+	'| Repository | Lane | Backends | Models | Built examples | Runtime smoke | Gate state | Action |',
+	'| --- | --- | --- | --- | --- | --- | --- | --- |',
+	'| ofxGgmlCore | backend-neutral runtime base | cpu, cuda | available (1) | complete (1/1) | available-and-validated | core-runtime-smoke-seeded | keep Core CPU graph smoke active |',
+	'| ofxGgmlSam | segmentation | cpu, cuda, metal | available (1) | complete (1/1) | missing | reference-lane-ready-for-runtime-smoke | add SAM3 CPU/CUDA runtime-smoke handoff |'
+) | Set-Content -LiteralPath $backendRuntimePlan
+
 @{
 	Summary = @{
 		Outcome = "passed"
@@ -65,7 +90,7 @@ if (Test-Path -LiteralPath $outputPath) {
 	Remove-Item -LiteralPath $outputPath -Force
 }
 
-python $scriptPath --workflow-status-report $workflowReport --backend-capability-report $backendReport --smoke-build-ci-report $smokeBuildReport --output $outputPath
+python $scriptPath --workflow-status-report $workflowReport --backend-capability-report $backendReport --backend-runtime-plan $backendRuntimePlan --smoke-build-ci-report $smokeBuildReport --output $outputPath
 if (!$?) {
 	throw "generate-release-readiness-score.py failed."
 }
@@ -93,6 +118,10 @@ foreach ($expected in @(
 	"Backend capability evidence",
 	"1 backend(s) runtime-smoke checked",
 	"runtime smoke passed",
+	"Backend runtime verification plan",
+	"Backend runtime verification evidence",
+	"1 core runtime seed(s), 1 reference lane(s) ready",
+	"reference-lane-ready-for-runtime-smoke",
 	"Smoke-build CI report",
 	"Smoke-build CI evidence",
 	"passed 14 target(s), 3 stage(s), 14 command(s)",
@@ -107,5 +136,6 @@ foreach ($expected in @(
 
 Remove-Item -LiteralPath $workflowReport -Force
 Remove-Item -LiteralPath $backendReport -Force
+Remove-Item -LiteralPath $backendRuntimePlan -Force
 Remove-Item -LiteralPath $smokeBuildReport -Force
 Remove-Item -LiteralPath $outputPath -Force

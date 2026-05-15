@@ -5,6 +5,7 @@ $planScript = Join-Path $scriptRoot "plan-release-readiness.ps1"
 $testId = [guid]::NewGuid().ToString("N")
 $workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-plan-evidence-$testId.md"
 $backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-capability-plan-evidence-$testId.md"
+$backendRuntimePlan = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-runtime-plan-evidence-$testId.md"
 $smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-plan-evidence-$testId.json"
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-plan-$testId.md"
 $jsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-json-plan-$testId.md"
@@ -41,6 +42,30 @@ $repoDefaultOutputPath = Resolve-Path (Join-Path $scriptRoot "..\docs\release-re
 	'| --- | --- | --- | --- | --- |',
 	'| `cpu` | yes | runtime smoke passed | passed | verified |'
 ) | Set-Content -LiteralPath $backendReport
+
+@(
+	'# Backend Runtime Verification Plan',
+	'',
+	'## Summary',
+	'',
+	'| Metric | Count |',
+	'| --- | ---: |',
+	'| Managed repositories | 11 |',
+	'| Runtime-applicable repositories | 10 |',
+	'| Core runtime-smoke seeded | 1 |',
+	'| Reference lanes ready | 1 |',
+	'| Runtime-smoke entrypoints | 1 |',
+	'| Repositories with models | 8 |',
+	'| Repositories with built examples | 4 |',
+	'| Repositories needing runtime-smoke plans | 8 |',
+	'',
+	'## Repository Evidence',
+	'',
+	'| Repository | Lane | Backends | Models | Built examples | Runtime smoke | Gate state | Action |',
+	'| --- | --- | --- | --- | --- | --- | --- | --- |',
+	'| ofxGgmlCore | backend-neutral runtime base | cpu, cuda | available (1) | complete (1/1) | available-and-validated | core-runtime-smoke-seeded | keep Core CPU graph smoke active |',
+	'| ofxGgmlSam | segmentation | cpu, cuda, metal | available (1) | complete (1/1) | missing | reference-lane-ready-for-runtime-smoke | add SAM3 CPU/CUDA runtime-smoke handoff |'
+) | Set-Content -LiteralPath $backendRuntimePlan
 
 @{
 	Summary = @{
@@ -82,7 +107,7 @@ if (Test-Path -LiteralPath (Join-Path $scriptRoot "..\docs\release-readiness-sco
 	throw "default release readiness plan should not write into docs without -OutputPath."
 }
 
-& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -SmokeBuildCiReport $smokeBuildReport -OutputPath $outputPath
+& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $outputPath
 if (!$?) {
 	throw "plan-release-readiness.ps1 failed."
 }
@@ -100,6 +125,8 @@ foreach ($expected in @(
 	"unavailable: HTTP 403",
 	"Backend capability evidence",
 	"runtime smoke passed",
+	"Backend runtime verification evidence",
+	"reference-lane-ready-for-runtime-smoke",
 	"Smoke-build CI evidence",
 	"passed 14 target(s), 3 stage(s), 14 command(s)",
 	"Repository readiness checklist"
@@ -109,7 +136,7 @@ foreach ($expected in @(
 	}
 }
 
-$jsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -SmokeBuildCiReport $smokeBuildReport -OutputPath $jsonOutputPath -Json)
+$jsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $jsonOutputPath -Json)
 if (!$?) {
 	throw "plan-release-readiness.ps1 JSON run failed."
 }
@@ -131,6 +158,9 @@ foreach ($property in @(
 	"BackendCapabilityEvidenceProvided",
 	"BackendCapabilityDefaultUsed",
 	"BackendCapabilityEvidenceExists",
+	"BackendRuntimePlanEvidenceProvided",
+	"BackendRuntimePlanEvidenceGenerated",
+	"BackendRuntimePlanEvidenceExists",
 	"SmokeBuildCiEvidenceProvided",
 	"SmokeBuildCiDefaultUsed",
 	"SmokeBuildCiEvidenceExists",
@@ -149,6 +179,9 @@ if (!$parsed.Summary.WorkflowStatusEvidenceProvided -or !$parsed.Summary.Workflo
 if (!$parsed.Summary.BackendCapabilityEvidenceProvided -or !$parsed.Summary.BackendCapabilityEvidenceExists) {
 	throw "release readiness JSON Summary did not report backend capability evidence."
 }
+if (!$parsed.Summary.BackendRuntimePlanEvidenceProvided -or !$parsed.Summary.BackendRuntimePlanEvidenceExists) {
+	throw "release readiness JSON Summary did not report backend runtime verification evidence."
+}
 if (!$parsed.Summary.SmokeBuildCiEvidenceProvided -or !$parsed.Summary.SmokeBuildCiEvidenceExists) {
 	throw "release readiness JSON Summary did not report smoke-build CI evidence."
 }
@@ -161,13 +194,16 @@ if (@($parsed.NextCommands) -notcontains "scripts\check-ecosystem-readiness.bat 
 if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "release readiness JSON NextCommands did not include compact branch cleanup planning."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly") {
+	throw "release readiness JSON NextCommands did not include compact backend runtime verification planning."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "release readiness JSON NextCommands did not include compact release readiness planning."
 }
 if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI report generation."
 }
-if (!$parsed.EvidenceSummaries -or @($parsed.EvidenceSummaries).Count -ne 3) {
+if (!$parsed.EvidenceSummaries -or @($parsed.EvidenceSummaries).Count -ne 4) {
 	throw "release readiness JSON did not include evidence summaries."
 }
 if (!$parsed.EvidenceSummaries[0].PSObject.Properties["Path"]) {
@@ -178,7 +214,7 @@ $summaryJsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-re
 if (Test-Path -LiteralPath $summaryJsonOutputPath) {
 	Remove-Item -LiteralPath $summaryJsonOutputPath -Force
 }
-$summaryJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -SmokeBuildCiReport $smokeBuildReport -OutputPath $summaryJsonOutputPath -Json -SummaryOnly)
+$summaryJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $summaryJsonOutputPath -Json -SummaryOnly)
 if (!$?) {
 	throw "plan-release-readiness.ps1 summary JSON run failed."
 }
@@ -189,10 +225,10 @@ $summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
 if (!$summaryParsed.SummaryOnly) {
 	throw "release readiness summary JSON did not report SummaryOnly."
 }
-if (!$summaryParsed.Summary -or !$summaryParsed.EvidenceSummaries -or @($summaryParsed.EvidenceSummaries).Count -ne 3) {
+if (!$summaryParsed.Summary -or !$summaryParsed.EvidenceSummaries -or @($summaryParsed.EvidenceSummaries).Count -ne 4) {
 	throw "release readiness summary JSON did not retain compact summary evidence."
 }
-foreach ($omitted in @("OutputPath", "WorkflowStatusReport", "BackendCapabilityReport", "SmokeBuildCiReport")) {
+foreach ($omitted in @("OutputPath", "WorkflowStatusReport", "BackendCapabilityReport", "BackendRuntimePlan", "SmokeBuildCiReport")) {
 	if ($summaryParsed.PSObject.Properties[$omitted]) {
 		throw "release readiness summary JSON should omit $omitted."
 	}
@@ -206,6 +242,7 @@ if (@($summaryParsed.NextCommands) -notcontains "scripts\plan-release-readiness.
 
 Remove-Item -LiteralPath $workflowReport -Force
 Remove-Item -LiteralPath $backendReport -Force
+Remove-Item -LiteralPath $backendRuntimePlan -Force
 Remove-Item -LiteralPath $smokeBuildReport -Force
 Remove-Item -LiteralPath $outputPath -Force
 Remove-Item -LiteralPath $jsonOutputPath -Force
