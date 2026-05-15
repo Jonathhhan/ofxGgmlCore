@@ -70,6 +70,10 @@ On macOS/Linux:
 
 Use `scripts\plan-ecosystem.bat -OutputPath docs\ECOSYSTEM_PLAN.md` to write a
 handoff plan for review.
+Use `scripts\plan-ecosystem.bat -Json` when Codex, GitHub Copilot, Hermes Agent,
+or another automation needs machine-readable summary counts, planning
+priorities, guardrails, smoke-build lifecycle commands, and validation commands
+without parsing Markdown.
 
 Use `scripts\plan-coding-agent-work.bat -OutputPath docs\CODING_AGENT_WORK.md`
 to write a prioritized, agent-safe work queue. It is designed for Codex,
