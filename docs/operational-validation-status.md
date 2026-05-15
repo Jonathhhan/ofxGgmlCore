@@ -69,6 +69,7 @@ The readiness pass currently verifies:
 - smoke-build postflight reports generated project files, Visual Studio addon wiring, git impact, completion/review counts, and next commands after target work
 - smoke-build project repair planning reports missing Visual Studio addon references, supports explicit generated-metadata repair with `-Apply`, and emits next commands for postflight and hygiene checks
 - smoke-build compile planning emits focused build commands only after generated-project postflight is complete, using addon-owned build scripts when present and the Core generic smoke builder otherwise
+- smoke-build CI writes a JSON report with top-level Summary counts for stages, targets, commands, and failures
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - release-readiness evidence folds in backend capability reports when available

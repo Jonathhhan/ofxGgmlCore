@@ -17,7 +17,9 @@ if ($TargetsPerStage -lt 0) {
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $planScript = Join-Path $scriptRoot "plan-smoke-build-compile.ps1"
+$reportHelpersScript = Join-Path $scriptRoot "smoke-build-ci-report.ps1"
 $addonsRoot = Split-Path -Parent (Split-Path -Parent $scriptRoot)
+. $reportHelpersScript
 
 $managedAddonRepos = @(
 	"ofxGgmlLlama",
@@ -337,6 +339,7 @@ try {
 } finally {
 	$report.CompletedUtc = (Get-Date).ToUniversalTime().ToString("o")
 	$report.StageCount = $stageTargetsToRun
+	$report["Summary"] = Get-SmokeBuildCiReportSummary -Report $report
 	$reportPathDir = Split-Path -Parent $defaultReportPath
 	if (![string]::IsNullOrWhiteSpace($reportPathDir)) {
 		[void](New-Item -ItemType Directory -Path $reportPathDir -Force -ErrorAction SilentlyContinue)

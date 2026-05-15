@@ -191,6 +191,8 @@ references, and repair next commands.
 Use `scripts\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json`
 when another agent needs compile-readiness `Summary` counts and focused next
 commands.
+The `smoke-build-ci` workflow writes `.smoke-build-ci-report.json` with top-level
+`Summary` counts for release and agent handoff evidence.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.
