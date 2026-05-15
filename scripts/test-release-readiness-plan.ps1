@@ -207,6 +207,9 @@ if (@($parsed.NextCommands) -notcontains "scripts\fetch-smoke-build-ci-report.ba
 if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI report generation."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\release-candidate.bat") {
+	throw "release readiness JSON NextCommands did not include release-candidate.bat."
+}
 if (!$parsed.EvidenceSummaries -or @($parsed.EvidenceSummaries).Count -ne 4) {
 	throw "release readiness JSON did not include evidence summaries."
 }
@@ -242,6 +245,9 @@ if ($summaryParsed.EvidenceSummaries[0].PSObject.Properties["Path"]) {
 }
 if (@($summaryParsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "release readiness summary JSON NextCommands did not include compact release readiness planning."
+}
+if (@($summaryParsed.NextCommands) -notcontains "scripts\release-candidate.bat") {
+	throw "release readiness summary JSON NextCommands did not include release-candidate.bat."
 }
 
 Remove-Item -LiteralPath $workflowReport -Force
