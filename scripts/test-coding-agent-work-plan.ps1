@@ -123,6 +123,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		throw "committed coding agent work snapshot did not reference plan-of-smoke-build.ps1."
 	}
 	foreach ($expected in @(
+		"README.md",
 		"select-smoke-build-target.ps1",
 		"plan-smoke-build-target-handoff.ps1",
 		"check-smoke-build-target-preflight.ps1",
