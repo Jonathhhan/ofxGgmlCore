@@ -645,6 +645,12 @@ $repairs = @($postflight.Postflights | ForEach-Object {
 })
 
 $needsAction = @($repairs | Where-Object { $_.State -ne "ready-for-compile-validation" })
+$readyForCompile = @($repairs | Where-Object { $_.State -eq "ready-for-compile-validation" })
+$needsProjectGeneration = @($repairs | Where-Object { $_.State -eq "needs-project-generation" })
+$needsAddonWiringRepair = @($repairs | Where-Object { $_.State -eq "needs-addon-wiring-repair" })
+$reviewGeneratedProject = @($repairs | Where-Object { $_.State -eq "review-generated-project" })
+$plannedRepairChanges = @($repairs | Where-Object { $_.RepairResult -and $_.RepairResult.Changed })
+$missingProjectAddons = @($repairs | ForEach-Object { $_.MissingProjectAddons } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
 $nextCommandList = New-Object System.Collections.Generic.List[string]
 foreach ($repair in $repairs) {
 	foreach ($command in @($repair.NextCommands)) {
@@ -659,11 +665,27 @@ $safetyNote = if ($Apply) {
 } else {
 	"This repair plan is non-mutating. Re-run with -Apply to update generated Visual Studio project metadata."
 }
+$summary = [pscustomobject]@{
+	Stage = $Stage
+	RequestedTargets = $First
+	SelectedTargets = $repairs.Count
+	ReadyForCompileValidation = $readyForCompile.Count
+	NeedsProjectGeneration = $needsProjectGeneration.Count
+	NeedsAddonWiringRepair = $needsAddonWiringRepair.Count
+	ReviewGeneratedProject = $reviewGeneratedProject.Count
+	NeedsAction = $needsAction.Count
+	PlannedRepairChanges = $plannedRepairChanges.Count
+	MissingProjectAddons = $missingProjectAddons.Count
+	NextCommands = $nextCommands.Count
+	Applied = [bool]$Apply
+	HasSelection = $repairs.Count -gt 0
+}
 
 if ($Json) {
 	[pscustomobject]@{
 		Root = $plan.Root
 		Stage = $Stage
+		Summary = $summary
 		Repairs = $repairs
 		Applied = [bool]$Apply
 		NeedsAction = $needsAction.Count

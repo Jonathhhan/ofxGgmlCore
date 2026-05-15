@@ -185,6 +185,9 @@ validation without staging anything.
 Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json`
 when another agent needs completion `Summary` counts, generated-file counts,
 and review counts.
+Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Json`
+when another agent needs repair-state `Summary` counts, expected addon
+references, and repair next commands.
 Use `scripts\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json`
 when another agent needs compile-readiness `Summary` counts and focused next
 commands.
