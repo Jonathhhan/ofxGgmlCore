@@ -178,8 +178,10 @@ evidence `Summary` counts, generated report paths, evidence paths, and next
 commands.
 Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent
 needs compact release evidence summaries without generated report paths.
-Use `scripts\list-models.bat -Json` when another agent needs model discovery
-`Summary` counts, existing search directories, and nearby GGUF file metadata.
+Use `scripts\list-models.bat -Json -SummaryOnly` when another agent needs
+compact model discovery `Summary` counts and search-directory existence before
+planning model-backed smoke tests. Re-run without `-SummaryOnly` when nearby
+GGUF file metadata is needed.
 Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
 project-generation and smoke-build rollout before adding compile gates.
 Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke

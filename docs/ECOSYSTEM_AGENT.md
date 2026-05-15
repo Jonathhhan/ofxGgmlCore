@@ -131,8 +131,10 @@ needs compact release evidence summaries without generated report paths.
 Use `scripts\plan-release-readiness.bat -SmokeBuildCiReport <path>` when an
 agent has downloaded `.smoke-build-ci-report.json` from GitHub Actions and needs
 generated-project compile evidence in the release readiness report.
-Use `scripts\list-models.bat -Json` when another agent needs model discovery
-`Summary` counts, existing search directories, and nearby GGUF file metadata.
+Use `scripts\list-models.bat -Json -SummaryOnly` when another agent needs
+compact model discovery `Summary` counts and search-directory existence before
+planning model-backed smoke tests. Re-run without `-SummaryOnly` when nearby
+GGUF file metadata is needed.
 
 ## Smoke-Build Target Lifecycle
 
