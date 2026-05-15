@@ -1,6 +1,7 @@
 param(
 	[string]$OutputPath = "",
 	[switch]$Json,
+	[switch]$SummaryOnly,
 	[switch]$Strict
 )
 
@@ -161,6 +162,22 @@ function Get-AuditSummary {
 	}
 }
 
+function ConvertTo-AuditRepositorySummary {
+	param([object]$Entry)
+
+	[pscustomobject]@{
+		Name = [string]$Entry.Name
+		Known = [bool]$Entry.Known
+		Present = [bool]$Entry.Present
+		Instructions = [string]$Entry.Instructions
+		CodingAgentWorkflow = [string]$Entry.CodingAgentWorkflow
+		Validation = [string]$Entry.Validation
+		ReleaseCandidate = [string]$Entry.ReleaseCandidate
+		DirtyCount = [int]$Entry.DirtyCount
+		Action = [string]$Entry.Action
+	}
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $statusScript = Join-Path $scriptRoot "status-family.ps1"
 $statusJson = & $statusScript -Json
@@ -187,11 +204,16 @@ if ($Strict) {
 }
 
 if ($Json) {
-	$content = [pscustomobject]@{
+	$result = [pscustomobject]@{
 		Root = $status.Root
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = Get-AuditSummary -Entries $entries
-		Repositories = $entries
-	} | ConvertTo-Json -Depth 6
+		RepositorySummaries = @($entries | ForEach-Object { ConvertTo-AuditRepositorySummary -Entry $_ })
+	}
+	if (!$SummaryOnly) {
+		$result | Add-Member -NotePropertyName Repositories -NotePropertyValue $entries
+	}
+	$content = $result | ConvertTo-Json -Depth 6
 } else {
 	$content = ConvertTo-MarkdownAudit -Entries $entries
 }
