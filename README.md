@@ -151,6 +151,10 @@ prioritized queue with suggested files and validation commands.
 Use `scripts\plan-coding-agent-work.bat -Json` when another agent needs
 structured queue summary, guardrail, suggested-file, and validation-command
 arrays.
+Use `docs\LOCAL_CODEX_LLAMA_SERVER.md` when running optional local Codex work
+against an OpenAI-compatible `llama-server` endpoint. Local model serving stays
+outside Core; the repository contract remains the planning queue, guardrails,
+and validation commands.
 Use `scripts\check-ecosystem-readiness.bat` when you need a single
 non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,

@@ -124,6 +124,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 	}
 	foreach ($expected in @(
 		"README.md",
+		"LOCAL_CODEX_LLAMA_SERVER.md",
 		"plan-ecosystem.ps1",
 		"test-ecosystem-agent.ps1",
 		"validate-local.ps1",
