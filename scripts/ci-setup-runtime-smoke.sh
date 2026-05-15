@@ -19,5 +19,7 @@ if ! command -v pwsh >/dev/null 2>&1 && ! command -v powershell >/dev/null 2>&1;
   exit 1
 fi
 
+chmod +x "$root_dir/scripts/setup-ggml.sh" "$root_dir/scripts/build-runtime-smoke.sh"
+
 "$root_dir/scripts/setup-ggml.sh" -CpuOnly -Jobs 2
 "$root_dir/scripts/build-runtime-smoke.sh"
