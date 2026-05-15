@@ -63,7 +63,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\plan-release-readiness.bat -Json` when another agent needs release evidence summary counts, generated report paths, evidence paths, and next commands.
 - Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent needs compact release evidence summaries without generated report paths.
 - Use `scripts\plan-release-readiness.bat -SmokeBuildCiReport <path>` when release planning should fold in a downloaded `.smoke-build-ci-report.json` artifact.
-- Use `scripts\list-models.bat -Json` when another agent needs model discovery summary counts, existing search directories, and nearby GGUF file metadata before planning model-backed smoke tests.
+- Use `scripts\list-models.bat -Json -SummaryOnly` when another agent needs compact model discovery summary counts and search-directory existence before planning model-backed smoke tests; re-run without `-SummaryOnly` when nearby GGUF file metadata is needed.
 - Use `scripts\generate-release-readiness-score.py --workflow-status-report <report>` after generating a workflow status report for release planning.
 - Use `scripts\generate-release-readiness-score.py --backend-capability-report docs\backend-capability-report.md` when release planning needs backend discovery or runtime-smoke evidence.
 - Use `scripts\generate-release-readiness-score.py --smoke-build-ci-report .smoke-build-ci-report.json` when release planning needs generated-project compile evidence.
