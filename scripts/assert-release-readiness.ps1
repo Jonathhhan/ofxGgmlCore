@@ -1,4 +1,5 @@
 param(
+	[string]$OutputPath = "",
 	[string]$WorkflowStatusReport = "",
 	[string]$BackendCapabilityReport = "",
 	[string]$BackendRuntimePlan = "",
@@ -86,12 +87,19 @@ function Test-SmokeBuildReportPassed {
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$addonRoot = Split-Path -Parent $scriptRoot
 $planScript = Join-Path $scriptRoot "plan-release-readiness.ps1"
 $testId = [guid]::NewGuid().ToString("N")
-$outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-gate-$testId.md"
+$resolvedOutputPath = if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+	Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-gate-$testId.md"
+} elseif ([System.IO.Path]::IsPathRooted($OutputPath)) {
+	$OutputPath
+} else {
+	Join-Path $addonRoot $OutputPath
+}
 
 $planParams = @{
-	OutputPath = $outputPath
+	OutputPath = $resolvedOutputPath
 	StaleDays = $StaleDays
 	Json = $true
 }
@@ -138,8 +146,8 @@ if (!$AllowMissingSmokeBuildCi) {
 	Test-SmokeBuildReportPassed -Path ([string]$plan.SmokeBuildCiReport) -Blockers $blockers
 }
 
-if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
-	$lines = @(Get-Content -LiteralPath $outputPath)
+if (Test-Path -LiteralPath $resolvedOutputPath -PathType Leaf) {
+	$lines = @(Get-Content -LiteralPath $resolvedOutputPath)
 	$workflowBlockerLines = Get-MarkdownSectionLines -Lines $lines -Heading "#### Required workflow blockers"
 	if (Test-SectionHasEntries -Lines $workflowBlockerLines) {
 		Add-Blocker -Blockers $blockers -Message "workflow status evidence reports required blockers"
@@ -151,7 +159,7 @@ $result = [ordered]@{
 	Ready = $ready
 	BlockerCount = $blockers.Count
 	Blockers = @($blockers.ToArray())
-	ReleaseReadinessPlan = $outputPath
+	ReleaseReadinessPlan = $resolvedOutputPath
 	SmokeBuildCiReport = [string]$plan.SmokeBuildCiReport
 	Summary = $summary
 }

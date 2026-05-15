@@ -3,6 +3,39 @@ name: release-gate
 on:
   workflow_dispatch:
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   release-gate:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/release-gate.yml@main
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout core repository
+        uses: actions/checkout@v4
+
+      - name: Fetch smoke-build CI evidence
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\fetch-smoke-build-ci-report.ps1" -Branch "$env:GITHUB_REF_NAME" -OutputPath ".smoke-build-ci-report.json" -Force
+
+      - name: Assert release readiness
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\assert-release-readiness.ps1" -OutputPath ".release-readiness-gate.md" -SmokeBuildCiReport ".smoke-build-ci-report.json"
+
+      - name: Upload release gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: release-gate-evidence
+          path: |
+            .release-readiness-gate.md
+            .smoke-build-ci-report.json
+          if-no-files-found: ignore
