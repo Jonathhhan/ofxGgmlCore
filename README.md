@@ -86,7 +86,7 @@ cd ../ofxGgmlLlama
 | `scripts\check-smoke-build-target-postflight.bat` | Report generated project and git impact after acting on a smoke-build target |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
-| `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status and policy metadata |
+| `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status, backend capability, and policy metadata |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
@@ -138,9 +138,10 @@ agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
 need a focused doctor entry point, wrapper, smoke test, or validation hook.
 Use `scripts\plan-release-readiness.bat` to generate a release-readiness score
-with workflow-status evidence when planning release gates. By default it writes
-to a temporary report path; pass `-OutputPath` when you intentionally want to
-persist evidence in the repository.
+with workflow-status evidence and backend capability evidence when planning
+release gates. By default it writes to a temporary report path and folds in
+`docs\backend-capability-report.md` when present; pass `-OutputPath` when you
+intentionally want to persist evidence in the repository.
 Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
 project-generation and smoke-build rollout before adding compile gates.
 Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an
