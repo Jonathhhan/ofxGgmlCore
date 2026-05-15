@@ -8,10 +8,11 @@ MANIFEST = ROOT / "ecosystem.json"
 OUTPUT = ROOT / "docs" / "workflow-status-plan.md"
 
 WORKFLOWS = [
-    "addon-hygiene",
-    "release-check",
-    "metadata-validation",
-    "baseline-compatibility",
+    {"name": "addon-hygiene", "scope": "all managed repositories"},
+    {"name": "release-check", "scope": "all managed repositories"},
+    {"name": "metadata-validation", "scope": "all managed repositories"},
+    {"name": "baseline-compatibility", "scope": "all managed repositories"},
+    {"name": "release-gate", "scope": "Core release control", "repos": ["Jonathhhan/ofxGgmlCore"]},
 ]
 
 
@@ -30,13 +31,18 @@ def main():
         "",
         "This document defines the workflow status signals that should eventually feed ecosystem health and release readiness.",
         "",
-        "| Repository | Lane | Expected workflow | Status source |",
-        "| --- | --- | --- | --- |",
+        "| Repository | Lane | Expected workflow | Scope | Status source |",
+        "| --- | --- | --- | --- | --- |",
     ]
 
     for repo in repos:
         for workflow in WORKFLOWS:
-            lines.append(f"| `{repo['repo']}` | `{repo['lane']}` | `{workflow}` | GitHub Actions |")
+            workflow_repos = workflow.get("repos")
+            if workflow_repos and repo["repo"] not in workflow_repos:
+                continue
+            lines.append(
+                f"| `{repo['repo']}` | `{repo['lane']}` | `{workflow['name']}` | {workflow['scope']} | GitHub Actions |"
+            )
 
     lines.extend([
         "",
