@@ -113,3 +113,28 @@ if (!$branchCleanupJson.Summary -or !$branchCleanupJson.PSObject.Properties["Rep
 if ($branchCleanupJson.PSObject.Properties["Inventory"] -or $branchCleanupJson.PSObject.Properties["Candidates"]) {
 	throw "ecosystem readiness branch cleanup handoff should omit branch-level Inventory and Candidates."
 }
+
+$summaryJsonOutput = & $readinessScript -SkipDoctorTests -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-ecosystem-readiness.ps1 -Json -SummaryOnly failed."
+}
+
+$summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$summaryParsed.SummaryOnly) {
+	throw "ecosystem readiness summary JSON did not report SummaryOnly."
+}
+if (!$summaryParsed.Passed -or !$summaryParsed.Summary) {
+	throw "ecosystem readiness summary JSON did not preserve pass summary."
+}
+$omittedOutputs = @($summaryParsed.Steps | Where-Object { $_.OutputOmitted })
+if ($omittedOutputs.Count -eq 0) {
+	throw "ecosystem readiness summary JSON did not omit successful step output."
+}
+$unexpectedOutput = @($summaryParsed.Steps | Where-Object { $_.State -eq "OK" -and @($_.Output).Count -gt 0 })
+if ($unexpectedOutput.Count -gt 0) {
+	throw "ecosystem readiness summary JSON retained successful step output."
+}
+$summaryBranchCleanupStep = @($summaryParsed.Steps | Where-Object { $_.Name -eq "agent branch cleanup plan" } | Select-Object -First 1)
+if ($summaryBranchCleanupStep.Count -eq 0 -or !$summaryBranchCleanupStep[0].OutputOmitted) {
+	throw "ecosystem readiness summary JSON did not compact branch cleanup output."
+}

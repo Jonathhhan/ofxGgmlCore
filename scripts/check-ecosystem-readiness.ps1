@@ -1,6 +1,7 @@
 param(
 	[string]$OutputPath = "",
 	[switch]$SkipDoctorTests,
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -123,6 +124,26 @@ function New-ReadinessSummary {
 	}
 }
 
+function ConvertTo-SummaryStepResult {
+	param([object]$Step)
+
+	$output = @()
+	$outputOmitted = $false
+	if ($Step.State -eq "OK" -and @($Step.Output).Count -gt 0) {
+		$outputOmitted = $true
+	} else {
+		$output = @($Step.Output)
+	}
+
+	return [pscustomobject]@{
+		Name = [string]$Step.Name
+		State = [string]$Step.State
+		Detail = [string]$Step.Detail
+		OutputOmitted = $outputOmitted
+		Output = @($output)
+	}
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $coreRoot = Split-Path -Parent $scriptRoot
 $statusScript = Join-Path $scriptRoot "status-family.ps1"
@@ -210,12 +231,20 @@ $failed = @(@($steps + $doctorTests) | Where-Object { $_.State -ne "OK" })
 $summary = New-ReadinessSummary -Steps $steps -DoctorTests $doctorTests
 
 if ($Json) {
+	$jsonSteps = @($steps)
+	$jsonDoctorTests = @($doctorTests)
+	if ($SummaryOnly) {
+		$jsonSteps = @($steps | ForEach-Object { ConvertTo-SummaryStepResult -Step $_ })
+		$jsonDoctorTests = @($doctorTests | ForEach-Object { ConvertTo-SummaryStepResult -Step $_ })
+	}
+
 	$content = [pscustomobject]@{
 		Root = [string]$status.Root
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		Passed = ($failed.Count -eq 0)
-		Steps = $steps
-		DoctorTests = $doctorTests
+		Steps = $jsonSteps
+		DoctorTests = $jsonDoctorTests
 	} | ConvertTo-Json -Depth 6
 } else {
 	$content = ConvertTo-MarkdownReadiness -Root ([string]$status.Root) -Steps $steps -DoctorTests $doctorTests

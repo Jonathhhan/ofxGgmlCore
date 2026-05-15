@@ -146,6 +146,9 @@ Use `scripts\check-ecosystem-readiness.bat -Json` when another agent needs
 readiness `Summary` counts plus detailed `Steps` and `DoctorTests` evidence;
 the embedded branch-cleanup step uses compact summary evidence so routine
 handoffs do not include the full branch inventory.
+Use `scripts\check-ecosystem-readiness.bat -Json -SummaryOnly` when another
+agent needs compact readiness pass/fail evidence without embedding successful
+step logs; failed step output is retained for diagnosis.
 Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact
