@@ -103,6 +103,26 @@ function Test-WorkflowGuideCoverage {
 		-Detail ("{0} managed workflow guides detected" -f $managed.Count)
 }
 
+function New-ReadinessSummary {
+	param(
+		[array]$Steps,
+		[array]$DoctorTests
+	)
+
+	$failedSteps = @($Steps | Where-Object { $_.State -ne "OK" })
+	$failedDoctorTests = @($DoctorTests | Where-Object { $_.State -ne "OK" })
+
+	return [pscustomobject]@{
+		TotalSteps = @($Steps).Count
+		PassedSteps = @($Steps | Where-Object { $_.State -eq "OK" }).Count
+		FailedSteps = $failedSteps.Count
+		TotalDoctorTests = @($DoctorTests).Count
+		PassedDoctorTests = @($DoctorTests | Where-Object { $_.State -eq "OK" }).Count
+		FailedDoctorTests = $failedDoctorTests.Count
+		FailedChecks = @(@($failedSteps + $failedDoctorTests) | ForEach-Object { [string]$_.Name })
+	}
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $coreRoot = Split-Path -Parent $scriptRoot
 $statusScript = Join-Path $scriptRoot "status-family.ps1"
@@ -184,10 +204,12 @@ if (!$SkipDoctorTests) {
 }
 
 $failed = @(@($steps + $doctorTests) | Where-Object { $_.State -ne "OK" })
+$summary = New-ReadinessSummary -Steps $steps -DoctorTests $doctorTests
 
 if ($Json) {
 	$content = [pscustomobject]@{
 		Root = [string]$status.Root
+		Summary = $summary
 		Passed = ($failed.Count -eq 0)
 		Steps = $steps
 		DoctorTests = $doctorTests

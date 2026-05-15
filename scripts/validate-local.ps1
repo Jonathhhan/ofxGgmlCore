@@ -87,6 +87,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGg
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "auto-detected" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "check-ecosystem-readiness" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "DoctorTests" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-coding-agent-work" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "AgentGuardrails" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "SuggestedFileList" "ecosystem agent docs"
