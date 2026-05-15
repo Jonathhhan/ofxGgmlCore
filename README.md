@@ -157,6 +157,8 @@ release gates. By default it writes to a temporary report path and folds in
 intentionally want to persist evidence in the repository.
 Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
 evidence `Summary` counts, generated report paths, and next commands.
+Use `scripts\list-models.bat -Json` when another agent needs model discovery
+`Summary` counts, existing search directories, and nearby GGUF file metadata.
 Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
 project-generation and smoke-build rollout before adding compile gates.
 Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke

@@ -62,11 +62,33 @@ foreach ($directory in $directories) {
 		}
 }
 
+$existingDirectories = @($directories | Where-Object { Test-Path -LiteralPath $_ -PathType Container })
+$totalBytes = [long]0
+$modelArray = @($models.ToArray())
+foreach ($model in $modelArray) {
+	$totalBytes += [long]$model.Bytes
+}
+$summary = [pscustomobject]@{
+	SearchDirectoryCount = @($directories).Count
+	ExistingSearchDirectoryCount = $existingDirectories.Count
+	ModelCount = $models.Count
+	TotalBytes = $totalBytes
+	TotalSize = Format-Size $totalBytes
+	HasModels = $models.Count -gt 0
+	CoreRequiresModel = $false
+}
+$nextCommands = New-Object System.Collections.Generic.List[string]
+$nextCommands.Add("scripts\list-models.bat -Json")
+$nextCommands.Add("scripts\validate-local.bat")
+$nextCommands.Add("cd ..\ofxGgmlLlama && scripts\list-models.bat")
+
 if ($Json) {
-	$modelArray = @($models | ForEach-Object { $_ })
 	[pscustomobject]@{
 		Root = $addonRoot.Path
 		SearchDirectories = @($directories)
+		ExistingSearchDirectories = $existingDirectories
+		Summary = $summary
+		NextCommands = @($nextCommands.ToArray())
 		Models = $modelArray
 	} | ConvertTo-Json -Depth 4
 } else {

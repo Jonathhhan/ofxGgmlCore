@@ -73,6 +73,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rol
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat -Json" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat -Json" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\list-models.bat -Json" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "backend capability evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Auto-Detected Completed Planning Guides" "coding agent work snapshot"
@@ -92,6 +93,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "s
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-of-smoke-build.bat -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\select-smoke-build-target.bat -Stage generate-project -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-release-readiness.bat -Json" "control plane next steps"
+Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\list-models.bat -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "structured JSON handoff" "operational validation status"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
@@ -109,6 +111,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "select-smo
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "select-smoke-build-target.bat -Stage generate-project -Json" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-of-smoke-build.bat -Json" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-release-readiness.bat -Json" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "list-models.bat -Json" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "check-smoke-build-target-preflight" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "check-smoke-build-target-postflight" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-agent-branch-cleanup" "ecosystem agent docs"
@@ -242,6 +245,10 @@ if (!$SkipModelList) {
 	Invoke-CheckedScript `
 		-Label "Checking model discovery" `
 		-ScriptPath (Join-Path $scriptRoot "list-models.ps1")
+
+	Invoke-CheckedScript `
+		-Label "Checking model discovery JSON" `
+		-ScriptPath (Join-Path $scriptRoot "test-model-discovery.ps1")
 }
 
 if (!$SkipDoctor) {
