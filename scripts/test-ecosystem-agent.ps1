@@ -17,7 +17,7 @@ foreach ($expected in @(
 	"Do not edit addon source",
 	"plan-coding-agent-work.bat",
 	"plan-doctor-rollout.bat",
-	"plan-agent-branch-cleanup.bat",
+	"plan-agent-branch-cleanup.bat -Json -SummaryOnly",
 	"Smoke-Build Target Lifecycle",
 	"select-smoke-build-target.bat",
 	"check-smoke-build-target-preflight.bat",
@@ -67,7 +67,7 @@ if (@($parsed.AgentGuardrails) -notcontains "Do not edit addon source unless the
 if (@($parsed.SmokeBuildLifecycle) -notcontains "scripts\check-smoke-build-target-preflight.bat -Stage generate-project") {
 	throw "ecosystem agent JSON output did not include the smoke-build preflight command."
 }
-if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-agent-branch-cleanup.bat") {
+if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the branch cleanup validation command."
 }
 if ($jsonOutput -join "`n" -notmatch '"PlanningPriorities":\s+\[') {
