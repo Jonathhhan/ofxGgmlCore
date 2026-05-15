@@ -116,6 +116,9 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 	if ($snapshot -notmatch [regex]::Escape("generate-release-readiness-score.py")) {
 		throw "committed coding agent work snapshot did not reference generate-release-readiness-score.py."
 	}
+	if ($snapshot -notmatch [regex]::Escape("test-release-readiness-plan.ps1")) {
+		throw "committed coding agent work snapshot did not reference test-release-readiness-plan.ps1."
+	}
 	if ($snapshot -notmatch [regex]::Escape("plan-of-smoke-build.ps1")) {
 		throw "committed coding agent work snapshot did not reference plan-of-smoke-build.ps1."
 	}
@@ -123,7 +126,10 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		"select-smoke-build-target.ps1",
 		"plan-smoke-build-target-handoff.ps1",
 		"check-smoke-build-target-preflight.ps1",
-		"check-smoke-build-target-postflight.ps1"
+		"check-smoke-build-target-postflight.ps1",
+		"run-smoke-build-ci.ps1",
+		"smoke-build-ci-report.ps1",
+		"test-smoke-build-ci-report.ps1"
 	)) {
 		if ($snapshot -notmatch [regex]::Escape($expected)) {
 			throw "committed coding agent work snapshot did not reference $expected."
