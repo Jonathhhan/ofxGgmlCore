@@ -8,7 +8,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Treat stale generic lane-uplift rows as a regression when the target lane already has a workflow guide.
 - Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work; it now includes a deterministic release-readiness planning pass.
 - Use `scripts\plan-ecosystem.bat -Json` when another agent needs summary counts, planning priorities, guardrails, smoke-build lifecycle commands, and validation commands as structured data.
-- Use `scripts\plan-coding-agent-work.bat -Json` when another agent needs queue summary data plus per-task suggested-file and validation-command arrays.
+- Use `scripts\plan-coding-agent-work.bat -Json` when another agent needs queue summary data, guardrails, and per-task suggested-file and validation-command arrays.
 
 ## P2: Workflow Observability
 

@@ -36,7 +36,7 @@ $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
 if (!$parsed.Tasks -or $parsed.Tasks.Count -eq 0) {
 	throw "coding agent work plan JSON did not include tasks."
 }
-foreach ($property in @("Summary", "Tasks")) {
+foreach ($property in @("Summary", "Guardrails", "Tasks")) {
 	if (!$parsed.PSObject.Properties[$property]) {
 		throw "coding agent work plan JSON did not include $property."
 	}
@@ -54,6 +54,12 @@ foreach ($property in @(
 }
 if ($parsed.Summary.ProposedTasks -ne @($parsed.Tasks).Count) {
 	throw "coding agent work plan JSON summary task count did not match tasks."
+}
+if (@($parsed.Guardrails) -notcontains "Do not edit addon runtime/source behavior unless the user explicitly asks for that repository and behavior.") {
+	throw "coding agent work plan JSON output did not include the runtime-edit guardrail."
+}
+if (($jsonOutput -join "`n") -notmatch '"Guardrails":\s+\[') {
+	throw "coding agent work plan JSON output did not preserve Guardrails as an array."
 }
 
 $firstTask = @($parsed.Tasks)[0]

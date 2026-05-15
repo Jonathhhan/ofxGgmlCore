@@ -71,6 +71,16 @@ function Get-CodingAgentQueueSummary {
 	}
 }
 
+function Get-CodingAgentGuardrails {
+	@(
+		"Work on planning, instructions, workflow, validation, and documentation first.",
+		"Do not edit addon runtime/source behavior unless the user explicitly asks for that repository and behavior.",
+		"Keep classified reference repositories out of generated automation unless they are intentionally promoted.",
+		"Prefer one small repository-scoped pull request over broad cross-repo edits.",
+		"Run the suggested validation before pushing."
+	)
+}
+
 function ConvertTo-MarkdownQueue {
 	param(
 		[array]$Tasks,
@@ -125,11 +135,9 @@ function ConvertTo-MarkdownQueue {
 	}
 	$lines.Add("## Guardrails")
 	$lines.Add("")
-	$lines.Add("- Work on planning, instructions, workflow, validation, and documentation first.")
-	$lines.Add("- Do not edit addon runtime/source behavior unless the user explicitly asks for that repository and behavior.")
-	$lines.Add("- Keep classified reference repositories out of generated automation unless they are intentionally promoted.")
-	$lines.Add("- Prefer one small repository-scoped pull request over broad cross-repo edits.")
-	$lines.Add("- Run the suggested validation before pushing.")
+	foreach ($guardrail in @(Get-CodingAgentGuardrails)) {
+		$lines.Add("- $guardrail")
+	}
 
 	return $lines -join [Environment]::NewLine
 }
@@ -270,6 +278,7 @@ $result = [pscustomobject]@{
 	Root = $status.Root
 	GeneratedFrom = "scripts/status-family.ps1 -Json"
 	Summary = Get-CodingAgentQueueSummary -Tasks $taskArray -Statuses $statuses
+	Guardrails = @(Get-CodingAgentGuardrails)
 	Tasks = $taskArray
 }
 
