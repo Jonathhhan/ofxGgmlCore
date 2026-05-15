@@ -82,6 +82,43 @@ if ([string]::IsNullOrWhiteSpace([string]$parsed.SafetyNote)) {
 	throw "agent branch cleanup JSON output did not include SafetyNote."
 }
 
+$summaryJsonOutput = & $cleanupScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-agent-branch-cleanup.ps1 -Json -SummaryOnly failed."
+}
+$summaryJsonText = $summaryJsonOutput -join "`n"
+$summaryParsed = $summaryJsonText | ConvertFrom-Json
+if (!$summaryParsed.SummaryOnly) {
+	throw "agent branch cleanup summary JSON did not report SummaryOnly."
+}
+if (!$summaryParsed.Summary) {
+	throw "agent branch cleanup summary JSON did not include Summary."
+}
+if (!$summaryParsed.PSObject.Properties["RepositorySummaries"]) {
+	throw "agent branch cleanup summary JSON did not include RepositorySummaries."
+}
+if ($summaryParsed.PSObject.Properties["Inventory"] -or $summaryParsed.PSObject.Properties["Candidates"]) {
+	throw "agent branch cleanup summary JSON should omit branch-level Inventory and Candidates."
+}
+
+$summaryMarkdownOutput = & $cleanupScript -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-agent-branch-cleanup.ps1 -SummaryOnly failed."
+}
+$summaryMarkdownText = $summaryMarkdownOutput -join "`n"
+foreach ($expected in @(
+	"## Repository Summary",
+	"Detailed branch inventory and candidates were omitted",
+	"## Next Commands"
+)) {
+	if ($summaryMarkdownText -notmatch [regex]::Escape($expected)) {
+		throw "agent branch cleanup summary output did not contain expected text: $expected"
+	}
+}
+if ($summaryMarkdownText -match [regex]::Escape("## Branch Inventory") -or $summaryMarkdownText -match [regex]::Escape("## Candidates")) {
+	throw "agent branch cleanup summary output should omit branch-level tables."
+}
+
 $emptyJsonOutput = & $cleanupScript -BranchPattern "codex/no-cleanup-branch-should-match-*" -Fetch -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-agent-branch-cleanup.ps1 empty -Json failed."

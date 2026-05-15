@@ -184,6 +184,9 @@ agent branch inventory so stale unmerged branches are visible before deletion
 is considered. Cleanup candidates can be directly `merged` or
 `patch-equivalent` when a squash merge already put the same patch on the
 default branch.
+Use `scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly` when another
+agent needs only cleanup Summary counts, per-repository counts, next commands,
+and the safety note; use the full plan before actually deleting branches.
 
 ## Auto-Discovery
 

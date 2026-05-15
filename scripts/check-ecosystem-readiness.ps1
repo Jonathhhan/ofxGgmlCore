@@ -183,7 +183,10 @@ $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-
 	SkipWorkflowStatus = $true
 }
 $steps += Invoke-ReadinessStep -Name "doctor rollout plan" -ScriptPath (Join-Path $scriptRoot "plan-doctor-rollout.ps1")
-$steps += Invoke-ReadinessStep -Name "agent branch cleanup plan" -ScriptPath (Join-Path $scriptRoot "plan-agent-branch-cleanup.ps1")
+$steps += Invoke-ReadinessStep -Name "agent branch cleanup plan" -ScriptPath (Join-Path $scriptRoot "plan-agent-branch-cleanup.ps1") -Parameters @{
+	Json = $true
+	SummaryOnly = $true
+}
 
 $doctorTests = @()
 if (!$SkipDoctorTests) {
