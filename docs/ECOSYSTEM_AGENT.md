@@ -148,6 +148,9 @@ focused target.
 Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json` when
 another agent needs target selection `Summary` counts, next commands, and the
 selected target payload.
+Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json`
+when another agent needs handoff `Summary` counts, commands, validation, and
+guardrails as structured data.
 Run projectGenerator only after preflight reports the selected target is ready.
 After acting on a target, run postflight with the selected repository and
 example if needed. When postflight reports missing Visual Studio addon wiring,

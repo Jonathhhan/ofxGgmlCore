@@ -220,6 +220,32 @@ if (!$?) {
 }
 
 $handoffParsed = ($handoffJsonOutput -join "`n") | ConvertFrom-Json
+if (!$handoffParsed.Summary) {
+	throw "smoke build target handoff JSON did not include Summary."
+}
+foreach ($property in @(
+	"Stage",
+	"RequestedTargets",
+	"SelectedTargets",
+	"TargetCommands",
+	"PostflightCommands",
+	"RepairPlanCommands",
+	"ValidationCommands",
+	"Guardrails",
+	"NextCommands",
+	"HasSelection",
+	"ProjectGeneratorDetected"
+)) {
+	if (!$handoffParsed.Summary.PSObject.Properties[$property]) {
+		throw "smoke build target handoff JSON Summary did not include $property."
+	}
+}
+if ($handoffParsed.Summary.SelectedTargets -ne 1 -or !$handoffParsed.Summary.HasSelection) {
+	throw "smoke build target handoff JSON Summary did not report the selected target."
+}
+if ($handoffParsed.Summary.NextCommands -eq 0 -or $handoffParsed.Summary.ValidationCommands -eq 0) {
+	throw "smoke build target handoff JSON Summary did not count commands."
+}
 if (!$handoffParsed.Targets -or $handoffParsed.Targets.Count -ne 1) {
 	throw "smoke build target handoff JSON did not include exactly one target."
 }
