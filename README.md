@@ -171,6 +171,9 @@ selected target payload.
 Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` when
 an agent needs the command, validation checklist, and artifact guardrails for
 that selected target.
+Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json`
+when another agent needs handoff `Summary` counts, commands, validation, and
+guardrails as structured data.
 Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project`
 before running projectGenerator to confirm the selected repo is clean and the
 target still matches filesystem state.

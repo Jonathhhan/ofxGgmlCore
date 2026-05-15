@@ -48,6 +48,19 @@ $repairPlanCommands = @($targets |
 	ForEach-Object { "scripts\plan-smoke-build-project-repair.bat -Stage $Stage -Repository $($_.Repository) -Example $($_.Example)" })
 $nextCommands = @($preflightCommand) + $targetCommands + $postflightCommands + $repairPlanCommands + $validationCommands
 $safetyNote = "This handoff is non-mutating. Run projectGenerator only after preflight reports the selected target is ready, then use postflight to review generated files, addon wiring, and git impact."
+$summary = [pscustomobject]@{
+	Stage = $Stage
+	RequestedTargets = $First
+	SelectedTargets = $targets.Count
+	TargetCommands = $targetCommands.Count
+	PostflightCommands = $postflightCommands.Count
+	RepairPlanCommands = $repairPlanCommands.Count
+	ValidationCommands = $validationCommands.Count
+	Guardrails = $guardrails.Count
+	NextCommands = $nextCommands.Count
+	HasSelection = $targets.Count -gt 0
+	ProjectGeneratorDetected = ![string]::IsNullOrWhiteSpace([string]$selection.ProjectGeneratorPath)
+}
 
 if ($Json) {
 	[pscustomobject]@{
@@ -55,6 +68,7 @@ if ($Json) {
 		OfRoot = $selection.OfRoot
 		ProjectGeneratorPath = $selection.ProjectGeneratorPath
 		Stage = $Stage
+		Summary = $summary
 		Targets = $targets
 		TargetCommands = $targetCommands
 		PostflightCommands = $postflightCommands

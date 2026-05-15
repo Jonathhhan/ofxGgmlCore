@@ -25,7 +25,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an agent needs the next concrete smoke-build target.
 - Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json` when another agent needs target selection summary counts, next commands, and the selected target payload.
 - Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` before handing a target to Codex, Copilot, or Hermes.
-- Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json` when another agent needs preflight, target, postflight, and validation commands as structured data.
+- Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json` when another agent needs handoff summary counts, preflight, target, postflight, and validation commands as structured data.
 - Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project` before any agent runs projectGenerator.
 - Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json` when an agent needs readiness-gated projectGenerator and postflight commands.
 - Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>` after projectGenerator to inspect generated files and git impact.
