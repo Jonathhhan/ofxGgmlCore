@@ -70,6 +70,19 @@ def github_json(url):
         raise
 
 
+def github_access_mode():
+    if os.environ.get("GITHUB_TOKEN"):
+        return "GITHUB_TOKEN"
+    if shutil.which("gh"):
+        return "authenticated GitHub CLI (`gh`) if available"
+    return "unauthenticated public GitHub API"
+
+
+def count_unavailable_http(records, code):
+    needle = f"unavailable: HTTP {code}"
+    return sum(1 for record in records if record["status"].get("summary") == needle)
+
+
 def repos_from_manifest(ecosystem):
     core = ecosystem.get("core", {}).get("repo")
     if core:
@@ -237,6 +250,7 @@ def main():
         record for record in records
         if not record["required"] and workflow_issue(record)
     ]
+    rate_limited_count = count_unavailable_http(records, 429)
 
     lines = [
         "# Workflow Status Report",
@@ -257,6 +271,7 @@ def main():
         f"- Stale required workflows: `{counts['stale_required']}`",
         f"- Stale optional workflows: `{counts['stale_optional']}`",
         f"- Stale threshold: `{args.stale_days}` days",
+        f"- GitHub access mode: `{github_access_mode()}`",
         "",
         "## Action Required",
         "",
@@ -300,13 +315,20 @@ def main():
         "",
         "## Notes",
         "",
+        f"- Current GitHub access mode: `{github_access_mode()}`.",
         "- Set `GITHUB_TOKEN` for higher API limits and private-repo access.",
         "- When `GITHUB_TOKEN` is absent, an authenticated GitHub CLI (`gh`) is used automatically if available.",
+        "- HTTP 429 means GitHub rate limited workflow-status evidence; rerun with `GITHUB_TOKEN` or authenticated `gh` before using this report as a strict release gate.",
         "- Missing optional workflows are rollout gaps, not command failures.",
         "- Repository-scoped workflow expectations only apply to the listed repositories.",
         "- Stale workflow runs are visible by default and fail required workflows only in `--strict` mode.",
         "- Release gating should consume this report after required workflow coverage is complete.",
     ])
+    if rate_limited_count > 0:
+        lines.extend([
+            f"- Rate-limit diagnosis: `{rate_limited_count}` workflow status request(s) returned HTTP 429.",
+            "- Release gate action: provide authenticated GitHub access, regenerate workflow-status evidence, then rerun `scripts\\assert-release-readiness.bat`.",
+        ])
 
     output = Path(args.output)
     if not output.is_absolute():

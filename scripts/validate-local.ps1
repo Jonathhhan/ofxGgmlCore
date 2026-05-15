@@ -91,6 +91,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\list-models.bat
 Assert-FileContains (Join-Path $addonRoot "README.md") "backend capability evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "backend runtime verification evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "smoke-build CI evidence" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "429 rate-limit evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Auto-Detected Completed Planning Guides" "coding agent work snapshot"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Workflow guides detected" "coding agent work snapshot"

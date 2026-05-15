@@ -28,12 +28,15 @@ foreach ($expected in @(
 	"Missing optional workflows",
 	"Stale required workflows",
 	"Stale threshold",
+	"GitHub access mode",
 	"addon-hygiene.yml",
 	"coding-agent-instructions.yml",
 	"multi-platform-smoke.yml",
 	"release-check.yml",
 	"release-gate.yml",
+	"Current GitHub access mode",
 	'authenticated GitHub CLI (`gh`) is used automatically',
+	"HTTP 429 means GitHub rate limited workflow-status evidence",
 	"Repository-scoped workflow expectations"
 )) {
 	if ($content -notmatch [regex]::Escape($expected)) {
