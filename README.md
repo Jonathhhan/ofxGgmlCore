@@ -91,6 +91,7 @@ cd ../ofxGgmlLlama
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |
+| `scripts\plan-local-codex.bat` | Detect optional local Codex `llama-server` endpoint and config readiness |
 | `scripts\generate-workflow-status-plan.bat` | Generate the deterministic workflow-status expectation plan |
 | `scripts\fetch-workflow-status.bat` | Fetch latest GitHub Actions workflow status evidence for release planning |
 | `scripts\fetch-smoke-build-ci-report.bat` | Download the latest uploaded smoke-build CI JSON report artifact for release-readiness evidence |
@@ -155,6 +156,9 @@ Use `docs\LOCAL_CODEX_LLAMA_SERVER.md` when running optional local Codex work
 against an OpenAI-compatible `llama-server` endpoint. Local model serving stays
 outside Core; the repository contract remains the planning queue, guardrails,
 and validation commands.
+Use `scripts\plan-local-codex.bat -Json -SummaryOnly` when another agent needs
+compact evidence for optional local Codex config and localhost `llama-server`
+endpoint readiness without mutating local setup.
 Use `scripts\check-ecosystem-readiness.bat` when you need a single
 non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,
