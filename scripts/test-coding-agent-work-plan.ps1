@@ -165,6 +165,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		"plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly",
 		"check-smoke-build-target-preflight.bat -Stage generate-project -Json -SummaryOnly",
 		"check-smoke-build-target-postflight.bat -Stage generate-project -Json -SummaryOnly",
+		"run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0",
 		"plan-agent-branch-cleanup.ps1",
 		"test-agent-branch-cleanup.ps1",
 		"plan-agent-branch-cleanup.bat -Json -SummaryOnly"
