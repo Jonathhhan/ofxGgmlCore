@@ -247,11 +247,27 @@ foreach ($postflight in $postflights) {
 }
 $nextCommandArray = @($nextCommands.ToArray())
 $safetyNote = "This postflight is non-mutating. Review generated files and git impact before committing, deleting, or moving to another smoke-build target."
+$completePostflights = @($postflights | Where-Object { $_.Complete })
+$generatedProjectFiles = @($postflights | ForEach-Object { $_.GeneratedProjectFiles } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
+$missingProjectAddons = @($postflights | ForEach-Object { $_.MissingProjectAddons } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
+$summary = [pscustomobject]@{
+	Stage = $Stage
+	RequestedTargets = $First
+	SelectedTargets = $postflights.Count
+	CompleteTargets = $completePostflights.Count
+	IncompleteTargets = $incompletePostflights.Count
+	ReviewTargets = $reviewPostflights.Count
+	GeneratedProjectFiles = $generatedProjectFiles.Count
+	MissingProjectAddons = $missingProjectAddons.Count
+	NextCommands = $nextCommandArray.Count
+	HasSelection = $postflights.Count -gt 0
+}
 
 if ($Json) {
 	[pscustomobject]@{
 		Root = $plan.Root
 		Stage = $Stage
+		Summary = $summary
 		Postflights = $postflights
 		IncompleteTargets = $incompletePostflights.Count
 		ReviewTargets = $reviewPostflights.Count

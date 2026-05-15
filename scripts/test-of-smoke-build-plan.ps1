@@ -299,6 +299,28 @@ if (!$?) {
 }
 
 $preflightParsed = ($preflightJsonOutput -join "`n") | ConvertFrom-Json
+if (!$preflightParsed.Summary) {
+	throw "smoke build target preflight JSON did not include Summary."
+}
+foreach ($property in @(
+	"Stage",
+	"RequestedTargets",
+	"SelectedTargets",
+	"ReadyTargets",
+	"BlockedTargets",
+	"ReadyCommands",
+	"PostflightCommands",
+	"NextCommands",
+	"HasSelection",
+	"ProjectGeneratorDetected"
+)) {
+	if (!$preflightParsed.Summary.PSObject.Properties[$property]) {
+		throw "smoke build target preflight JSON Summary did not include $property."
+	}
+}
+if ($preflightParsed.Summary.SelectedTargets -ne 1 -or !$preflightParsed.Summary.HasSelection) {
+	throw "smoke build target preflight JSON Summary did not report the selected target."
+}
 if (!$preflightParsed.Preflights -or $preflightParsed.Preflights.Count -ne 1) {
 	throw "smoke build target preflight JSON did not include exactly one preflight."
 }
@@ -348,6 +370,28 @@ if (!$?) {
 }
 
 $postflightParsed = ($postflightJsonOutput -join "`n") | ConvertFrom-Json
+if (!$postflightParsed.Summary) {
+	throw "smoke build target postflight JSON did not include Summary."
+}
+foreach ($property in @(
+	"Stage",
+	"RequestedTargets",
+	"SelectedTargets",
+	"CompleteTargets",
+	"IncompleteTargets",
+	"ReviewTargets",
+	"GeneratedProjectFiles",
+	"MissingProjectAddons",
+	"NextCommands",
+	"HasSelection"
+)) {
+	if (!$postflightParsed.Summary.PSObject.Properties[$property]) {
+		throw "smoke build target postflight JSON Summary did not include $property."
+	}
+}
+if ($postflightParsed.Summary.SelectedTargets -ne 1 -or !$postflightParsed.Summary.HasSelection) {
+	throw "smoke build target postflight JSON Summary did not report the selected target."
+}
 if (!$postflightParsed.Postflights -or $postflightParsed.Postflights.Count -ne 1) {
 	throw "smoke build target postflight JSON did not include exactly one postflight."
 }
@@ -456,6 +500,29 @@ if (!$?) {
 	throw "plan-smoke-build-compile.ps1 -Json failed."
 }
 $compilePlanParsed = ($compilePlanJsonOutput -join "`n") | ConvertFrom-Json
+if (!$compilePlanParsed.Summary) {
+	throw "smoke build compile plan JSON did not include Summary."
+}
+foreach ($property in @(
+	"Stage",
+	"RequestedTargets",
+	"SelectedTargets",
+	"AllTargets",
+	"CompileReadyTargets",
+	"RepairTargets",
+	"MissingCommandTargets",
+	"NextCommands",
+	"HasSelection",
+	"Configuration",
+	"Platform"
+)) {
+	if (!$compilePlanParsed.Summary.PSObject.Properties[$property]) {
+		throw "smoke build compile plan JSON Summary did not include $property."
+	}
+}
+if ($compilePlanParsed.Summary.SelectedTargets -ne 1 -or !$compilePlanParsed.Summary.HasSelection) {
+	throw "smoke build compile plan JSON Summary did not report the selected target."
+}
 if (!$compilePlanParsed.Targets -or $compilePlanParsed.Targets.Count -ne 1) {
 	throw "smoke build compile plan JSON did not include exactly one target."
 }

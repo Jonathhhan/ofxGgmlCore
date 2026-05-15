@@ -244,6 +244,19 @@ $compileReady = @($orderedTargets | Where-Object { $_.Stage -eq "compile-example
 $needsRepair = @($orderedTargets | Where-Object { $_.Stage -eq "repair-generated-project" })
 $needsCommand = @($orderedTargets | Where-Object { $_.Stage -eq "add-compile-command" })
 $safetyNote = "This compile plan is non-mutating. Run focused build commands only after generated-project postflight is OK, and keep generated outputs out of git."
+$summary = [pscustomobject]@{
+	Stage = $Stage
+	RequestedTargets = $First
+	SelectedTargets = $selectedTargets.Count
+	AllTargets = $orderedTargets.Count
+	CompileReadyTargets = $compileReady.Count
+	RepairTargets = $needsRepair.Count
+	MissingCommandTargets = $needsCommand.Count
+	NextCommands = $nextCommands.Count
+	HasSelection = $selectedTargets.Count -gt 0
+	Configuration = $Configuration
+	Platform = $Platform
+}
 
 if ($Json) {
 	[pscustomobject]@{
@@ -251,6 +264,7 @@ if ($Json) {
 		Stage = $Stage
 		Configuration = $Configuration
 		Platform = $Platform
+		Summary = $summary
 		Targets = $selectedTargets
 		AllTargets = $orderedTargets
 		CompileReadyTargets = $compileReady.Count

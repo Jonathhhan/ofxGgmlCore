@@ -27,14 +27,14 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` before handing a target to Codex, Copilot, or Hermes.
 - Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json` when another agent needs handoff summary counts, preflight, target, postflight, and validation commands as structured data.
 - Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project` before any agent runs projectGenerator.
-- Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json` when an agent needs readiness-gated projectGenerator and postflight commands.
+- Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json` when an agent needs readiness summary counts plus gated projectGenerator and postflight commands.
 - Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>` after projectGenerator to inspect generated files and git impact.
-- Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json` when an agent needs completion counts, review counts, and next validation commands.
+- Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json` when an agent needs completion summary counts, generated-file counts, review counts, and next validation commands.
 - Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example>` when postflight reports missing Visual Studio addon wiring.
 - Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Json` when an agent needs expected addon references and repair next commands as structured data.
 - Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Apply` only after reviewing the dry-run; it updates generated Visual Studio project metadata and should be followed by postflight and artifact hygiene.
 - Use `scripts\plan-smoke-build-compile.bat -Stage compile-example` after generated-project postflight is OK to get focused build commands without running them.
-- Use `scripts\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json` when an agent needs machine-readable compile readiness, repair status, and next commands.
+- Use `scripts\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json` when an agent needs compile-readiness Summary counts, repair status, and next commands.
 - Use `scripts\build-smoke-example.bat -Repository <addon> -Example <example>` for generated projects that pass postflight but do not have an addon-owned build wrapper.
 - Use `scripts\run-smoke-build-ci.ps1` (or the `smoke-build-ci` GitHub workflow on PRs) to run the full generate-repair-compile control-plane validation loop with all managed examples.
 - Keep reusable workflow expectations in `ofxGgmlWorkflows`, and keep caller-addon documentation in Core.
