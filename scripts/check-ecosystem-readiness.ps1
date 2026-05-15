@@ -125,7 +125,13 @@ $steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-
 	Strict = $true
 }
 $steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
+$steps += Invoke-ReadinessStep -Name "structured ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1") -Parameters @{
+	Json = $true
+}
 $steps += Invoke-ReadinessStep -Name "coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1")
+$steps += Invoke-ReadinessStep -Name "structured coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1") -Parameters @{
+	Json = $true
+}
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build plan" -ScriptPath (Join-Path $scriptRoot "plan-of-smoke-build.ps1")
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target selection" -ScriptPath (Join-Path $scriptRoot "select-smoke-build-target.ps1") -Parameters @{
 	Stage = "generate-project"
