@@ -125,6 +125,8 @@ Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md
 Assert-FileContains (Join-Path $addonRoot ".github\workflows\release-gate.yml") "assert-release-readiness.ps1" "release gate workflow"
 Assert-FileContains (Join-Path $addonRoot ".github\workflows\release-gate.yml") "fetch-smoke-build-ci-report.ps1" "release gate workflow"
 Assert-FileContains (Join-Path $addonRoot ".github\workflows\release-gate.yml") "release-gate-evidence" "release gate workflow"
+Assert-FileContains (Join-Path $addonRoot ".github\workflows\release-gate.yml") "release/\*\*" "release gate workflow"
+Assert-FileContains (Join-Path $addonRoot ".github\workflows\release-gate.yml") "v\*" "release gate workflow"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
