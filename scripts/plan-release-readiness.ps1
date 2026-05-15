@@ -61,6 +61,30 @@ function New-ReleaseEvidenceSummary {
 	[pscustomobject]$result
 }
 
+function Get-ReleaseEvidenceGaps {
+	param(
+		[pscustomobject]$Summary
+	)
+
+	$gaps = New-Object System.Collections.Generic.List[string]
+	if (!$Summary.ReleaseReportExists) {
+		$gaps.Add("release-readiness report was not generated") | Out-Null
+	}
+	if (!$SkipWorkflowStatus -and !$Summary.WorkflowStatusEvidenceExists) {
+		$gaps.Add("workflow status evidence is missing") | Out-Null
+	}
+	if (!$SkipBackendCapability -and !$Summary.BackendCapabilityEvidenceExists) {
+		$gaps.Add("backend capability evidence is missing") | Out-Null
+	}
+	if (!$SkipBackendRuntimePlan -and !$Summary.BackendRuntimePlanEvidenceExists) {
+		$gaps.Add("backend runtime verification evidence is missing") | Out-Null
+	}
+	if (!$SkipSmokeBuildCi -and !$Summary.SmokeBuildCiEvidenceExists) {
+		$gaps.Add("smoke-build CI evidence is missing") | Out-Null
+	}
+	return @($gaps.ToArray())
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Split-Path -Parent $scriptRoot
 $releaseScript = Join-Path $scriptRoot "generate-release-readiness-score.py"
@@ -190,6 +214,8 @@ $summary = [pscustomobject]@{
 	SmokeBuildCiEvidenceExists = (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf))
 	OutputPathIsTemporary = [string]::IsNullOrWhiteSpace($OutputPath)
 }
+$evidenceGaps = [string[]](Get-ReleaseEvidenceGaps -Summary $summary)
+$summary | Add-Member -NotePropertyName EvidenceGapCount -NotePropertyValue ([int]$evidenceGaps.Count)
 $nextCommands = Get-ReleaseReadinessNextCommands
 $evidenceSummaries = @(
 	New-ReleaseEvidenceSummary `
@@ -230,6 +256,7 @@ if ($Json) {
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		EvidenceSummaries = $evidenceSummaries
+		EvidenceGaps = [string[]]$evidenceGaps
 		NextCommands = $nextCommands
 	}
 	if (!$SummaryOnly) {

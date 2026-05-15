@@ -9,6 +9,7 @@ $backendRuntimePlan = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backe
 $smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-plan-evidence-$testId.json"
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-plan-$testId.md"
 $jsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-json-plan-$testId.md"
+$missingSmokeJsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-missing-smoke-json-plan-$testId.md"
 $defaultOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
 $repoDefaultOutputPath = Resolve-Path (Join-Path $scriptRoot "..\docs\release-readiness-score.md") -ErrorAction SilentlyContinue
 
@@ -89,6 +90,9 @@ if (Test-Path -LiteralPath $outputPath) {
 if (Test-Path -LiteralPath $jsonOutputPath) {
 	Remove-Item -LiteralPath $jsonOutputPath -Force
 }
+if (Test-Path -LiteralPath $missingSmokeJsonOutputPath) {
+	Remove-Item -LiteralPath $missingSmokeJsonOutputPath -Force
+}
 if (Test-Path -LiteralPath $defaultOutputPath) {
 	Remove-Item -LiteralPath $defaultOutputPath -Force
 }
@@ -165,7 +169,8 @@ foreach ($property in @(
 	"SmokeBuildCiDefaultUsed",
 	"SmokeBuildCiEvidenceFetched",
 	"SmokeBuildCiEvidenceExists",
-	"OutputPathIsTemporary"
+	"OutputPathIsTemporary",
+	"EvidenceGapCount"
 )) {
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "release readiness JSON Summary did not include $property."
@@ -216,6 +221,27 @@ if (!$parsed.EvidenceSummaries -or @($parsed.EvidenceSummaries).Count -ne 4) {
 if (!$parsed.EvidenceSummaries[0].PSObject.Properties["Path"]) {
 	throw "release readiness full JSON evidence summaries should include paths."
 }
+if (!$parsed.PSObject.Properties["EvidenceGaps"]) {
+	throw "release readiness JSON did not include EvidenceGaps."
+}
+if ($parsed.Summary.EvidenceGapCount -ne 0) {
+	throw "release readiness JSON unexpectedly reported evidence gaps for complete evidence."
+}
+
+$missingSmokeJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -OutputPath $missingSmokeJsonOutputPath -Json -SummaryOnly)
+if (!$?) {
+	throw "plan-release-readiness.ps1 missing-smoke JSON run failed."
+}
+$missingSmokeParsed = ($missingSmokeJsonOutput -join "`n") | ConvertFrom-Json
+if ($missingSmokeParsed.Summary.EvidenceGapCount -ne 1) {
+	throw "release readiness JSON did not report the expected missing evidence gap count."
+}
+if (!$missingSmokeParsed.EvidenceGaps -or @($missingSmokeParsed.EvidenceGaps) -notcontains "smoke-build CI evidence is missing") {
+	throw "release readiness JSON did not report missing smoke-build CI evidence."
+}
+if (!(Test-Path -LiteralPath $missingSmokeJsonOutputPath -PathType Leaf)) {
+	throw "release readiness missing-smoke JSON run did not write report: $missingSmokeJsonOutputPath"
+}
 
 $summaryJsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-summary-json-plan-$testId.md"
 if (Test-Path -LiteralPath $summaryJsonOutputPath) {
@@ -256,5 +282,6 @@ Remove-Item -LiteralPath $backendRuntimePlan -Force
 Remove-Item -LiteralPath $smokeBuildReport -Force
 Remove-Item -LiteralPath $outputPath -Force
 Remove-Item -LiteralPath $jsonOutputPath -Force
+Remove-Item -LiteralPath $missingSmokeJsonOutputPath -Force
 Remove-Item -LiteralPath $summaryJsonOutputPath -Force
 Remove-Item -LiteralPath $defaultOutputPath -Force
