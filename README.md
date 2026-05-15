@@ -131,7 +131,8 @@ Use `scripts\plan-coding-agent-work.bat` when an agent needs the next concrete
 Codex, Copilot, or Hermes-safe task. It turns local family status into a
 prioritized queue with suggested files and validation commands.
 Use `scripts\plan-coding-agent-work.bat -Json` when another agent needs
-structured queue summary, suggested-file, and validation-command arrays.
+structured queue summary, guardrail, suggested-file, and validation-command
+arrays.
 Use `scripts\check-ecosystem-readiness.bat` when you need a single
 non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,

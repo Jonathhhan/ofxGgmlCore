@@ -81,7 +81,8 @@ GitHub Copilot, and Hermes Agent sessions that need a next concrete task with
 suggested files and validation commands.
 Use `scripts\plan-coding-agent-work.bat -Json` when an agent needs structured
 queue summary data plus per-task `SuggestedFileList` and `ValidationCommands`
-arrays instead of parsing the Markdown table.
+arrays instead of parsing the Markdown table. The JSON output also includes the
+same `Guardrails` list shown in Markdown.
 
 The latest committed queue snapshot lives at `docs\CODING_AGENT_WORK.md`.
 Follow-up control-plane planning lives at `docs\CONTROL_PLANE_NEXT_STEPS.md`.
