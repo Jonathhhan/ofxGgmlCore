@@ -81,6 +81,7 @@ The readiness pass currently verifies:
 - release-readiness planning can fetch the latest uploaded smoke-build CI artifact when `-FetchSmokeBuildCiReport` is used in an environment with GitHub Actions artifact access
 - release-readiness assertion can fail a release gate on missing required evidence, workflow blockers, or failed smoke-build CI evidence
 - release-gate workflow dispatch and release-ref pushes run the strict release-readiness assertion against fetched smoke-build CI artifact evidence
+- workflow status reporting tracks the Core-only `release-gate` workflow as optional release-control evidence without requiring the workflow on companion addons
 - backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
 - backend runtime verification reports `ofxGgmlLlama`, `ofxGgmlSam`, `ofxGgmlAudio`, `ofxGgmlMusic`, `ofxGgmlDiffusion`, `ofxGgmlVision`, `ofxGgmlVideo`, `ofxGgmlRag`, and `ofxGgmlAgents` as `available-and-validated`

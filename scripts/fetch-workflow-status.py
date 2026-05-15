@@ -19,6 +19,7 @@ WORKFLOWS = [
     {"name": "multi-platform-smoke.yml", "required": True},
     {"name": "release-check.yml", "required": False},
     {"name": "baseline-compatibility.yml", "required": False},
+    {"name": "release-gate.yml", "required": False, "repos": ["Jonathhhan/ofxGgmlCore"]},
 ]
 
 BLOCKING_CONCLUSIONS = {
@@ -48,6 +49,14 @@ def repos_from_manifest(ecosystem):
         repo = addon.get("repo")
         if repo:
             yield repo
+
+
+def workflow_specs_for_repo(repo):
+    for workflow_spec in WORKFLOWS:
+        repos = workflow_spec.get("repos")
+        if repos and repo not in repos:
+            continue
+        yield workflow_spec
 
 
 def latest_workflow_status(repo, workflow):
@@ -152,7 +161,7 @@ def main():
     now = dt.datetime.now(dt.timezone.utc)
 
     for repo in repos_from_manifest(ecosystem):
-        for workflow_spec in WORKFLOWS:
+        for workflow_spec in workflow_specs_for_repo(repo):
             workflow = workflow_spec["name"]
             required = workflow_spec["required"]
             status = latest_workflow_status(repo, workflow)
@@ -264,6 +273,7 @@ def main():
         "",
         "- Set `GITHUB_TOKEN` for higher API limits and private-repo access.",
         "- Missing optional workflows are rollout gaps, not command failures.",
+        "- Repository-scoped workflow expectations only apply to the listed repositories.",
         "- Stale workflow runs are visible by default and fail required workflows only in `--strict` mode.",
         "- Release gating should consume this report after required workflow coverage is complete.",
     ])

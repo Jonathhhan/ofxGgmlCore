@@ -31,7 +31,9 @@ foreach ($expected in @(
 	"addon-hygiene.yml",
 	"coding-agent-instructions.yml",
 	"multi-platform-smoke.yml",
-	"release-check.yml"
+	"release-check.yml",
+	"release-gate.yml",
+	"Repository-scoped workflow expectations"
 )) {
 	if ($content -notmatch [regex]::Escape($expected)) {
 		throw "workflow status report did not contain expected text: $expected"
