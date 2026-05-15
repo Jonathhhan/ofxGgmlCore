@@ -18,7 +18,7 @@ foreach ($expected in @(
 	"Backend Runtime Verification Plan",
 	'Reference target: `ofxGgmlSam`',
 	"ofxGgmlSam",
-	"reference-lane-ready-for-runtime-smoke",
+	"runtime-smoke-entrypoint-present",
 	"Core runtime-smoke seeded",
 	"scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly"
 )) {
@@ -57,11 +57,17 @@ if (!$parsed.Repositories -or @($parsed.Repositories).Count -eq 0) {
 	throw "backend runtime verification full JSON did not include repositories."
 }
 $sam = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlSam" } | Select-Object -First 1)
-if ($sam.Count -eq 0 -or !$sam.CudaDeclared -or $sam.GateState -ne "reference-lane-ready-for-runtime-smoke") {
-	throw "backend runtime verification JSON did not expose SAM CUDA reference-lane readiness."
+if ($sam.Count -eq 0 -or !$sam.CudaDeclared -or $sam.GateState -ne "runtime-smoke-entrypoint-present") {
+	throw "backend runtime verification JSON did not expose SAM CUDA runtime-smoke readiness."
+}
+if ($sam.RuntimeSmokeEvidence -ne "available-and-validated") {
+	throw "backend runtime verification JSON did not expose validated SAM runtime smoke evidence."
 }
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "backend runtime verification JSON did not include release-readiness follow-up."
+}
+if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun") {
+	throw "backend runtime verification JSON did not include the SAM3 runtime smoke follow-up."
 }
 
 $summaryJsonOutput = & $planScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
