@@ -194,6 +194,18 @@ if ($targetParsed.Targets[0].Stage -ne $targetStage) {
 	throw "smoke build target selector returned the wrong target stage."
 }
 
+$targetSummaryJsonOutput = & $selectScript -Stage $targetStage -First 1 -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "select-smoke-build-target.ps1 -Json -SummaryOnly failed."
+}
+$targetSummaryParsed = ($targetSummaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$targetSummaryParsed.SummaryOnly -or !$targetSummaryParsed.TargetSummaries) {
+	throw "smoke build target selector summary JSON did not report compact target summaries."
+}
+if ($targetSummaryParsed.PSObject.Properties["Targets"]) {
+	throw "smoke build target selector summary JSON should omit full Targets."
+}
+
 $handoffOutput = & $handoffScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-smoke-build-target-handoff.ps1 failed."
@@ -274,6 +286,23 @@ if ([string]::IsNullOrWhiteSpace([string]$handoffParsed.SafetyNote)) {
 	throw "smoke build target handoff JSON did not include SafetyNote."
 }
 
+$handoffSummaryJsonOutput = & $handoffScript -Stage $targetStage -First 1 -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-target-handoff.ps1 -Json -SummaryOnly failed."
+}
+$handoffSummaryParsed = ($handoffSummaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$handoffSummaryParsed.SummaryOnly -or !$handoffSummaryParsed.TargetSummaries) {
+	throw "smoke build target handoff summary JSON did not report compact target summaries."
+}
+foreach ($omitted in @("Targets", "TargetCommands", "PostflightCommands", "RepairPlanCommands", "Validation", "Guardrails")) {
+	if ($handoffSummaryParsed.PSObject.Properties[$omitted]) {
+		throw "smoke build target handoff summary JSON should omit $omitted."
+	}
+}
+if (!$handoffSummaryParsed.NextCommands -or [string]::IsNullOrWhiteSpace([string]$handoffSummaryParsed.SafetyNote)) {
+	throw "smoke build target handoff summary JSON did not retain next commands and safety note."
+}
+
 $preflightOutput = & $preflightScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-preflight.ps1 failed."
@@ -342,6 +371,18 @@ if ($preflightParsed.Preflights[0].Ready) {
 	}
 } elseif ([string]@($preflightParsed.NextCommands)[0] -notmatch "Preflight is blocked") {
 	throw "blocked smoke build target preflight JSON did not start next commands with a blocked note."
+}
+
+$preflightSummaryJsonOutput = & $preflightScript -Stage $targetStage -First 1 -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-preflight.ps1 -Json -SummaryOnly failed."
+}
+$preflightSummaryParsed = ($preflightSummaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$preflightSummaryParsed.SummaryOnly -or !$preflightSummaryParsed.PreflightSummaries) {
+	throw "smoke build target preflight summary JSON did not report compact preflight summaries."
+}
+if ($preflightSummaryParsed.PSObject.Properties["Preflights"]) {
+	throw "smoke build target preflight summary JSON should omit full Preflights."
 }
 
 $postflightOutput = & $postflightScript -Stage $targetStage -First 1 *>&1 | ForEach-Object { $_.ToString() }
@@ -420,6 +461,18 @@ if (@($postflightParsed.NextCommands) -notcontains "scripts\plan-of-smoke-build.
 $nullGeneratedProjectFiles = @($postflightParsed.Postflights[0].GeneratedProjectFiles | Where-Object { $null -eq $_ -or [string]::IsNullOrWhiteSpace([string]$_) })
 if ($nullGeneratedProjectFiles.Count -gt 0) {
 	throw "smoke build target postflight JSON included null or empty generated project file entries."
+}
+
+$postflightSummaryJsonOutput = & $postflightScript -Stage $targetStage -First 1 -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "check-smoke-build-target-postflight.ps1 -Json -SummaryOnly failed."
+}
+$postflightSummaryParsed = ($postflightSummaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$postflightSummaryParsed.SummaryOnly -or !$postflightSummaryParsed.PostflightSummaries) {
+	throw "smoke build target postflight summary JSON did not report compact postflight summaries."
+}
+if ($postflightSummaryParsed.PSObject.Properties["Postflights"]) {
+	throw "smoke build target postflight summary JSON should omit full Postflights."
 }
 
 $repairPlanOutput = & $repairPlanScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" *>&1 | ForEach-Object { $_.ToString() }

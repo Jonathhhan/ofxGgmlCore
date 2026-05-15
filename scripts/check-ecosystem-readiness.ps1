@@ -180,18 +180,26 @@ $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build plan" -ScriptPa
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target selection" -ScriptPath (Join-Path $scriptRoot "select-smoke-build-target.ps1") -Parameters @{
 	Stage = "generate-project"
 	First = 1
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target handoff" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-target-handoff.ps1") -Parameters @{
 	Stage = "generate-project"
 	First = 1
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target preflight" -ScriptPath (Join-Path $scriptRoot "check-smoke-build-target-preflight.ps1") -Parameters @{
 	Stage = "generate-project"
 	First = 1
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target postflight" -ScriptPath (Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1") -Parameters @{
 	Stage = "generate-project"
 	First = 1
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build project repair plan" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1") -Parameters @{
 	Stage = "verify-generated-project"

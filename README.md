@@ -183,26 +183,27 @@ Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke
 build `Summary` counts, next commands, records, and target queues.
 Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an
 agent needs the next concrete smoke-build target without parsing the full plan.
-Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json` when
-another agent needs target selection `Summary` counts, next commands, and the
-selected target payload.
+Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json -SummaryOnly`
+when another agent needs compact target selection `Summary` counts, next
+commands, and target summaries.
 Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` when
 an agent needs the command, validation checklist, and artifact guardrails for
 that selected target.
-Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json`
-when another agent needs handoff `Summary` counts, commands, validation, and
-guardrails as structured data.
+Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly`
+when another agent needs compact handoff `Summary` counts and target summaries
+without full command and guardrail lists.
 Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project`
 before running projectGenerator to confirm the selected repo is clean and the
 target still matches filesystem state.
-Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json`
-when another agent needs readiness `Summary` counts and gated next commands.
+Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json -SummaryOnly`
+when another agent needs compact readiness `Summary` counts and gated next
+commands.
 Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>`
 after running projectGenerator to report generated files, git impact, and next
 validation without staging anything.
-Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json`
-when another agent needs completion `Summary` counts, generated-file counts,
-and review counts.
+Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json -SummaryOnly`
+when another agent needs compact completion `Summary` counts, generated-file
+counts, and review counts.
 Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Json`
 when another agent needs repair-state `Summary` counts, expected addon
 references, and repair next commands.
