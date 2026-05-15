@@ -47,8 +47,10 @@ scripts\plan-release-readiness.bat
 ```
 
 The release evidence report folds in workflow status when network access is
-available and `docs\backend-capability-report.md` when it exists. Use
-`-SkipWorkflowStatus` only for an offline policy/evidence dry run.
+available, `docs\backend-capability-report.md` when it exists, and
+`.smoke-build-ci-report.json` when present. Use `-SkipWorkflowStatus` only for
+an offline policy/evidence dry run, and pass `-SmokeBuildCiReport <path>` when
+using a downloaded GitHub Actions artifact as release evidence.
 
 The focused Core example build wrapper remains available when a smaller check is
 needed:
@@ -71,6 +73,7 @@ Before creating the `1.0.1` tag:
 - README setup and validation commands match the actual scripts.
 - `docs/CORE_CONTRACT.md` matches the addon boundary.
 - `scripts\plan-release-readiness.bat` has no required workflow blockers.
+- smoke-build CI evidence reports no failed stages, targets, or commands.
 - backend capability evidence is present or the release notes explicitly state
   why runtime evidence is unavailable.
 - generated binaries, model files, caches, and project files are not staged.

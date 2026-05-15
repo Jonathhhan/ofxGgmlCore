@@ -56,9 +56,12 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Connect release readiness to actual validation evidence: local validation, strict ecosystem audit, readiness check, workflow status, and backend capability evidence.
 - Prefer `scripts\plan-release-readiness.bat` for a one-command release evidence pass; it writes to a temporary report path unless `-OutputPath` is supplied.
 - Use `scripts\plan-release-readiness.bat -Json` when another agent needs release evidence summary counts, generated report paths, and next commands.
+- Use `scripts\plan-release-readiness.bat -SmokeBuildCiReport <path>` when release planning should fold in a downloaded `.smoke-build-ci-report.json` artifact.
 - Use `scripts\list-models.bat -Json` when another agent needs model discovery summary counts, existing search directories, and nearby GGUF file metadata before planning model-backed smoke tests.
 - Use `scripts\generate-release-readiness-score.py --workflow-status-report <report>` after generating a workflow status report for release planning.
 - Use `scripts\generate-release-readiness-score.py --backend-capability-report docs\backend-capability-report.md` when release planning needs backend discovery or runtime-smoke evidence.
+- Use `scripts\generate-release-readiness-score.py --smoke-build-ci-report .smoke-build-ci-report.json` when release planning needs generated-project compile evidence.
 - `scripts\plan-release-readiness.bat` folds in `docs\backend-capability-report.md` automatically when it exists; use `-SkipBackendCapability` only for policy-only dry runs.
+- `scripts\plan-release-readiness.bat` folds in `.smoke-build-ci-report.json` automatically when it exists; use `-SkipSmokeBuildCi` only when intentionally ignoring local smoke-build evidence.
 - Keep generated artifacts, local models, build output, and IDE state out of release planning.
 - Favor one repository-scoped readiness improvement per PR so agent-authored changes remain reviewable.

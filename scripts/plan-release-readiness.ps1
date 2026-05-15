@@ -2,9 +2,11 @@ param(
 	[string]$OutputPath = "",
 	[string]$WorkflowStatusReport = "",
 	[string]$BackendCapabilityReport = "",
+	[string]$SmokeBuildCiReport = "",
 	[int]$StaleDays = 30,
 	[switch]$SkipWorkflowStatus,
 	[switch]$SkipBackendCapability,
+	[switch]$SkipSmokeBuildCi,
 	[switch]$Json
 )
 
@@ -23,6 +25,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\validate-local.bat")
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+	$commands.Add("scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0")
 	$commands.Add("scripts\plan-release-readiness.bat -Json")
 	$commands.Add("scripts\release-candidate.ps1")
 	return @($commands.ToArray())
@@ -69,12 +72,25 @@ if ([string]::IsNullOrWhiteSpace($backendReport) -and !$SkipBackendCapability) {
 	}
 }
 
+$smokeBuildReport = $SmokeBuildCiReport
+$usedDefaultSmokeBuildReport = $false
+if ([string]::IsNullOrWhiteSpace($smokeBuildReport) -and !$SkipSmokeBuildCi) {
+	$defaultSmokeBuildReport = Join-Path $addonRoot ".smoke-build-ci-report.json"
+	if (Test-Path -LiteralPath $defaultSmokeBuildReport -PathType Leaf) {
+		$smokeBuildReport = $defaultSmokeBuildReport
+		$usedDefaultSmokeBuildReport = $true
+	}
+}
+
 $arguments = @($releaseScript, "--output", $resolvedOutputPath)
 if (![string]::IsNullOrWhiteSpace($workflowReport)) {
 	$arguments += @("--workflow-status-report", $workflowReport)
 }
 if (![string]::IsNullOrWhiteSpace($backendReport)) {
 	$arguments += @("--backend-capability-report", $backendReport)
+}
+if (![string]::IsNullOrWhiteSpace($smokeBuildReport)) {
+	$arguments += @("--smoke-build-ci-report", $smokeBuildReport)
 }
 
 Write-Step "Generating release readiness score"
@@ -97,6 +113,9 @@ $summary = [pscustomobject]@{
 	BackendCapabilityEvidenceProvided = ![string]::IsNullOrWhiteSpace($backendReport)
 	BackendCapabilityDefaultUsed = $usedDefaultBackendReport
 	BackendCapabilityEvidenceExists = (![string]::IsNullOrWhiteSpace($backendReport) -and (Test-Path -LiteralPath $backendReport -PathType Leaf))
+	SmokeBuildCiEvidenceProvided = ![string]::IsNullOrWhiteSpace($smokeBuildReport)
+	SmokeBuildCiDefaultUsed = $usedDefaultSmokeBuildReport
+	SmokeBuildCiEvidenceExists = (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf))
 	OutputPathIsTemporary = [string]::IsNullOrWhiteSpace($OutputPath)
 }
 $nextCommands = Get-ReleaseReadinessNextCommands
@@ -107,9 +126,11 @@ if ($Json) {
 		OutputPath = $resolvedOutputPath
 		WorkflowStatusReport = $workflowReport
 		BackendCapabilityReport = $backendReport
+		SmokeBuildCiReport = $smokeBuildReport
 		StaleDays = $StaleDays
 		SkipWorkflowStatus = [bool]$SkipWorkflowStatus
 		SkipBackendCapability = [bool]$SkipBackendCapability
+		SkipSmokeBuildCi = [bool]$SkipSmokeBuildCi
 		Summary = $summary
 		NextCommands = $nextCommands
 	} | ConvertTo-Json -Depth 5

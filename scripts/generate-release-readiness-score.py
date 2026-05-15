@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument("--output", default=str(OUTPUT), help="Markdown report path.")
     parser.add_argument("--workflow-status-report", default="", help="Optional workflow status markdown report to fold into release evidence.")
     parser.add_argument("--backend-capability-report", default="", help="Optional backend capability markdown report to fold into release evidence.")
+    parser.add_argument("--smoke-build-ci-report", default="", help="Optional smoke-build CI JSON report to fold into release evidence.")
     return parser.parse_args()
 
 
@@ -127,6 +128,45 @@ def backend_evidence_status(backend_report):
     return "backend capability evidence reported"
 
 
+def parse_smoke_build_ci_report(path):
+    if not path:
+        return None
+
+    report = Path(path)
+    if not report.is_absolute():
+        report = ROOT / report
+    if not report.exists():
+        raise FileNotFoundError(f"smoke-build CI report was not found: {report}")
+
+    data = json.loads(report.read_text(encoding="utf-8-sig"))
+    summary = data.get("Summary") or {}
+    return {
+        "path": str(report),
+        "summary": summary,
+    }
+
+
+def smoke_build_evidence_status(smoke_report):
+    if not smoke_report:
+        return "not provided"
+
+    summary = smoke_report.get("summary", {})
+    outcome = str(summary.get("Outcome") or "unknown")
+    failed_targets = int(summary.get("FailedTargets") or 0)
+    failed_commands = int(summary.get("FailedCommands") or 0)
+    has_failures = bool(summary.get("HasFailures"))
+    if outcome == "passed" and not has_failures and failed_targets == 0 and failed_commands == 0:
+        targets = int(summary.get("ReportedTargets") or summary.get("TargetsRun") or 0)
+        stages = int(summary.get("ReportedStages") or summary.get("StageCount") or 0)
+        commands = int(summary.get("CommandsRun") or 0)
+        return f"passed {targets} target(s), {stages} stage(s), {commands} command(s)"
+
+    failures = failed_targets + failed_commands
+    if failures > 0:
+        return f"blocked by {failures} smoke-build failure signal(s)"
+    return f"reported {outcome}"
+
+
 def main():
     args = parse_args()
     ecosystem = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -134,6 +174,7 @@ def main():
     required_files = ecosystem.get("required_files", [])
     workflow_report = parse_workflow_status_report(args.workflow_status_report)
     backend_report = parse_backend_capability_report(args.backend_capability_report)
+    smoke_report = parse_smoke_build_ci_report(args.smoke_build_ci_report)
 
     repos = []
     core = ecosystem.get("core", {})
@@ -161,6 +202,7 @@ def main():
         "- Ecosystem readiness check: expected before release",
         f"- Workflow status report: `{workflow_evidence_status(workflow_report)}`",
         f"- Backend capability report: `{backend_evidence_status(backend_report)}`",
+        f"- Smoke-build CI report: `{smoke_build_evidence_status(smoke_report)}`",
         "",
     ]
 
@@ -220,6 +262,30 @@ def main():
         lines.extend([
             "",
             "Backend capability evidence is runtime-discovery evidence unless a row reports `runtime smoke passed`.",
+            "",
+        ])
+
+    if smoke_report:
+        summary = smoke_report.get("summary", {})
+        stage_names = summary.get("StageNames") or []
+        failed_stage_names = summary.get("FailedStageNames") or []
+        lines.extend([
+            "### Smoke-build CI evidence",
+            "",
+            f"Report: `{smoke_report['path']}`",
+            "",
+            "| Metric | Count |",
+            "| --- | ---: |",
+            f"| Reported stages | {int(summary.get('ReportedStages') or 0)} |",
+            f"| Reported targets | {int(summary.get('ReportedTargets') or 0)} |",
+            f"| Commands run | {int(summary.get('CommandsRun') or 0)} |",
+            f"| Failed targets | {int(summary.get('FailedTargets') or 0)} |",
+            f"| Failed commands | {int(summary.get('FailedCommands') or 0)} |",
+            "",
+            f"Outcome: `{summary.get('Outcome', 'unknown')}`",
+            f"Has failures: `{str(bool(summary.get('HasFailures'))).lower()}`",
+            f"Stages: `{', '.join(stage_names) if stage_names else 'none reported'}`",
+            f"Failed stages: `{', '.join(failed_stage_names) if failed_stage_names else 'none'}`",
             "",
         ])
 
