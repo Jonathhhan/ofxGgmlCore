@@ -55,7 +55,10 @@ Recommended minimum checks:
 ```txt
 ./scripts/doctor.sh
 ./scripts/validate-local.sh
-./scripts/build-simple-example.sh
+./scripts/release-candidate.sh
 ```
 
-Windows equivalents should exist where practical.
+Windows equivalents should exist where practical. For companion addons, use the
+addon-owned build/run-example scripts named by that lane; `build-simple-example`
+is Core's compatibility wrapper for `ofxGgmlCoreExample`, not a companion-addon
+template requirement.
