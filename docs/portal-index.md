@@ -20,6 +20,7 @@
 ## Control plane planning
 
 - [control plane next steps](./CONTROL_PLANE_NEXT_STEPS.md)
+- [local Codex llama-server handoff](./LOCAL_CODEX_LLAMA_SERVER.md)
 
 ## Automation scripts
 

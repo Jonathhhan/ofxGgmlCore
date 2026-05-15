@@ -61,6 +61,11 @@ to select a concrete repository-scoped task. The planning agent layer should
 improve instructions, reusable workflows, status reporting, and validation
 before it touches addon source code.
 
+For optional local Codex work against an OpenAI-compatible `llama-server`
+endpoint, use `docs/LOCAL_CODEX_LLAMA_SERVER.md`. That guide keeps local model
+serving outside Core and uses the existing planning, validation, and release
+commands as the handoff contract.
+
 `ofxGgmlWorkflows` is included as the reusable GitHub Actions workflow repo. It
 owns `.github/workflows/coding-agent-instructions.yml`; companion addons consume
 that workflow through `workflow_call`.
