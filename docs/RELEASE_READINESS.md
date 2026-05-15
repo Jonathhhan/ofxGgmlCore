@@ -55,6 +55,11 @@ present. Use `-SkipWorkflowStatus` only for an offline policy/evidence dry run,
 evidence, and pass `-SmokeBuildCiReport <path>` when using a downloaded GitHub
 Actions artifact as release evidence.
 
+The JSON mode includes `EvidenceGaps` and `Summary.EvidenceGapCount` so Codex,
+Copilot, Hermes, and release automation can tell whether a report is final
+release evidence or still waiting on workflow, backend, runtime, or smoke-build
+CI inputs.
+
 To fetch the latest uploaded smoke-build CI artifact before planning:
 
 ```bat

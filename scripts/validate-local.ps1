@@ -102,6 +102,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend 
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend runtime verification planning" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "SmokeBuildCiReport" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "FetchSmokeBuildCiReport" "release readiness docs"
+Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "EvidenceGaps" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "./scripts/release-candidate.sh" "addon family sync docs"
 Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "not a companion-addon" "addon family sync docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "Workflow Observability" "control plane next steps"
