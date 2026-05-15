@@ -224,16 +224,31 @@ function Get-AgentBranchInventory {
 }
 
 function Get-CleanupNextCommands {
-	param([array]$Candidates)
+	param(
+		[array]$Candidates,
+		[switch]$SummaryOnly
+	)
 
 	$commands = New-Object System.Collections.Generic.List[string]
-	if (!$Fetch) {
-		$commands.Add("scripts\plan-agent-branch-cleanup.bat -Fetch")
-	}
-
 	$deleteCommands = @($Candidates |
 		Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.DeleteCommand) } |
 		ForEach-Object { [string]$_.DeleteCommand })
+
+	if ($SummaryOnly) {
+		if (!$Fetch) {
+			$commands.Add("scripts\plan-agent-branch-cleanup.bat -Fetch -Json -SummaryOnly")
+		}
+		if ($deleteCommands.Count -gt 0) {
+			$commands.Add("scripts\plan-agent-branch-cleanup.bat -Fetch")
+		} else {
+			$commands.Add("# No delete commands were generated.")
+		}
+		return @($commands.ToArray())
+	}
+
+	if (!$Fetch) {
+		$commands.Add("scripts\plan-agent-branch-cleanup.bat -Fetch")
+	}
 	if ($deleteCommands.Count -gt 0) {
 		foreach ($command in $deleteCommands) {
 			$commands.Add($command)
@@ -295,7 +310,7 @@ function ConvertTo-MarkdownCleanupPlan {
 			}
 		}
 		$lines.Add("")
-		$lines.Add("Detailed branch inventory and candidates were omitted. Re-run without ``-SummaryOnly`` before deleting branches.")
+		$lines.Add("Detailed branch inventory, candidates, and delete commands were omitted. Re-run without ``-SummaryOnly`` before deleting branches.")
 		$lines.Add("")
 	} else {
 	$lines.Add("## Branch Inventory")
@@ -380,7 +395,7 @@ $repositorySummaries = @(
 		}
 	}
 )
-$nextCommands = Get-CleanupNextCommands -Candidates $candidates
+$nextCommands = Get-CleanupNextCommands -Candidates $candidates -SummaryOnly:$SummaryOnly
 $safetyNote = "This script only writes a plan. Refresh refs with -Fetch before acting, review every command, and keep deletion as an explicit follow-up."
 
 if ($Json) {
