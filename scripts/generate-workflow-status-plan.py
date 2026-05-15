@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 from pathlib import Path
 
@@ -16,7 +17,14 @@ WORKFLOWS = [
 ]
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generate the ofxGgml workflow status planning report.")
+    parser.add_argument("--output", default=str(OUTPUT), help="Markdown report path.")
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     ecosystem = json.loads(MANIFEST.read_text(encoding="utf-8"))
 
     repos = []
@@ -59,8 +67,16 @@ def main():
         "This is a planning scaffold. It does not yet query GitHub Actions APIs.",
     ])
 
-    OUTPUT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Wrote {OUTPUT.relative_to(ROOT)}")
+    output = Path(args.output)
+    if not output.is_absolute():
+        output = ROOT / output
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines), encoding="utf-8")
+    try:
+        display_path = output.relative_to(ROOT)
+    except ValueError:
+        display_path = output
+    print(f"Wrote {display_path}")
 
 
 if __name__ == "__main__":
