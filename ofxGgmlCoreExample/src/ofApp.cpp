@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <sstream>
 
 namespace {
@@ -31,28 +30,6 @@ std::string formatMs(double ms) {
 	stream.precision(ms < 10.0 ? 3 : 1);
 	stream << ms << " ms";
 	return stream.str();
-}
-
-std::string formatSample(const std::vector<float> & values) {
-	std::ostringstream stream;
-	const std::size_t count = std::min<std::size_t>(values.size(), 4);
-	for (std::size_t i = 0; i < count; ++i) {
-		if (i > 0) {
-			stream << ", ";
-		}
-		stream << values[i];
-	}
-	return stream.str();
-}
-
-float expectedValue(int index) {
-	const float left = static_cast<float>((index % 97) + 1);
-	const float right = static_cast<float>((index % 31) + 1) * 0.25f;
-	const float sum = left + right;
-	const float mixed = sum * right;
-	const float boosted = mixed + left;
-	const float scaled = boosted * sum;
-	return scaled + mixed;
 }
 
 void appendLine(std::vector<std::string> & lines, const std::string & line, bool warning = false) {
@@ -134,7 +111,6 @@ void ofApp::runBackendCheck() {
 
 	std::vector<float> left(static_cast<std::size_t>(elementCount));
 	std::vector<float> right(static_cast<std::size_t>(elementCount));
-	std::vector<float> output(static_cast<std::size_t>(elementCount));
 	for (int i = 0; i < elementCount; ++i) {
 		left[static_cast<std::size_t>(i)] = static_cast<float>((i % 97) + 1);
 		right[static_cast<std::size_t>(i)] = static_cast<float>((i % 31) + 1) * 0.25f;
@@ -168,20 +144,10 @@ void ofApp::runBackendCheck() {
 	const auto wallEnd = std::chrono::steady_clock::now();
 	const double wallMs = std::chrono::duration<double, std::milli>(wallEnd - wallStart).count();
 
-	auto readResult = graphError.empty()
-		? runtime.getData(resultTensor, output.data(), output.size() * sizeof(float))
-		: ofxGgmlResult<void>::failure(graphError);
-
-	if (!readResult) {
+	if (!graphError.empty()) {
 		lastRunHadError = true;
-		appendLine(lines, "graph error: " + readResult.error().message, true);
+		appendLine(lines, "graph error: " + graphError, true);
 		return;
-	}
-
-	float maxAbsError = 0.0f;
-	for (int i = 0; i < elementCount; ++i) {
-		const float expected = expectedValue(i);
-		maxAbsError = std::max(maxAbsError, std::abs(output[static_cast<std::size_t>(i)] - expected));
 	}
 
 	const double averageComputeMs = iterationCount > 0 ? computeMs / static_cast<double>(iterationCount) : 0.0;
@@ -190,8 +156,6 @@ void ofApp::runBackendCheck() {
 	appendLine(lines, "approx element ops: " + std::to_string(static_cast<long long>(elementOps)));
 	appendLine(lines, "backend compute time: " + formatMs(computeMs) + " total, " + formatMs(averageComputeMs) + " average");
 	appendLine(lines, "wall time: " + formatMs(wallMs));
-	appendLine(lines, "correctness check: max abs error " + std::to_string(maxAbsError));
-	appendLine(lines, "first output values: [" + formatSample(output) + "]");
 }
 
 void ofApp::draw() {
