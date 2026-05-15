@@ -153,6 +153,8 @@ with workflow-status evidence and backend capability evidence when planning
 release gates. By default it writes to a temporary report path and folds in
 `docs\backend-capability-report.md` when present; pass `-OutputPath` when you
 intentionally want to persist evidence in the repository.
+Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
+evidence `Summary` counts, generated report paths, and next commands.
 Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks
 project-generation and smoke-build rollout before adding compile gates.
 Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke
