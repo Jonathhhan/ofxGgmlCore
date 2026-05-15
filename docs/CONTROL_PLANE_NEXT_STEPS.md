@@ -56,6 +56,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Connect release readiness to actual validation evidence: local validation, strict ecosystem audit, readiness check, workflow status, and backend capability evidence.
 - Prefer `scripts\plan-release-readiness.bat` for a one-command release evidence pass; it writes to a temporary report path unless `-OutputPath` is supplied.
 - Use `scripts\plan-release-readiness.bat -Json` when another agent needs release evidence summary counts, generated report paths, and next commands.
+- Use `scripts\list-models.bat -Json` when another agent needs model discovery summary counts, existing search directories, and nearby GGUF file metadata before planning model-backed smoke tests.
 - Use `scripts\generate-release-readiness-score.py --workflow-status-report <report>` after generating a workflow status report for release planning.
 - Use `scripts\generate-release-readiness-score.py --backend-capability-report docs\backend-capability-report.md` when release planning needs backend discovery or runtime-smoke evidence.
 - `scripts\plan-release-readiness.bat` folds in `docs\backend-capability-report.md` automatically when it exists; use `-SkipBackendCapability` only for policy-only dry runs.
