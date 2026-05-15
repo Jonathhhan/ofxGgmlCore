@@ -97,6 +97,9 @@ if (@($parsed.SuggestedValidation) -notcontains "scripts\check-smoke-build-targe
 if (@($parsed.SuggestedValidation) -notcontains "scripts\check-smoke-build-target-postflight.bat -Stage generate-project -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact smoke-build postflight validation command."
 }
+if (@($parsed.SuggestedValidation) -notcontains "scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0") {
+	throw "ecosystem agent JSON output did not include the smoke-build CI validation command."
+}
 if ($jsonOutput -join "`n" -notmatch '"PlanningPriorities":\s+\[') {
 	throw "ecosystem agent JSON output did not preserve PlanningPriorities as an array."
 }
