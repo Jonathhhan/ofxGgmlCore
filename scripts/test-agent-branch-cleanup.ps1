@@ -81,3 +81,19 @@ if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat 
 if ([string]::IsNullOrWhiteSpace([string]$parsed.SafetyNote)) {
 	throw "agent branch cleanup JSON output did not include SafetyNote."
 }
+
+$emptyJsonOutput = & $cleanupScript -BranchPattern "codex/no-cleanup-branch-should-match-*" -Fetch -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-agent-branch-cleanup.ps1 empty -Json failed."
+}
+$emptyJsonText = $emptyJsonOutput -join "`n"
+foreach ($expected in @(
+	'"Inventory":  [',
+	'"Candidates":  [',
+	'"NextCommands":  [',
+	'# No delete commands were generated.'
+)) {
+	if ($emptyJsonText -notmatch [regex]::Escape($expected)) {
+		throw "agent branch cleanup empty JSON output did not preserve expected array shape/text: $expected"
+	}
+}

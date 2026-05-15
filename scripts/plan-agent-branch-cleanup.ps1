@@ -349,9 +349,9 @@ if ($Json) {
 		BranchPattern = $BranchPattern
 		Fetched = [bool]$Fetch
 		Summary = $summary
-		Inventory = $inventory
-		Candidates = $candidates
-		NextCommands = $nextCommands
+		Inventory = @($inventory)
+		Candidates = @($candidates)
+		NextCommands = @($nextCommands)
 		SafetyNote = $safetyNote
 	} | ConvertTo-Json -Depth 6
 } else {
