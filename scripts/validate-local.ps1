@@ -327,6 +327,10 @@ Invoke-CheckedScript `
 	-ScriptPath (Join-Path $scriptRoot "test-workflow-status-report.ps1")
 
 Invoke-CheckedScript `
+	-Label "Checking workflow status plan" `
+	-ScriptPath (Join-Path $scriptRoot "test-workflow-status-plan.ps1")
+
+Invoke-CheckedScript `
 	-Label "Checking release readiness score" `
 	-ScriptPath (Join-Path $scriptRoot "test-release-readiness-score.ps1")
 
