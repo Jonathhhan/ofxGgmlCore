@@ -124,6 +124,7 @@ function Get-SuggestedValidationCommands {
 		"scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project",
 		"scripts\plan-smoke-build-compile.bat -Stage compile-example",
 		"scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample",
+		"scripts\plan-release-readiness.bat -Json -SummaryOnly",
 		"scripts\plan-doctor-rollout.bat -Json -SummaryOnly",
 		"scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly",
 		"scripts\status-family.bat"

@@ -174,7 +174,10 @@ folds in `docs\backend-capability-report.md` plus `.smoke-build-ci-report.json`
 when present; pass `-OutputPath` when you intentionally want to persist evidence
 in the repository.
 Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
-evidence `Summary` counts, generated report paths, and next commands.
+evidence `Summary` counts, generated report paths, evidence paths, and next
+commands.
+Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent
+needs compact release evidence summaries without generated report paths.
 Use `scripts\list-models.bat -Json` when another agent needs model discovery
 `Summary` counts, existing search directories, and nearby GGUF file metadata.
 Use `scripts\plan-of-smoke-build.bat` to plan the next openFrameworks

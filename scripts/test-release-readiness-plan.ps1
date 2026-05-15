@@ -120,6 +120,9 @@ $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
 if (!$parsed.Summary) {
 	throw "release readiness JSON did not include Summary."
 }
+if ($parsed.SummaryOnly) {
+	throw "release readiness full JSON unexpectedly reported SummaryOnly."
+}
 foreach ($property in @(
 	"ReleaseReportExists",
 	"WorkflowStatusEvidenceProvided",
@@ -158,8 +161,47 @@ if (@($parsed.NextCommands) -notcontains "scripts\check-ecosystem-readiness.bat 
 if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "release readiness JSON NextCommands did not include compact branch cleanup planning."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
+	throw "release readiness JSON NextCommands did not include compact release readiness planning."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI report generation."
+}
+if (!$parsed.EvidenceSummaries -or @($parsed.EvidenceSummaries).Count -ne 3) {
+	throw "release readiness JSON did not include evidence summaries."
+}
+if (!$parsed.EvidenceSummaries[0].PSObject.Properties["Path"]) {
+	throw "release readiness full JSON evidence summaries should include paths."
+}
+
+$summaryJsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-summary-json-plan-$testId.md"
+if (Test-Path -LiteralPath $summaryJsonOutputPath) {
+	Remove-Item -LiteralPath $summaryJsonOutputPath -Force
+}
+$summaryJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -SmokeBuildCiReport $smokeBuildReport -OutputPath $summaryJsonOutputPath -Json -SummaryOnly)
+if (!$?) {
+	throw "plan-release-readiness.ps1 summary JSON run failed."
+}
+if (!(Test-Path -LiteralPath $summaryJsonOutputPath -PathType Leaf)) {
+	throw "release readiness summary JSON run did not write report: $summaryJsonOutputPath"
+}
+$summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$summaryParsed.SummaryOnly) {
+	throw "release readiness summary JSON did not report SummaryOnly."
+}
+if (!$summaryParsed.Summary -or !$summaryParsed.EvidenceSummaries -or @($summaryParsed.EvidenceSummaries).Count -ne 3) {
+	throw "release readiness summary JSON did not retain compact summary evidence."
+}
+foreach ($omitted in @("OutputPath", "WorkflowStatusReport", "BackendCapabilityReport", "SmokeBuildCiReport")) {
+	if ($summaryParsed.PSObject.Properties[$omitted]) {
+		throw "release readiness summary JSON should omit $omitted."
+	}
+}
+if ($summaryParsed.EvidenceSummaries[0].PSObject.Properties["Path"]) {
+	throw "release readiness summary JSON evidence summaries should omit paths."
+}
+if (@($summaryParsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
+	throw "release readiness summary JSON NextCommands did not include compact release readiness planning."
 }
 
 Remove-Item -LiteralPath $workflowReport -Force
@@ -167,4 +209,5 @@ Remove-Item -LiteralPath $backendReport -Force
 Remove-Item -LiteralPath $smokeBuildReport -Force
 Remove-Item -LiteralPath $outputPath -Force
 Remove-Item -LiteralPath $jsonOutputPath -Force
+Remove-Item -LiteralPath $summaryJsonOutputPath -Force
 Remove-Item -LiteralPath $defaultOutputPath -Force

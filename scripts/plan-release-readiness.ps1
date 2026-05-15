@@ -7,6 +7,7 @@ param(
 	[switch]$SkipWorkflowStatus,
 	[switch]$SkipBackendCapability,
 	[switch]$SkipSmokeBuildCi,
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -27,9 +28,32 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0")
-	$commands.Add("scripts\plan-release-readiness.bat -Json")
+	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	$commands.Add("scripts\release-candidate.ps1")
 	return @($commands.ToArray())
+}
+
+function New-ReleaseEvidenceSummary {
+	param(
+		[string]$Name,
+		[bool]$Provided,
+		[bool]$Exists,
+		[bool]$Generated = $false,
+		[bool]$DefaultUsed = $false,
+		[string]$Path = ""
+	)
+
+	$result = [ordered]@{
+		Name = $Name
+		Provided = $Provided
+		Exists = $Exists
+		Generated = $Generated
+		DefaultUsed = $DefaultUsed
+	}
+	if (!$SummaryOnly) {
+		$result.Path = $Path
+	}
+	[pscustomobject]$result
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -120,21 +144,46 @@ $summary = [pscustomobject]@{
 	OutputPathIsTemporary = [string]::IsNullOrWhiteSpace($OutputPath)
 }
 $nextCommands = Get-ReleaseReadinessNextCommands
+$evidenceSummaries = @(
+	New-ReleaseEvidenceSummary `
+		-Name "workflow status" `
+		-Provided (![string]::IsNullOrWhiteSpace($workflowReport)) `
+		-Exists (![string]::IsNullOrWhiteSpace($workflowReport) -and (Test-Path -LiteralPath $workflowReport -PathType Leaf)) `
+		-Generated $generatedWorkflowReport `
+		-Path $workflowReport
+	New-ReleaseEvidenceSummary `
+		-Name "backend capability" `
+		-Provided (![string]::IsNullOrWhiteSpace($backendReport)) `
+		-Exists (![string]::IsNullOrWhiteSpace($backendReport) -and (Test-Path -LiteralPath $backendReport -PathType Leaf)) `
+		-DefaultUsed $usedDefaultBackendReport `
+		-Path $backendReport
+	New-ReleaseEvidenceSummary `
+		-Name "smoke-build CI" `
+		-Provided (![string]::IsNullOrWhiteSpace($smokeBuildReport)) `
+		-Exists (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf)) `
+		-DefaultUsed $usedDefaultSmokeBuildReport `
+		-Path $smokeBuildReport
+)
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [ordered]@{
 		Root = $addonRoot
-		OutputPath = $resolvedOutputPath
-		WorkflowStatusReport = $workflowReport
-		BackendCapabilityReport = $backendReport
-		SmokeBuildCiReport = $smokeBuildReport
 		StaleDays = $StaleDays
 		SkipWorkflowStatus = [bool]$SkipWorkflowStatus
 		SkipBackendCapability = [bool]$SkipBackendCapability
 		SkipSmokeBuildCi = [bool]$SkipSmokeBuildCi
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
+		EvidenceSummaries = $evidenceSummaries
 		NextCommands = $nextCommands
-	} | ConvertTo-Json -Depth 5
+	}
+	if (!$SummaryOnly) {
+		$result.OutputPath = $resolvedOutputPath
+		$result.WorkflowStatusReport = $workflowReport
+		$result.BackendCapabilityReport = $backendReport
+		$result.SmokeBuildCiReport = $smokeBuildReport
+	}
+	[pscustomobject]$result | ConvertTo-Json -Depth 5
 } else {
 	Write-Host "Release readiness plan: $resolvedOutputPath"
 }

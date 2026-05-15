@@ -102,6 +102,16 @@ $releaseReadinessStep = @($parsed.Steps | Where-Object { $_.Name -eq "release re
 if ($releaseReadinessStep.Count -eq 0 -or $releaseReadinessStep[0].State -ne "OK") {
 	throw "ecosystem readiness JSON did not report release readiness plan as OK."
 }
+if (!$releaseReadinessStep[0].Output -or @($releaseReadinessStep[0].Output).Count -eq 0) {
+	throw "ecosystem readiness JSON did not retain output for release readiness plan."
+}
+$releaseReadinessJson = (@($releaseReadinessStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$releaseReadinessJson.SummaryOnly) {
+	throw "ecosystem readiness release readiness plan should use SummaryOnly output."
+}
+if (!$releaseReadinessJson.EvidenceSummaries -or $releaseReadinessJson.PSObject.Properties["OutputPath"]) {
+	throw "ecosystem readiness release readiness plan did not use compact evidence summaries."
+}
 
 $smokeBuildStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build plan" } | Select-Object -First 1)
 if ($smokeBuildStep.Count -eq 0 -or $smokeBuildStep[0].State -ne "OK") {

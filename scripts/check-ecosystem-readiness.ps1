@@ -213,6 +213,8 @@ $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build compile plan" -
 $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters @{
 	OutputPath = $releaseReadinessOutput
 	SkipWorkflowStatus = $true
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "doctor rollout plan" -ScriptPath (Join-Path $scriptRoot "plan-doctor-rollout.ps1") -Parameters @{
 	Json = $true
