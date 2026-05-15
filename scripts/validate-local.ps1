@@ -80,6 +80,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rol
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat -Json -SummaryOnly" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\fetch-smoke-build-ci-report.bat -Force" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\list-models.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "backend capability evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "backend runtime verification evidence" "README"
@@ -94,6 +95,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "scripts\
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend capability evidence" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend runtime verification planning" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "SmokeBuildCiReport" "release readiness docs"
+Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "FetchSmokeBuildCiReport" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "./scripts/release-candidate.sh" "addon family sync docs"
 Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "not a companion-addon" "addon family sync docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "Workflow Observability" "control plane next steps"
@@ -109,6 +111,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "r
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "compile-readiness Summary counts" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "top-level Summary counts for release evidence" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly" "control plane next steps"
+Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\fetch-smoke-build-ci-report.bat -Force" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-release-readiness.bat -Json -SummaryOnly" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-release-readiness.bat -SmokeBuildCiReport <path>" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\list-models.bat -Json -SummaryOnly" "control plane next steps"
@@ -134,6 +137,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-smoke
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-of-smoke-build.bat -Json" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-release-readiness.bat -Json -SummaryOnly" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-backend-runtime-verification.bat -Json -SummaryOnly" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "fetch-smoke-build-ci-report.bat -Force" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-release-readiness.bat -SmokeBuildCiReport <path>" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "list-models.bat -Json -SummaryOnly" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "check-smoke-build-target-preflight" "ecosystem agent docs"
@@ -201,6 +205,9 @@ foreach ($requiredScript in @(
 	"plan-release-readiness.bat",
 	"plan-release-readiness.ps1",
 	"plan-release-readiness.sh",
+	"fetch-smoke-build-ci-report.bat",
+	"fetch-smoke-build-ci-report.ps1",
+	"fetch-smoke-build-ci-report.sh",
 	"plan-doctor-rollout.bat",
 	"plan-doctor-rollout.ps1",
 	"plan-doctor-rollout.sh",

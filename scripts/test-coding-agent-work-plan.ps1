@@ -129,6 +129,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		"check-smoke-build-target-postflight.ps1",
 		"run-smoke-build-ci.ps1",
 		"smoke-build-ci-report.ps1",
+		"fetch-smoke-build-ci-report.ps1",
 		"test-smoke-build-ci-report.ps1",
 		"check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly",
 		"status-family.bat -Json -SummaryOnly",

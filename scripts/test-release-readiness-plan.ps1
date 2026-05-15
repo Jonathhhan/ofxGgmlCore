@@ -163,6 +163,7 @@ foreach ($property in @(
 	"BackendRuntimePlanEvidenceExists",
 	"SmokeBuildCiEvidenceProvided",
 	"SmokeBuildCiDefaultUsed",
+	"SmokeBuildCiEvidenceFetched",
 	"SmokeBuildCiEvidenceExists",
 	"OutputPathIsTemporary"
 )) {
@@ -199,6 +200,9 @@ if (@($parsed.NextCommands) -notcontains "scripts\plan-backend-runtime-verificat
 }
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "release readiness JSON NextCommands did not include compact release readiness planning."
+}
+if (@($parsed.NextCommands) -notcontains "scripts\fetch-smoke-build-ci-report.bat -Force") {
+	throw "release readiness JSON NextCommands did not include smoke-build CI artifact fetch."
 }
 if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI report generation."
