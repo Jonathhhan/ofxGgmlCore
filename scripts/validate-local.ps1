@@ -72,6 +72,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-smoke-buil
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\check-smoke-build-target-preflight.bat -Stage generate-project -Json" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Json" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") ".smoke-build-ci-report.json" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat -Json" "README"
@@ -99,9 +100,11 @@ Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "s
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-smoke-build-target-handoff.bat -Stage generate-project -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "repair-state Summary counts" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "compile-readiness Summary counts" "control plane next steps"
+Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "top-level Summary counts for release evidence" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-release-readiness.bat -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\list-models.bat -Json" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "structured JSON handoff" "operational validation status"
+Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "smoke-build CI writes a JSON report with top-level Summary counts" "operational validation status"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
@@ -318,6 +321,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking openFrameworks smoke build planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-of-smoke-build-plan.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking smoke-build CI report summary" `
+	-ScriptPath (Join-Path $scriptRoot "test-smoke-build-ci-report.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking agent branch cleanup planner" `
