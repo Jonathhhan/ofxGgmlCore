@@ -122,7 +122,7 @@ function Get-SuggestedValidationCommands {
 		"scripts\plan-smoke-build-compile.bat -Stage compile-example",
 		"scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample",
 		"scripts\plan-doctor-rollout.bat",
-		"scripts\plan-agent-branch-cleanup.bat",
+		"scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly",
 		"scripts\status-family.bat"
 	)
 }
