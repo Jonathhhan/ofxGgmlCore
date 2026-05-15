@@ -98,6 +98,8 @@ before broad ecosystem work. It checks generated agent instructions, strict
 ecosystem audit status, planning handoffs, coding-agent work queue generation,
 structured JSON handoffs, workflow guide coverage, doctor rollout status,
 branch cleanup planning, and managed doctor smoke tests.
+Use `scripts\check-ecosystem-readiness.bat -Json` when another agent needs
+compact `Summary` counts plus detailed `Steps` and `DoctorTests` evidence.
 
 ## Smoke-Build Target Lifecycle
 

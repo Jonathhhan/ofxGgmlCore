@@ -43,6 +43,18 @@ $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
 if (!$parsed.Passed) {
 	throw "ecosystem readiness JSON did not report Passed."
 }
+if (!$parsed.Summary) {
+	throw "ecosystem readiness JSON did not include Summary."
+}
+if ($parsed.Summary.TotalSteps -le 0 -or $parsed.Summary.FailedSteps -ne 0) {
+	throw "ecosystem readiness JSON Summary did not report passing control-plane steps."
+}
+if ($parsed.Summary.TotalDoctorTests -ne 0 -or $parsed.Summary.FailedDoctorTests -ne 0) {
+	throw "ecosystem readiness JSON Summary did not reflect skipped doctor tests."
+}
+if (@($parsed.Summary.FailedChecks).Count -ne 0) {
+	throw "ecosystem readiness JSON Summary reported failed checks for a passing run."
+}
 if (!$parsed.Steps -or $parsed.Steps.Count -eq 0) {
 	throw "ecosystem readiness JSON did not include steps."
 }

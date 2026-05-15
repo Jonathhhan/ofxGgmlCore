@@ -138,6 +138,8 @@ non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,
 structured JSON handoffs, doctor rollout status, merged branch cleanup
 planning, and managed doctor smoke tests.
+Use `scripts\check-ecosystem-readiness.bat -Json` when another agent needs
+readiness `Summary` counts plus detailed `Steps` and `DoctorTests` evidence.
 Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
