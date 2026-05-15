@@ -121,12 +121,14 @@ The current smoke-build workflow:
 - compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow (Windows Release x64)
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - validates CPU backend runtime initialization and lightweight graph smoke in CI for Core runtime changes
+- plans backend runtime verification evidence from Core with compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, and reference-lane readiness summaries
 - does not yet validate CUDA/Metal/Vulkan runtimes in CI
 - does not yet validate model-backed runtime inference
 
 ## Next operational milestones
 
 - Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
+- SAM3 CPU/CUDA runtime-smoke handoff from the `ofxGgmlSam` reference lane
 - GPU backend runtime verification from suitable runners
 - inference smoke tests
 - release gating from CI truth

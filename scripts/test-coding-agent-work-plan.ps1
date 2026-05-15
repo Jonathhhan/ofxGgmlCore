@@ -137,6 +137,8 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		"test-ecosystem-audit.ps1",
 		"plan-doctor-rollout.bat -Json -SummaryOnly",
 		"test-doctor-rollout-plan.ps1",
+		"plan-backend-runtime-verification.bat -Json -SummaryOnly",
+		"test-backend-runtime-verification-plan.ps1",
 		"plan-ecosystem.bat -Json -SummaryOnly",
 		"plan-release-readiness.bat -Json -SummaryOnly",
 		"plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly",

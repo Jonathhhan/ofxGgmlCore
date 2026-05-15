@@ -55,4 +55,9 @@ Assert-FileContains `
 	-Pattern "backend-runtime-check" `
 	-Label "backend verification plan"
 
+Assert-FileContains `
+	-Path (Join-Path $addonRoot "docs\backend-verification-plan.md") `
+	-Pattern "plan-backend-runtime-verification" `
+	-Label "backend verification plan"
+
 Write-Host "Backend verification planning coverage passed"

@@ -2,10 +2,12 @@ param(
 	[string]$OutputPath = "",
 	[string]$WorkflowStatusReport = "",
 	[string]$BackendCapabilityReport = "",
+	[string]$BackendRuntimePlan = "",
 	[string]$SmokeBuildCiReport = "",
 	[int]$StaleDays = 30,
 	[switch]$SkipWorkflowStatus,
 	[switch]$SkipBackendCapability,
+	[switch]$SkipBackendRuntimePlan,
 	[switch]$SkipSmokeBuildCi,
 	[switch]$SummaryOnly,
 	[switch]$Json
@@ -27,6 +29,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
+	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")
 	$commands.Add("scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0")
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	$commands.Add("scripts\release-candidate.ps1")
@@ -60,6 +63,7 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Split-Path -Parent $scriptRoot
 $releaseScript = Join-Path $scriptRoot "generate-release-readiness-score.py"
 $workflowScript = Join-Path $scriptRoot "fetch-workflow-status.py"
+$backendRuntimeScript = Join-Path $scriptRoot "plan-backend-runtime-verification.ps1"
 
 $resolvedOutputPath = if ([string]::IsNullOrWhiteSpace($OutputPath)) {
 	Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
@@ -97,6 +101,24 @@ if ([string]::IsNullOrWhiteSpace($backendReport) -and !$SkipBackendCapability) {
 	}
 }
 
+$backendRuntimePlan = $BackendRuntimePlan
+$generatedBackendRuntimePlan = $false
+if ([string]::IsNullOrWhiteSpace($backendRuntimePlan) -and !$SkipBackendRuntimePlan) {
+	$backendRuntimePlan = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-runtime-verification-release-evidence.md"
+	$generatedBackendRuntimePlan = $true
+	Write-Step "Generating backend runtime verification evidence"
+	$backendRuntimeOutput = @(& $backendRuntimeScript -OutputPath $backendRuntimePlan -Quiet 2>&1)
+	if (!$?) {
+		if ($backendRuntimeOutput.Count -gt 0) {
+			$backendRuntimeOutput | Write-Host
+		}
+		throw "plan-backend-runtime-verification.ps1 failed."
+	}
+	if (!$Json -and $backendRuntimeOutput.Count -gt 0) {
+		$backendRuntimeOutput | Write-Host
+	}
+}
+
 $smokeBuildReport = $SmokeBuildCiReport
 $usedDefaultSmokeBuildReport = $false
 if ([string]::IsNullOrWhiteSpace($smokeBuildReport) -and !$SkipSmokeBuildCi) {
@@ -113,6 +135,9 @@ if (![string]::IsNullOrWhiteSpace($workflowReport)) {
 }
 if (![string]::IsNullOrWhiteSpace($backendReport)) {
 	$arguments += @("--backend-capability-report", $backendReport)
+}
+if (![string]::IsNullOrWhiteSpace($backendRuntimePlan)) {
+	$arguments += @("--backend-runtime-plan", $backendRuntimePlan)
 }
 if (![string]::IsNullOrWhiteSpace($smokeBuildReport)) {
 	$arguments += @("--smoke-build-ci-report", $smokeBuildReport)
@@ -138,6 +163,9 @@ $summary = [pscustomobject]@{
 	BackendCapabilityEvidenceProvided = ![string]::IsNullOrWhiteSpace($backendReport)
 	BackendCapabilityDefaultUsed = $usedDefaultBackendReport
 	BackendCapabilityEvidenceExists = (![string]::IsNullOrWhiteSpace($backendReport) -and (Test-Path -LiteralPath $backendReport -PathType Leaf))
+	BackendRuntimePlanEvidenceProvided = ![string]::IsNullOrWhiteSpace($backendRuntimePlan)
+	BackendRuntimePlanEvidenceGenerated = $generatedBackendRuntimePlan
+	BackendRuntimePlanEvidenceExists = (![string]::IsNullOrWhiteSpace($backendRuntimePlan) -and (Test-Path -LiteralPath $backendRuntimePlan -PathType Leaf))
 	SmokeBuildCiEvidenceProvided = ![string]::IsNullOrWhiteSpace($smokeBuildReport)
 	SmokeBuildCiDefaultUsed = $usedDefaultSmokeBuildReport
 	SmokeBuildCiEvidenceExists = (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf))
@@ -158,6 +186,12 @@ $evidenceSummaries = @(
 		-DefaultUsed $usedDefaultBackendReport `
 		-Path $backendReport
 	New-ReleaseEvidenceSummary `
+		-Name "backend runtime verification" `
+		-Provided (![string]::IsNullOrWhiteSpace($backendRuntimePlan)) `
+		-Exists (![string]::IsNullOrWhiteSpace($backendRuntimePlan) -and (Test-Path -LiteralPath $backendRuntimePlan -PathType Leaf)) `
+		-Generated $generatedBackendRuntimePlan `
+		-Path $backendRuntimePlan
+	New-ReleaseEvidenceSummary `
 		-Name "smoke-build CI" `
 		-Provided (![string]::IsNullOrWhiteSpace($smokeBuildReport)) `
 		-Exists (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf)) `
@@ -171,6 +205,7 @@ if ($Json) {
 		StaleDays = $StaleDays
 		SkipWorkflowStatus = [bool]$SkipWorkflowStatus
 		SkipBackendCapability = [bool]$SkipBackendCapability
+		SkipBackendRuntimePlan = [bool]$SkipBackendRuntimePlan
 		SkipSmokeBuildCi = [bool]$SkipSmokeBuildCi
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
@@ -181,6 +216,7 @@ if ($Json) {
 		$result.OutputPath = $resolvedOutputPath
 		$result.WorkflowStatusReport = $workflowReport
 		$result.BackendCapabilityReport = $backendReport
+		$result.BackendRuntimePlan = $backendRuntimePlan
 		$result.SmokeBuildCiReport = $smokeBuildReport
 	}
 	[pscustomobject]$result | ConvertTo-Json -Depth 5

@@ -38,6 +38,7 @@ servers. It includes:
 - ecosystem readiness planning
 - release-readiness planning
 - backend verification planning
+- backend runtime verification planning
 - Core example build validation
 
 Generate the release evidence report before tagging:
@@ -47,10 +48,12 @@ scripts\plan-release-readiness.bat
 ```
 
 The release evidence report folds in workflow status when network access is
-available, `docs\backend-capability-report.md` when it exists, and
-`.smoke-build-ci-report.json` when present. Use `-SkipWorkflowStatus` only for
-an offline policy/evidence dry run, and pass `-SmokeBuildCiReport <path>` when
-using a downloaded GitHub Actions artifact as release evidence.
+available, `docs\backend-capability-report.md` when it exists, generated
+backend runtime verification planning, and `.smoke-build-ci-report.json` when
+present. Use `-SkipWorkflowStatus` only for an offline policy/evidence dry run,
+`-SkipBackendRuntimePlan` only when intentionally ignoring runtime-planning
+evidence, and pass `-SmokeBuildCiReport <path>` when using a downloaded GitHub
+Actions artifact as release evidence.
 
 The focused Core example build wrapper remains available when a smaller check is
 needed:
@@ -79,6 +82,9 @@ Before creating the `1.0.1` tag:
   deleting branches automatically.
 - backend capability evidence is present or the release notes explicitly state
   why runtime evidence is unavailable.
+- `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` identifies
+  the next model-backed runtime-smoke target and preserves `ofxGgmlSam` as the
+  first reference lane until SAM3 CPU/CUDA evidence is lane-owned.
 - generated binaries, model files, caches, and project files are not staged.
 - optional runtimes fail clearly when not installed.
 - any new public type has a focused headless test.

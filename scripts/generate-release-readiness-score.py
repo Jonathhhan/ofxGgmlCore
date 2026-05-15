@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument("--output", default=str(OUTPUT), help="Markdown report path.")
     parser.add_argument("--workflow-status-report", default="", help="Optional workflow status markdown report to fold into release evidence.")
     parser.add_argument("--backend-capability-report", default="", help="Optional backend capability markdown report to fold into release evidence.")
+    parser.add_argument("--backend-runtime-plan", default="", help="Optional backend runtime verification markdown plan to fold into release evidence.")
     parser.add_argument("--smoke-build-ci-report", default="", help="Optional smoke-build CI JSON report to fold into release evidence.")
     return parser.parse_args()
 
@@ -128,6 +129,62 @@ def backend_evidence_status(backend_report):
     return "backend capability evidence reported"
 
 
+def parse_backend_runtime_plan(path):
+    if not path:
+        return None
+
+    report = Path(path)
+    if not report.is_absolute():
+        report = ROOT / report
+    if not report.exists():
+        raise FileNotFoundError(f"backend runtime verification plan was not found: {report}")
+
+    metrics = {}
+    rows = []
+    for line in report.read_text(encoding="utf-8").splitlines():
+        metric_match = re.match(r"\| ([^|]+) \| (\d+) \|", line)
+        if metric_match and metric_match.group(1) not in {"Metric", "---"}:
+            metrics[metric_match.group(1)] = int(metric_match.group(2))
+            continue
+
+        if not line.startswith("| ofxGgml"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) != 8:
+            continue
+        rows.append({
+            "repository": cells[0],
+            "lane": cells[1],
+            "backends": cells[2],
+            "models": cells[3],
+            "built_examples": cells[4],
+            "runtime_smoke": cells[5],
+            "gate_state": cells[6],
+            "action": cells[7],
+        })
+
+    return {
+        "path": str(report),
+        "metrics": metrics,
+        "rows": rows,
+    }
+
+
+def backend_runtime_evidence_status(runtime_plan):
+    if not runtime_plan:
+        return "not provided"
+
+    metrics = runtime_plan.get("metrics", {})
+    core_seeded = metrics.get("Core runtime-smoke seeded", 0)
+    reference_ready = metrics.get("Reference lanes ready", 0)
+    needs_plan = metrics.get("Repositories needing runtime-smoke plans", 0)
+    if core_seeded > 0 and reference_ready > 0:
+        return f"{core_seeded} core runtime seed(s), {reference_ready} reference lane(s) ready, {needs_plan} lane(s) still need plans"
+    if core_seeded > 0:
+        return f"{core_seeded} core runtime seed(s), no reference lane ready"
+    return "runtime verification planning reported"
+
+
 def parse_smoke_build_ci_report(path):
     if not path:
         return None
@@ -174,6 +231,7 @@ def main():
     required_files = ecosystem.get("required_files", [])
     workflow_report = parse_workflow_status_report(args.workflow_status_report)
     backend_report = parse_backend_capability_report(args.backend_capability_report)
+    backend_runtime_plan = parse_backend_runtime_plan(args.backend_runtime_plan)
     smoke_report = parse_smoke_build_ci_report(args.smoke_build_ci_report)
 
     repos = []
@@ -202,6 +260,7 @@ def main():
         "- Ecosystem readiness check: expected before release",
         f"- Workflow status report: `{workflow_evidence_status(workflow_report)}`",
         f"- Backend capability report: `{backend_evidence_status(backend_report)}`",
+        f"- Backend runtime verification plan: `{backend_runtime_evidence_status(backend_runtime_plan)}`",
         f"- Smoke-build CI report: `{smoke_build_evidence_status(smoke_report)}`",
         "",
     ]
@@ -262,6 +321,43 @@ def main():
         lines.extend([
             "",
             "Backend capability evidence is runtime-discovery evidence unless a row reports `runtime smoke passed`.",
+            "",
+        ])
+
+    if backend_runtime_plan:
+        lines.extend([
+            "### Backend runtime verification evidence",
+            "",
+            "| Metric | Count |",
+            "| --- | ---: |",
+        ])
+        for key in (
+            "Managed repositories",
+            "Runtime-applicable repositories",
+            "Core runtime-smoke seeded",
+            "Reference lanes ready",
+            "Runtime-smoke entrypoints",
+            "Repositories with models",
+            "Repositories with built examples",
+            "Repositories needing runtime-smoke plans",
+        ):
+            lines.append(f"| {key} | {backend_runtime_plan['metrics'].get(key, 0)} |")
+        lines.extend([
+            "",
+            "| Repository | Backends | Models | Built examples | Runtime smoke | Gate state |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ])
+        rows = backend_runtime_plan.get("rows", [])
+        if rows:
+            for row in rows:
+                lines.append(
+                    f"| {row['repository']} | {row['backends']} | {row['models']} | {row['built_examples']} | {row['runtime_smoke']} | {row['gate_state']} |"
+                )
+        else:
+            lines.append("| - | - | - | - | - | no backend runtime rows found |")
+        lines.extend([
+            "",
+            "Backend runtime verification evidence is planning evidence until a lane reports a runtime-smoke entry point and validation hook.",
             "",
         ])
 

@@ -216,6 +216,10 @@ $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-
 	Json = $true
 	SummaryOnly = $true
 }
+$steps += Invoke-ReadinessStep -Name "backend runtime verification plan" -ScriptPath (Join-Path $scriptRoot "plan-backend-runtime-verification.ps1") -Parameters @{
+	Json = $true
+	SummaryOnly = $true
+}
 $steps += Invoke-ReadinessStep -Name "doctor rollout plan" -ScriptPath (Join-Path $scriptRoot "plan-doctor-rollout.ps1") -Parameters @{
 	Json = $true
 	SummaryOnly = $true

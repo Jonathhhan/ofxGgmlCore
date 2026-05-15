@@ -77,10 +77,12 @@ Assert-FileContains (Join-Path $addonRoot "README.md") ".smoke-build-ci-report.j
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-agent-branch-cleanup.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rollout.bat -Json" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\list-models.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "backend capability evidence" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "backend runtime verification evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "smoke-build CI evidence" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\write-agent-instructions.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "Auto-Detected Completed Planning Guides" "coding agent work snapshot"
@@ -90,6 +92,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENT_WORK.md") "plan-rel
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "scripts\\release-candidate.bat" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "scripts\\plan-release-readiness.bat" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend capability evidence" "release readiness docs"
+Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend runtime verification planning" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "SmokeBuildCiReport" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "./scripts/release-candidate.sh" "addon family sync docs"
 Assert-FileContains (Join-Path $addonRoot "docs\addon-family-sync.md") "not a companion-addon" "addon family sync docs"
@@ -105,12 +108,14 @@ Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "s
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "repair-state Summary counts" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "compile-readiness Summary counts" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "top-level Summary counts for release evidence" "control plane next steps"
+Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-release-readiness.bat -Json -SummaryOnly" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\plan-release-readiness.bat -SmokeBuildCiReport <path>" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\CONTROL_PLANE_NEXT_STEPS.md") "scripts\\list-models.bat -Json -SummaryOnly" "control plane next steps"
 Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "structured JSON handoff" "operational validation status"
 Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "smoke-build CI writes a JSON report with top-level Summary counts" "operational validation status"
 Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "release-readiness evidence folds in smoke-build CI Summary counts" "operational validation status"
+Assert-FileContains (Join-Path $addonRoot "docs\operational-validation-status.md") "plans backend runtime verification evidence" "operational validation status"
 Assert-FileContains (Join-Path $addonRoot "docs\portal-index.md") "CODING_AGENT_WORK.md" "portal index"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_MANIFEST.json") "ofxGgmlCore" "ecosystem manifest"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "Do not edit addon source" "ecosystem agent docs"
@@ -128,6 +133,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "select-smo
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-of-smoke-build.bat -Json" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-release-readiness.bat -Json -SummaryOnly" "ecosystem agent docs"
+Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-backend-runtime-verification.bat -Json -SummaryOnly" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "plan-release-readiness.bat -SmokeBuildCiReport <path>" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "list-models.bat -Json -SummaryOnly" "ecosystem agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\ECOSYSTEM_AGENT.md") "check-smoke-build-target-preflight" "ecosystem agent docs"
@@ -312,6 +318,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking backend verification planning" `
 	-ScriptPath (Join-Path $scriptRoot "test-backend-verification-plan.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking backend runtime verification planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-backend-runtime-verification-plan.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking ecosystem readiness" `

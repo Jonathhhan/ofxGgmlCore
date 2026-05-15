@@ -86,7 +86,8 @@ cd ../ofxGgmlLlama
 | `scripts\check-smoke-build-target-postflight.bat` | Report generated project and git impact after acting on a smoke-build target |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
-| `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status, backend capability, smoke-build CI, and policy metadata |
+| `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |
+| `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status, backend capability/runtime planning, smoke-build CI, and policy metadata |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
@@ -167,12 +168,19 @@ Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor
 coverage `Summary` counts, follow-up commands, and per-repository actions.
 Use `scripts\plan-doctor-rollout.bat -Json -SummaryOnly` when another agent
 needs compact doctor coverage evidence without full script lists.
+Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` when
+another agent needs compact backend/runtime readiness evidence before choosing a
+model-backed runtime smoke target. It reports declared CPU/CUDA/Metal/Vulkan
+lanes, local model/build evidence, runtime-smoke entry points, and the current
+reference target (`ofxGgmlSam`) without running inference or mutating companion
+addons.
 Use `scripts\plan-release-readiness.bat` to generate a release-readiness score
-with workflow-status evidence, backend capability evidence, and smoke-build CI evidence
-when planning release gates. By default it writes to a temporary report path and
-folds in `docs\backend-capability-report.md` plus `.smoke-build-ci-report.json`
-when present; pass `-OutputPath` when you intentionally want to persist evidence
-in the repository.
+with workflow-status evidence, backend capability evidence, backend runtime verification evidence,
+and smoke-build CI evidence when planning release gates. By default it writes
+to a temporary report path and folds in
+`docs\backend-capability-report.md`, generated backend runtime planning, plus
+`.smoke-build-ci-report.json` when present; pass `-OutputPath` when you
+intentionally want to persist evidence in the repository.
 Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
 evidence `Summary` counts, generated report paths, evidence paths, and next
 commands.
