@@ -32,7 +32,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")
 	$commands.Add("scripts\fetch-smoke-build-ci-report.bat -Force")
-	$commands.Add("scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0")
+	$commands.Add("scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0")
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	$commands.Add("scripts\release-candidate.ps1")
 	return @($commands.ToArray())
