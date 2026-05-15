@@ -43,6 +43,8 @@ foreach ($property in @(
 	"ReferenceLaneReady",
 	"RuntimeSmokeEntrypoints",
 	"ValidatedRuntimeSmokeEntrypoints",
+	"InferenceSmokeEntrypoints",
+	"InferenceCheckedRepositories",
 	"RepositoriesWithModels",
 	"RepositoriesWithBuiltExamples",
 	"ExampleBuildGaps",
@@ -59,6 +61,9 @@ if ($parsed.Summary.ReferenceTarget -ne "ofxGgmlSam") {
 }
 if ($parsed.Summary.ValidatedRuntimeSmokeEntrypoints -lt 1) {
 	throw "backend runtime verification JSON did not count validated runtime-smoke entrypoints."
+}
+if ($parsed.Summary.InferenceSmokeEntrypoints -lt 0 -or $parsed.Summary.InferenceCheckedRepositories -lt 0) {
+	throw "backend runtime verification JSON reported negative inference-smoke counts."
 }
 if ($parsed.Summary.ExampleBuildGaps -lt 0) {
 	throw "backend runtime verification JSON reported a negative example build gap count."
@@ -79,8 +84,22 @@ if ($sam.Count -eq 0 -or !$sam.CudaDeclared -or $sam.GateState -ne "runtime-smok
 if ($sam.RuntimeSmokeEvidence -ne "available-and-validated") {
 	throw "backend runtime verification JSON did not expose validated SAM runtime smoke evidence."
 }
+$llamaRows = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlLlama" } | Select-Object -First 1)
+if ($llamaRows.Count -eq 0) {
+	throw "backend runtime verification JSON did not include Llama repository summary."
+}
+$llama = $llamaRows[0]
+if (!$llama.PSObject.Properties["InferenceSmokeEvidence"]) {
+	throw "backend runtime verification JSON did not expose Llama inference smoke evidence."
+}
+if ($llama.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "missing")) {
+	throw "backend runtime verification JSON reported an unexpected Llama inference smoke state."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "backend runtime verification JSON did not include release-readiness follow-up."
+}
+if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlLlama && scripts\run-llama-runtime-smoke.bat -Backend cpu -Json -SummaryOnly -OutputPath .llama-runtime-smoke.json") {
+	throw "backend runtime verification JSON did not include the Llama inference smoke evidence command."
 }
 if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun") {
 	throw "backend runtime verification JSON did not include the SAM3 runtime smoke follow-up."
