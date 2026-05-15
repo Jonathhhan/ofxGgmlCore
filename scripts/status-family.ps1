@@ -130,11 +130,45 @@ function Get-AddonStatus {
 	}
 }
 
+function Get-FamilyStatusSummary {
+	param([array]$Statuses)
+
+	$managed = @($Statuses | Where-Object { $_.Known })
+	$detected = @($Statuses | Where-Object { !$_.Known })
+	return [pscustomobject]@{
+		Repositories = @($Statuses).Count
+		ManagedRepositories = $managed.Count
+		PresentManagedRepositories = @($managed | Where-Object { $_.Present }).Count
+		ReadyManagedRepositories = @($managed | Where-Object { $_.Present -and $_.ValidateScript }).Count
+		DetectedReferenceRepositories = $detected.Count
+		ClassifiedReferenceRepositories = @($detected | Where-Object { $_.Classified }).Count
+		UnclassifiedDetectedRepositories = @($detected | Where-Object { !$_.Classified }).Count
+		DirtyManagedRepositories = @($managed | Where-Object { $_.DirtyCount -gt 0 }).Count
+		MissingManagedRepositories = @($managed | Where-Object { !$_.Present }).Count
+		MissingValidationEntrypoints = @($managed | Where-Object { $_.Present -and !$_.ValidateScript }).Count
+		MissingDoctorEntrypoints = @($managed | Where-Object { $_.Present -and !$_.DoctorScript }).Count
+		AgentWorkflowGuideCoverage = @($managed | Where-Object { $_.AgentWorkflowGuide }).Count
+	}
+}
+
+function Get-FamilyStatusNextCommands {
+	$commands = New-Object System.Collections.Generic.List[string]
+	$commands.Add("scripts\plan-ecosystem.bat -Json")
+	$commands.Add("scripts\audit-ecosystem.bat -Strict")
+	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+	$commands.Add("scripts\plan-coding-agent-work.bat -Json")
+	return @($commands.ToArray())
+}
+
 $statuses = @($family | ForEach-Object { Get-AddonStatus -Addon $_ })
+$summary = Get-FamilyStatusSummary -Statuses $statuses
+$nextCommands = Get-FamilyStatusNextCommands
 
 if ($Json) {
 	[pscustomobject]@{
 		Root = $addonsRoot
+		Summary = $summary
+		NextCommands = $nextCommands
 		Addons = $statuses
 	} | ConvertTo-Json -Depth 5
 } else {
