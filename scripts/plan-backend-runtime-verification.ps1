@@ -247,6 +247,11 @@ function Get-BackendRuntimeSummary {
 		$_.GateState -ne "reference-lane-ready-for-runtime-smoke" -and
 		$_.GateState -ne "runtime-smoke-entrypoint-present"
 	})
+	$exampleBuildGaps = @($Entries | Where-Object {
+		$_.GateState -ne "not-applicable" -and
+		$_.ExampleBuildEvidence.ExampleCount -gt 0 -and
+		$_.ExampleBuildEvidence.BuiltExamples -lt $_.ExampleBuildEvidence.ExampleCount
+	})
 
 	[pscustomobject]@{
 		ManagedRepositories = @($Entries).Count
@@ -254,8 +259,11 @@ function Get-BackendRuntimeSummary {
 		CoreRuntimeSmokeSeeded = @($Entries | Where-Object { $_.GateState -eq "core-runtime-smoke-seeded" }).Count
 		ReferenceLaneReady = @($Entries | Where-Object { $_.GateState -eq "reference-lane-ready-for-runtime-smoke" }).Count
 		RuntimeSmokeEntrypoints = @($Entries | Where-Object { $_.RuntimeSmokeEvidence.State -ne "missing" }).Count
+		ValidatedRuntimeSmokeEntrypoints = @($Entries | Where-Object { $_.RuntimeSmokeEvidence.State -eq "available-and-validated" }).Count
 		RepositoriesWithModels = @($Entries | Where-Object { $_.ModelEvidence.State -eq "available" }).Count
 		RepositoriesWithBuiltExamples = @($Entries | Where-Object { $_.ExampleBuildEvidence.BuiltExamples -gt 0 }).Count
+		ExampleBuildGaps = @($exampleBuildGaps).Count
+		RepositoriesMissingBuiltExamples = @($exampleBuildGaps | Sort-Object Priority, Repository | ForEach-Object { [string]$_.Repository })
 		NeedsRuntimeSmokePlan = @($Entries | Where-Object { $_.GateState -eq "needs-runtime-smoke-plan" }).Count
 		BlockingRepositories = @($blocking | Sort-Object Priority, Repository | ForEach-Object { [string]$_.Repository })
 		ReferenceTarget = "ofxGgmlSam"
@@ -331,11 +339,17 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("| Core runtime-smoke seeded | $($summary.CoreRuntimeSmokeSeeded) |")
 	$lines.Add("| Reference lanes ready | $($summary.ReferenceLaneReady) |")
 	$lines.Add("| Runtime-smoke entrypoints | $($summary.RuntimeSmokeEntrypoints) |")
+	$lines.Add("| Validated runtime-smoke entrypoints | $($summary.ValidatedRuntimeSmokeEntrypoints) |")
 	$lines.Add("| Repositories with models | $($summary.RepositoriesWithModels) |")
 	$lines.Add("| Repositories with built examples | $($summary.RepositoriesWithBuiltExamples) |")
+	$lines.Add("| Repositories missing built examples | $($summary.ExampleBuildGaps) |")
 	$lines.Add("| Repositories needing runtime-smoke plans | $($summary.NeedsRuntimeSmokePlan) |")
 	$lines.Add("")
 	$lines.Add(("Reference target: ``{0}``" -f $summary.ReferenceTarget))
+	if (@($summary.RepositoriesMissingBuiltExamples).Count -gt 0) {
+		$lines.Add("")
+		$lines.Add("Example build evidence gaps: $(@($summary.RepositoriesMissingBuiltExamples) -join ', ')")
+	}
 	$lines.Add("")
 	$lines.Add("## Repository Evidence")
 	$lines.Add("")
