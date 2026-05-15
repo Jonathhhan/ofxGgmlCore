@@ -51,9 +51,10 @@ repository, run:
 scripts\plan-local-codex.bat -Json -SummaryOnly
 ```
 
-The planner probes only localhost OpenAI-compatible `/v1/models` endpoints and
-reads local Codex config candidates. It does not start a server, write config,
-or change addon runtime behavior.
+The planner probes only localhost OpenAI-compatible `/v1/models` endpoints,
+reads local Codex config candidates, and emits structured recommended actions
+for the detected readiness state. It does not start a server, write config, or
+change addon runtime behavior.
 
 ## Codex Provider Sketch
 
