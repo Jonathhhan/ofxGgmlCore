@@ -57,7 +57,7 @@ int main(int argc, char ** argv) {
     const auto setupResult = runtime.setup(settings);
     if (!setupResult) {
         std::cerr << ofxGgmlGetBackendName(requestedBackend)
-                  << " backend initialization failed: " << setupResult.error << std::endl;
+                  << " backend initialization failed: " << setupResult.error().message << std::endl;
         if (isOptionalBackend(requestedBackend) && !requireBackend) {
             std::cout << "Optional backend unavailable; skipping inference smoke test" << std::endl;
             return EXIT_SUCCESS;
@@ -87,7 +87,7 @@ int main(int argc, char ** argv) {
 
     const auto allocateResult = runtime.allocate(graph);
     if (!allocateResult) {
-        std::cerr << "Graph allocation failed: " << allocateResult.error << std::endl;
+        std::cerr << "Graph allocation failed: " << allocateResult.error().message << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -111,7 +111,7 @@ int main(int argc, char ** argv) {
     std::array<float, 4> actual {};
     const auto getResult = runtime.getData(out, actual.data(), sizeof(float) * actual.size());
     if (!getResult) {
-        std::cerr << "Output tensor readback failed: " << getResult.error << std::endl;
+        std::cerr << "Output tensor readback failed: " << getResult.error().message << std::endl;
         return EXIT_FAILURE;
     }
 

@@ -36,6 +36,11 @@ Assert-FileContains `
 	-Label "backend capability report"
 
 Assert-FileContains `
+	-Path (Join-Path $addonRoot "docs\backend-capability-report.md") `
+	-Pattern "build-runtime-smoke.ps1" `
+	-Label "backend capability report"
+
+Assert-FileContains `
 	-Path (Join-Path $addonRoot "docs\backend-verification-plan.md") `
 	-Pattern "runtime-checked" `
 	-Label "backend verification plan"
