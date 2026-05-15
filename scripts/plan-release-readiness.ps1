@@ -25,6 +25,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\validate-local.bat")
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0")
 	$commands.Add("scripts\plan-release-readiness.bat -Json")
 	$commands.Add("scripts\release-candidate.ps1")

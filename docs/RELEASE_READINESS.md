@@ -74,6 +74,9 @@ Before creating the `1.0.1` tag:
 - `docs/CORE_CONTRACT.md` matches the addon boundary.
 - `scripts\plan-release-readiness.bat` has no required workflow blockers.
 - smoke-build CI evidence reports no failed stages, targets, or commands.
+- `scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly` has been reviewed
+  so release handoffs see stale Codex/Copilot/Hermes branch counts without
+  deleting branches automatically.
 - backend capability evidence is present or the release notes explicitly state
   why runtime evidence is unavailable.
 - generated binaries, model files, caches, and project files are not staged.
