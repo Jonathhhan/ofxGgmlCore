@@ -72,6 +72,16 @@ scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport
 The fetch path uses `GITHUB_TOKEN` or `-Token` and writes fetched evidence to a
 temporary file unless `scripts\fetch-smoke-build-ci-report.bat` is run directly.
 
+Use the strict assertion gate before tagging:
+
+```bat
+scripts\assert-release-readiness.bat -SmokeBuildCiReport .smoke-build-ci-report.json
+```
+
+That command fails when workflow evidence has required blockers, backend
+capability/runtime evidence is missing, smoke-build CI evidence is missing, or
+the smoke-build CI report has failed targets or commands.
+
 The focused Core example build wrapper remains available when a smaller check is
 needed:
 
@@ -93,6 +103,7 @@ Before creating the `1.0.1` tag:
 - README setup and validation commands match the actual scripts.
 - `docs/CORE_CONTRACT.md` matches the addon boundary.
 - `scripts\plan-release-readiness.bat` has no required workflow blockers.
+- `scripts\assert-release-readiness.bat -SmokeBuildCiReport .smoke-build-ci-report.json` passes.
 - smoke-build CI evidence reports no failed stages, targets, or commands.
 - `scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly` has been reviewed
   so release handoffs see stale Codex/Copilot/Hermes branch counts without

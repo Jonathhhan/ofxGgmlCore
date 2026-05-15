@@ -89,6 +89,7 @@ cd ../ofxGgmlLlama
 | `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |
 | `scripts\fetch-smoke-build-ci-report.bat` | Download the latest uploaded smoke-build CI JSON report artifact for release-readiness evidence |
 | `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status, backend capability/runtime planning, smoke-build CI, and policy metadata |
+| `scripts\assert-release-readiness.bat` | Fail the release gate when required release-readiness evidence is missing or blocked |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
 | `scripts\list-models.bat` | List nearby GGUF files for companion workflows |
@@ -193,6 +194,9 @@ evidence `Summary` counts, generated report paths, evidence paths, and next
 commands.
 Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent
 needs compact release evidence summaries without generated report paths.
+Use `scripts\assert-release-readiness.bat -SmokeBuildCiReport <path>` when a
+release gate should fail on missing workflow/backend/runtime evidence, workflow
+blockers, or failed smoke-build CI evidence.
 Use `scripts\list-models.bat -Json -SummaryOnly` when another agent needs
 compact model discovery `Summary` counts and search-directory existence before
 planning model-backed smoke tests. Re-run without `-SummaryOnly` when nearby
