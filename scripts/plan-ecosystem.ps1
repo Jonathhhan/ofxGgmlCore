@@ -114,6 +114,7 @@ function Get-SuggestedValidationCommands {
 	@(
 		"scripts\write-agent-instructions.bat -Check",
 		"scripts\audit-ecosystem.bat -Strict",
+		"scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly",
 		"scripts\plan-ecosystem.bat",
 		"scripts\plan-ecosystem.bat -Json -SummaryOnly",
 		"scripts\plan-coding-agent-work.bat",

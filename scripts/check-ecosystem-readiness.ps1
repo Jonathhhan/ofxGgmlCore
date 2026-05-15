@@ -164,6 +164,8 @@ $steps += Invoke-ReadinessStep -Name "agent instructions current" -ScriptPath (J
 }
 $steps += Invoke-ReadinessStep -Name "ecosystem audit strict" -ScriptPath (Join-Path $scriptRoot "audit-ecosystem.ps1") -Parameters @{
 	Strict = $true
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1")
 $steps += Invoke-ReadinessStep -Name "structured ecosystem plan" -ScriptPath (Join-Path $scriptRoot "plan-ecosystem.ps1") -Parameters @{

@@ -155,7 +155,7 @@ function Get-FamilyStatusSummary {
 function Get-FamilyStatusNextCommands {
 	$commands = New-Object System.Collections.Generic.List[string]
 	$commands.Add("scripts\plan-ecosystem.bat -Json -SummaryOnly")
-	$commands.Add("scripts\audit-ecosystem.bat -Strict")
+	$commands.Add("scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly")
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-coding-agent-work.bat -Json")

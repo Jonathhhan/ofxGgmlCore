@@ -56,6 +56,9 @@ if ($parsed.Summary.BlockedManagedRepositories -ne 0 -or @($parsed.Summary.Block
 if (!$parsed.Repositories -or $parsed.Repositories.Count -lt 11) {
 	throw "ecosystem audit JSON output did not include repositories."
 }
+if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -lt 11) {
+	throw "ecosystem audit JSON output did not include compact repository summaries."
+}
 
 $core = @($parsed.Repositories | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
 if (!$core -or $core.Instructions -ne "complete") {
@@ -68,4 +71,26 @@ if ($core.CopilotEcosystemInstructions -ne "yes") {
 & $auditScript -Strict | Out-Null
 if (!$?) {
 	throw "audit-ecosystem.ps1 -Strict failed."
+}
+
+$summaryJsonOutput = & $auditScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "audit-ecosystem.ps1 -Json -SummaryOnly failed."
+}
+
+$summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$summaryParsed.SummaryOnly) {
+	throw "ecosystem audit summary JSON did not report SummaryOnly."
+}
+if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -lt 11) {
+	throw "ecosystem audit summary JSON did not retain compact summary evidence."
+}
+if ($summaryParsed.PSObject.Properties["Repositories"]) {
+	throw "ecosystem audit summary JSON should omit full repository audit rows."
+}
+$summaryCore = @($summaryParsed.RepositorySummaries | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
+foreach ($property in @("Name", "Known", "Present", "Instructions", "CodingAgentWorkflow", "Validation", "ReleaseCandidate", "DirtyCount", "Action")) {
+	if (!$summaryCore[0].PSObject.Properties[$property]) {
+		throw "ecosystem audit summary JSON repository summary did not include $property."
+	}
 }

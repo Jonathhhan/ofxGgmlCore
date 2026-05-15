@@ -98,6 +98,8 @@ same `Guardrails` list shown in Markdown.
 Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact audit
 `Summary` counts plus per-repository readiness actions before deciding whether
 to run the broader readiness pass.
+Use `scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly` when another agent
+needs blocker counts and compact audit actions without full repository rows.
 Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor
 coverage `Summary` counts, follow-up commands, and per-repository actions.
 

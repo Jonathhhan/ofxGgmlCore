@@ -10,6 +10,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\status-family.bat -Json -SummaryOnly` when another agent needs compact inventory evidence without full addon records.
 - Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work; it now includes structured agent handoff checks and a deterministic release-readiness planning pass.
 - Use `scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly` when another agent needs compact readiness evidence without successful step logs.
+- Use `scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly` when another agent needs compact audit blocker evidence without full repository rows.
 - Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor coverage summary counts and next commands.
 - Use `scripts\plan-ecosystem.bat -Json` when another agent needs summary counts, planning priorities, guardrails, smoke-build lifecycle commands, and validation commands as structured data.
 - Use `scripts\plan-ecosystem.bat -Json -SummaryOnly` when another agent needs compact ecosystem summary evidence without full addon records.

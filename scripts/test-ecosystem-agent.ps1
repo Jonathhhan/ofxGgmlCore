@@ -76,6 +76,9 @@ if (@($parsed.SmokeBuildLifecycle) -notcontains "scripts\check-smoke-build-targe
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the branch cleanup validation command."
 }
+if (@($parsed.SuggestedValidation) -notcontains "scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly") {
+	throw "ecosystem agent JSON output did not include the compact strict audit validation command."
+}
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-ecosystem.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact ecosystem plan validation command."
 }

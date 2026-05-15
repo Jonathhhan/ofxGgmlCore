@@ -64,6 +64,21 @@ if ($workflowGuideStep.Count -eq 0 -or $workflowGuideStep[0].State -ne "OK") {
 	throw "ecosystem readiness JSON did not report workflow guide coverage as OK."
 }
 
+$auditStep = @($parsed.Steps | Where-Object { $_.Name -eq "ecosystem audit strict" } | Select-Object -First 1)
+if ($auditStep.Count -eq 0 -or $auditStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report ecosystem audit strict as OK."
+}
+if (!$auditStep[0].Output -or @($auditStep[0].Output).Count -eq 0) {
+	throw "ecosystem readiness JSON did not retain output for ecosystem audit strict."
+}
+$auditJson = (@($auditStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$auditJson.SummaryOnly) {
+	throw "ecosystem readiness strict audit should use SummaryOnly output."
+}
+if (!$auditJson.RepositorySummaries -or $auditJson.PSObject.Properties["Repositories"]) {
+	throw "ecosystem readiness strict audit did not use compact repository summaries."
+}
+
 foreach ($stepName in @("structured ecosystem plan", "structured coding agent work queue")) {
 	$step = @($parsed.Steps | Where-Object { $_.Name -eq $stepName } | Select-Object -First 1)
 	if ($step.Count -eq 0 -or $step[0].State -ne "OK") {

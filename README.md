@@ -158,6 +158,9 @@ Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact
 audit `Summary` counts plus per-repository readiness actions.
+Use `scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly` when another
+agent needs blocker counts and compact audit actions without full repository
+rows.
 Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
 need a focused doctor entry point, wrapper, smoke test, or validation hook.
 Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor
