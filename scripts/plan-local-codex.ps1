@@ -243,13 +243,14 @@ function Get-RecommendedActions {
 		}
 		"local-provider-missing" {
 			$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:8080/v1" }
+			$model = if ($firstReachable.Count -gt 0 -and @($firstReachable[0].Models).Count -gt 0) { [string]@($firstReachable[0].Models)[0] } else { "<model-id-from-v1-models>" }
 			$configPath = if ($config.Count -gt 0) { [string]$config[0].Path } else { "%USERPROFILE%\.codex\config.toml" }
 			$actions.Add((New-LocalCodexAction `
 				-Priority "P1" `
 				-State $ReadinessState `
 				-Action "Add a local Codex provider/profile that points at the reachable localhost OpenAI-compatible endpoint." `
 				-Rationale "A server is reachable, but the checked Codex config does not expose a local provider endpoint." `
-				-Command "Edit $configPath and add a provider base_url for $endpoint."))
+				-Command "Edit $configPath and add a provider base_url for $endpoint with wire_api responses and model $model."))
 		}
 		"server-missing" {
 			$endpoint = if (@($Endpoints).Count -gt 0) { [string]@($Endpoints)[0].BaseUrl } else { "http://127.0.0.1:8080/v1" }
@@ -262,12 +263,13 @@ function Get-RecommendedActions {
 		}
 		"config-missing" {
 			$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:8080/v1" }
+			$model = if ($firstReachable.Count -gt 0 -and @($firstReachable[0].Models).Count -gt 0) { [string]@($firstReachable[0].Models)[0] } else { "<model-id-from-v1-models>" }
 			$actions.Add((New-LocalCodexAction `
 				-Priority "P1" `
 				-State $ReadinessState `
 				-Action "Create a Codex config with a local provider/profile for the reachable endpoint." `
 				-Rationale "A localhost model endpoint is reachable, but no Codex config file was found in the checked locations." `
-				-Command "Create %USERPROFILE%\.codex\config.toml with a provider base_url for $endpoint."))
+				-Command "Create %USERPROFILE%\.codex\config.toml with a provider base_url for $endpoint, wire_api responses, and model $model."))
 		}
 		default {
 			$actions.Add((New-LocalCodexAction `

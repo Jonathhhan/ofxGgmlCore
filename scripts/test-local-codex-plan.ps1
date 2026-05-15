@@ -12,8 +12,7 @@ Set-Content -LiteralPath $configPath -Value @"
 [model_providers.local_llama]
 name = "local-llama"
 base_url = "http://127.0.0.1:9/v1"
-env_key = "OFXGGML_TEST_LOCAL_LLAMA_KEY"
-wire_api = "chat"
+wire_api = "responses"
 
 [profiles.ofxggml_local]
 model = "local-coder"
@@ -66,6 +65,9 @@ try {
 	}
 	if ($parsed.Summary.ConfigFilesFound -ne 1 -or $parsed.Summary.ConfigFilesWithLocalEndpoints -ne 1) {
 		throw "local Codex plan did not detect the test config local endpoint."
+	}
+	if ($parsed.Summary.EnvKeysDeclared -ne 0) {
+		throw "local Codex plan unexpectedly detected env keys for the unauthenticated test config."
 	}
 	if ($parsed.Summary.ReachableEndpoints -ne 0) {
 		throw "local Codex plan unexpectedly reached the closed test endpoint."
