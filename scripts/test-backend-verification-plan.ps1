@@ -45,4 +45,14 @@ Assert-FileContains `
 	-Pattern "runtime-checked" `
 	-Label "backend verification plan"
 
+Assert-FileContains `
+	-Path (Join-Path $addonRoot "docs\backend-verification-plan.md") `
+	-Pattern "graph-smoke-checked" `
+	-Label "backend verification plan"
+
+Assert-FileContains `
+	-Path (Join-Path $addonRoot "docs\backend-verification-plan.md") `
+	-Pattern "backend-runtime-check" `
+	-Label "backend verification plan"
+
 Write-Host "Backend verification planning coverage passed"

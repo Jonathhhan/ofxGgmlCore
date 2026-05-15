@@ -15,14 +15,15 @@ The ecosystem currently provides:
 - live workflow observability scaffolding
 - workflow action summaries folded into release-readiness evidence
 - multi-platform smoke-build scaffolding
+- Core CPU backend runtime smoke evidence from the reusable `backend-runtime-check` workflow
 
 ## Current limitations
 
 Current release gates do not yet:
 
 - validate cross-platform openFrameworks compilation and execution (Windows only in current CI smoke loop)
-- validate runtime inference
-- validate CUDA/Metal/Vulkan runtime availability
+- validate model-backed runtime inference
+- validate CUDA/Metal/Vulkan runtime availability in CI
 - fully enforce build failures from the smoke-build CI control-plane in the release approval decision
 
 ## Planned release-gating phases
@@ -60,10 +61,10 @@ Compilation gates:
 
 Runtime gates:
 
-- runtime initialization
-- backend verification
-- lightweight inference startup
-- runtime smoke tests
+- runtime initialization, starting with Core CPU backend smoke evidence
+- backend verification for optional GPU backends when suitable runners are available
+- lightweight graph smoke tests
+- model-backed inference startup
 
 ## Long-term direction
 
