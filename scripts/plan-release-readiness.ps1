@@ -34,7 +34,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\fetch-smoke-build-ci-report.bat -Force")
 	$commands.Add("scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0")
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
-	$commands.Add("scripts\release-candidate.ps1")
+	$commands.Add("scripts\release-candidate.bat")
 	return @($commands.ToArray())
 }
 
