@@ -155,6 +155,9 @@ if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
 if (@($parsed.NextCommands) -notcontains "scripts\check-ecosystem-readiness.bat -SkipDoctorTests") {
 	throw "release readiness JSON NextCommands did not include ecosystem readiness check."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
+	throw "release readiness JSON NextCommands did not include compact branch cleanup planning."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0") {
 	throw "release readiness JSON NextCommands did not include smoke-build CI report generation."
 }
