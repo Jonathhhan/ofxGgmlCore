@@ -30,7 +30,7 @@ cxx="${CXX:-c++}"
   "$root_dir/libs/ggml/lib/libggml.a" \
   "$root_dir/libs/ggml/lib/libggml-base.a" \
   "$root_dir/libs/ggml/lib/libggml-cpu.a" \
-  -lpthread -ldl \
+  -fopenmp -lpthread -ldl \
   -o "$output"
 
 "$output" --backend cpu --require-backend
