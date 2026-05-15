@@ -177,9 +177,17 @@ guardrails as structured data.
 Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project`
 before running projectGenerator to confirm the selected repo is clean and the
 target still matches filesystem state.
+Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json`
+when another agent needs readiness `Summary` counts and gated next commands.
 Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>`
 after running projectGenerator to report generated files, git impact, and next
 validation without staging anything.
+Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json`
+when another agent needs completion `Summary` counts, generated-file counts,
+and review counts.
+Use `scripts\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json`
+when another agent needs compile-readiness `Summary` counts and focused next
+commands.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.

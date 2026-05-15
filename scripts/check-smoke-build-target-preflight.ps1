@@ -166,11 +166,25 @@ if ($readyCommands.Count -gt 0) {
 	$nextCommands = @("# Preflight is blocked. Fix BLOCKED checks before running projectGenerator.") + $blockedCommands
 }
 $safetyNote = "Run projectGenerator commands only when every preflight check is OK. Use postflight immediately after acting on a target."
+$readyTargets = @($preflights | Where-Object { $_.Ready })
+$summary = [pscustomobject]@{
+	Stage = $Stage
+	RequestedTargets = $First
+	SelectedTargets = $preflights.Count
+	ReadyTargets = $readyTargets.Count
+	BlockedTargets = $preflights.Count - $readyTargets.Count
+	ReadyCommands = $readyCommands.Count
+	PostflightCommands = $postflightCommands.Count
+	NextCommands = $nextCommands.Count
+	HasSelection = $preflights.Count -gt 0
+	ProjectGeneratorDetected = ![string]::IsNullOrWhiteSpace([string]$plan.ProjectGeneratorPath)
+}
 
 if ($Json) {
 	[pscustomobject]@{
 		Root = $plan.Root
 		Stage = $Stage
+		Summary = $summary
 		Preflights = $preflights
 		ReadyCommands = $readyCommands
 		PostflightCommands = $postflightCommands
