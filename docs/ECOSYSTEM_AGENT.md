@@ -134,6 +134,9 @@ On macOS/Linux:
 ./scripts/build-smoke-example.sh -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 ```
 
+Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke-build
+`Summary` counts, next commands, records, and target queues before choosing a
+focused target.
 Run projectGenerator only after preflight reports the selected target is ready.
 After acting on a target, run postflight with the selected repository and
 example if needed. When postflight reports missing Visual Studio addon wiring,
