@@ -1,5 +1,6 @@
 param(
 	[switch]$Json,
+	[switch]$SummaryOnly,
 	[switch]$Strict
 )
 
@@ -78,19 +79,30 @@ $summary = [pscustomobject]@{
 	CoreRequiresModel = $false
 }
 $nextCommands = New-Object System.Collections.Generic.List[string]
-$nextCommands.Add("scripts\list-models.bat -Json")
+$nextCommands.Add("scripts\list-models.bat -Json -SummaryOnly")
 $nextCommands.Add("scripts\validate-local.bat")
 $nextCommands.Add("cd ..\ofxGgmlLlama && scripts\list-models.bat")
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [ordered]@{
 		Root = $addonRoot.Path
-		SearchDirectories = @($directories)
-		ExistingSearchDirectories = $existingDirectories
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		NextCommands = @($nextCommands.ToArray())
-		Models = $modelArray
-	} | ConvertTo-Json -Depth 4
+	}
+	if (!$SummaryOnly) {
+		$result.SearchDirectories = @($directories)
+		$result.ExistingSearchDirectories = $existingDirectories
+		$result.Models = $modelArray
+	} else {
+		$result.SearchDirectorySummaries = @($directories | ForEach-Object {
+			[pscustomobject]@{
+				Path = [string]$_
+				Exists = Test-Path -LiteralPath $_ -PathType Container
+			}
+		})
+	}
+	[pscustomobject]$result | ConvertTo-Json -Depth 4
 } else {
 	Write-Host "ofxGgmlCore model search"
 	Write-Host "Root  $addonRoot"
