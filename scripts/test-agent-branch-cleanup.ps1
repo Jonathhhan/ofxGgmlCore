@@ -20,11 +20,11 @@ foreach ($expected in @(
 	"Remote agent branches",
 	"Repositories with agent branches",
 	"## Branch Inventory",
-	"Inventory includes merged and unmerged matching branches.",
+	"squash-merged branches whose patches are equivalent",
 	"## Candidates",
+	"Integration",
 	"## Next Commands",
 	"scripts\plan-agent-branch-cleanup.bat -Fetch",
-	"# No delete commands were generated.",
 	"This script only writes a plan"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
@@ -59,6 +59,18 @@ foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "Repositori
 }
 if (!$parsed.PSObject.Properties["Inventory"]) {
 	throw "agent branch cleanup JSON output did not include Inventory."
+}
+if (@($parsed.Candidates).Count -gt 0) {
+	$candidate = $parsed.Candidates | Select-Object -First 1
+	if (!$candidate.PSObject.Properties["Integration"]) {
+		throw "agent branch cleanup candidate did not include Integration."
+	}
+	$patchEquivalentLocal = @($parsed.Candidates | Where-Object {
+			$_.Type -eq "local" -and $_.Integration -eq "patch-equivalent" -and ![string]::IsNullOrWhiteSpace([string]$_.DeleteCommand)
+		} | Select-Object -First 1)
+	if ($patchEquivalentLocal.Count -gt 0 -and [string]$patchEquivalentLocal[0].DeleteCommand -notmatch [regex]::Escape(" branch -D ")) {
+		throw "patch-equivalent local cleanup candidate should use git branch -D."
+	}
 }
 if (!$parsed.NextCommands -or $parsed.NextCommands.Count -eq 0) {
 	throw "agent branch cleanup JSON output did not include NextCommands."

@@ -64,11 +64,13 @@ function ConvertTo-DeleteCommand {
 	param(
 		[string]$Repository,
 		[string]$Type,
-		[string]$Branch
+		[string]$Branch,
+		[switch]$Force
 	)
 
 	if ($Type -eq "local") {
-		return "git -C `"$Repository`" branch -d $Branch"
+		$flag = if ($Force) { "-D" } else { "-d" }
+		return "git -C `"$Repository`" branch $flag $Branch"
 	}
 
 	$parts = $Branch -split "/", 2
@@ -76,6 +78,27 @@ function ConvertTo-DeleteCommand {
 		return ""
 	}
 	return "git -C `"$Repository`" push $($parts[0]) --delete $($parts[1])"
+}
+
+function Test-BranchPatchEquivalent {
+	param(
+		[string]$Repository,
+		[string]$Upstream,
+		[string]$Branch
+	)
+
+	if ([string]::IsNullOrWhiteSpace($Upstream) -or [string]::IsNullOrWhiteSpace($Branch)) {
+		return $false
+	}
+
+	$cherry = Invoke-Git -Repository $Repository -Arguments @("cherry", $Upstream, $Branch)
+	$lines = @($cherry -split "`n" | Where-Object { ![string]::IsNullOrWhiteSpace($_) })
+	if ($lines.Count -eq 0) {
+		return $false
+	}
+
+	$remaining = @($lines | Where-Object { !$_.Trim().StartsWith("-") })
+	return $remaining.Count -eq 0
 }
 
 function Get-MergedBranches {
@@ -94,10 +117,20 @@ function Get-MergedBranches {
 	$candidates = @()
 
 	if (![string]::IsNullOrWhiteSpace($defaultBranch.Local)) {
-		$localBranches = Invoke-Git -Repository $repo -Arguments @("branch", "--format", "%(refname:short)", "--merged", $defaultBranch.Local)
+		$mergedLocalBranches = @(
+			(Invoke-Git -Repository $repo -Arguments @("branch", "--format", "%(refname:short)", "--merged", $defaultBranch.Local)) -split "`n" |
+				Where-Object { ![string]::IsNullOrWhiteSpace($_) } |
+				ForEach-Object { $_.Trim() }
+		)
+		$localBranches = Invoke-Git -Repository $repo -Arguments @("branch", "--format", "%(refname:short)")
 		foreach ($branch in @($localBranches -split "`n" | Where-Object { $_ })) {
 			$branch = $branch.Trim()
 			if ($branch -eq $defaultBranch.Local -or $branch -notlike $BranchPattern) {
+				continue
+			}
+			$directlyMerged = $mergedLocalBranches -contains $branch
+			$patchEquivalent = !$directlyMerged -and (Test-BranchPatchEquivalent -Repository $repo -Upstream $defaultBranch.Local -Branch $branch)
+			if (!$directlyMerged -and !$patchEquivalent) {
 				continue
 			}
 			$isCurrent = $branch -eq $current
@@ -107,18 +140,29 @@ function Get-MergedBranches {
 				Type = "local"
 				Branch = $branch
 				DefaultBranch = [string]$defaultBranch.Local
+				Integration = if ($directlyMerged) { "merged" } else { "patch-equivalent" }
 				Current = $isCurrent
-				Action = if ($isCurrent) { "skip current local branch" } else { "delete merged local branch" }
-				DeleteCommand = if ($isCurrent) { "" } else { ConvertTo-DeleteCommand -Repository $repo -Type "local" -Branch $branch }
+				Action = if ($isCurrent) { "skip current local branch" } else { "delete integrated local branch" }
+				DeleteCommand = if ($isCurrent) { "" } else { ConvertTo-DeleteCommand -Repository $repo -Type "local" -Branch $branch -Force:$patchEquivalent }
 			}
 		}
 	}
 
 	if (![string]::IsNullOrWhiteSpace($defaultBranch.Remote)) {
-		$remoteBranches = Invoke-Git -Repository $repo -Arguments @("branch", "-r", "--format", "%(refname:short)", "--merged", $defaultBranch.Remote)
+		$mergedRemoteBranches = @(
+			(Invoke-Git -Repository $repo -Arguments @("branch", "-r", "--format", "%(refname:short)", "--merged", $defaultBranch.Remote)) -split "`n" |
+				Where-Object { ![string]::IsNullOrWhiteSpace($_) } |
+				ForEach-Object { $_.Trim() }
+		)
+		$remoteBranches = Invoke-Git -Repository $repo -Arguments @("branch", "-r", "--format", "%(refname:short)")
 		foreach ($branch in @($remoteBranches -split "`n" | Where-Object { $_ })) {
 			$branch = $branch.Trim()
 			if ($branch -eq $defaultBranch.Remote -or $branch -eq "origin/HEAD" -or $branch -notlike "*/$BranchPattern") {
+				continue
+			}
+			$directlyMerged = $mergedRemoteBranches -contains $branch
+			$patchEquivalent = !$directlyMerged -and (Test-BranchPatchEquivalent -Repository $repo -Upstream $defaultBranch.Remote -Branch $branch)
+			if (!$directlyMerged -and !$patchEquivalent) {
 				continue
 			}
 			$candidates += [pscustomobject]@{
@@ -127,8 +171,9 @@ function Get-MergedBranches {
 				Type = "remote"
 				Branch = $branch
 				DefaultBranch = [string]$defaultBranch.Remote
+				Integration = if ($directlyMerged) { "merged" } else { "patch-equivalent" }
 				Current = $false
-				Action = "delete merged remote branch"
+				Action = "delete integrated remote branch"
 				DeleteCommand = ConvertTo-DeleteCommand -Repository $repo -Type "remote" -Branch $branch
 			}
 		}
@@ -236,7 +281,7 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("")
 	$lines.Add("## Branch Inventory")
 	$lines.Add("")
-	$lines.Add("Inventory includes merged and unmerged matching branches. The candidate table only lists branches Git reports as merged into the default branch.")
+	$lines.Add("Inventory includes merged and unmerged matching branches. The candidate table lists branches Git reports as merged into the default branch and squash-merged branches whose patches are equivalent to default.")
 	$lines.Add("")
 	if ($Inventory.Count -eq 0) {
 		$lines.Add("No matching agent branches are present in managed repositories.")
@@ -252,13 +297,13 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("## Candidates")
 	$lines.Add("")
 	if ($Candidates.Count -eq 0) {
-		$lines.Add("No merged agent branches were found.")
+		$lines.Add("No integrated agent branches were found.")
 	} else {
-		$lines.Add("| Repository | Type | Branch | Default | Action | Delete command |")
-		$lines.Add("| --- | --- | --- | --- | --- | --- |")
+		$lines.Add("| Repository | Type | Branch | Default | Integration | Action | Delete command |")
+		$lines.Add("| --- | --- | --- | --- | --- | --- | --- |")
 		foreach ($candidate in $Candidates) {
 			$command = if ([string]::IsNullOrWhiteSpace($candidate.DeleteCommand)) { "" } else { $candidate.DeleteCommand.Replace("|", "\|") }
-			$lines.Add(("| {0} | {1} | ``{2}`` | ``{3}`` | {4} | ``{5}`` |" -f $candidate.Repository, $candidate.Type, $candidate.Branch, $candidate.DefaultBranch, $candidate.Action, $command))
+			$lines.Add(("| {0} | {1} | ``{2}`` | ``{3}`` | {4} | {5} | ``{6}`` |" -f $candidate.Repository, $candidate.Type, $candidate.Branch, $candidate.DefaultBranch, $candidate.Integration, $candidate.Action, $command))
 		}
 	}
 	$lines.Add("")
