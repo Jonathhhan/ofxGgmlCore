@@ -27,6 +27,8 @@ The ecosystem currently provides:
 - generic focused smoke-example build handoff for generated projects that pass postflight
 - backend runtime smoke execution through the reusable `backend-runtime-check` workflow
 - CPU backend initialization plus lightweight ggml graph compute/readback smoke on Windows and Ubuntu CI
+- lane-owned runtime-smoke entrypoints across all managed runtime lanes
+- backend runtime verification planning that reports managed runtime lanes as `available-and-validated`
 
 ## Current agent readiness
 
@@ -46,7 +48,9 @@ scripts\check-smoke-build-target-postflight.bat -Stage generate-project
 scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 scripts\plan-smoke-build-compile.bat -Stage compile-example
 scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
-scripts\plan-release-readiness.bat -SkipWorkflowStatus
+scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly
+scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0
+scripts\plan-release-readiness.bat -Json -SummaryOnly
 scripts\build-runtime-smoke.bat -Backend cpu
 ```
 
@@ -76,6 +80,8 @@ The readiness pass currently verifies:
 - release-readiness evidence folds in smoke-build CI Summary counts when available
 - backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
+- backend runtime verification reports `ofxGgmlLlama`, `ofxGgmlSam`, `ofxGgmlAudio`, `ofxGgmlMusic`, `ofxGgmlDiffusion`, `ofxGgmlVision`, `ofxGgmlVideo`, `ofxGgmlRag`, and `ofxGgmlAgents` as `available-and-validated`
+- release-readiness planning identifies missing smoke-build CI report evidence when `.smoke-build-ci-report.json` is absent
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs and emits explicit next commands in Markdown, full JSON, and compact summary JSON for readiness handoffs
 
@@ -122,15 +128,18 @@ The current smoke-build workflow:
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - validates CPU backend runtime initialization and lightweight graph smoke in CI for Core runtime changes
 - plans backend runtime verification evidence from Core with compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, and reference-lane readiness summaries
+- uses lane-owned runtime-smoke evidence across all managed runtime lanes as release-readiness handoff material
+- still needs a smoke-build CI report artifact before generated-project compile evidence can be treated as release CI truth
 - does not yet validate CUDA/Metal/Vulkan runtimes in CI
 - does not yet validate model-backed runtime inference
 
 ## Next operational milestones
 
 - Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
-- SAM3 CPU/CUDA runtime-smoke handoff from the `ofxGgmlSam` reference lane
+- generate and persist smoke-build CI evidence for release readiness with `scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0`
+- keep lane-owned runtime-smoke evidence fresh as model-backed and GPU-backed lanes mature
 - GPU backend runtime verification from suitable runners
-- inference smoke tests
+- model-backed inference smoke tests
 - release gating from CI truth
 - compatibility enforcement from actual builds
 - recurring review of the generated coding-agent work queue
