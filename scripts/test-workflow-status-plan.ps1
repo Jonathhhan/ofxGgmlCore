@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$scriptPath = Join-Path $scriptRoot "generate-workflow-status-plan.py"
+$scriptPath = Join-Path $scriptRoot "generate-workflow-status-plan.bat"
 $testId = [guid]::NewGuid().ToString("N")
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-plan-$testId.md"
 $repoOutputPath = Join-Path $scriptRoot "..\docs\workflow-status-plan.md"
@@ -13,9 +13,9 @@ if (Test-Path -LiteralPath $repoOutputPath) {
 	throw "workflow status plan test should not start with generated repo output: $repoOutputPath"
 }
 
-python $scriptPath --output $outputPath
-if (!$?) {
-	throw "generate-workflow-status-plan.py failed."
+& $scriptPath --output $outputPath
+if ($LASTEXITCODE -ne 0) {
+	throw "generate-workflow-status-plan.bat failed."
 }
 
 if (!(Test-Path -LiteralPath $outputPath -PathType Leaf)) {
@@ -31,7 +31,7 @@ foreach ($expected in @(
 	"Expected workflow",
 	"Scope",
 	"Core release control",
-	"scripts\fetch-workflow-status.py --stale-days 30",
+	"scripts\fetch-workflow-status.bat --stale-days 30",
 	"Live report path",
 	"plan-release-readiness.bat",
 	"offline-friendly",

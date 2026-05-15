@@ -87,6 +87,8 @@ cd ../ofxGgmlLlama
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |
+| `scripts\generate-workflow-status-plan.bat` | Generate the deterministic workflow-status expectation plan |
+| `scripts\fetch-workflow-status.bat` | Fetch latest GitHub Actions workflow status evidence for release planning |
 | `scripts\fetch-smoke-build-ci-report.bat` | Download the latest uploaded smoke-build CI JSON report artifact for release-readiness evidence |
 | `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status, backend capability/runtime planning, smoke-build CI, and policy metadata |
 | `scripts\assert-release-readiness.bat` | Fail the release gate when required release-readiness evidence is missing or blocked |

@@ -2,16 +2,16 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
-$scriptPath = Join-Path $scriptRoot "fetch-workflow-status.py"
+$scriptPath = Join-Path $scriptRoot "fetch-workflow-status.bat"
 $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-report.md"
 
 if (Test-Path -LiteralPath $outputPath) {
 	Remove-Item -LiteralPath $outputPath -Force
 }
 
-python $scriptPath --output $outputPath
-if (!$?) {
-	throw "fetch-workflow-status.py failed."
+& $scriptPath --output $outputPath
+if ($LASTEXITCODE -ne 0) {
+	throw "fetch-workflow-status.bat failed."
 }
 
 if (!(Test-Path -LiteralPath $outputPath -PathType Leaf)) {
