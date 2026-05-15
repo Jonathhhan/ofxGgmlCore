@@ -102,6 +102,8 @@ Use `scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly` when another agent
 needs blocker counts and compact audit actions without full repository rows.
 Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor
 coverage `Summary` counts, follow-up commands, and per-repository actions.
+Use `scripts\plan-doctor-rollout.bat -Json -SummaryOnly` when another agent
+needs compact doctor coverage evidence without full script lists.
 
 The latest committed queue snapshot lives at `docs\CODING_AGENT_WORK.md`.
 Follow-up control-plane planning lives at `docs\CONTROL_PLANE_NEXT_STEPS.md`.

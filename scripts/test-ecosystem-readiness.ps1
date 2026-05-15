@@ -138,6 +138,21 @@ if ($branchCleanupJson.PSObject.Properties["Inventory"] -or $branchCleanupJson.P
 	throw "ecosystem readiness branch cleanup handoff should omit branch-level Inventory and Candidates."
 }
 
+$doctorRolloutStep = @($parsed.Steps | Where-Object { $_.Name -eq "doctor rollout plan" } | Select-Object -First 1)
+if ($doctorRolloutStep.Count -eq 0 -or $doctorRolloutStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report doctor rollout plan as OK."
+}
+if (!$doctorRolloutStep[0].Output -or @($doctorRolloutStep[0].Output).Count -eq 0) {
+	throw "ecosystem readiness JSON did not retain output for doctor rollout plan."
+}
+$doctorRolloutJson = (@($doctorRolloutStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$doctorRolloutJson.SummaryOnly) {
+	throw "ecosystem readiness doctor rollout should use SummaryOnly output."
+}
+if (!$doctorRolloutJson.RepositorySummaries -or $doctorRolloutJson.PSObject.Properties["Repositories"]) {
+	throw "ecosystem readiness doctor rollout did not use compact repository summaries."
+}
+
 $summaryJsonOutput = & $readinessScript -SkipDoctorTests -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-ecosystem-readiness.ps1 -Json -SummaryOnly failed."
