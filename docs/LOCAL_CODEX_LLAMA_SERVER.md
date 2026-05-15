@@ -44,6 +44,17 @@ Bind to `127.0.0.1` unless you have a specific reason to expose the server to
 another machine. Do not publish a local endpoint or API token in repository
 files.
 
+To auto-detect whether the local endpoint and Codex config are visible from the
+repository, run:
+
+```powershell
+scripts\plan-local-codex.bat -Json -SummaryOnly
+```
+
+The planner probes only localhost OpenAI-compatible `/v1/models` endpoints and
+reads local Codex config candidates. It does not start a server, write config,
+or change addon runtime behavior.
+
 ## Codex Provider Sketch
 
 Codex provider configuration can change between installed versions, so verify
@@ -103,6 +114,7 @@ scripts\release-candidate.bat.
 Start with compact planning evidence:
 
 ```powershell
+scripts\plan-local-codex.bat -Json -SummaryOnly
 scripts\plan-ecosystem.bat -Json -SummaryOnly
 scripts\plan-coding-agent-work.bat -Json
 scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly

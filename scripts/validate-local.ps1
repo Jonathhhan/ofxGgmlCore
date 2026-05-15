@@ -84,6 +84,7 @@ Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-doctor-rol
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-backend-runtime-verification.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-release-readiness.bat -Json -SummaryOnly" "README"
+Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\plan-local-codex.bat -Json -SummaryOnly" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\fetch-smoke-build-ci-report.bat -Force" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\assert-release-readiness.bat -SmokeBuildCiReport <path>" "README"
 Assert-FileContains (Join-Path $addonRoot "README.md") "scripts\\list-models.bat -Json -SummaryOnly" "README"
@@ -168,6 +169,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "copilot-inst
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") ".github/instructions" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "LOCAL_CODEX_LLAMA_SERVER.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "llama-server" "local Codex llama-server docs"
+Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-local-codex.bat -Json -SummaryOnly" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-ecosystem.bat -Json -SummaryOnly" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "Do not commit generated projects" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "README.md") "LOCAL_CODEX_LLAMA_SERVER.md" "README"
@@ -213,6 +215,9 @@ foreach ($requiredScript in @(
 	"plan-coding-agent-work.bat",
 	"plan-coding-agent-work.ps1",
 	"plan-coding-agent-work.sh",
+	"plan-local-codex.bat",
+	"plan-local-codex.ps1",
+	"plan-local-codex.sh",
 	"plan-of-smoke-build.bat",
 	"plan-of-smoke-build.ps1",
 	"plan-of-smoke-build.sh",
@@ -389,6 +394,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking backend runtime verification planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-backend-runtime-verification-plan.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking local Codex planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-local-codex-plan.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking ecosystem readiness" `
