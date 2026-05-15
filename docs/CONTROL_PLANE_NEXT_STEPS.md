@@ -61,6 +61,8 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Connect release readiness to actual validation evidence: local validation, strict ecosystem audit, readiness check, workflow status, backend capability evidence, backend runtime verification planning, and smoke-build CI truth.
 - Prefer `scripts\plan-release-readiness.bat` for a one-command release evidence pass; it writes to a temporary report path unless `-OutputPath` is supplied.
 - Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` when another agent needs compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, and reference-lane readiness evidence before choosing a model-backed runtime smoke target.
+- Treat the managed runtime-smoke rollout as complete only when `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` reports every managed runtime lane as `available-and-validated`.
+- Treat missing smoke-build CI evidence as the next release-readiness gap when `.smoke-build-ci-report.json` is absent; generate it with `scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0` before claiming CI truth for generated-project compilation.
 - Use `scripts\plan-release-readiness.bat -Json` when another agent needs release evidence summary counts, generated report paths, evidence paths, and next commands.
 - Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent needs compact release evidence summaries without generated report paths.
 - Use `scripts\plan-release-readiness.bat -SmokeBuildCiReport <path>` when release planning should fold in a downloaded `.smoke-build-ci-report.json` artifact.
