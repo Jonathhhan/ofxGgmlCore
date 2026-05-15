@@ -95,3 +95,21 @@ foreach ($stepName in @(
 		throw "ecosystem readiness JSON did not report $stepName as OK."
 	}
 }
+
+$branchCleanupStep = @($parsed.Steps | Where-Object { $_.Name -eq "agent branch cleanup plan" } | Select-Object -First 1)
+if ($branchCleanupStep.Count -eq 0 -or $branchCleanupStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report agent branch cleanup plan as OK."
+}
+if (!$branchCleanupStep[0].Output -or @($branchCleanupStep[0].Output).Count -eq 0) {
+	throw "ecosystem readiness JSON did not retain output for agent branch cleanup plan."
+}
+$branchCleanupJson = (@($branchCleanupStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$branchCleanupJson.SummaryOnly) {
+	throw "ecosystem readiness branch cleanup handoff should use SummaryOnly output."
+}
+if (!$branchCleanupJson.Summary -or !$branchCleanupJson.PSObject.Properties["RepositorySummaries"]) {
+	throw "ecosystem readiness branch cleanup handoff did not retain compact summary evidence."
+}
+if ($branchCleanupJson.PSObject.Properties["Inventory"] -or $branchCleanupJson.PSObject.Properties["Candidates"]) {
+	throw "ecosystem readiness branch cleanup handoff should omit branch-level Inventory and Candidates."
+}

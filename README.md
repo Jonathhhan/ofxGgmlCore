@@ -141,7 +141,9 @@ agent instruction freshness, strict ecosystem audit status, planning handoffs,
 structured JSON handoffs, doctor rollout status, merged branch cleanup
 planning, and managed doctor smoke tests.
 Use `scripts\check-ecosystem-readiness.bat -Json` when another agent needs
-readiness `Summary` counts plus detailed `Steps` and `DoctorTests` evidence.
+readiness `Summary` counts plus detailed `Steps` and `DoctorTests` evidence;
+the embedded branch-cleanup step uses compact summary evidence so routine
+handoffs do not include the full branch inventory.
 Use `scripts\audit-ecosystem.bat` when you need a compact readiness matrix for
 agent instructions, reusable workflow coverage, validation, and release gates.
 Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact
@@ -197,6 +199,9 @@ The `smoke-build-ci` workflow writes `.smoke-build-ci-report.json` with top-leve
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.
+Use `scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly` when another
+agent only needs cleanup `Summary` counts, per-repository counts, next commands,
+and the safety note.
 
 For Hermes Agent, Codex, and GitHub Copilot support, use
 `scripts\write-agent-instructions.bat` to generate `HERMES.md`, `AGENTS.md`,

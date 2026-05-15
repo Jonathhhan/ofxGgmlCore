@@ -77,7 +77,7 @@ The readiness pass currently verifies:
 - backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
 - doctor rollout planning runs
-- merged agent branch cleanup planning runs and emits explicit next commands in Markdown and JSON
+- merged agent branch cleanup planning runs and emits explicit next commands in Markdown, full JSON, and compact summary JSON for readiness handoffs
 
 The current queue reports all managed repositories as ready, detects planning
 guides for all 11 managed repositories, and suppresses stale generic lane-uplift

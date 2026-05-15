@@ -2,6 +2,7 @@ param(
 	[string]$BranchPattern = "codex/*",
 	[string]$OutputPath = "",
 	[switch]$Fetch,
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -248,9 +249,11 @@ function ConvertTo-MarkdownCleanupPlan {
 	param(
 		[array]$Candidates,
 		[array]$Inventory,
+		[array]$RepositorySummaries,
 		[object]$Summary,
 		[string]$Root,
-		[string[]]$NextCommands
+		[string[]]$NextCommands,
+		[switch]$SummaryOnly
 	)
 
 	$lines = New-Object System.Collections.Generic.List[string]
@@ -279,6 +282,22 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("| Remote agent branches | $($Summary.RemoteAgentBranches) |")
 	$lines.Add("| Repositories with agent branches | $($Summary.RepositoriesWithAgentBranches) |")
 	$lines.Add("")
+	if ($SummaryOnly) {
+		$lines.Add("## Repository Summary")
+		$lines.Add("")
+		if ($RepositorySummaries.Count -eq 0) {
+			$lines.Add("No matching agent branches are present in managed repositories.")
+		} else {
+			$lines.Add("| Repository | Local branches | Remote branches | Delete candidates | Current skipped |")
+			$lines.Add("| --- | ---: | ---: | ---: | ---: |")
+			foreach ($repository in $RepositorySummaries) {
+				$lines.Add(("| {0} | {1} | {2} | {3} | {4} |" -f $repository.Repository, $repository.LocalAgentBranches, $repository.RemoteAgentBranches, $repository.DeleteCandidates, $repository.CurrentBranchesSkipped))
+			}
+		}
+		$lines.Add("")
+		$lines.Add("Detailed branch inventory and candidates were omitted. Re-run without ``-SummaryOnly`` before deleting branches.")
+		$lines.Add("")
+	} else {
 	$lines.Add("## Branch Inventory")
 	$lines.Add("")
 	$lines.Add("Inventory includes merged and unmerged matching branches. The candidate table lists branches Git reports as merged into the default branch and squash-merged branches whose patches are equivalent to default.")
@@ -307,6 +326,7 @@ function ConvertTo-MarkdownCleanupPlan {
 		}
 	}
 	$lines.Add("")
+	}
 	$lines.Add("## Next Commands")
 	$lines.Add("")
 	$lines.Add('```powershell')
@@ -340,22 +360,47 @@ $summary = [pscustomobject]@{
 	RemoteAgentBranches = @($inventory | Where-Object { $_.Type -eq "remote" }).Count
 	RepositoriesWithAgentBranches = @($inventory | ForEach-Object { $_.Repository } | Sort-Object -Unique).Count
 }
+$repositorySummaries = @(
+	foreach ($repository in $repositories) {
+		$name = [string]$repository.Name
+		$repositoryInventory = @($inventory | Where-Object { $_.Repository -eq $name })
+		$repositoryCandidates = @($candidates | Where-Object { $_.Repository -eq $name })
+		$deleteCandidates = @($repositoryCandidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) })
+		if ($repositoryInventory.Count -eq 0 -and $repositoryCandidates.Count -eq 0) {
+			continue
+		}
+		[pscustomobject]@{
+			Repository = $name
+			LocalAgentBranches = @($repositoryInventory | Where-Object { $_.Type -eq "local" }).Count
+			RemoteAgentBranches = @($repositoryInventory | Where-Object { $_.Type -eq "remote" }).Count
+			DeleteCandidates = $deleteCandidates.Count
+			LocalDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "local" }).Count
+			RemoteDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "remote" }).Count
+			CurrentBranchesSkipped = @($repositoryCandidates | Where-Object { $_.Current }).Count
+		}
+	}
+)
 $nextCommands = Get-CleanupNextCommands -Candidates $candidates
 $safetyNote = "This script only writes a plan. Refresh refs with -Fetch before acting, review every command, and keep deletion as an explicit follow-up."
 
 if ($Json) {
-	$content = [pscustomobject]@{
+	$payload = [ordered]@{
 		Root = $status.Root
 		BranchPattern = $BranchPattern
 		Fetched = [bool]$Fetch
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
-		Inventory = @($inventory)
-		Candidates = @($candidates)
+		RepositorySummaries = @($repositorySummaries)
 		NextCommands = @($nextCommands)
 		SafetyNote = $safetyNote
-	} | ConvertTo-Json -Depth 6
+	}
+	if (!$SummaryOnly) {
+		$payload.Inventory = @($inventory)
+		$payload.Candidates = @($candidates)
+	}
+	$content = [pscustomobject]$payload | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Inventory $inventory -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands
+	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Inventory $inventory -RepositorySummaries $repositorySummaries -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands -SummaryOnly:$SummaryOnly
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {
