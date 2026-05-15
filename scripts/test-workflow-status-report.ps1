@@ -33,6 +33,7 @@ foreach ($expected in @(
 	"multi-platform-smoke.yml",
 	"release-check.yml",
 	"release-gate.yml",
+	'authenticated GitHub CLI (`gh`) is used automatically',
 	"Repository-scoped workflow expectations"
 )) {
 	if ($content -notmatch [regex]::Escape($expected)) {

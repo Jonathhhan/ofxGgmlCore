@@ -4,7 +4,10 @@ import argparse
 import datetime as dt
 import json
 import os
+import shutil
+import subprocess
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -31,14 +34,40 @@ BLOCKING_CONCLUSIONS = {
 }
 
 
+def gh_api_json(url):
+    gh = shutil.which("gh")
+    if not gh:
+        raise RuntimeError("gh executable was not found")
+    parsed = urllib.parse.urlsplit(url)
+    endpoint = parsed.path.lstrip("/")
+    if parsed.query:
+        endpoint = f"{endpoint}?{parsed.query}"
+    result = subprocess.run(
+        [gh, "api", endpoint],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    return json.loads(result.stdout)
+
+
 def github_json(url):
+    if not os.environ.get("GITHUB_TOKEN") and shutil.which("gh"):
+        return gh_api_json(url)
+
     headers = {"Accept": "application/vnd.github+json"}
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code in {403, 429} and shutil.which("gh"):
+            return gh_api_json(url)
+        raise
 
 
 def repos_from_manifest(ecosystem):
@@ -272,6 +301,7 @@ def main():
         "## Notes",
         "",
         "- Set `GITHUB_TOKEN` for higher API limits and private-repo access.",
+        "- When `GITHUB_TOKEN` is absent, an authenticated GitHub CLI (`gh`) is used automatically if available.",
         "- Missing optional workflows are rollout gaps, not command failures.",
         "- Repository-scoped workflow expectations only apply to the listed repositories.",
         "- Stale workflow runs are visible by default and fail required workflows only in `--strict` mode.",
