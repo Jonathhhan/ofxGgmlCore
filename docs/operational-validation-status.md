@@ -24,6 +24,8 @@ The ecosystem currently provides:
 - dry-run and explicit-apply generated-project repair planning
 - non-mutating focused compile-target planning
 - generic focused smoke-example build handoff for generated projects that pass postflight
+- backend runtime smoke execution through the reusable `backend-runtime-check` workflow
+- CPU backend initialization plus lightweight ggml graph compute/readback smoke on Windows and Ubuntu CI
 
 ## Current agent readiness
 
@@ -44,6 +46,7 @@ scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 scripts\plan-smoke-build-compile.bat -Stage compile-example
 scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 scripts\plan-release-readiness.bat -SkipWorkflowStatus
+scripts\build-runtime-smoke.bat -Backend cpu
 ```
 
 The readiness pass currently verifies:
@@ -65,6 +68,8 @@ The readiness pass currently verifies:
 - smoke-build compile planning emits focused build commands only after generated-project postflight is complete, using addon-owned build scripts when present and the Core generic smoke builder otherwise
 - release-readiness planning runs without requiring live workflow access
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
+- backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
+- CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs and emits explicit next commands in Markdown and JSON
 
@@ -109,13 +114,14 @@ The current smoke-build workflow:
 - locally built all 14 managed addon examples on Windows Release x64 with 0 errors
 - compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow (Windows Release x64)
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
-- does not yet validate CUDA/Metal/Vulkan runtimes
-- does not yet validate runtime inference
+- validates CPU backend runtime initialization and lightweight graph smoke in CI for Core runtime changes
+- does not yet validate CUDA/Metal/Vulkan runtimes in CI
+- does not yet validate model-backed runtime inference
 
 ## Next operational milestones
 
 - Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
-- backend runtime verification
+- GPU backend runtime verification from suitable runners
 - inference smoke tests
 - release gating from CI truth
 - compatibility enforcement from actual builds
