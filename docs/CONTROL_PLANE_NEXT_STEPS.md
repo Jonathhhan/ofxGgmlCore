@@ -27,13 +27,13 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use the smoke-build command plan to choose the next focused example-generation target without committing generated files.
 - Prefer the smoke-build target queue order when moving from project generation to generated-project repair or compile validation.
 - Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an agent needs the next concrete smoke-build target.
-- Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json` when another agent needs target selection summary counts, next commands, and the selected target payload.
+- Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json -SummaryOnly` when another agent needs compact target selection summary counts, next commands, and target summaries.
 - Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` before handing a target to Codex, Copilot, or Hermes.
-- Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json` when another agent needs handoff summary counts, preflight, target, postflight, and validation commands as structured data.
+- Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly` when another agent needs compact handoff summary counts and target summaries without full command and guardrail lists.
 - Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project` before any agent runs projectGenerator.
-- Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json` when an agent needs readiness summary counts plus gated projectGenerator and postflight commands.
+- Use `scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json -SummaryOnly` when an agent needs compact readiness summary counts plus gated projectGenerator and postflight commands.
 - Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example>` after projectGenerator to inspect generated files and git impact.
-- Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json` when an agent needs completion summary counts, generated-file counts, review counts, and next validation commands.
+- Use `scripts\check-smoke-build-target-postflight.bat -Repository <addon> -Example <example> -Json -SummaryOnly` when an agent needs compact completion summary counts, generated-file counts, review counts, and next validation commands.
 - Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example>` when postflight reports missing Visual Studio addon wiring.
 - Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Json` when an agent needs repair-state Summary counts, expected addon references, and repair next commands as structured data.
 - Use `scripts\plan-smoke-build-project-repair.bat -Repository <addon> -Example <example> -Apply` only after reviewing the dry-run; it updates generated Visual Studio project metadata and should be followed by postflight and artifact hygiene.

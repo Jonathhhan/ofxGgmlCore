@@ -1,6 +1,7 @@
 param(
 	[string]$Stage = "",
 	[int]$First = 1,
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -48,15 +49,28 @@ if ($selected.Count -gt 0) {
 }
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [ordered]@{
 		Root = $plan.Root
 		OfRoot = $plan.OfRoot
 		ProjectGeneratorPath = $plan.ProjectGeneratorPath
 		Stage = $Stage
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		NextCommands = @($nextCommands.ToArray())
-		Targets = $selected
-	} | ConvertTo-Json -Depth 6
+		TargetSummaries = @($selected | ForEach-Object {
+			[pscustomobject]@{
+				Repository = [string]$_.Repository
+				Example = [string]$_.Example
+				Stage = [string]$_.Stage
+				Action = [string]$_.Action
+				HasCommand = ![string]::IsNullOrWhiteSpace([string]$_.Command)
+			}
+		})
+	}
+	if (!$SummaryOnly) {
+		$result.Targets = $selected
+	}
+	[pscustomobject]$result | ConvertTo-Json -Depth 6
 	return
 }
 

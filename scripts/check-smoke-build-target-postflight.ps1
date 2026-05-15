@@ -3,6 +3,7 @@ param(
 	[int]$First = 1,
 	[string]$Repository = "",
 	[string]$Example = "",
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -264,16 +265,33 @@ $summary = [pscustomobject]@{
 }
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [ordered]@{
 		Root = $plan.Root
 		Stage = $Stage
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
-		Postflights = $postflights
+		PostflightSummaries = @($postflights | ForEach-Object {
+			$reviewChecks = @($_.Checks | Where-Object { $_.State -ne "OK" })
+			[pscustomobject]@{
+				Repository = [string]$_.Repository
+				Example = [string]$_.Example
+				Stage = [string]$_.Stage
+				Complete = [bool]$_.Complete
+				GeneratedProjectFiles = @($_.GeneratedProjectFiles).Count
+				MissingProjectAddons = @($_.MissingProjectAddons).Count
+				GitStatusLines = @($_.GitStatus).Count
+				ReviewChecks = $reviewChecks.Count
+			}
+		})
 		IncompleteTargets = $incompletePostflights.Count
 		ReviewTargets = $reviewPostflights.Count
 		NextCommands = $nextCommandArray
 		SafetyNote = $safetyNote
-	} | ConvertTo-Json -Depth 8
+	}
+	if (!$SummaryOnly) {
+		$result.Postflights = $postflights
+	}
+	[pscustomobject]$result | ConvertTo-Json -Depth 8
 	return
 }
 

@@ -118,6 +118,37 @@ foreach ($stepName in @(
 	if ($step.Count -eq 0 -or $step[0].State -ne "OK") {
 		throw "ecosystem readiness JSON did not report $stepName as OK."
 	}
+	if (!$step[0].Output -or @($step[0].Output).Count -eq 0) {
+		throw "ecosystem readiness JSON did not retain output for $stepName."
+	}
+	$smokeJson = (@($step[0].Output) -join "`n") | ConvertFrom-Json
+	if (!$smokeJson.SummaryOnly) {
+		throw "ecosystem readiness $stepName should use SummaryOnly output."
+	}
+}
+
+$smokeSelectionStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build target selection" } | Select-Object -First 1)
+$smokeSelectionJson = (@($smokeSelectionStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$smokeSelectionJson.PSObject.Properties["TargetSummaries"] -or $smokeSelectionJson.PSObject.Properties["Targets"]) {
+	throw "ecosystem readiness smoke target selection did not use compact target summaries."
+}
+
+$smokeHandoffStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build target handoff" } | Select-Object -First 1)
+$smokeHandoffJson = (@($smokeHandoffStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$smokeHandoffJson.PSObject.Properties["TargetSummaries"] -or $smokeHandoffJson.PSObject.Properties["Targets"]) {
+	throw "ecosystem readiness smoke target handoff did not use compact target summaries."
+}
+
+$smokePreflightStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build target preflight" } | Select-Object -First 1)
+$smokePreflightJson = (@($smokePreflightStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$smokePreflightJson.PSObject.Properties["PreflightSummaries"] -or $smokePreflightJson.PSObject.Properties["Preflights"]) {
+	throw "ecosystem readiness smoke target preflight did not use compact preflight summaries."
+}
+
+$smokePostflightStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build target postflight" } | Select-Object -First 1)
+$smokePostflightJson = (@($smokePostflightStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$smokePostflightJson.PSObject.Properties["PostflightSummaries"] -or $smokePostflightJson.PSObject.Properties["Postflights"]) {
+	throw "ecosystem readiness smoke target postflight did not use compact postflight summaries."
 }
 
 $branchCleanupStep = @($parsed.Steps | Where-Object { $_.Name -eq "agent branch cleanup plan" } | Select-Object -First 1)

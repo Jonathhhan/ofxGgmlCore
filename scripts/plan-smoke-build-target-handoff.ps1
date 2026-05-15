@@ -1,6 +1,7 @@
 param(
 	[string]$Stage = "generate-project",
 	[int]$First = 1,
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -63,21 +64,34 @@ $summary = [pscustomobject]@{
 }
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [ordered]@{
 		Root = $selection.Root
 		OfRoot = $selection.OfRoot
 		ProjectGeneratorPath = $selection.ProjectGeneratorPath
 		Stage = $Stage
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
-		Targets = $targets
-		TargetCommands = $targetCommands
-		PostflightCommands = $postflightCommands
-		RepairPlanCommands = $repairPlanCommands
-		Validation = $validationCommands
-		Guardrails = $guardrails
+		TargetSummaries = @($targets | ForEach-Object {
+			[pscustomobject]@{
+				Repository = [string]$_.Repository
+				Example = [string]$_.Example
+				Stage = [string]$_.Stage
+				Action = [string]$_.Action
+				HasCommand = ![string]::IsNullOrWhiteSpace([string]$_.Command)
+			}
+		})
 		NextCommands = $nextCommands
 		SafetyNote = $safetyNote
-	} | ConvertTo-Json -Depth 6
+	}
+	if (!$SummaryOnly) {
+		$result.Targets = $targets
+		$result.TargetCommands = $targetCommands
+		$result.PostflightCommands = $postflightCommands
+		$result.RepairPlanCommands = $repairPlanCommands
+		$result.Validation = $validationCommands
+		$result.Guardrails = $guardrails
+	}
+	[pscustomobject]$result | ConvertTo-Json -Depth 6
 	return
 }
 

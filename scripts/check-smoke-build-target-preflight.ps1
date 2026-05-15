@@ -3,6 +3,7 @@ param(
 	[int]$First = 1,
 	[string]$Repository = "",
 	[string]$Example = "",
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -181,16 +182,31 @@ $summary = [pscustomobject]@{
 }
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [ordered]@{
 		Root = $plan.Root
 		Stage = $Stage
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
-		Preflights = $preflights
+		PreflightSummaries = @($preflights | ForEach-Object {
+			$blockedChecks = @($_.Checks | Where-Object { $_.State -ne "OK" })
+			[pscustomobject]@{
+				Repository = [string]$_.Repository
+				Example = [string]$_.Example
+				Stage = [string]$_.Stage
+				Ready = [bool]$_.Ready
+				BlockedChecks = $blockedChecks.Count
+				CheckStates = @($_.Checks | ForEach-Object { [string]$_.State })
+			}
+		})
 		ReadyCommands = $readyCommands
 		PostflightCommands = $postflightCommands
 		NextCommands = $nextCommands
 		SafetyNote = $safetyNote
-	} | ConvertTo-Json -Depth 8
+	}
+	if (!$SummaryOnly) {
+		$result.Preflights = $preflights
+	}
+	[pscustomobject]$result | ConvertTo-Json -Depth 8
 	return
 }
 
