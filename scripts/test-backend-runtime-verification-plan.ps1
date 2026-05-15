@@ -20,6 +20,8 @@ foreach ($expected in @(
 	"ofxGgmlSam",
 	"runtime-smoke-entrypoint-present",
 	"Core runtime-smoke seeded",
+	"Validated runtime-smoke entrypoints",
+	"Example build evidence gaps",
 	"scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly"
 )) {
 	if ($markdown -notmatch [regex]::Escape($expected)) {
@@ -41,8 +43,11 @@ foreach ($property in @(
 	"CoreRuntimeSmokeSeeded",
 	"ReferenceLaneReady",
 	"RuntimeSmokeEntrypoints",
+	"ValidatedRuntimeSmokeEntrypoints",
 	"RepositoriesWithModels",
 	"RepositoriesWithBuiltExamples",
+	"ExampleBuildGaps",
+	"RepositoriesMissingBuiltExamples",
 	"NeedsRuntimeSmokePlan",
 	"ReferenceTarget"
 )) {
@@ -52,6 +57,12 @@ foreach ($property in @(
 }
 if ($parsed.Summary.ReferenceTarget -ne "ofxGgmlSam") {
 	throw "backend runtime verification JSON did not prioritize ofxGgmlSam."
+}
+if ($parsed.Summary.ValidatedRuntimeSmokeEntrypoints -lt 1) {
+	throw "backend runtime verification JSON did not count validated runtime-smoke entrypoints."
+}
+if ($parsed.Summary.ExampleBuildGaps -lt 1 -or @($parsed.Summary.RepositoriesMissingBuiltExamples).Count -lt 1) {
+	throw "backend runtime verification JSON did not expose example build evidence gaps."
 }
 if (!$parsed.Repositories -or @($parsed.Repositories).Count -eq 0) {
 	throw "backend runtime verification full JSON did not include repositories."
