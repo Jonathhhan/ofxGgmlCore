@@ -7,6 +7,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Keep `docs\CODING_AGENT_WORK.md` aligned with `scripts\plan-coding-agent-work.bat` after control-plane changes.
 - Treat stale generic lane-uplift rows as a regression when the target lane already has a workflow guide.
 - Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work; it now includes structured agent handoff checks and a deterministic release-readiness planning pass.
+- Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor coverage summary counts and next commands.
 - Use `scripts\plan-ecosystem.bat -Json` when another agent needs summary counts, planning priorities, guardrails, smoke-build lifecycle commands, and validation commands as structured data.
 - Use `scripts\plan-coding-agent-work.bat -Json` when another agent needs queue summary data, guardrails, and per-task suggested-file and validation-command arrays.
 

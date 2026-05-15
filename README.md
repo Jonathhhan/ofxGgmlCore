@@ -146,6 +146,8 @@ Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact
 audit `Summary` counts plus per-repository readiness actions.
 Use `scripts\plan-doctor-rollout.bat` to plan which managed companion repos
 need a focused doctor entry point, wrapper, smoke test, or validation hook.
+Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor
+coverage `Summary` counts, follow-up commands, and per-repository actions.
 Use `scripts\plan-release-readiness.bat` to generate a release-readiness score
 with workflow-status evidence and backend capability evidence when planning
 release gates. By default it writes to a temporary report path and folds in
