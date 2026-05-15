@@ -2,9 +2,11 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $scriptPath = Join-Path $scriptRoot "generate-release-readiness-score.py"
-$workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-evidence.md"
-$backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-capability-evidence.md"
-$outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
+$testId = [guid]::NewGuid().ToString("N")
+$workflowReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-workflow-status-evidence-$testId.md"
+$backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-capability-evidence-$testId.md"
+$smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-evidence-$testId.json"
+$outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score-$testId.md"
 
 @(
 	'# Workflow Status Report',
@@ -43,11 +45,27 @@ $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readi
 	'| `metal` | yes | not installed locally | not checked | optional backend absent |'
 ) | Set-Content -LiteralPath $backendReport
 
+@{
+	Summary = @{
+		Outcome = "passed"
+		StageCount = 3
+		ReportedStages = 3
+		TargetsRun = 14
+		ReportedTargets = 14
+		CommandsRun = 14
+		FailedTargets = 0
+		FailedCommands = 0
+		StageNames = @("generate-project", "repair-generated-project", "compile-example")
+		FailedStageNames = @()
+		HasFailures = $false
+	}
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $smokeBuildReport
+
 if (Test-Path -LiteralPath $outputPath) {
 	Remove-Item -LiteralPath $outputPath -Force
 }
 
-python $scriptPath --workflow-status-report $workflowReport --backend-capability-report $backendReport --output $outputPath
+python $scriptPath --workflow-status-report $workflowReport --backend-capability-report $backendReport --smoke-build-ci-report $smokeBuildReport --output $outputPath
 if (!$?) {
 	throw "generate-release-readiness-score.py failed."
 }
@@ -75,6 +93,10 @@ foreach ($expected in @(
 	"Backend capability evidence",
 	"1 backend(s) runtime-smoke checked",
 	"runtime smoke passed",
+	"Smoke-build CI report",
+	"Smoke-build CI evidence",
+	"passed 14 target(s), 3 stage(s), 14 command(s)",
+	"Failed commands",
 	"Stale required workflows",
 	"Repository readiness checklist"
 )) {
@@ -85,4 +107,5 @@ foreach ($expected in @(
 
 Remove-Item -LiteralPath $workflowReport -Force
 Remove-Item -LiteralPath $backendReport -Force
+Remove-Item -LiteralPath $smokeBuildReport -Force
 Remove-Item -LiteralPath $outputPath -Force

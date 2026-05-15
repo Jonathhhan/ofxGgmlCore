@@ -111,6 +111,9 @@ compact `Summary` counts plus detailed `Steps` and `DoctorTests` evidence.
 Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
 evidence `Summary` counts, generated report paths, and next commands before
 deciding whether CI truth is strong enough for a release gate.
+Use `scripts\plan-release-readiness.bat -SmokeBuildCiReport <path>` when an
+agent has downloaded `.smoke-build-ci-report.json` from GitHub Actions and needs
+generated-project compile evidence in the release readiness report.
 Use `scripts\list-models.bat -Json` when another agent needs model discovery
 `Summary` counts, existing search directories, and nearby GGUF file metadata.
 
