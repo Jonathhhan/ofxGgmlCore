@@ -65,8 +65,24 @@ function Invoke-RuntimeSmoke {
 		$arguments += "--require-backend"
 	}
 
-	$output = @(& $exe @arguments 2>&1)
-	$exitCode = $LASTEXITCODE
+	$logId = [guid]::NewGuid().ToString("N")
+	$stdoutPath = Join-Path $buildDir "$BackendName.$logId.stdout.log"
+	$stderrPath = Join-Path $buildDir "$BackendName.$logId.stderr.log"
+	$argumentText = ($arguments | ForEach-Object { Convert-ToCmdArgument $_ }) -join " "
+	$command = "$(Convert-ToCmdArgument $exe) $argumentText > $(Convert-ToCmdArgument $stdoutPath) 2> $(Convert-ToCmdArgument $stderrPath)"
+	try {
+		& cmd.exe /d /s /c $command
+		$exitCode = $LASTEXITCODE
+		$output = @()
+		if (Test-Path -LiteralPath $stdoutPath -PathType Leaf) {
+			$output += @(Get-Content -LiteralPath $stdoutPath | ForEach-Object { [string]$_ })
+		}
+		if (Test-Path -LiteralPath $stderrPath -PathType Leaf) {
+			$output += @(Get-Content -LiteralPath $stderrPath | ForEach-Object { [string]$_ })
+		}
+	} finally {
+		Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+	}
 	[pscustomobject]@{
 		backend = $BackendName
 		required = [bool]$RequireBackend
@@ -79,6 +95,17 @@ function Invoke-RuntimeSmoke {
 Assert-File (Join-Path $root "libs\ggml\include\ggml.h") "Missing ggml headers. Run scripts\setup-ggml.ps1 -CpuOnly first."
 foreach ($library in @("ggml.lib", "ggml-base.lib", "ggml-cpu.lib")) {
 	Assert-File (Join-Path $root "libs\ggml\lib\$library") "Missing ggml library: libs\ggml\lib\$library. Run scripts\setup-ggml.ps1 -CpuOnly first."
+}
+
+$enableCuda = @($Backend | Where-Object { $_ -eq "cuda" -or $_ -eq "auto" }).Count -gt 0
+if ($enableCuda) {
+	Assert-File (Join-Path $root "libs\ggml\lib\ggml-cuda.lib") "Missing ggml CUDA library: libs\ggml\lib\ggml-cuda.lib. Run scripts\setup-ggml.ps1 -Cuda first."
+	if (!$env:CUDA_PATH) {
+		throw "CUDA_PATH is not set. Install the NVIDIA CUDA Toolkit or run CPU runtime smoke only."
+	}
+	foreach ($library in @("cublas.lib", "cublasLt.lib", "cudart.lib", "cuda.lib")) {
+		Assert-File (Join-Path $env:CUDA_PATH "lib\x64\$library") "Missing CUDA link library: `$env:CUDA_PATH\lib\x64\$library"
+	}
 }
 
 New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
@@ -101,14 +128,26 @@ if (!$SkipBuild) {
 		"/I" + (Convert-ToCmdArgument (Join-Path $root "libs\ggml\include"))
 	)
 	$libPath = "/LIBPATH:" + (Convert-ToCmdArgument (Join-Path $root "libs\ggml\lib"))
+	$linkLibraries = @("ggml.lib", "ggml-base.lib", "ggml-cpu.lib", "advapi32.lib")
+	$defines = @("/DGGML_MAX_NAME=128")
+	if ($enableCuda) {
+		$defines += "/DOFXGGML_WITH_CUDA"
+		$linkLibraries += "ggml-cuda.lib"
+		$linkLibraries += (Convert-ToCmdArgument (Join-Path $env:CUDA_PATH "lib\x64\cublas.lib"))
+		$linkLibraries += (Convert-ToCmdArgument (Join-Path $env:CUDA_PATH "lib\x64\cublasLt.lib"))
+		$linkLibraries += (Convert-ToCmdArgument (Join-Path $env:CUDA_PATH "lib\x64\cudart.lib"))
+		$linkLibraries += (Convert-ToCmdArgument (Join-Path $env:CUDA_PATH "lib\x64\cuda.lib"))
+	}
 	$compileCommand = @(
 		"cl /nologo /std:c++17 /EHsc /O2 /W3 /MD",
+		($defines -join " "),
 		($includeArgs -join " "),
 		($quotedSources -join " "),
 		"/Fe:$(Convert-ToCmdArgument $exe)",
 		"/link",
 		$libPath,
-		"ggml.lib ggml-base.lib ggml-cpu.lib advapi32.lib"
+		"/NODEFAULTLIB:LIBCMT",
+		($linkLibraries -join " ")
 	) -join " "
 	$command = "call $(Convert-ToCmdArgument $vsDevCmd) -arch=x64 -host_arch=x64 >nul && $compileCommand"
 
