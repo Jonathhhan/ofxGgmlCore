@@ -19,10 +19,33 @@ if (!$?) {
 
 $plan = ($planJson -join [Environment]::NewLine) | ConvertFrom-Json
 $targets = @($plan.Targets)
+$totalTargets = $targets.Count
 if (![string]::IsNullOrWhiteSpace($Stage)) {
 	$targets = @($targets | Where-Object { $_.Stage -eq $Stage })
 }
 $selected = @($targets | Select-Object -First $First)
+$selectedStage = if ($selected.Count -gt 0) { [string]$selected[0].Stage } else { $Stage }
+$summary = [pscustomobject]@{
+	TotalTargets = $totalTargets
+	FilteredTargets = $targets.Count
+	SelectedTargets = $selected.Count
+	StageFilter = $Stage
+	SelectedStage = $selectedStage
+	ProjectGeneratorDetected = ![string]::IsNullOrWhiteSpace([string]$plan.ProjectGeneratorPath)
+	HasSelection = $selected.Count -gt 0
+	SelectedTargetsWithCommands = @($selected | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_.Command) }).Count
+}
+$nextCommands = New-Object System.Collections.Generic.List[string]
+if ($selected.Count -gt 0) {
+	$handoffStage = if ([string]::IsNullOrWhiteSpace($selectedStage)) { $Stage } else { $selectedStage }
+	if (![string]::IsNullOrWhiteSpace($handoffStage)) {
+		$nextCommands.Add("scripts\plan-smoke-build-target-handoff.bat -Stage $handoffStage -First $First")
+		$nextCommands.Add("scripts\check-smoke-build-target-preflight.bat -Stage $handoffStage -First $First")
+	}
+	$nextCommands.Add("scripts\test-of-smoke-build-plan.ps1")
+} else {
+	$nextCommands.Add("scripts\plan-of-smoke-build.bat -Json")
+}
 
 if ($Json) {
 	[pscustomobject]@{
@@ -30,6 +53,8 @@ if ($Json) {
 		OfRoot = $plan.OfRoot
 		ProjectGeneratorPath = $plan.ProjectGeneratorPath
 		Stage = $Stage
+		Summary = $summary
+		NextCommands = @($nextCommands.ToArray())
 		Targets = $selected
 	} | ConvertTo-Json -Depth 6
 	return
