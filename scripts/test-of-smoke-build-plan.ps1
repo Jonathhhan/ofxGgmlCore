@@ -446,6 +446,34 @@ if (!$?) {
 	throw "plan-smoke-build-project-repair.ps1 -Json failed."
 }
 $repairPlanParsed = ($repairPlanJsonOutput -join "`n") | ConvertFrom-Json
+if (!$repairPlanParsed.Summary) {
+	throw "smoke build project repair plan JSON did not include Summary."
+}
+foreach ($property in @(
+	"Stage",
+	"RequestedTargets",
+	"SelectedTargets",
+	"ReadyForCompileValidation",
+	"NeedsProjectGeneration",
+	"NeedsAddonWiringRepair",
+	"ReviewGeneratedProject",
+	"NeedsAction",
+	"PlannedRepairChanges",
+	"MissingProjectAddons",
+	"NextCommands",
+	"Applied",
+	"HasSelection"
+)) {
+	if (!$repairPlanParsed.Summary.PSObject.Properties[$property]) {
+		throw "smoke build project repair plan JSON Summary did not include $property."
+	}
+}
+if ($repairPlanParsed.Summary.SelectedTargets -ne 1 -or !$repairPlanParsed.Summary.HasSelection) {
+	throw "smoke build project repair plan JSON Summary did not report the selected target."
+}
+if ($repairPlanParsed.Summary.ReadyForCompileValidation -ne 1 -or $repairPlanParsed.Summary.NeedsAction -ne 0) {
+	throw "Core smoke build project repair plan JSON Summary did not report compile-validation readiness."
+}
 if (!$repairPlanParsed.Repairs -or $repairPlanParsed.Repairs.Count -ne 1) {
 	throw "smoke build project repair plan JSON did not include exactly one repair target."
 }

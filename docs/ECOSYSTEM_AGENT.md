@@ -151,9 +151,10 @@ selected target payload.
 Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json`
 when another agent needs handoff `Summary` counts, commands, validation, and
 guardrails as structured data.
-Use the `-Json` preflight, postflight, and compile planner outputs when Codex,
-GitHub Copilot, or Hermes needs compact readiness, completion, and
-compile-readiness Summary counts without parsing nested target arrays.
+Use the `-Json` preflight, postflight, repair, and compile planner outputs when
+Codex, GitHub Copilot, or Hermes needs compact readiness, completion,
+repair-state, and compile-readiness Summary counts without parsing nested target
+arrays.
 Run projectGenerator only after preflight reports the selected target is ready.
 After acting on a target, run postflight with the selected repository and
 example if needed. When postflight reports missing Visual Studio addon wiring,
