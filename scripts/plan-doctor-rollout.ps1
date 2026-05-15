@@ -118,12 +118,22 @@ function ConvertTo-MarkdownDoctorPlan {
 		[string]$Root
 	)
 
+	$summary = Get-DoctorRolloutSummary -Entries $Entries
 	$lines = New-Object System.Collections.Generic.List[string]
 	$lines.Add("# ofxGgml Doctor Rollout Plan")
 	$lines.Add("")
 	$lines.Add("Dry-run plan for adding consistent local diagnostic entry points across managed addon repositories.")
 	$lines.Add("")
 	$lines.Add("Root: $Root")
+	$lines.Add("")
+	$lines.Add("## Summary")
+	$lines.Add("")
+	$lines.Add("| Metric | Count |")
+	$lines.Add("| --- | --- |")
+	$lines.Add("| Managed repositories | $($summary.ManagedRepositories) |")
+	$lines.Add("| Complete doctor coverage | $($summary.CompleteCoverage) |")
+	$lines.Add("| Missing or incomplete doctor coverage | $($summary.IncompleteCoverage) |")
+	$lines.Add("| Workflow-only repositories | $($summary.NotApplicable) |")
 	$lines.Add("")
 	$lines.Add("| Repository | Lane | Coverage | Doctor | Test | Validate hook | Action |")
 	$lines.Add("| --- | --- | --- | --- | --- | --- | --- |")
@@ -159,6 +169,45 @@ function ConvertTo-MarkdownDoctorPlan {
 	return $lines -join [Environment]::NewLine
 }
 
+function Get-DoctorRolloutSummary {
+	param([array]$Entries)
+
+	$blocking = @($Entries | Where-Object {
+		$_.Coverage -ne "complete" -and
+		$_.Coverage -ne "not-applicable"
+	})
+
+	return [pscustomobject]@{
+		ManagedRepositories = @($Entries).Count
+		CompleteCoverage = @($Entries | Where-Object { $_.Coverage -eq "complete" }).Count
+		IncompleteCoverage = $blocking.Count
+		NotApplicable = @($Entries | Where-Object { $_.Coverage -eq "not-applicable" }).Count
+		MissingRepository = @($Entries | Where-Object { $_.Coverage -eq "missing-repository" }).Count
+		MissingDoctor = @($Entries | Where-Object { $_.Coverage -eq "missing" }).Count
+		NeedsWrappers = @($Entries | Where-Object { $_.Coverage -eq "needs-wrappers" }).Count
+		NeedsTestOrValidationHook = @($Entries | Where-Object { $_.Coverage -eq "needs-test-or-validation-hook" }).Count
+		BlockingRepositories = @($blocking | Sort-Object Priority, Repository | ForEach-Object { [string]$_.Repository })
+	}
+}
+
+function Get-DoctorRolloutNextCommands {
+	param([array]$Entries)
+
+	$commands = New-Object System.Collections.Generic.List[string]
+	$blocking = @($Entries | Where-Object {
+		$_.Coverage -ne "complete" -and
+		$_.Coverage -ne "not-applicable"
+	} | Sort-Object Priority, Repository)
+
+	if ($blocking.Count -gt 0) {
+		$commands.Add("scripts\plan-doctor-rollout.bat")
+	} else {
+		$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+	}
+	$commands.Add("scripts\plan-doctor-rollout.bat -Json")
+	return @($commands.ToArray())
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $statusJson = & (Join-Path $scriptRoot "status-family.ps1") -Json
 if (!$?) {
@@ -168,10 +217,14 @@ if (!$?) {
 $status = $statusJson | ConvertFrom-Json
 $managed = @($status.Addons | Where-Object { $_.Known })
 $entries = @($managed | ForEach-Object { New-DoctorRolloutEntry -Status $_ })
+$summary = Get-DoctorRolloutSummary -Entries $entries
+$nextCommands = Get-DoctorRolloutNextCommands -Entries $entries
 
 if ($Json) {
 	$content = [pscustomobject]@{
 		Root = $status.Root
+		Summary = $summary
+		NextCommands = $nextCommands
 		Repositories = $entries
 	} | ConvertTo-Json -Depth 6
 } else {
