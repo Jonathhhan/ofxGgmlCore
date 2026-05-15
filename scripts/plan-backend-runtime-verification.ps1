@@ -166,6 +166,113 @@ function Get-RuntimeSmokeEvidence {
 	}
 }
 
+function Get-InferenceSmokeEvidence {
+	param([object]$Status)
+
+	if (!$Status.Present) {
+		return [pscustomobject]@{
+			State = "missing-repository"
+			ReportPath = ""
+			Passed = $false
+			Backend = ""
+			ModelPath = ""
+			SmokeKind = ""
+			Error = ""
+		}
+	}
+
+	$reportPath = Join-Path $Status.Path ".llama-runtime-smoke.json"
+	if ($Status.Name -ne "ofxGgmlLlama") {
+		return [pscustomobject]@{
+			State = "missing"
+			ReportPath = ""
+			Passed = $false
+			Backend = ""
+			ModelPath = ""
+			SmokeKind = ""
+			Error = ""
+		}
+	}
+
+	if ($Status.Name -eq "ofxGgmlLlama" -and (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+		try {
+			$report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+			$summary = $report.Summary
+			$passed = [bool]($summary -and $summary.Passed -and $summary.InferenceChecked)
+			return [pscustomobject]@{
+				State = if ($passed) { "inference-checked" } else { "inference-report-failed" }
+				ReportPath = $reportPath
+				Passed = $passed
+				Backend = if ($summary) { [string]$summary.Backend } else { "" }
+				ModelPath = if ($summary) { [string]$summary.ModelPath } else { "" }
+				SmokeKind = if ($summary) { [string]$summary.SmokeKind } else { "" }
+				Error = if ($summary) { [string]$summary.Error } else { "missing report summary" }
+			}
+		} catch {
+			return [pscustomobject]@{
+				State = "inference-report-invalid"
+				ReportPath = $reportPath
+				Passed = $false
+				Backend = ""
+				ModelPath = ""
+				SmokeKind = ""
+				Error = $_.Exception.Message
+			}
+		}
+	}
+
+	$scriptsRoot = Join-Path $Status.Path "scripts"
+	$scriptNames = @()
+	if (Test-Path -LiteralPath $scriptsRoot -PathType Container) {
+		$scriptNames = @(
+			Get-ChildItem -LiteralPath $scriptsRoot -File -ErrorAction SilentlyContinue |
+				Where-Object { $_.Name -match "(runtime|inference).*smoke|smoke.*(runtime|inference)" } |
+				Sort-Object Name |
+				Select-Object -ExpandProperty Name
+		)
+	}
+
+	$validationHook = $false
+	$validate = Join-Path $Status.Path "scripts\validate-local.ps1"
+	if (Test-Path -LiteralPath $validate -PathType Leaf) {
+		$content = Get-Content -LiteralPath $validate -Raw
+		$validationHook = $content -match "runtime|inference"
+	}
+
+	if ($scriptNames.Count -gt 0 -and $validationHook) {
+		return [pscustomobject]@{
+			State = "inference-smoke-entrypoint-validated"
+			ReportPath = $reportPath
+			Passed = $false
+			Backend = ""
+			ModelPath = ""
+			SmokeKind = ""
+			Error = "run the lane-owned smoke with -OutputPath to produce local inference evidence"
+		}
+	}
+	if ($scriptNames.Count -gt 0) {
+		return [pscustomobject]@{
+			State = "inference-smoke-entrypoint-present"
+			ReportPath = $reportPath
+			Passed = $false
+			Backend = ""
+			ModelPath = ""
+			SmokeKind = ""
+			Error = "runtime smoke script exists but is not part of local validation"
+		}
+	}
+
+	return [pscustomobject]@{
+		State = "missing"
+		ReportPath = $reportPath
+		Passed = $false
+		Backend = ""
+		ModelPath = ""
+		SmokeKind = ""
+		Error = ""
+	}
+}
+
 function Get-BackendRuntimePriority {
 	param([object]$Status)
 
@@ -195,12 +302,15 @@ function New-BackendRuntimeEntry {
 	$modelEvidence = Get-ModelEvidence -Status $Status
 	$buildEvidence = Get-ExampleBuildEvidence -Status $Status
 	$runtimeEvidence = Get-RuntimeSmokeEvidence -Status $Status
+	$inferenceEvidence = Get-InferenceSmokeEvidence -Status $Status
 	$priority = Get-BackendRuntimePriority -Status $Status
 
 	$gateState = if ($Status.Name -eq "ofxGgmlWorkflows") {
 		"not-applicable"
 	} elseif (!$Status.Present) {
 		"missing-repository"
+	} elseif ($inferenceEvidence.State -eq "inference-checked") {
+		"inference-checked"
 	} elseif ($Status.Name -eq "ofxGgmlCore" -and $runtimeEvidence.State -ne "missing") {
 		"core-runtime-smoke-seeded"
 	} elseif ($runtimeEvidence.State -ne "missing") {
@@ -214,6 +324,7 @@ function New-BackendRuntimeEntry {
 	$action = switch ($gateState) {
 		"not-applicable" { "skip workflow-only repository" }
 		"missing-repository" { "restore repository before planning runtime verification" }
+		"inference-checked" { "use model-backed inference smoke as release evidence" }
 		"core-runtime-smoke-seeded" { "keep Core CPU graph smoke active and require reports as release evidence" }
 		"reference-lane-ready-for-runtime-smoke" { "add SAM3 CPU/CUDA runtime-smoke handoff before broadening other lanes" }
 		"runtime-smoke-entrypoint-present" { "use runtime smoke as validation and release evidence" }
@@ -233,6 +344,7 @@ function New-BackendRuntimeEntry {
 		ModelEvidence = $modelEvidence
 		ExampleBuildEvidence = $buildEvidence
 		RuntimeSmokeEvidence = $runtimeEvidence
+		InferenceSmokeEvidence = $inferenceEvidence
 		GateState = $gateState
 		Action = $action
 	}
@@ -243,6 +355,7 @@ function Get-BackendRuntimeSummary {
 
 	$blocking = @($Entries | Where-Object {
 		$_.GateState -ne "not-applicable" -and
+		$_.GateState -ne "inference-checked" -and
 		$_.GateState -ne "core-runtime-smoke-seeded" -and
 		$_.GateState -ne "reference-lane-ready-for-runtime-smoke" -and
 		$_.GateState -ne "runtime-smoke-entrypoint-present"
@@ -260,6 +373,8 @@ function Get-BackendRuntimeSummary {
 		ReferenceLaneReady = @($Entries | Where-Object { $_.GateState -eq "reference-lane-ready-for-runtime-smoke" }).Count
 		RuntimeSmokeEntrypoints = @($Entries | Where-Object { $_.RuntimeSmokeEvidence.State -ne "missing" }).Count
 		ValidatedRuntimeSmokeEntrypoints = @($Entries | Where-Object { $_.RuntimeSmokeEvidence.State -eq "available-and-validated" }).Count
+		InferenceSmokeEntrypoints = @($Entries | Where-Object { $_.InferenceSmokeEvidence.State -ne "missing" -and $_.InferenceSmokeEvidence.State -ne "missing-repository" }).Count
+		InferenceCheckedRepositories = @($Entries | Where-Object { $_.InferenceSmokeEvidence.State -eq "inference-checked" }).Count
 		RepositoriesWithModels = @($Entries | Where-Object { $_.ModelEvidence.State -eq "available" }).Count
 		RepositoriesWithBuiltExamples = @($Entries | Where-Object { $_.ExampleBuildEvidence.BuiltExamples -gt 0 }).Count
 		ExampleBuildGaps = @($exampleBuildGaps).Count
@@ -275,6 +390,11 @@ function Get-BackendRuntimeNextCommands {
 
 	$commands = New-Object System.Collections.Generic.List[string]
 	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")
+	$llama = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlLlama" } | Select-Object -First 1)
+	if ($llama.Count -gt 0) {
+		$commands.Add("cd ..\ofxGgmlLlama && scripts\list-models.bat -Json -SummaryOnly")
+		$commands.Add("cd ..\ofxGgmlLlama && scripts\run-llama-runtime-smoke.bat -Backend cpu -Json -SummaryOnly -OutputPath .llama-runtime-smoke.json")
+	}
 	$reference = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlSam" } | Select-Object -First 1)
 	if ($reference.Count -gt 0) {
 		$commands.Add("cd ..\ofxGgmlSam && scripts\doctor-sam.bat")
@@ -302,6 +422,8 @@ function ConvertTo-BackendRuntimeRepositorySummary {
 		ExampleBuildEvidence = [string]$Entry.ExampleBuildEvidence.State
 		BuiltExamples = [int]$Entry.ExampleBuildEvidence.BuiltExamples
 		RuntimeSmokeEvidence = [string]$Entry.RuntimeSmokeEvidence.State
+		InferenceSmokeEvidence = [string]$Entry.InferenceSmokeEvidence.State
+		InferenceBackend = [string]$Entry.InferenceSmokeEvidence.Backend
 		GateState = [string]$Entry.GateState
 		Action = [string]$Entry.Action
 	}
@@ -340,6 +462,8 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("| Reference lanes ready | $($summary.ReferenceLaneReady) |")
 	$lines.Add("| Runtime-smoke entrypoints | $($summary.RuntimeSmokeEntrypoints) |")
 	$lines.Add("| Validated runtime-smoke entrypoints | $($summary.ValidatedRuntimeSmokeEntrypoints) |")
+	$lines.Add("| Inference-smoke entrypoints | $($summary.InferenceSmokeEntrypoints) |")
+	$lines.Add("| Inference-checked repositories | $($summary.InferenceCheckedRepositories) |")
 	$lines.Add("| Repositories with models | $($summary.RepositoriesWithModels) |")
 	$lines.Add("| Repositories with built examples | $($summary.RepositoriesWithBuiltExamples) |")
 	$lines.Add("| Repositories missing built examples | $($summary.ExampleBuildGaps) |")
@@ -353,13 +477,17 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("")
 	$lines.Add("## Repository Evidence")
 	$lines.Add("")
-	$lines.Add("| Repository | Lane | Backends | Models | Built examples | Runtime smoke | Gate state | Action |")
-	$lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- |")
+	$lines.Add("| Repository | Lane | Backends | Models | Built examples | Runtime smoke | Inference smoke | Gate state | Action |")
+	$lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 	foreach ($entry in @($Entries | Sort-Object Priority, Repository)) {
 		$backends = Join-OrDash -Values $entry.DeclaredBackends
 		$modelText = "$($entry.ModelEvidence.State) ($($entry.ModelEvidence.Count))"
 		$buildText = "$($entry.ExampleBuildEvidence.State) ($($entry.ExampleBuildEvidence.BuiltExamples)/$($entry.ExampleBuildEvidence.ExampleCount))"
-		$lines.Add("| $($entry.Repository) | $($entry.Lane) | $backends | $modelText | $buildText | $($entry.RuntimeSmokeEvidence.State) | $($entry.GateState) | $($entry.Action) |")
+		$inferenceText = $entry.InferenceSmokeEvidence.State
+		if (![string]::IsNullOrWhiteSpace([string]$entry.InferenceSmokeEvidence.Backend)) {
+			$inferenceText += " ($($entry.InferenceSmokeEvidence.Backend))"
+		}
+		$lines.Add("| $($entry.Repository) | $($entry.Lane) | $backends | $modelText | $buildText | $($entry.RuntimeSmokeEvidence.State) | $inferenceText | $($entry.GateState) | $($entry.Action) |")
 	}
 	$lines.Add("")
 	$lines.Add("## Next Commands")
@@ -372,6 +500,7 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("")
 	$lines.Add("- Keep this as planning evidence until a lane-owned runtime-smoke script exists.")
 	$lines.Add("- Do not add model-specific code to Core; companion lanes own model loading and inference.")
+	$lines.Add("- Treat `inference-checked` as local evidence from an ignored lane-owned smoke report, not as a committed artifact.")
 	$lines.Add("- Treat SAM as the first reference lane because local SAM3 CPU/CUDA evidence already exists outside Core.")
 
 	return $lines -join [Environment]::NewLine
