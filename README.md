@@ -87,6 +87,7 @@ cd ../ofxGgmlLlama
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |
+| `scripts\fetch-smoke-build-ci-report.bat` | Download the latest uploaded smoke-build CI JSON report artifact for release-readiness evidence |
 | `scripts\plan-release-readiness.bat` | Generate non-mutating release-readiness evidence from workflow status, backend capability/runtime planning, smoke-build CI, and policy metadata |
 | `scripts\status-family.bat` | Print the local ofxGgml addon-family status |
 | `scripts\write-agent-instructions.bat` | Refresh Codex/Copilot instructions across active addon repos |
@@ -171,9 +172,8 @@ needs compact doctor coverage evidence without full script lists.
 Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` when
 another agent needs compact backend/runtime readiness evidence before choosing a
 model-backed runtime smoke target. It reports declared CPU/CUDA/Metal/Vulkan
-lanes, local model/build evidence, runtime-smoke entry points, and the current
-reference target (`ofxGgmlSam`) without running inference or mutating companion
-addons.
+lanes, local model/build evidence, runtime-smoke entry points, and release
+handoff actions without running inference or mutating companion addons.
 Use `scripts\plan-release-readiness.bat` to generate a release-readiness score
 with workflow-status evidence, backend capability evidence, backend runtime verification evidence,
 and smoke-build CI evidence when planning release gates. By default it writes
@@ -181,6 +181,13 @@ to a temporary report path and folds in
 `docs\backend-capability-report.md`, generated backend runtime planning, plus
 `.smoke-build-ci-report.json` when present; pass `-OutputPath` when you
 intentionally want to persist evidence in the repository.
+Use `scripts\fetch-smoke-build-ci-report.bat -Force` when an agent needs to
+download the latest uploaded smoke-build CI artifact into
+`.smoke-build-ci-report.json`; this requires GitHub Actions artifact access
+through `GITHUB_TOKEN` or `-Token`.
+Use `scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport` when a CI or
+release agent should fetch the smoke-build CI artifact into a temporary path and
+fold it into the release-readiness score in one pass.
 Use `scripts\plan-release-readiness.bat -Json` when another agent needs release
 evidence `Summary` counts, generated report paths, evidence paths, and next
 commands.

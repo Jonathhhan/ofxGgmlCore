@@ -15,6 +15,7 @@ obj/
 *.ilk
 *.lib
 *.pdb
+.smoke-build-ci-report.json
 
 *.gguf
 *.safetensors

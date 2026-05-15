@@ -9,6 +9,7 @@ param(
 	[switch]$SkipBackendCapability,
 	[switch]$SkipBackendRuntimePlan,
 	[switch]$SkipSmokeBuildCi,
+	[switch]$FetchSmokeBuildCiReport,
 	[switch]$SummaryOnly,
 	[switch]$Json
 )
@@ -30,6 +31,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")
+	$commands.Add("scripts\fetch-smoke-build-ci-report.bat -Force")
 	$commands.Add("scripts\run-smoke-build-ci.ps1 -CloneAddonRepos -TargetsPerStage 0")
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	$commands.Add("scripts\release-candidate.ps1")
@@ -64,6 +66,7 @@ $addonRoot = Split-Path -Parent $scriptRoot
 $releaseScript = Join-Path $scriptRoot "generate-release-readiness-score.py"
 $workflowScript = Join-Path $scriptRoot "fetch-workflow-status.py"
 $backendRuntimeScript = Join-Path $scriptRoot "plan-backend-runtime-verification.ps1"
+$smokeBuildFetchScript = Join-Path $scriptRoot "fetch-smoke-build-ci-report.ps1"
 
 $resolvedOutputPath = if ([string]::IsNullOrWhiteSpace($OutputPath)) {
 	Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-readiness-score.md"
@@ -121,11 +124,26 @@ if ([string]::IsNullOrWhiteSpace($backendRuntimePlan) -and !$SkipBackendRuntimeP
 
 $smokeBuildReport = $SmokeBuildCiReport
 $usedDefaultSmokeBuildReport = $false
+$fetchedSmokeBuildReport = $false
 if ([string]::IsNullOrWhiteSpace($smokeBuildReport) -and !$SkipSmokeBuildCi) {
 	$defaultSmokeBuildReport = Join-Path $addonRoot ".smoke-build-ci-report.json"
 	if (Test-Path -LiteralPath $defaultSmokeBuildReport -PathType Leaf) {
 		$smokeBuildReport = $defaultSmokeBuildReport
 		$usedDefaultSmokeBuildReport = $true
+	} elseif ($FetchSmokeBuildCiReport) {
+		$smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-release-evidence.json"
+		Write-Step "Fetching smoke-build CI report evidence"
+		$fetchOutput = @(& $smokeBuildFetchScript -OutputPath $smokeBuildReport -Force -Json 2>&1)
+		if (!$?) {
+			if ($fetchOutput.Count -gt 0) {
+				$fetchOutput | Write-Host
+			}
+			throw "fetch-smoke-build-ci-report.ps1 failed."
+		}
+		$fetchedSmokeBuildReport = $true
+		if (!$Json -and $fetchOutput.Count -gt 0) {
+			$fetchOutput | Write-Host
+		}
 	}
 }
 
@@ -168,6 +186,7 @@ $summary = [pscustomobject]@{
 	BackendRuntimePlanEvidenceExists = (![string]::IsNullOrWhiteSpace($backendRuntimePlan) -and (Test-Path -LiteralPath $backendRuntimePlan -PathType Leaf))
 	SmokeBuildCiEvidenceProvided = ![string]::IsNullOrWhiteSpace($smokeBuildReport)
 	SmokeBuildCiDefaultUsed = $usedDefaultSmokeBuildReport
+	SmokeBuildCiEvidenceFetched = $fetchedSmokeBuildReport
 	SmokeBuildCiEvidenceExists = (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf))
 	OutputPathIsTemporary = [string]::IsNullOrWhiteSpace($OutputPath)
 }
@@ -207,6 +226,7 @@ if ($Json) {
 		SkipBackendCapability = [bool]$SkipBackendCapability
 		SkipBackendRuntimePlan = [bool]$SkipBackendRuntimePlan
 		SkipSmokeBuildCi = [bool]$SkipSmokeBuildCi
+		FetchSmokeBuildCiReport = [bool]$FetchSmokeBuildCiReport
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		EvidenceSummaries = $evidenceSummaries

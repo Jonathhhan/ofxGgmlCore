@@ -55,6 +55,23 @@ present. Use `-SkipWorkflowStatus` only for an offline policy/evidence dry run,
 evidence, and pass `-SmokeBuildCiReport <path>` when using a downloaded GitHub
 Actions artifact as release evidence.
 
+To fetch the latest uploaded smoke-build CI artifact before planning:
+
+```bat
+scripts\fetch-smoke-build-ci-report.bat -Force
+scripts\plan-release-readiness.bat
+```
+
+In GitHub Actions or another environment with artifact access, a release agent
+can do that in one pass:
+
+```bat
+scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport
+```
+
+The fetch path uses `GITHUB_TOKEN` or `-Token` and writes fetched evidence to a
+temporary file unless `scripts\fetch-smoke-build-ci-report.bat` is run directly.
+
 The focused Core example build wrapper remains available when a smaller check is
 needed:
 
@@ -82,9 +99,8 @@ Before creating the `1.0.1` tag:
   deleting branches automatically.
 - backend capability evidence is present or the release notes explicitly state
   why runtime evidence is unavailable.
-- `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` identifies
-  the next model-backed runtime-smoke target and preserves `ofxGgmlSam` as the
-  first reference lane until SAM3 CPU/CUDA evidence is lane-owned.
+- `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` reports
+  managed runtime-smoke entrypoints as `available-and-validated` before release.
 - generated binaries, model files, caches, and project files are not staged.
 - optional runtimes fail clearly when not installed.
 - any new public type has a focused headless test.
