@@ -20,30 +20,46 @@ product-level GUI workflows.
 
 ## Required Checks
 
-Run:
+Run the full local release candidate pass:
 
 ```bat
-scripts\validate-local.bat
+scripts\release-candidate.bat
 ```
 
 That command must pass and must not open UI windows or start long-running
-servers. It covers:
+servers. It includes:
 
 - headless C++ addon tests
 - setup dry-run smoke checks
 - generated Visual Studio project repair checks
-- simple-example launch dry-run smoke checks
+- Core example launch dry-run smoke checks
 - first-run dry-run checks
 - generated-artifact hygiene checks
+- ecosystem readiness planning
+- release-readiness planning
+- backend verification planning
+- Core example build validation
 
-Example builds are useful release confidence checks when generated project files
-exist locally:
+Generate the release evidence report before tagging:
 
 ```bat
-scripts\build-simple-example.bat
+scripts\plan-release-readiness.bat
 ```
 
-Companion addon checks should run in their own repositories.
+The release evidence report folds in workflow status when network access is
+available and `docs\backend-capability-report.md` when it exists. Use
+`-SkipWorkflowStatus` only for an offline policy/evidence dry run.
+
+The focused Core example build wrapper remains available when a smaller check is
+needed:
+
+```bat
+scripts\build-simple-example.bat -Example ofxGgmlCoreExample
+```
+
+Companion addon checks should run in their own repositories. Ecosystem-wide
+generated-project compile coverage should use the smoke-build control plane and
+`smoke-build-ci` workflow rather than committing generated project files.
 
 ## Tag Gate
 
@@ -54,6 +70,9 @@ Before creating the `1.0.1` tag:
   committed or left unstaged as local setup state.
 - README setup and validation commands match the actual scripts.
 - `docs/CORE_CONTRACT.md` matches the addon boundary.
+- `scripts\plan-release-readiness.bat` has no required workflow blockers.
+- backend capability evidence is present or the release notes explicitly state
+  why runtime evidence is unavailable.
 - generated binaries, model files, caches, and project files are not staged.
 - optional runtimes fail clearly when not installed.
 - any new public type has a focused headless test.
