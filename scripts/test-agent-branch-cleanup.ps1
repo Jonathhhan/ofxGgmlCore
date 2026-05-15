@@ -100,6 +100,15 @@ if (!$summaryParsed.PSObject.Properties["RepositorySummaries"]) {
 if ($summaryParsed.PSObject.Properties["Inventory"] -or $summaryParsed.PSObject.Properties["Candidates"]) {
 	throw "agent branch cleanup summary JSON should omit branch-level Inventory and Candidates."
 }
+if (@($summaryParsed.NextCommands | Where-Object { [string]$_ -match [regex]::Escape("git -C") }).Count -gt 0) {
+	throw "agent branch cleanup summary JSON should omit raw delete commands."
+}
+if (@($summaryParsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Fetch -Json -SummaryOnly") {
+	throw "agent branch cleanup summary JSON did not include the refreshed summary command."
+}
+if ($summaryParsed.Summary.DeleteCandidates -gt 0 -and @($summaryParsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Fetch") {
+	throw "agent branch cleanup summary JSON did not include the detailed review command."
+}
 
 $summaryMarkdownOutput = & $cleanupScript -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -108,7 +117,7 @@ if (!$?) {
 $summaryMarkdownText = $summaryMarkdownOutput -join "`n"
 foreach ($expected in @(
 	"## Repository Summary",
-	"Detailed branch inventory and candidates were omitted",
+	"Detailed branch inventory, candidates, and delete commands were omitted",
 	"## Next Commands"
 )) {
 	if ($summaryMarkdownText -notmatch [regex]::Escape($expected)) {
@@ -117,6 +126,9 @@ foreach ($expected in @(
 }
 if ($summaryMarkdownText -match [regex]::Escape("## Branch Inventory") -or $summaryMarkdownText -match [regex]::Escape("## Candidates")) {
 	throw "agent branch cleanup summary output should omit branch-level tables."
+}
+if ($summaryMarkdownText -match [regex]::Escape("git -C")) {
+	throw "agent branch cleanup summary output should omit raw delete commands."
 }
 
 $emptyJsonOutput = & $cleanupScript -BranchPattern "codex/no-cleanup-branch-should-match-*" -Fetch -Json *>&1 | ForEach-Object { $_.ToString() }
