@@ -73,7 +73,11 @@ handoff plan for review.
 Use `scripts\status-family.bat -Json` when Codex, GitHub Copilot, Hermes Agent,
 or another automation needs local inventory `Summary` counts, next commands,
 and per-repository status before choosing a planning command. Its next commands
-include compact branch-cleanup summary evidence, not branch deletion.
+include compact ecosystem, readiness, and branch-cleanup summary evidence, not
+branch deletion.
+Use `scripts\status-family.bat -Json -SummaryOnly` when another agent needs
+local inventory counts and compact repository summaries without the full addon
+records.
 Use `scripts\plan-ecosystem.bat -Json` when Codex, GitHub Copilot, Hermes Agent,
 or another automation needs machine-readable `Summary`, `PlanningPriorities`,
 `AgentGuardrails`, `SmokeBuildLifecycle`, and `SuggestedValidation` fields

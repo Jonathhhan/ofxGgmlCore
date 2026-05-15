@@ -6,7 +6,8 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 
 - Keep `docs\CODING_AGENT_WORK.md` aligned with `scripts\plan-coding-agent-work.bat` after control-plane changes.
 - Treat stale generic lane-uplift rows as a regression when the target lane already has a workflow guide.
-- Use `scripts\status-family.bat -Json` when another agent needs local inventory summary counts, next commands, and per-repository status before picking a planner; its next commands include compact branch-cleanup summary evidence, not branch deletion.
+- Use `scripts\status-family.bat -Json` when another agent needs local inventory summary counts, next commands, and per-repository status before picking a planner; its next commands include compact ecosystem, readiness, and branch-cleanup summary evidence, not branch deletion.
+- Use `scripts\status-family.bat -Json -SummaryOnly` when another agent needs compact inventory evidence without full addon records.
 - Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work; it now includes structured agent handoff checks and a deterministic release-readiness planning pass.
 - Use `scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly` when another agent needs compact readiness evidence without successful step logs.
 - Use `scripts\plan-doctor-rollout.bat -Json` when another agent needs doctor coverage summary counts and next commands.

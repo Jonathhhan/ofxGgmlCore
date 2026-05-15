@@ -127,8 +127,11 @@ sibling `ofxGgml*` repositories, and attach known lane metadata where
 available.
 Use `scripts\status-family.bat -Json` when an agent needs local inventory
 `Summary` counts, next commands, and per-repository status before planning. The
-next commands include compact branch-cleanup summary evidence, not branch
-deletion.
+next commands include compact ecosystem, readiness, and branch-cleanup summary
+evidence, not branch deletion.
+Use `scripts\status-family.bat -Json -SummaryOnly` when another agent needs
+local inventory counts and compact repository summaries without the full addon
+records.
 Use `scripts\plan-ecosystem.bat -Json` when an agent needs structured summary,
 priority, guardrail, smoke-build lifecycle, and validation-command fields.
 Use `scripts\plan-ecosystem.bat -Json -SummaryOnly` when another agent needs
