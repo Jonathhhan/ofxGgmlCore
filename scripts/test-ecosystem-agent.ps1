@@ -37,6 +37,12 @@ $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
 if (!$parsed.Addons -or $parsed.Addons.Count -eq 0) {
 	throw "ecosystem agent JSON output did not include addons."
 }
+if ($parsed.SummaryOnly) {
+	throw "ecosystem agent JSON output unexpectedly reported SummaryOnly."
+}
+if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -eq 0) {
+	throw "ecosystem agent JSON output did not include repository summaries."
+}
 foreach ($property in @("Summary", "PlanningPriorities", "AgentGuardrails", "SmokeBuildLifecycle", "SuggestedValidation")) {
 	if (!$parsed.PSObject.Properties[$property]) {
 		throw "ecosystem agent JSON output did not include $property."
@@ -70,6 +76,31 @@ if (@($parsed.SmokeBuildLifecycle) -notcontains "scripts\check-smoke-build-targe
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the branch cleanup validation command."
 }
+if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-ecosystem.bat -Json -SummaryOnly") {
+	throw "ecosystem agent JSON output did not include the compact ecosystem plan validation command."
+}
 if ($jsonOutput -join "`n" -notmatch '"PlanningPriorities":\s+\[') {
 	throw "ecosystem agent JSON output did not preserve PlanningPriorities as an array."
+}
+
+$summaryJsonOutput = & $planScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-ecosystem.ps1 -Json -SummaryOnly failed."
+}
+
+$summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$summaryParsed.SummaryOnly) {
+	throw "ecosystem agent summary JSON did not report SummaryOnly."
+}
+if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -eq 0) {
+	throw "ecosystem agent summary JSON did not retain compact summary evidence."
+}
+if ($summaryParsed.PSObject.Properties["Addons"]) {
+	throw "ecosystem agent summary JSON should omit full Addons inventory."
+}
+foreach ($property in @("Name", "Known", "Classified", "Present", "DirtyCount", "ValidateScript", "AgentWorkflowGuide")) {
+	$firstSummary = @($summaryParsed.RepositorySummaries | Select-Object -First 1)
+	if (!$firstSummary[0].PSObject.Properties[$property]) {
+		throw "ecosystem agent summary JSON repository summary did not include $property."
+	}
 }

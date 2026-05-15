@@ -74,6 +74,15 @@ foreach ($stepName in @("structured ecosystem plan", "structured coding agent wo
 	}
 }
 
+$structuredPlanStep = @($parsed.Steps | Where-Object { $_.Name -eq "structured ecosystem plan" } | Select-Object -First 1)
+$structuredPlanJson = (@($structuredPlanStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$structuredPlanJson.SummaryOnly) {
+	throw "ecosystem readiness structured ecosystem plan should use SummaryOnly output."
+}
+if (!$structuredPlanJson.RepositorySummaries -or $structuredPlanJson.PSObject.Properties["Addons"]) {
+	throw "ecosystem readiness structured ecosystem plan did not use compact repository summaries."
+}
+
 $releaseReadinessStep = @($parsed.Steps | Where-Object { $_.Name -eq "release readiness plan" } | Select-Object -First 1)
 if ($releaseReadinessStep.Count -eq 0 -or $releaseReadinessStep[0].State -ne "OK") {
 	throw "ecosystem readiness JSON did not report release readiness plan as OK."

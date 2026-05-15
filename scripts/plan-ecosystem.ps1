@@ -1,5 +1,6 @@
 param(
 	[string]$OutputPath = "",
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -114,6 +115,7 @@ function Get-SuggestedValidationCommands {
 		"scripts\write-agent-instructions.bat -Check",
 		"scripts\audit-ecosystem.bat -Strict",
 		"scripts\plan-ecosystem.bat",
+		"scripts\plan-ecosystem.bat -Json -SummaryOnly",
 		"scripts\plan-coding-agent-work.bat",
 		"scripts\plan-smoke-build-target-handoff.bat -Stage generate-project",
 		"scripts\check-smoke-build-target-preflight.bat -Stage generate-project",
@@ -202,15 +204,30 @@ $statuses = @($status.Addons)
 
 if ($Json) {
 	$buckets = Get-EcosystemPlanBuckets -Statuses $statuses
+	$addonSummaries = @($statuses | ForEach-Object {
+		[pscustomobject]@{
+			Name = [string]$_.Name
+			Known = [bool]$_.Known
+			Classified = [bool]$_.Classified
+			Present = [bool]$_.Present
+			DirtyCount = [int]$_.DirtyCount
+			ValidateScript = [bool]$_.ValidateScript
+			AgentWorkflowGuide = [bool]$_.AgentWorkflowGuide
+		}
+	})
 	$result = [pscustomobject]@{
 		Root = $status.Root
 		GeneratedFrom = "scripts/status-family.ps1 -Json"
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = Get-EcosystemSummary -Buckets $buckets
 		PlanningPriorities = @(Get-PlanningPriorityLines -Buckets $buckets)
 		AgentGuardrails = @(Get-AgentGuardrailLines)
 		SmokeBuildLifecycle = @(Get-SmokeBuildLifecycleCommands)
 		SuggestedValidation = @(Get-SuggestedValidationCommands)
-		Addons = $statuses
+		RepositorySummaries = $addonSummaries
+	}
+	if (!$SummaryOnly) {
+		$result | Add-Member -NotePropertyName Addons -NotePropertyValue $statuses
 	}
 	$content = $result | ConvertTo-Json -Depth 6
 } else {

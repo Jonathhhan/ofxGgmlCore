@@ -131,6 +131,8 @@ next commands include compact branch-cleanup summary evidence, not branch
 deletion.
 Use `scripts\plan-ecosystem.bat -Json` when an agent needs structured summary,
 priority, guardrail, smoke-build lifecycle, and validation-command fields.
+Use `scripts\plan-ecosystem.bat -Json -SummaryOnly` when another agent needs
+compact ecosystem summary evidence without the full addon inventory.
 Use `scripts\plan-coding-agent-work.bat` when an agent needs the next concrete
 Codex, Copilot, or Hermes-safe task. It turns local family status into a
 prioritized queue with suggested files and validation commands.
