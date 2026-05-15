@@ -84,6 +84,9 @@ cd ../ofxGgmlLlama
 | `scripts\plan-smoke-build-target-handoff.bat` | Generate an agent checklist for the selected smoke-build target |
 | `scripts\check-smoke-build-target-preflight.bat` | Check whether the selected smoke-build target is safe to act on |
 | `scripts\check-smoke-build-target-postflight.bat` | Report generated project and git impact after acting on a smoke-build target |
+| `scripts\plan-smoke-build-project-repair.bat` | Plan generated Visual Studio project addon-wiring repairs |
+| `scripts\plan-smoke-build-compile.bat` | Plan focused compile commands for generated examples |
+| `scripts\build-smoke-example.bat` | Build a generated example that passed smoke-build postflight |
 | `scripts\plan-doctor-rollout.bat` | Dry-run rollout plan for consistent local doctor diagnostics |
 | `scripts\plan-agent-branch-cleanup.bat` | Dry-run cleanup plan for merged Codex/Copilot/Hermes branches |
 | `scripts\plan-backend-runtime-verification.bat` | Dry-run runtime evidence plan for backend, model, build, and smoke-test readiness |
