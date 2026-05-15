@@ -129,7 +129,10 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 		"check-smoke-build-target-postflight.ps1",
 		"run-smoke-build-ci.ps1",
 		"smoke-build-ci-report.ps1",
-		"test-smoke-build-ci-report.ps1"
+		"test-smoke-build-ci-report.ps1",
+		"plan-agent-branch-cleanup.ps1",
+		"test-agent-branch-cleanup.ps1",
+		"plan-agent-branch-cleanup.bat -Json -SummaryOnly"
 	)) {
 		if ($snapshot -notmatch [regex]::Escape($expected)) {
 			throw "committed coding agent work snapshot did not reference $expected."
