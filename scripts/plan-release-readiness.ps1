@@ -1,8 +1,10 @@
 param(
 	[string]$OutputPath = "",
 	[string]$WorkflowStatusReport = "",
+	[string]$BackendCapabilityReport = "",
 	[int]$StaleDays = 30,
-	[switch]$SkipWorkflowStatus
+	[switch]$SkipWorkflowStatus,
+	[switch]$SkipBackendCapability
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,9 +37,20 @@ if ([string]::IsNullOrWhiteSpace($workflowReport) -and !$SkipWorkflowStatus) {
 	}
 }
 
+$backendReport = $BackendCapabilityReport
+if ([string]::IsNullOrWhiteSpace($backendReport) -and !$SkipBackendCapability) {
+	$defaultBackendReport = Join-Path $addonRoot "docs\backend-capability-report.md"
+	if (Test-Path -LiteralPath $defaultBackendReport -PathType Leaf) {
+		$backendReport = $defaultBackendReport
+	}
+}
+
 $arguments = @($releaseScript, "--output", $resolvedOutputPath)
 if (![string]::IsNullOrWhiteSpace($workflowReport)) {
 	$arguments += @("--workflow-status-report", $workflowReport)
+}
+if (![string]::IsNullOrWhiteSpace($backendReport)) {
+	$arguments += @("--backend-capability-report", $backendReport)
 }
 
 Write-Step "Generating release readiness score"

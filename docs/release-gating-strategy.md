@@ -14,6 +14,7 @@ The ecosystem currently provides:
 - release-readiness scoring
 - live workflow observability scaffolding
 - workflow action summaries folded into release-readiness evidence
+- backend capability reports folded into release-readiness evidence
 - multi-platform smoke-build scaffolding
 - Core CPU backend runtime smoke evidence from the reusable `backend-runtime-check` workflow
 
