@@ -1,5 +1,6 @@
 param(
 	[switch]$Json,
+	[switch]$SummaryOnly,
 	[switch]$Strict
 )
 
@@ -153,12 +154,28 @@ function Get-FamilyStatusSummary {
 
 function Get-FamilyStatusNextCommands {
 	$commands = New-Object System.Collections.Generic.List[string]
-	$commands.Add("scripts\plan-ecosystem.bat -Json")
+	$commands.Add("scripts\plan-ecosystem.bat -Json -SummaryOnly")
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
-	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-coding-agent-work.bat -Json")
 	return @($commands.ToArray())
+}
+
+function ConvertTo-FamilyRepositorySummary {
+	param([object]$Status)
+
+	[pscustomobject]@{
+		Name = [string]$Status.Name
+		Known = [bool]$Status.Known
+		Classified = [bool]$Status.Classified
+		Present = [bool]$Status.Present
+		Head = [string]$Status.Head
+		DirtyCount = [int]$Status.DirtyCount
+		ValidateScript = [bool]$Status.ValidateScript
+		DoctorScript = [bool]$Status.DoctorScript
+		AgentWorkflowGuide = [bool]$Status.AgentWorkflowGuide
+	}
 }
 
 $statuses = @($family | ForEach-Object { Get-AddonStatus -Addon $_ })
@@ -166,12 +183,17 @@ $summary = Get-FamilyStatusSummary -Statuses $statuses
 $nextCommands = Get-FamilyStatusNextCommands
 
 if ($Json) {
-	[pscustomobject]@{
+	$result = [pscustomobject]@{
 		Root = $addonsRoot
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		NextCommands = $nextCommands
-		Addons = $statuses
-	} | ConvertTo-Json -Depth 5
+		RepositorySummaries = @($statuses | ForEach-Object { ConvertTo-FamilyRepositorySummary -Status $_ })
+	}
+	if (!$SummaryOnly) {
+		$result | Add-Member -NotePropertyName Addons -NotePropertyValue $statuses
+	}
+	$result | ConvertTo-Json -Depth 5
 } else {
 	Write-Host "ofxGgml family status"
 	Write-Host "Root  $addonsRoot"
