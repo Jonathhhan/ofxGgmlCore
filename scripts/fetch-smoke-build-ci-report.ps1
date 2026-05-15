@@ -19,6 +19,31 @@ function Write-Step {
 	}
 }
 
+function Get-GitHubAccessToken {
+	param([string]$Token)
+
+	if (![string]::IsNullOrWhiteSpace($Token)) {
+		return $Token
+	}
+
+	$gh = Get-Command gh -ErrorAction SilentlyContinue
+	if (!$gh) {
+		return ""
+	}
+
+	try {
+		$tokenOutput = @(& $gh.Source auth token 2>$null)
+		if ($LASTEXITCODE -eq 0 -and $tokenOutput.Count -gt 0) {
+			$resolvedToken = ([string]$tokenOutput[0]).Trim()
+			if (![string]::IsNullOrWhiteSpace($resolvedToken)) {
+				return $resolvedToken
+			}
+		}
+	} catch {
+	}
+	return ""
+}
+
 function Invoke-GitHubJson {
 	param(
 		[string]$Uri,
@@ -43,7 +68,7 @@ function Invoke-GitHubDownload {
 	)
 
 	if ([string]::IsNullOrWhiteSpace($Token)) {
-		throw "GitHub Actions artifact download requires a token. Set GITHUB_TOKEN or pass -Token."
+		throw "GitHub Actions artifact download requires a token. Set GITHUB_TOKEN, pass -Token, or authenticate gh locally."
 	}
 
 	$headers = @{
@@ -86,6 +111,8 @@ if ([string]::IsNullOrWhiteSpace($Branch)) {
 	}
 }
 
+$resolvedToken = Get-GitHubAccessToken -Token $Token
+
 $apiRoot = "https://api.github.com/repos/$Repository/actions"
 $selectedRun = $null
 if (![string]::IsNullOrWhiteSpace($RunId)) {
@@ -105,12 +132,12 @@ if (![string]::IsNullOrWhiteSpace($RunId)) {
 	}
 	$runsUri = "$apiRoot/workflows/$([uri]::EscapeDataString($WorkflowFile))/runs?$query"
 	Write-Step "Finding latest successful smoke-build CI workflow run"
-	$runs = Invoke-GitHubJson -Uri $runsUri -Token $Token
+	$runs = Invoke-GitHubJson -Uri $runsUri -Token $resolvedToken
 	$workflowRuns = @($runs.workflow_runs)
 	if ($workflowRuns.Count -eq 0 -and ![string]::IsNullOrWhiteSpace($Branch)) {
 		$runsUri = "$apiRoot/workflows/$([uri]::EscapeDataString($WorkflowFile))/runs?status=success&per_page=50"
 		Write-Step "No branch-specific run found; falling back to latest successful workflow run"
-		$runs = Invoke-GitHubJson -Uri $runsUri -Token $Token
+		$runs = Invoke-GitHubJson -Uri $runsUri -Token $resolvedToken
 		$workflowRuns = @($runs.workflow_runs)
 	}
 	$selectedRun = @($workflowRuns | Where-Object { [string]$_.conclusion -eq "success" } | Select-Object -First 1)[0]
@@ -121,7 +148,7 @@ if (![string]::IsNullOrWhiteSpace($RunId)) {
 
 $artifactsUri = "$apiRoot/runs/$($selectedRun.id)/artifacts"
 Write-Step "Finding smoke-build CI report artifact"
-$artifacts = Invoke-GitHubJson -Uri $artifactsUri -Token $Token
+$artifacts = Invoke-GitHubJson -Uri $artifactsUri -Token $resolvedToken
 $artifact = @(@($artifacts.artifacts) | Where-Object {
 	[string]$_.name -eq $ArtifactName -and ![bool]$_.expired
 } | Sort-Object -Property created_at -Descending | Select-Object -First 1)[0]
@@ -136,7 +163,7 @@ New-Item -ItemType Directory -Force -Path $tempRoot, $extractPath | Out-Null
 
 try {
 	Write-Step "Downloading smoke-build CI report artifact"
-	Invoke-GitHubDownload -Uri ([string]$artifact.archive_download_url) -Token $Token -OutFile $zipPath
+	Invoke-GitHubDownload -Uri ([string]$artifact.archive_download_url) -Token $resolvedToken -OutFile $zipPath
 	Expand-Archive -LiteralPath $zipPath -DestinationPath $extractPath -Force
 	$report = @(Get-ChildItem -LiteralPath $extractPath -Recurse -File -Filter ".smoke-build-ci-report.json" | Select-Object -First 1)[0]
 	if (!$report) {

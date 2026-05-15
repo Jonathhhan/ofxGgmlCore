@@ -69,8 +69,9 @@ can do that in one pass:
 scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport
 ```
 
-The fetch path uses `GITHUB_TOKEN` or `-Token` and writes fetched evidence to a
-temporary file unless `scripts\fetch-smoke-build-ci-report.bat` is run directly.
+The fetch path uses `GITHUB_TOKEN`, `-Token`, or an authenticated local `gh`
+session and writes fetched evidence to a temporary file unless
+`scripts\fetch-smoke-build-ci-report.bat` is run directly.
 
 Use the strict assertion gate before tagging:
 

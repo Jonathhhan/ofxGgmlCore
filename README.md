@@ -185,7 +185,7 @@ intentionally want to persist evidence in the repository.
 Use `scripts\fetch-smoke-build-ci-report.bat -Force` when an agent needs to
 download the latest uploaded smoke-build CI artifact into
 `.smoke-build-ci-report.json`; this requires GitHub Actions artifact access
-through `GITHUB_TOKEN` or `-Token`.
+through `GITHUB_TOKEN`, `-Token`, or an authenticated local `gh` session.
 Use `scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport` when a CI or
 release agent should fetch the smoke-build CI artifact into a temporary path and
 fold it into the release-readiness score in one pass.

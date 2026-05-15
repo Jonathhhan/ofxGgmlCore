@@ -131,7 +131,7 @@ needs compact release evidence summaries without generated report paths.
 Use `scripts\fetch-smoke-build-ci-report.bat -Force` when an agent needs to
 download the latest uploaded `ofx-smoke-build-ci-report` artifact into
 `.smoke-build-ci-report.json` before release planning; this requires
-`GITHUB_TOKEN` or `-Token`.
+`GITHUB_TOKEN`, `-Token`, or an authenticated local `gh` session.
 Use `scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport` when a CI or
 release agent should fetch that artifact into a temporary path and fold it into
 the release-readiness score in one pass.

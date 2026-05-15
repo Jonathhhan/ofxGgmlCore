@@ -366,6 +366,10 @@ Invoke-CheckedScript `
 	-ScriptPath (Join-Path $scriptRoot "test-smoke-build-ci-report.ps1")
 
 Invoke-CheckedScript `
+	-Label "Checking smoke-build CI artifact fetch auth" `
+	-ScriptPath (Join-Path $scriptRoot "test-fetch-smoke-build-ci-report.ps1")
+
+Invoke-CheckedScript `
 	-Label "Checking agent branch cleanup planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-agent-branch-cleanup.ps1")
 
