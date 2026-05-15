@@ -135,6 +135,9 @@ download the latest uploaded `ofx-smoke-build-ci-report` artifact into
 Use `scripts\plan-release-readiness.bat -FetchSmokeBuildCiReport` when a CI or
 release agent should fetch that artifact into a temporary path and fold it into
 the release-readiness score in one pass.
+Use `scripts\assert-release-readiness.bat -SmokeBuildCiReport .smoke-build-ci-report.json`
+when a release gate should fail on missing required evidence, required workflow
+blockers, or failed smoke-build CI evidence.
 Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` when
 another agent needs compact CPU/CUDA/Metal/Vulkan declaration, model-path,
 example-build, runtime-smoke, and reference-lane readiness evidence before
