@@ -202,6 +202,93 @@ function Get-NextCommands {
 	)
 }
 
+function New-LocalCodexAction {
+	param(
+		[string]$Priority,
+		[string]$State,
+		[string]$Action,
+		[string]$Rationale,
+		[string]$Command = ""
+	)
+
+	[pscustomobject]@{
+		Priority = $Priority
+		State = $State
+		Action = $Action
+		Rationale = $Rationale
+		Command = $Command
+	}
+}
+
+function Get-RecommendedActions {
+	param(
+		[string]$ReadinessState,
+		[array]$Configs,
+		[array]$Endpoints
+	)
+
+	$actions = New-Object System.Collections.Generic.List[object]
+	$reachable = @($Endpoints | Where-Object { $_.Reachable })
+	$firstReachable = @($reachable | Select-Object -First 1)
+	$config = @($Configs | Where-Object { $_.Exists } | Select-Object -First 1)
+
+	switch ($ReadinessState) {
+		"ready" {
+			$actions.Add((New-LocalCodexAction `
+				-Priority "P2" `
+				-State $ReadinessState `
+				-Action "Use the local Codex profile only for bounded planning, documentation, validation, and small repository-scoped patches." `
+				-Rationale "The endpoint and config are visible, but release truth still comes from validation and CI." `
+				-Command "scripts\plan-coding-agent-work.bat -Json"))
+		}
+		"local-provider-missing" {
+			$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:8080/v1" }
+			$configPath = if ($config.Count -gt 0) { [string]$config[0].Path } else { "%USERPROFILE%\.codex\config.toml" }
+			$actions.Add((New-LocalCodexAction `
+				-Priority "P1" `
+				-State $ReadinessState `
+				-Action "Add a local Codex provider/profile that points at the reachable localhost OpenAI-compatible endpoint." `
+				-Rationale "A server is reachable, but the checked Codex config does not expose a local provider endpoint." `
+				-Command "Edit $configPath and add a provider base_url for $endpoint."))
+		}
+		"server-missing" {
+			$endpoint = if (@($Endpoints).Count -gt 0) { [string]@($Endpoints)[0].BaseUrl } else { "http://127.0.0.1:8080/v1" }
+			$actions.Add((New-LocalCodexAction `
+				-Priority "P1" `
+				-State $ReadinessState `
+				-Action "Start or repoint the local OpenAI-compatible llama-server endpoint referenced by Codex config." `
+				-Rationale "Codex config contains a local provider endpoint, but the planner could not reach `/v1/models`." `
+				-Command "Start llama-server on $endpoint, then rerun scripts\plan-local-codex.bat -Json -SummaryOnly."))
+		}
+		"config-missing" {
+			$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:8080/v1" }
+			$actions.Add((New-LocalCodexAction `
+				-Priority "P1" `
+				-State $ReadinessState `
+				-Action "Create a Codex config with a local provider/profile for the reachable endpoint." `
+				-Rationale "A localhost model endpoint is reachable, but no Codex config file was found in the checked locations." `
+				-Command "Create %USERPROFILE%\.codex\config.toml with a provider base_url for $endpoint."))
+		}
+		default {
+			$actions.Add((New-LocalCodexAction `
+				-Priority "P2" `
+				-State $ReadinessState `
+				-Action "Keep local Codex disabled until a localhost model server and matching Codex provider are intentionally configured." `
+				-Rationale "No local provider and no reachable default endpoint were detected." `
+				-Command "scripts\plan-local-codex.bat -Json -SummaryOnly"))
+		}
+	}
+
+	$actions.Add((New-LocalCodexAction `
+		-Priority "P2" `
+		-State "guardrail" `
+		-Action "Before any repository edit, run the ecosystem and coding-agent planners and keep changes inside the suggested file scope." `
+		-Rationale "Local model suggestions are helper evidence, not release or lane-ownership truth." `
+		-Command "scripts\plan-ecosystem.bat -Json -SummaryOnly; scripts\plan-coding-agent-work.bat -Json"))
+
+	return @($actions.ToArray())
+}
+
 function ConvertTo-LocalCodexMarkdown {
 	param([object]$Result)
 
@@ -240,6 +327,15 @@ function ConvertTo-LocalCodexMarkdown {
 		$lines.Add(('| `{0}` | {1} | {2} |' -f $endpoint.BaseUrl, $endpoint.Reachable, $endpoint.ModelCount))
 	}
 	$lines.Add("")
+	$lines.Add("## Recommended Actions")
+	$lines.Add("")
+	$lines.Add("| Priority | State | Action | Command |")
+	$lines.Add("| --- | --- | --- | --- |")
+	foreach ($action in @($Result.RecommendedActions)) {
+		$command = if ([string]::IsNullOrWhiteSpace($action.Command)) { "-" } else { $action.Command }
+		$lines.Add(('| {0} | `{1}` | {2} | `{3}` |' -f $action.Priority, $action.State, $action.Action, $command))
+	}
+	$lines.Add("")
 	$lines.Add("## Next Commands")
 	$lines.Add("")
 	foreach ($command in @($Result.NextCommands)) {
@@ -273,12 +369,14 @@ $summary = [pscustomobject]@{
 	EnvKeysDeclared = @($envKeyRecords).Count
 	EnvKeysPresent = @($envKeyRecords | Where-Object { $_.Present }).Count
 }
+$recommendedActions = Get-RecommendedActions -ReadinessState $summary.ReadinessState -Configs $configEvidence -Endpoints $endpointEvidence
 
 $result = [ordered]@{
 	Root = $addonRoot
 	SummaryOnly = [bool]$SummaryOnly
 	SkipDefaultEndpoints = [bool]$SkipDefaultEndpoints
 	Summary = $summary
+	RecommendedActions = @($recommendedActions)
 	NextCommands = @(Get-NextCommands)
 }
 if (!$SummaryOnly) {

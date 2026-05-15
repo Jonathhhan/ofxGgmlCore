@@ -31,6 +31,8 @@ try {
 		"llama-server",
 		"Readiness state",
 		"server-missing",
+		"Recommended Actions",
+		"Start or repoint the local OpenAI-compatible llama-server endpoint",
 		"http://127.0.0.1:9/v1",
 		"scripts\plan-local-codex.bat -Json -SummaryOnly"
 	)) {
@@ -71,6 +73,13 @@ try {
 	if (!$parsed.Configs -or !$parsed.Endpoints) {
 		throw "local Codex full JSON did not include config and endpoint evidence."
 	}
+	if (!$parsed.RecommendedActions -or @($parsed.RecommendedActions).Count -lt 2) {
+		throw "local Codex JSON did not include recommended actions."
+	}
+	$stateAction = @($parsed.RecommendedActions | Where-Object { $_.State -eq "server-missing" } | Select-Object -First 1)
+	if ($stateAction.Count -eq 0 -or $stateAction[0].Command -notmatch [regex]::Escape("scripts\plan-local-codex.bat -Json -SummaryOnly")) {
+		throw "local Codex JSON did not include a server-missing action with a rerun command."
+	}
 	if (@($parsed.NextCommands) -notcontains "scripts\release-candidate.bat") {
 		throw "local Codex plan JSON did not include release-candidate follow-up."
 	}
@@ -85,6 +94,9 @@ try {
 	}
 	if ($summaryParsed.PSObject.Properties["Configs"] -or $summaryParsed.PSObject.Properties["Endpoints"]) {
 		throw "local Codex summary JSON should omit full config and endpoint evidence."
+	}
+	if (!$summaryParsed.RecommendedActions -or @($summaryParsed.RecommendedActions).Count -eq 0) {
+		throw "local Codex summary JSON should retain recommended actions."
 	}
 
 	& $planScript -ConfigPath $configPath -Endpoint "http://127.0.0.1:9/v1" -SkipDefaultEndpoints -OutputPath $outputPath
