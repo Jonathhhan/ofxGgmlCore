@@ -79,6 +79,9 @@ if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-agent-branch-clean
 if (@($parsed.SuggestedValidation) -notcontains "scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact strict audit validation command."
 }
+if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-doctor-rollout.bat -Json -SummaryOnly") {
+	throw "ecosystem agent JSON output did not include the compact doctor rollout validation command."
+}
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-ecosystem.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact ecosystem plan validation command."
 }

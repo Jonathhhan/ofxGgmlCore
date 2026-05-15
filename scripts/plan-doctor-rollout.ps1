@@ -1,5 +1,6 @@
 param(
 	[string]$OutputPath = "",
+	[switch]$SummaryOnly,
 	[switch]$Json
 )
 
@@ -202,10 +203,24 @@ function Get-DoctorRolloutNextCommands {
 	if ($blocking.Count -gt 0) {
 		$commands.Add("scripts\plan-doctor-rollout.bat")
 	} else {
-		$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+		$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly")
 	}
-	$commands.Add("scripts\plan-doctor-rollout.bat -Json")
+	$commands.Add("scripts\plan-doctor-rollout.bat -Json -SummaryOnly")
 	return @($commands.ToArray())
+}
+
+function ConvertTo-DoctorRepositorySummary {
+	param([object]$Entry)
+
+	[pscustomobject]@{
+		Repository = [string]$Entry.Repository
+		Lane = [string]$Entry.Lane
+		Present = [bool]$Entry.Present
+		Priority = [int]$Entry.Priority
+		Coverage = [string]$Entry.Coverage
+		ValidateHook = [bool]$Entry.ValidateHook
+		Action = [string]$Entry.Action
+	}
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -221,12 +236,17 @@ $summary = Get-DoctorRolloutSummary -Entries $entries
 $nextCommands = Get-DoctorRolloutNextCommands -Entries $entries
 
 if ($Json) {
-	$content = [pscustomobject]@{
+	$result = [pscustomobject]@{
 		Root = $status.Root
+		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		NextCommands = $nextCommands
-		Repositories = $entries
-	} | ConvertTo-Json -Depth 6
+		RepositorySummaries = @($entries | ForEach-Object { ConvertTo-DoctorRepositorySummary -Entry $_ })
+	}
+	if (!$SummaryOnly) {
+		$result | Add-Member -NotePropertyName Repositories -NotePropertyValue $entries
+	}
+	$content = $result | ConvertTo-Json -Depth 6
 } else {
 	$content = ConvertTo-MarkdownDoctorPlan -Entries $entries -Root ([string]$status.Root)
 }

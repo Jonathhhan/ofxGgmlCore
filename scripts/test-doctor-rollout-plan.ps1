@@ -56,8 +56,14 @@ if ($parsed.Summary.IncompleteCoverage -ne 0 -or @($parsed.Summary.BlockingRepos
 if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
 	throw "doctor rollout JSON output did not include NextCommands."
 }
-if (@($parsed.NextCommands) -notcontains "scripts\plan-doctor-rollout.bat -Json") {
-	throw "doctor rollout JSON NextCommands did not include the structured planner command."
+if (@($parsed.NextCommands) -notcontains "scripts\plan-doctor-rollout.bat -Json -SummaryOnly") {
+	throw "doctor rollout JSON NextCommands did not include the compact structured planner command."
+}
+if (@($parsed.NextCommands) -notcontains "scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly") {
+	throw "doctor rollout JSON NextCommands did not include compact readiness planning."
+}
+if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -lt 11) {
+	throw "doctor rollout JSON output did not include compact repository summaries."
 }
 if (!$parsed.Repositories -or $parsed.Repositories.Count -lt 11) {
 	throw "doctor rollout JSON output did not include managed repositories."
@@ -66,4 +72,26 @@ if (!$parsed.Repositories -or $parsed.Repositories.Count -lt 11) {
 $workflows = @($parsed.Repositories | Where-Object { $_.Repository -eq "ofxGgmlWorkflows" } | Select-Object -First 1)
 if (!$workflows -or $workflows.Coverage -ne "not-applicable") {
 	throw "doctor rollout JSON did not mark ofxGgmlWorkflows as not applicable."
+}
+
+$summaryJsonOutput = & $planScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-doctor-rollout.ps1 -Json -SummaryOnly failed."
+}
+
+$summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
+if (!$summaryParsed.SummaryOnly) {
+	throw "doctor rollout summary JSON did not report SummaryOnly."
+}
+if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -lt 11) {
+	throw "doctor rollout summary JSON did not retain compact summary evidence."
+}
+if ($summaryParsed.PSObject.Properties["Repositories"]) {
+	throw "doctor rollout summary JSON should omit full repository rows."
+}
+$summaryWorkflows = @($summaryParsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlWorkflows" } | Select-Object -First 1)
+foreach ($property in @("Repository", "Lane", "Present", "Priority", "Coverage", "ValidateHook", "Action")) {
+	if (!$summaryWorkflows[0].PSObject.Properties[$property]) {
+		throw "doctor rollout summary JSON repository summary did not include $property."
+	}
 }
