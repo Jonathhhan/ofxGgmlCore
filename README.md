@@ -126,7 +126,9 @@ load managed lane metadata from `docs\ECOSYSTEM_MANIFEST.json`, auto-detect
 sibling `ofxGgml*` repositories, and attach known lane metadata where
 available.
 Use `scripts\status-family.bat -Json` when an agent needs local inventory
-`Summary` counts, next commands, and per-repository status before planning.
+`Summary` counts, next commands, and per-repository status before planning. The
+next commands include compact branch-cleanup summary evidence, not branch
+deletion.
 Use `scripts\plan-ecosystem.bat -Json` when an agent needs structured summary,
 priority, guardrail, smoke-build lifecycle, and validation-command fields.
 Use `scripts\plan-coding-agent-work.bat` when an agent needs the next concrete

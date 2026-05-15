@@ -156,6 +156,7 @@ function Get-FamilyStatusNextCommands {
 	$commands.Add("scripts\plan-ecosystem.bat -Json")
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
+	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-coding-agent-work.bat -Json")
 	return @($commands.ToArray())
 }

@@ -54,6 +54,9 @@ if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
 if (@($parsed.NextCommands) -notcontains "scripts\plan-ecosystem.bat -Json") {
 	throw "family status JSON NextCommands did not include structured ecosystem planning."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
+	throw "family status JSON NextCommands did not include compact branch cleanup planning."
+}
 if (!$parsed.Addons -or $parsed.Addons.Count -lt 11) {
 	throw "family status JSON did not contain the expected addon list."
 }

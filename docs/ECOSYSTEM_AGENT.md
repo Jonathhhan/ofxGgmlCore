@@ -72,7 +72,8 @@ Use `scripts\plan-ecosystem.bat -OutputPath docs\ECOSYSTEM_PLAN.md` to write a
 handoff plan for review.
 Use `scripts\status-family.bat -Json` when Codex, GitHub Copilot, Hermes Agent,
 or another automation needs local inventory `Summary` counts, next commands,
-and per-repository status before choosing a planning command.
+and per-repository status before choosing a planning command. Its next commands
+include compact branch-cleanup summary evidence, not branch deletion.
 Use `scripts\plan-ecosystem.bat -Json` when Codex, GitHub Copilot, Hermes Agent,
 or another automation needs machine-readable `Summary`, `PlanningPriorities`,
 `AgentGuardrails`, `SmokeBuildLifecycle`, and `SuggestedValidation` fields
