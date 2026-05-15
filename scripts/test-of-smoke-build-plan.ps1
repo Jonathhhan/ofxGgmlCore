@@ -161,6 +161,32 @@ if (!$?) {
 }
 
 $targetParsed = ($targetJsonOutput -join "`n") | ConvertFrom-Json
+if (!$targetParsed.Summary) {
+	throw "smoke build target selector JSON did not include Summary."
+}
+foreach ($property in @(
+	"TotalTargets",
+	"FilteredTargets",
+	"SelectedTargets",
+	"StageFilter",
+	"SelectedStage",
+	"ProjectGeneratorDetected",
+	"HasSelection",
+	"SelectedTargetsWithCommands"
+)) {
+	if (!$targetParsed.Summary.PSObject.Properties[$property]) {
+		throw "smoke build target selector JSON Summary did not include $property."
+	}
+}
+if ($targetParsed.Summary.SelectedTargets -ne 1 -or !$targetParsed.Summary.HasSelection) {
+	throw "smoke build target selector JSON Summary did not report the selected target."
+}
+if (!$targetParsed.NextCommands -or @($targetParsed.NextCommands).Count -eq 0) {
+	throw "smoke build target selector JSON did not include NextCommands."
+}
+if (@($targetParsed.NextCommands) -notcontains "scripts\plan-smoke-build-target-handoff.bat -Stage $targetStage -First 1") {
+	throw "smoke build target selector JSON NextCommands did not include the target handoff command."
+}
 if (!$targetParsed.Targets -or $targetParsed.Targets.Count -ne 1) {
 	throw "smoke build target selector JSON did not include exactly one target."
 }

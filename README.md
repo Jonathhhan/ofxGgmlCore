@@ -163,6 +163,9 @@ Use `scripts\plan-of-smoke-build.bat -Json` when another agent needs smoke
 build `Summary` counts, next commands, records, and target queues.
 Use `scripts\select-smoke-build-target.bat -Stage generate-project` when an
 agent needs the next concrete smoke-build target without parsing the full plan.
+Use `scripts\select-smoke-build-target.bat -Stage generate-project -Json` when
+another agent needs target selection `Summary` counts, next commands, and the
+selected target payload.
 Use `scripts\plan-smoke-build-target-handoff.bat -Stage generate-project` when
 an agent needs the command, validation checklist, and artifact guardrails for
 that selected target.
