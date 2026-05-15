@@ -20,6 +20,7 @@ The ecosystem currently provides:
 - Core CPU backend runtime smoke evidence from the reusable `backend-runtime-check` workflow
 - lane-owned runtime-smoke entrypoints across all managed runtime lanes
 - a strict release-readiness assertion script for workflow, backend, runtime, and smoke-build CI evidence
+- a manual `release-gate` workflow that fetches smoke-build CI artifact evidence and runs the strict assertion gate
 
 ## Current limitations
 
@@ -28,7 +29,7 @@ Current release gates do not yet:
 - validate cross-platform openFrameworks compilation and execution (Windows only in current CI smoke loop)
 - validate model-backed runtime inference
 - validate CUDA/Metal/Vulkan runtime availability in CI
-- fully enforce build failures from the smoke-build CI control-plane in the release approval decision
+- run the strict release gate automatically on tags or release branches
 
 ## Planned release-gating phases
 

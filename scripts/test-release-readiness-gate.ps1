@@ -9,6 +9,7 @@ $backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-ca
 $backendRuntimePlan = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-runtime-gate-evidence-$testId.md"
 $smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-gate-evidence-$testId.json"
 $failedSmokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-gate-failed-$testId.json"
+$gateOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-gate-output-$testId.md"
 
 @(
 	'# Workflow Status Report',
@@ -113,6 +114,7 @@ $failedSmokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-s
 
 try {
 	$passOutput = @(& $gateScript `
+		-OutputPath $gateOutputPath `
 		-WorkflowStatusReport $workflowReport `
 		-BackendCapabilityReport $backendReport `
 		-BackendRuntimePlan $backendRuntimePlan `
@@ -124,6 +126,12 @@ try {
 	$pass = ($passOutput -join "`n") | ConvertFrom-Json
 	if (!$pass.Ready -or $pass.BlockerCount -ne 0) {
 		throw "release readiness gate did not pass clean evidence."
+	}
+	if (!(Test-Path -LiteralPath $gateOutputPath -PathType Leaf)) {
+		throw "release readiness gate did not write the requested output path."
+	}
+	if ([string]$pass.ReleaseReadinessPlan -ne $gateOutputPath) {
+		throw "release readiness gate JSON did not report the requested output path."
 	}
 
 	$failedOutput = @(& $gateScript `
@@ -164,7 +172,8 @@ try {
 		$backendReport,
 		$backendRuntimePlan,
 		$smokeBuildReport,
-		$failedSmokeBuildReport
+		$failedSmokeBuildReport,
+		$gateOutputPath
 	)) {
 		Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
 	}

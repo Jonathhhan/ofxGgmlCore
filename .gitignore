@@ -16,6 +16,7 @@ obj/
 *.lib
 *.pdb
 .smoke-build-ci-report.json
+.release-readiness-gate.md
 
 *.gguf
 *.safetensors

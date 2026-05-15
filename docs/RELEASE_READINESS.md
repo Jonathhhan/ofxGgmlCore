@@ -82,6 +82,11 @@ That command fails when workflow evidence has required blockers, backend
 capability/runtime evidence is missing, smoke-build CI evidence is missing, or
 the smoke-build CI report has failed targets or commands.
 
+The `release-gate` GitHub workflow runs the same strict gate on demand. It
+fetches the latest uploaded smoke-build CI artifact for the selected branch,
+writes `.release-readiness-gate.md`, and uploads both gate and smoke-build
+evidence as workflow artifacts.
+
 The focused Core example build wrapper remains available when a smaller check is
 needed:
 
