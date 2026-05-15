@@ -124,6 +124,7 @@ if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 	}
 	foreach ($expected in @(
 		"README.md",
+		"validate-local.ps1",
 		"select-smoke-build-target.ps1",
 		"plan-smoke-build-target-handoff.ps1",
 		"check-smoke-build-target-preflight.ps1",
