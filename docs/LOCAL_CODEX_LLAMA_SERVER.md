@@ -69,24 +69,24 @@ Illustrative `%USERPROFILE%\.codex\config.toml` shape:
 [model_providers.local_llama]
 name = "local-llama"
 base_url = "http://127.0.0.1:8080/v1"
-env_key = "LOCAL_LLAMA_API_KEY"
-wire_api = "chat"
+wire_api = "responses"
 
 [profiles.ofxggml_local]
-model = "local-coder"
+model = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
 model_provider = "local_llama"
 ```
 
-Most local OpenAI-compatible servers ignore the API key, but some clients still
-expect the referenced environment variable to exist:
+Most local OpenAI-compatible servers ignore the API key. Add `env_key` only if
+your endpoint enforces authentication:
 
 ```powershell
 $env:LOCAL_LLAMA_API_KEY = "local"
 ```
 
 Use the wire API supported by your installed Codex version and the local
-server. For llama.cpp-style OpenAI-compatible servers, the chat/completions
-surface is the conservative starting point.
+server. Current Codex builds reject the legacy `chat` wire API for custom
+providers and expect `responses`; set `model` to a model id returned by the
+local `/v1/models` endpoint.
 
 ## Required Repository Prompt
 

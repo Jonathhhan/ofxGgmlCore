@@ -171,6 +171,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "LOCAL_CODEX_
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "llama-server" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-local-codex.bat -Json -SummaryOnly" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "structured recommended actions" "local Codex llama-server docs"
+Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") 'wire_api = "responses"' "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-ecosystem.bat -Json -SummaryOnly" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "Do not commit generated projects" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "README.md") "LOCAL_CODEX_LLAMA_SERVER.md" "README"
