@@ -196,6 +196,9 @@ to a temporary report path and folds in
 `docs\backend-capability-report.md`, generated backend runtime planning, plus
 `.smoke-build-ci-report.json` when present; pass `-OutputPath` when you
 intentionally want to persist evidence in the repository.
+Workflow-status reports include the active GitHub access mode and call out HTTP
+429 rate-limit evidence explicitly; regenerate them with `GITHUB_TOKEN` or an
+authenticated local `gh` before using them for a strict release gate.
 Use `scripts\fetch-smoke-build-ci-report.bat -Force` when an agent needs to
 download the latest uploaded smoke-build CI artifact into
 `.smoke-build-ci-report.json`; this requires GitHub Actions artifact access
