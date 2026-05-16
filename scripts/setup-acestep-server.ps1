@@ -152,7 +152,7 @@ function Ensure-GgmlSourceFromCore {
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Split-Path -Parent $scriptRoot
-$runtimeRoot = Join-Path $addonRoot "lib\acestep"
+$runtimeRoot = Join-Path $addonRoot "libs\acestep"
 
 if ([string]::IsNullOrWhiteSpace($SourceDir)) {
 	$SourceDir = Join-Path $runtimeRoot ".source"

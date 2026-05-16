@@ -209,6 +209,12 @@ foreach ($requiredScript in @(
 	"release-candidate.bat",
 	"release-candidate.ps1",
 	"release-candidate.sh",
+	"setup-acestep-server.bat",
+	"setup-acestep-server.ps1",
+	"setup-acestep-server.sh",
+	"test-acestep-setup-dry-run.bat",
+	"test-acestep-setup-dry-run.ps1",
+	"test-acestep-setup-dry-run.sh",
 	"check-ecosystem-readiness.bat",
 	"check-ecosystem-readiness.ps1",
 	"check-ecosystem-readiness.sh",
@@ -305,6 +311,9 @@ if (!$SkipSetupDryRun) {
 			Configuration = $Configuration
 			Platform = $Platform
 		}
+	Invoke-CheckedScript `
+		-Label "Checking acestep setup dry-run plan" `
+		-ScriptPath (Join-Path $scriptRoot "test-acestep-setup-dry-run.ps1")
 }
 
 if (!$SkipProjectRepair) {
