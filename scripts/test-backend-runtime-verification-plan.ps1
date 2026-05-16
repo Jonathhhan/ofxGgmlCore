@@ -105,6 +105,17 @@ if (!$llama.PSObject.Properties["InferenceSmokeEvidence"]) {
 if ($llama.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Llama inference smoke state."
 }
+$audioRows = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlAudio" } | Select-Object -First 1)
+if ($audioRows.Count -eq 0) {
+	throw "backend runtime verification JSON did not include Audio repository summary."
+}
+$audio = $audioRows[0]
+if (!$audio.PSObject.Properties["InferenceSmokeEvidence"]) {
+	throw "backend runtime verification JSON did not expose Audio inference smoke evidence."
+}
+if ($audio.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "missing")) {
+	throw "backend runtime verification JSON reported an unexpected Audio inference smoke state."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "backend runtime verification JSON did not include release-readiness follow-up."
 }
@@ -116,6 +127,9 @@ if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlSam && scripts\run-sam3-r
 }
 if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -Backend cuda -Json -SummaryOnly -OutputPath .sam3-runtime-smoke.json") {
 	throw "backend runtime verification JSON did not include the SAM3 inference smoke evidence command."
+}
+if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -Mode simple -Json -SummaryOnly -OutputPath .audio-runtime-smoke.json") {
+	throw "backend runtime verification JSON did not include the Audio inference smoke evidence command."
 }
 
 $summaryJsonOutput = & $planScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }

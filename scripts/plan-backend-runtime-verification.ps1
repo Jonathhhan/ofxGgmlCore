@@ -184,6 +184,7 @@ function Get-InferenceSmokeEvidence {
 	$reportFiles = @{
 		ofxGgmlLlama = ".llama-runtime-smoke.json"
 		ofxGgmlSam = ".sam3-runtime-smoke.json"
+		ofxGgmlAudio = ".audio-runtime-smoke.json"
 	}
 	$reportFile = $reportFiles[$Status.Name]
 	$reportPath = if (![string]::IsNullOrWhiteSpace($reportFile)) {
@@ -410,6 +411,11 @@ function Get-BackendRuntimeNextCommands {
 		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun")
 		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -Backend cuda -Json -SummaryOnly -OutputPath .sam3-runtime-smoke.json")
 		$commands.Add("cd ..\ofxGgmlSam && scripts\validate-local.bat")
+	}
+	$audio = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlAudio" } | Select-Object -First 1)
+	if ($audio.Count -gt 0) {
+		$commands.Add("cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -DryRun")
+		$commands.Add("cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -Mode simple -Json -SummaryOnly -OutputPath .audio-runtime-smoke.json")
 	}
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	return @($commands.ToArray())
