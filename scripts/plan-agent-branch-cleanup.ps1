@@ -116,6 +116,42 @@ function Test-BranchPatchEquivalent {
 	return $remaining.Count -eq 0
 }
 
+function Test-BranchContentEquivalent {
+	param(
+		[string]$Repository,
+		[string]$Upstream,
+		[string]$Branch
+	)
+
+	if ([string]::IsNullOrWhiteSpace($Upstream) -or [string]::IsNullOrWhiteSpace($Branch)) {
+		return $false
+	}
+
+	$mergeBase = Invoke-Git -Repository $Repository -Arguments @("merge-base", $Upstream, $Branch)
+	if ([string]::IsNullOrWhiteSpace($mergeBase)) {
+		return $false
+	}
+
+	$changedPaths = @(
+		(Invoke-Git -Repository $Repository -Arguments @("diff", "--name-only", "$mergeBase..$Branch")) -split "`n" |
+			Where-Object { ![string]::IsNullOrWhiteSpace($_) } |
+			ForEach-Object { $_.Trim() }
+	)
+	if ($changedPaths.Count -eq 0) {
+		return $false
+	}
+
+	foreach ($path in $changedPaths) {
+		$upstreamObject = Invoke-Git -Repository $Repository -Arguments @("rev-parse", "$Upstream`:$path")
+		$branchObject = Invoke-Git -Repository $Repository -Arguments @("rev-parse", "$Branch`:$path")
+		if ($upstreamObject -ne $branchObject) {
+			return $false
+		}
+	}
+
+	return $true
+}
+
 function Get-MergedBranches {
 	param([object]$Status)
 
@@ -145,9 +181,11 @@ function Get-MergedBranches {
 			}
 			$directlyMerged = $mergedLocalBranches -contains $branch
 			$patchEquivalent = !$directlyMerged -and (Test-BranchPatchEquivalent -Repository $repo -Upstream $defaultBranch.Local -Branch $branch)
-			if (!$directlyMerged -and !$patchEquivalent) {
+			$contentEquivalent = !$directlyMerged -and !$patchEquivalent -and (Test-BranchContentEquivalent -Repository $repo -Upstream $defaultBranch.Local -Branch $branch)
+			if (!$directlyMerged -and !$patchEquivalent -and !$contentEquivalent) {
 				continue
 			}
+			$integration = if ($directlyMerged) { "merged" } elseif ($patchEquivalent) { "patch-equivalent" } else { "content-equivalent" }
 			$isCurrent = $branch -eq $current
 			$candidates += [pscustomobject]@{
 				Repository = [string]$Status.Name
@@ -155,10 +193,10 @@ function Get-MergedBranches {
 				Type = "local"
 				Branch = $branch
 				DefaultBranch = [string]$defaultBranch.Local
-				Integration = if ($directlyMerged) { "merged" } else { "patch-equivalent" }
+				Integration = $integration
 				Current = $isCurrent
 				Action = if ($isCurrent) { "skip current local branch" } else { "delete integrated local branch" }
-				DeleteCommand = if ($isCurrent) { "" } else { ConvertTo-DeleteCommand -Repository $repo -Type "local" -Branch $branch -Force:$patchEquivalent }
+				DeleteCommand = if ($isCurrent) { "" } else { ConvertTo-DeleteCommand -Repository $repo -Type "local" -Branch $branch -Force:(!$directlyMerged) }
 			}
 		}
 	}
@@ -177,16 +215,18 @@ function Get-MergedBranches {
 			}
 			$directlyMerged = $mergedRemoteBranches -contains $branch
 			$patchEquivalent = !$directlyMerged -and (Test-BranchPatchEquivalent -Repository $repo -Upstream $defaultBranch.Remote -Branch $branch)
-			if (!$directlyMerged -and !$patchEquivalent) {
+			$contentEquivalent = !$directlyMerged -and !$patchEquivalent -and (Test-BranchContentEquivalent -Repository $repo -Upstream $defaultBranch.Remote -Branch $branch)
+			if (!$directlyMerged -and !$patchEquivalent -and !$contentEquivalent) {
 				continue
 			}
+			$integration = if ($directlyMerged) { "merged" } elseif ($patchEquivalent) { "patch-equivalent" } else { "content-equivalent" }
 			$candidates += [pscustomobject]@{
 				Repository = [string]$Status.Name
 				Path = $repo
 				Type = "remote"
 				Branch = $branch
 				DefaultBranch = [string]$defaultBranch.Remote
-				Integration = if ($directlyMerged) { "merged" } else { "patch-equivalent" }
+				Integration = $integration
 				Current = $false
 				Action = "delete integrated remote branch"
 				DeleteCommand = ConvertTo-DeleteCommand -Repository $repo -Type "remote" -Branch $branch
@@ -349,6 +389,7 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("| Remote delete candidates | $($Summary.RemoteDeleteCandidates) |")
 	$lines.Add("| Directly merged delete candidates | $($Summary.MergedDeleteCandidates) |")
 	$lines.Add("| Patch-equivalent delete candidates | $($Summary.PatchEquivalentDeleteCandidates) |")
+	$lines.Add("| Content-equivalent delete candidates | $($Summary.ContentEquivalentDeleteCandidates) |")
 	$lines.Add("| Current branches skipped | $($Summary.CurrentBranchesSkipped) |")
 	$lines.Add("| Local agent branches | $($Summary.LocalAgentBranches) |")
 	$lines.Add("| Remote agent branches | $($Summary.RemoteAgentBranches) |")
@@ -362,10 +403,10 @@ function ConvertTo-MarkdownCleanupPlan {
 		if ($RepositorySummaries.Count -eq 0) {
 			$lines.Add("No matching agent branches are present in managed repositories.")
 		} else {
-			$lines.Add("| Repository | Local branches | Remote branches | Delete candidates | Merged | Patch-equivalent | Unintegrated | Current skipped |")
-			$lines.Add("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+			$lines.Add("| Repository | Local branches | Remote branches | Delete candidates | Merged | Patch-equivalent | Content-equivalent | Unintegrated | Current skipped |")
+			$lines.Add("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
 			foreach ($repository in $RepositorySummaries) {
-				$lines.Add(("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} |" -f $repository.Repository, $repository.LocalAgentBranches, $repository.RemoteAgentBranches, $repository.DeleteCandidates, $repository.MergedDeleteCandidates, $repository.PatchEquivalentDeleteCandidates, $repository.UnintegratedAgentBranches, $repository.CurrentBranchesSkipped))
+				$lines.Add(("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} | {8} |" -f $repository.Repository, $repository.LocalAgentBranches, $repository.RemoteAgentBranches, $repository.DeleteCandidates, $repository.MergedDeleteCandidates, $repository.PatchEquivalentDeleteCandidates, $repository.ContentEquivalentDeleteCandidates, $repository.UnintegratedAgentBranches, $repository.CurrentBranchesSkipped))
 			}
 		}
 		$lines.Add("")
@@ -447,6 +488,7 @@ $summary = [pscustomobject]@{
 	RemoteDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "remote" }).Count
 	MergedDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "merged" }).Count
 	PatchEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "patch-equivalent" }).Count
+	ContentEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "content-equivalent" }).Count
 	CurrentBranchesSkipped = @($candidates | Where-Object { $_.Current }).Count
 	LocalAgentBranches = @($inventory | Where-Object { $_.Type -eq "local" }).Count
 	RemoteAgentBranches = @($inventory | Where-Object { $_.Type -eq "remote" }).Count
@@ -473,6 +515,7 @@ $repositorySummaries = @(
 			RemoteDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "remote" }).Count
 			MergedDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "merged" }).Count
 			PatchEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "patch-equivalent" }).Count
+			ContentEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "content-equivalent" }).Count
 			IntegratedAgentBranches = $repositoryCandidates.Count
 			UnintegratedAgentBranches = [Math]::Max(0, $repositoryInventory.Count - $repositoryCandidates.Count)
 			UnintegratedBranchReviews = @($repositoryUnintegratedReviews | ForEach-Object { [string]$_.Branch })
