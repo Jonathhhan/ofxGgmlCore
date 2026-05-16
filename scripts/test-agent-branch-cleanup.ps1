@@ -86,6 +86,15 @@ if (@($parsed.Candidates).Count -gt 0) {
 	if ($patchEquivalentLocal.Count -gt 0 -and [string]$patchEquivalentLocal[0].DeleteCommand -notmatch [regex]::Escape(" branch -D ")) {
 		throw "patch-equivalent local cleanup candidate should use git branch -D."
 	}
+	$emptyRetriggerBranch = @($parsed.Candidates | Where-Object {
+			[string]$_.Branch -eq "codex/compact-smoke-build-target-json" -or
+			[string]$_.Branch -eq "origin/codex/compact-smoke-build-target-json"
+		})
+	foreach ($candidate in $emptyRetriggerBranch) {
+		if ([string]$candidate.Integration -ne "patch-equivalent") {
+			throw "branch cleanup should treat patch-equivalent branches with empty retrigger commits as patch-equivalent."
+		}
+	}
 	$contentEquivalent = @($parsed.Candidates | Where-Object { $_.Integration -eq "content-equivalent" } | Select-Object -First 1)
 	if ($contentEquivalent.Count -gt 0) {
 		$branch = [string]$contentEquivalent[0].Branch
