@@ -27,6 +27,7 @@ foreach ($expected in @(
 	"squash-merged branches whose patches are equivalent",
 	"## Candidates",
 	"Integration",
+	"## Unintegrated Branches To Review",
 	"## Next Commands",
 	"scripts\plan-agent-branch-cleanup.bat -Fetch",
 	"This script only writes a plan"
@@ -91,6 +92,20 @@ if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat 
 if ([string]::IsNullOrWhiteSpace([string]$parsed.SafetyNote)) {
 	throw "agent branch cleanup JSON output did not include SafetyNote."
 }
+if (!$parsed.PSObject.Properties["UnintegratedBranchReviews"]) {
+	throw "agent branch cleanup JSON output did not include UnintegratedBranchReviews."
+}
+if (@($parsed.UnintegratedBranchReviews).Count -ne $parsed.Summary.UnintegratedAgentBranches) {
+	throw "agent branch cleanup JSON output did not reconcile unintegrated branch reviews with the summary count."
+}
+if (@($parsed.UnintegratedBranchReviews).Count -gt 0) {
+	$review = @($parsed.UnintegratedBranchReviews)[0]
+	foreach ($property in @("Repository", "Type", "Branch", "DefaultBranch", "ReviewCommand")) {
+		if (!$review.PSObject.Properties[$property]) {
+			throw "agent branch cleanup unintegrated branch review did not include property: $property"
+		}
+	}
+}
 
 $summaryJsonOutput = & $cleanupScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
@@ -107,9 +122,15 @@ if (!$summaryParsed.Summary) {
 if (!$summaryParsed.PSObject.Properties["RepositorySummaries"]) {
 	throw "agent branch cleanup summary JSON did not include RepositorySummaries."
 }
+if (!$summaryParsed.PSObject.Properties["UnintegratedBranchReviews"]) {
+	throw "agent branch cleanup summary JSON did not include UnintegratedBranchReviews."
+}
+if (@($summaryParsed.UnintegratedBranchReviews).Count -ne $summaryParsed.Summary.UnintegratedAgentBranches) {
+	throw "agent branch cleanup summary JSON did not reconcile unintegrated branch reviews with the summary count."
+}
 if (@($summaryParsed.RepositorySummaries).Count -gt 0) {
 	$repositorySummary = @($summaryParsed.RepositorySummaries)[0]
-	foreach ($property in @("MergedDeleteCandidates", "PatchEquivalentDeleteCandidates", "IntegratedAgentBranches", "UnintegratedAgentBranches")) {
+	foreach ($property in @("MergedDeleteCandidates", "PatchEquivalentDeleteCandidates", "IntegratedAgentBranches", "UnintegratedAgentBranches", "UnintegratedBranchReviews")) {
 		if (!$repositorySummary.PSObject.Properties[$property]) {
 			throw "agent branch cleanup repository summary did not include property: $property"
 		}
@@ -136,6 +157,7 @@ $summaryMarkdownText = $summaryMarkdownOutput -join "`n"
 foreach ($expected in @(
 	"## Repository Summary",
 	"Detailed branch inventory, candidates, and delete commands were omitted",
+	"## Unintegrated Branches To Review",
 	"## Next Commands"
 )) {
 	if ($summaryMarkdownText -notmatch [regex]::Escape($expected)) {
@@ -145,7 +167,7 @@ foreach ($expected in @(
 if ($summaryMarkdownText -match [regex]::Escape("## Branch Inventory") -or $summaryMarkdownText -match [regex]::Escape("## Candidates")) {
 	throw "agent branch cleanup summary output should omit branch-level tables."
 }
-if ($summaryMarkdownText -match [regex]::Escape("git -C")) {
+if ($summaryMarkdownText -match [regex]::Escape(" branch -D ") -or $summaryMarkdownText -match [regex]::Escape(" push origin --delete ")) {
 	throw "agent branch cleanup summary output should omit raw delete commands."
 }
 
@@ -157,6 +179,7 @@ $emptyJsonText = $emptyJsonOutput -join "`n"
 foreach ($expected in @(
 	'"Inventory":  [',
 	'"Candidates":  [',
+	'"UnintegratedBranchReviews":  [',
 	'"NextCommands":  [',
 	'# No delete commands were generated.'
 )) {
