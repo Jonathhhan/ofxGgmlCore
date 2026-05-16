@@ -3,8 +3,10 @@
 This guide describes an optional local coding-agent setup for Codex-compatible
 tools that can talk to an OpenAI-compatible `llama-server` endpoint. It is an
 operator handoff, not an addon runtime feature: `ofxGgmlCore` should keep the
-ecosystem guardrails, validation commands, and planning queue, while the local
-server, model files, and endpoint credentials stay outside git.
+ecosystem guardrails, validation commands, and planning queue. `ofxGgmlLlama`
+owns the concrete llama.cpp build, GGUF model, `llama-server`, and
+`ofxGgmlLlamaCodexLocalExample` walkthrough. Endpoint credentials stay outside
+git.
 
 ## When to Use
 
@@ -20,24 +22,42 @@ uncommitted.
 
 ## Server Shape
 
-Run an OpenAI-compatible `llama-server` on localhost from your local llama.cpp
-or companion-addon runtime checkout. Keep the model path outside the repository
+Run an OpenAI-compatible `llama-server` on localhost from `ofxGgmlLlama` or an
+explicit llama.cpp runtime checkout. Keep the model path outside the repository
 unless an owning addon explicitly tracks a tiny test fixture.
 
-Example:
+Recommended `ofxGgmlLlama` path:
+
+```powershell
+cd ..\ofxGgmlLlama
+scripts\build-llama-server.bat -Cuda
+scripts\start-llama-server.bat `
+	-ModelPath ..\models\unsloth\GLM-4.7-Flash-GGUF\GLM-4.7-Flash-UD-Q4_K_XL.gguf `
+	-Port 8001 `
+	-GpuLayers 999 `
+	-ContextSize 131072
+```
+
+The projectGenerator-ready walkthrough lives at:
+
+```text
+ofxGgmlLlama\ofxGgmlLlamaCodexLocalExample
+```
+
+Direct llama.cpp example:
 
 ```powershell
 .\llama-server.exe `
 	-m C:\models\qwen2.5-coder-7b-instruct-q4_k_m.gguf `
 	--host 127.0.0.1 `
-	--port 8080 `
+	--port 8001 `
 	--ctx-size 8192
 ```
 
 The expected endpoint shape is:
 
 ```text
-http://127.0.0.1:8080/v1
+http://127.0.0.1:8001/v1
 ```
 
 Bind to `127.0.0.1` unless you have a specific reason to expose the server to
@@ -68,11 +88,11 @@ Illustrative `%USERPROFILE%\.codex\config.toml` shape:
 ```toml
 [model_providers.local_llama]
 name = "local-llama"
-base_url = "http://127.0.0.1:8080/v1"
+base_url = "http://127.0.0.1:8001/v1"
 wire_api = "responses"
 
 [profiles.ofxggml_local]
-model = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+model = "unsloth/GLM-4.7-Flash"
 model_provider = "local_llama"
 ```
 
@@ -136,7 +156,8 @@ scripts\release-candidate.bat
 
 ## Operating Rules
 
-- Keep local model setup local; do not make `ofxGgmlCore` own server lifecycle.
+- Keep local model setup in `ofxGgmlLlama`; do not make `ofxGgmlCore` or
+  `ofxGgmlAgents` own server lifecycle.
 - Prefer one repository-scoped task over broad fanout.
 - Treat local model suggestions as untrusted until validation passes.
 - Use workflow and smoke-build evidence for release gates.

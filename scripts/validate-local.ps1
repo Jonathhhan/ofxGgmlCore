@@ -171,6 +171,8 @@ Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "copilot-inst
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") ".github/instructions" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\CODING_AGENTS.md") "LOCAL_CODEX_LLAMA_SERVER.md" "coding agent docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "llama-server" "local Codex llama-server docs"
+Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "ofxGgmlLlamaCodexLocalExample" "local Codex llama-server docs"
+Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "http://127.0.0.1:8001/v1" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-local-codex.bat -Json -SummaryOnly" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "structured recommended actions" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") 'wire_api = "responses"' "local Codex llama-server docs"
