@@ -292,9 +292,13 @@ function ConvertTo-MarkdownCleanupPlan {
 	$lines.Add("| Delete candidates | $($Summary.DeleteCandidates) |")
 	$lines.Add("| Local delete candidates | $($Summary.LocalDeleteCandidates) |")
 	$lines.Add("| Remote delete candidates | $($Summary.RemoteDeleteCandidates) |")
+	$lines.Add("| Directly merged delete candidates | $($Summary.MergedDeleteCandidates) |")
+	$lines.Add("| Patch-equivalent delete candidates | $($Summary.PatchEquivalentDeleteCandidates) |")
 	$lines.Add("| Current branches skipped | $($Summary.CurrentBranchesSkipped) |")
 	$lines.Add("| Local agent branches | $($Summary.LocalAgentBranches) |")
 	$lines.Add("| Remote agent branches | $($Summary.RemoteAgentBranches) |")
+	$lines.Add("| Integrated agent branches | $($Summary.IntegratedAgentBranches) |")
+	$lines.Add("| Unintegrated agent branches | $($Summary.UnintegratedAgentBranches) |")
 	$lines.Add("| Repositories with agent branches | $($Summary.RepositoriesWithAgentBranches) |")
 	$lines.Add("")
 	if ($SummaryOnly) {
@@ -303,10 +307,10 @@ function ConvertTo-MarkdownCleanupPlan {
 		if ($RepositorySummaries.Count -eq 0) {
 			$lines.Add("No matching agent branches are present in managed repositories.")
 		} else {
-			$lines.Add("| Repository | Local branches | Remote branches | Delete candidates | Current skipped |")
-			$lines.Add("| --- | ---: | ---: | ---: | ---: |")
+			$lines.Add("| Repository | Local branches | Remote branches | Delete candidates | Merged | Patch-equivalent | Unintegrated | Current skipped |")
+			$lines.Add("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
 			foreach ($repository in $RepositorySummaries) {
-				$lines.Add(("| {0} | {1} | {2} | {3} | {4} |" -f $repository.Repository, $repository.LocalAgentBranches, $repository.RemoteAgentBranches, $repository.DeleteCandidates, $repository.CurrentBranchesSkipped))
+				$lines.Add(("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} |" -f $repository.Repository, $repository.LocalAgentBranches, $repository.RemoteAgentBranches, $repository.DeleteCandidates, $repository.MergedDeleteCandidates, $repository.PatchEquivalentDeleteCandidates, $repository.UnintegratedAgentBranches, $repository.CurrentBranchesSkipped))
 			}
 		}
 		$lines.Add("")
@@ -365,14 +369,19 @@ $status = $statusJson | ConvertFrom-Json
 $repositories = @($status.Addons | Where-Object { $_.Known -and $_.Present })
 $candidates = @($repositories | ForEach-Object { Get-MergedBranches -Status $_ })
 $inventory = @($repositories | ForEach-Object { Get-AgentBranchInventory -Status $_ })
+$deleteCandidates = @($candidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) })
 $summary = [pscustomobject]@{
 	RepositoriesScanned = $repositories.Count
-	DeleteCandidates = @($candidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
-	LocalDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "local" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
-	RemoteDeleteCandidates = @($candidates | Where-Object { $_.Type -eq "remote" -and ![string]::IsNullOrWhiteSpace($_.DeleteCommand) }).Count
+	DeleteCandidates = $deleteCandidates.Count
+	LocalDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "local" }).Count
+	RemoteDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "remote" }).Count
+	MergedDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "merged" }).Count
+	PatchEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "patch-equivalent" }).Count
 	CurrentBranchesSkipped = @($candidates | Where-Object { $_.Current }).Count
 	LocalAgentBranches = @($inventory | Where-Object { $_.Type -eq "local" }).Count
 	RemoteAgentBranches = @($inventory | Where-Object { $_.Type -eq "remote" }).Count
+	IntegratedAgentBranches = $candidates.Count
+	UnintegratedAgentBranches = [Math]::Max(0, $inventory.Count - $candidates.Count)
 	RepositoriesWithAgentBranches = @($inventory | ForEach-Object { $_.Repository } | Sort-Object -Unique).Count
 }
 $repositorySummaries = @(
@@ -391,6 +400,10 @@ $repositorySummaries = @(
 			DeleteCandidates = $deleteCandidates.Count
 			LocalDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "local" }).Count
 			RemoteDeleteCandidates = @($deleteCandidates | Where-Object { $_.Type -eq "remote" }).Count
+			MergedDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "merged" }).Count
+			PatchEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "patch-equivalent" }).Count
+			IntegratedAgentBranches = $repositoryCandidates.Count
+			UnintegratedAgentBranches = [Math]::Max(0, $repositoryInventory.Count - $repositoryCandidates.Count)
 			CurrentBranchesSkipped = @($repositoryCandidates | Where-Object { $_.Current }).Count
 		}
 	}

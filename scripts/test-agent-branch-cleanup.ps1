@@ -16,8 +16,12 @@ foreach ($expected in @(
 	"## Summary",
 	"Managed repositories scanned",
 	"Delete candidates",
+	"Directly merged delete candidates",
+	"Patch-equivalent delete candidates",
 	"Local agent branches",
 	"Remote agent branches",
+	"Integrated agent branches",
+	"Unintegrated agent branches",
 	"Repositories with agent branches",
 	"## Branch Inventory",
 	"squash-merged branches whose patches are equivalent",
@@ -47,15 +51,21 @@ if ([string]$parsed.BranchPattern -ne "codex/*") {
 if (!$parsed.Summary) {
 	throw "agent branch cleanup JSON output did not include Summary."
 }
-foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteCandidates", "RemoteDeleteCandidates", "CurrentBranchesSkipped")) {
+foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteCandidates", "RemoteDeleteCandidates", "MergedDeleteCandidates", "PatchEquivalentDeleteCandidates", "CurrentBranchesSkipped")) {
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "agent branch cleanup summary did not include property: $property"
 	}
 }
-foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "RepositoriesWithAgentBranches")) {
+foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "IntegratedAgentBranches", "UnintegratedAgentBranches", "RepositoriesWithAgentBranches")) {
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "agent branch cleanup inventory summary did not include property: $property"
 	}
+}
+if (($parsed.Summary.MergedDeleteCandidates + $parsed.Summary.PatchEquivalentDeleteCandidates) -ne $parsed.Summary.DeleteCandidates) {
+	throw "agent branch cleanup summary did not reconcile merged and patch-equivalent delete candidates."
+}
+if (($parsed.Summary.IntegratedAgentBranches + $parsed.Summary.UnintegratedAgentBranches) -ne ($parsed.Summary.LocalAgentBranches + $parsed.Summary.RemoteAgentBranches)) {
+	throw "agent branch cleanup summary did not reconcile integrated and unintegrated branch inventory."
 }
 if (!$parsed.PSObject.Properties["Inventory"]) {
 	throw "agent branch cleanup JSON output did not include Inventory."
@@ -96,6 +106,14 @@ if (!$summaryParsed.Summary) {
 }
 if (!$summaryParsed.PSObject.Properties["RepositorySummaries"]) {
 	throw "agent branch cleanup summary JSON did not include RepositorySummaries."
+}
+if (@($summaryParsed.RepositorySummaries).Count -gt 0) {
+	$repositorySummary = @($summaryParsed.RepositorySummaries)[0]
+	foreach ($property in @("MergedDeleteCandidates", "PatchEquivalentDeleteCandidates", "IntegratedAgentBranches", "UnintegratedAgentBranches")) {
+		if (!$repositorySummary.PSObject.Properties[$property]) {
+			throw "agent branch cleanup repository summary did not include property: $property"
+		}
+	}
 }
 if ($summaryParsed.PSObject.Properties["Inventory"] -or $summaryParsed.PSObject.Properties["Candidates"]) {
 	throw "agent branch cleanup summary JSON should omit branch-level Inventory and Candidates."
