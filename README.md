@@ -63,6 +63,20 @@ cd ../ofxGgmlLlama
 ./scripts/run-example.sh embedding -Build -Model /path/to/embedding-model.gguf
 ```
 
+For music-generation runtime setup, prepare AceStep once in the sibling music repo:
+
+```powershell
+cd ..\ofxGgmlMusic
+.\scripts\setup-acestep-server.bat -Auto -InstallDir .\libs\acestep
+```
+
+or macOS/Linux:
+
+```sh
+cd ../ofxGgmlMusic
+./scripts/setup-acestep-server.sh -Auto -InstallDir ./libs/acestep
+```
+
 ## Scripts
 
 | Script | Purpose |
@@ -74,6 +88,8 @@ cd ../ofxGgmlLlama
 | `scripts\run-simple-example.bat` | Launch the Core smoke example |
 | `scripts\validate-local.bat` | Run the local Core validation suite |
 | `scripts\release-candidate.bat` | Run the pre-release validation gate |
+| `scripts\setup-acestep-server.bat` | Prepare the AceStep ggml-backed `ace-server` helper in `ofxGgmlMusic` |
+| `scripts\test-acestep-setup-dry-run.ps1` | Verify AceStep setup CLI contract without mutating files |
 | `scripts\get-ecosystem.ps1` | Shared auto-discovery helper for ofxGgml sibling repositories |
 | `scripts\check-ecosystem-readiness.bat` | Run the non-mutating agent readiness pass across the managed ecosystem |
 | `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
