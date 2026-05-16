@@ -30,9 +30,18 @@ ofxggml-addon.json
     "cuda",
     "metal",
     "vulkan"
-  ]
+  ],
+  "inferenceSmokeReport": ".llama-runtime-smoke.json"
 }
 ```
+
+## New field: inferenceSmokeReport
+
+`inferenceSmokeReport` (optional, recommended for inference/runtime-capable lanes) is the filename of the lane-owned inference smoke report expected by Core's backend-runtime planning scripts. It is read by `scripts/plan-backend-runtime-verification.ps1`.
+
+### Migration note
+
+Lanes that currently participate in model-backed runtime planning should add `inferenceSmokeReport` to `ofxggml-addon.json`. Core now resolves inference smoke evidence from metadata first-classly and no longer maintains a hard-coded per-lane filename map.
 
 ## Future validation possibilities
 

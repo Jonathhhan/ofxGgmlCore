@@ -247,12 +247,7 @@ function Get-InferenceSmokeEvidence {
 		}
 	}
 
-	$reportFiles = @{
-		ofxGgmlLlama = ".llama-runtime-smoke.json"
-		ofxGgmlSam = ".sam3-runtime-smoke.json"
-		ofxGgmlAudio = ".audio-runtime-smoke.json"
-	}
-	$reportFile = $reportFiles[$Status.Name]
+	$reportFile = Get-InferenceSmokeReportFile -Metadata $Status.Metadata
 	$reportPath = if (![string]::IsNullOrWhiteSpace($reportFile)) {
 		Join-Path $Status.Path $reportFile
 	} else {
@@ -361,6 +356,23 @@ function Get-InferenceSmokeEvidence {
 	}
 }
 
+function Get-InferenceSmokeReportFile {
+	param(
+		[object]$Metadata
+	)
+
+	$declared = if ($Metadata -and $Metadata.PSObject.Properties["inferenceSmokeReport"]) {
+		$Metadata.inferenceSmokeReport
+	} else {
+		""
+	}
+	if ($declared -is [string] -and -not [string]::IsNullOrWhiteSpace($declared)) {
+		return [string]$declared.Trim()
+	}
+
+	return ""
+}
+
 function Get-BackendRuntimePriority {
 	param([object]$Status)
 
@@ -383,6 +395,7 @@ function New-BackendRuntimeEntry {
 	param([object]$Status)
 
 	$metadata = Get-AddonMetadata -RepositoryPath $Status.Path
+	$Status | Add-Member -NotePropertyName Metadata -NotePropertyValue $metadata -Force
 	$declaredBackends = @()
 	if ($metadata -and $metadata.PSObject.Properties["backends"]) {
 		$declaredBackends = @($metadata.backends | ForEach-Object { [string]$_ })
@@ -502,6 +515,10 @@ function Get-BackendRuntimeNextCommands {
 	if ($audio.Count -gt 0) {
 		$commands.Add("cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -DryRun")
 		$commands.Add("cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -Mode simple -Json -SummaryOnly -OutputPath .audio-runtime-smoke.json")
+	}
+	$agents = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlAgents" } | Select-Object -First 1)
+	if ($agents.Count -gt 0) {
+		$commands.Add("cd ..\ofxGgmlAgents && scripts\run-agents-runtime-smoke.bat -Json -SummaryOnly -OutputPath .agents-runtime-smoke.json")
 	}
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	return @($commands.ToArray())
