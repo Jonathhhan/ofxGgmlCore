@@ -18,6 +18,7 @@ foreach ($expected in @(
 	"Delete candidates",
 	"Directly merged delete candidates",
 	"Patch-equivalent delete candidates",
+	"Content-equivalent delete candidates",
 	"Local agent branches",
 	"Remote agent branches",
 	"Integrated agent branches",
@@ -57,13 +58,16 @@ foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteC
 		throw "agent branch cleanup summary did not include property: $property"
 	}
 }
+if (!$parsed.Summary.PSObject.Properties["ContentEquivalentDeleteCandidates"]) {
+	throw "agent branch cleanup summary did not include content-equivalent delete candidates."
+}
 foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "IntegratedAgentBranches", "UnintegratedAgentBranches", "RepositoriesWithAgentBranches")) {
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "agent branch cleanup inventory summary did not include property: $property"
 	}
 }
-if (($parsed.Summary.MergedDeleteCandidates + $parsed.Summary.PatchEquivalentDeleteCandidates) -ne $parsed.Summary.DeleteCandidates) {
-	throw "agent branch cleanup summary did not reconcile merged and patch-equivalent delete candidates."
+if (($parsed.Summary.MergedDeleteCandidates + $parsed.Summary.PatchEquivalentDeleteCandidates + $parsed.Summary.ContentEquivalentDeleteCandidates) -ne $parsed.Summary.DeleteCandidates) {
+	throw "agent branch cleanup summary did not reconcile merged, patch-equivalent, and content-equivalent delete candidates."
 }
 if (($parsed.Summary.IntegratedAgentBranches + $parsed.Summary.UnintegratedAgentBranches) -ne ($parsed.Summary.LocalAgentBranches + $parsed.Summary.RemoteAgentBranches)) {
 	throw "agent branch cleanup summary did not reconcile integrated and unintegrated branch inventory."
@@ -81,6 +85,24 @@ if (@($parsed.Candidates).Count -gt 0) {
 		} | Select-Object -First 1)
 	if ($patchEquivalentLocal.Count -gt 0 -and [string]$patchEquivalentLocal[0].DeleteCommand -notmatch [regex]::Escape(" branch -D ")) {
 		throw "patch-equivalent local cleanup candidate should use git branch -D."
+	}
+	$contentEquivalent = @($parsed.Candidates | Where-Object { $_.Integration -eq "content-equivalent" } | Select-Object -First 1)
+	if ($contentEquivalent.Count -gt 0) {
+		$branch = [string]$contentEquivalent[0].Branch
+		$upstream = [string]$contentEquivalent[0].DefaultBranch
+		$repo = [string]$contentEquivalent[0].Path
+		$base = (& git -C $repo merge-base $upstream $branch).Trim()
+		$changedPaths = @(& git -C $repo diff --name-only "$base..$branch" | Where-Object { ![string]::IsNullOrWhiteSpace($_) })
+		if ($changedPaths.Count -eq 0) {
+			throw "content-equivalent cleanup candidate should have changed paths from its merge base."
+		}
+		foreach ($path in $changedPaths) {
+			$upstreamObject = (& git -C $repo rev-parse "$upstream`:$path" 2>$null)
+			$branchObject = (& git -C $repo rev-parse "$branch`:$path" 2>$null)
+			if (($upstreamObject -join "") -ne ($branchObject -join "")) {
+				throw "content-equivalent cleanup candidate path differs from upstream: $path"
+			}
+		}
 	}
 }
 if (!$parsed.NextCommands -or $parsed.NextCommands.Count -eq 0) {
@@ -130,7 +152,7 @@ if (@($summaryParsed.UnintegratedBranchReviews).Count -ne $summaryParsed.Summary
 }
 if (@($summaryParsed.RepositorySummaries).Count -gt 0) {
 	$repositorySummary = @($summaryParsed.RepositorySummaries)[0]
-	foreach ($property in @("MergedDeleteCandidates", "PatchEquivalentDeleteCandidates", "IntegratedAgentBranches", "UnintegratedAgentBranches", "UnintegratedBranchReviews")) {
+	foreach ($property in @("MergedDeleteCandidates", "PatchEquivalentDeleteCandidates", "ContentEquivalentDeleteCandidates", "IntegratedAgentBranches", "UnintegratedAgentBranches", "UnintegratedBranchReviews")) {
 		if (!$repositorySummary.PSObject.Properties[$property]) {
 			throw "agent branch cleanup repository summary did not include property: $property"
 		}
