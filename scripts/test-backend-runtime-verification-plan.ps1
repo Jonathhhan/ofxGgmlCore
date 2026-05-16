@@ -77,12 +77,22 @@ if ($parsed.Summary.ExampleBuildGaps -eq 0 -and @($parsed.Summary.RepositoriesMi
 if (!$parsed.Repositories -or @($parsed.Repositories).Count -eq 0) {
 	throw "backend runtime verification full JSON did not include repositories."
 }
-$sam = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlSam" } | Select-Object -First 1)
-if ($sam.Count -eq 0 -or !$sam.CudaDeclared -or $sam.GateState -ne "runtime-smoke-entrypoint-present") {
+$samRows = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlSam" } | Select-Object -First 1)
+if ($samRows.Count -eq 0) {
+	throw "backend runtime verification JSON did not include SAM repository summary."
+}
+$sam = $samRows[0]
+if (!$sam.CudaDeclared -or $sam.GateState -notin @("runtime-smoke-entrypoint-present", "inference-checked")) {
 	throw "backend runtime verification JSON did not expose SAM CUDA runtime-smoke readiness."
 }
 if ($sam.RuntimeSmokeEvidence -ne "available-and-validated") {
 	throw "backend runtime verification JSON did not expose validated SAM runtime smoke evidence."
+}
+if (!$sam.PSObject.Properties["InferenceSmokeEvidence"]) {
+	throw "backend runtime verification JSON did not expose SAM inference smoke evidence."
+}
+if ($sam.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "missing")) {
+	throw "backend runtime verification JSON reported an unexpected SAM inference smoke state."
 }
 $llamaRows = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlLlama" } | Select-Object -First 1)
 if ($llamaRows.Count -eq 0) {
@@ -103,6 +113,9 @@ if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlLlama && scripts\run-llam
 }
 if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun") {
 	throw "backend runtime verification JSON did not include the SAM3 runtime smoke follow-up."
+}
+if (@($parsed.NextCommands) -notcontains "cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -Backend cuda -Json -SummaryOnly -OutputPath .sam3-runtime-smoke.json") {
+	throw "backend runtime verification JSON did not include the SAM3 inference smoke evidence command."
 }
 
 $summaryJsonOutput = & $planScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
