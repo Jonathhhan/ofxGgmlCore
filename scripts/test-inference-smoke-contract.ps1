@@ -130,6 +130,26 @@ try {
 				throw "Expected inference-checked state for $($target.Repository), got '$($evidence.State)'."
 			}
 			Write-Host "Contract valid-field case passed for $($target.Repository)."
+
+			Write-InferenceSmokeReport -ReportPath $target.ReportPath ([pscustomobject]@{
+				Summary = [pscustomobject]@{
+					Passed = $true
+					InferenceChecked = $true
+					SmokeKind = "model-backed-cli-text"
+					Backend = "cpu"
+					ModelPath = "C:\\model.gguf"
+				}
+			})
+			$staleTime = (Get-Date).AddDays(-2)
+			(Get-Item -LiteralPath $target.ReportPath).LastWriteTime = $staleTime
+			$evidence = Invoke-InferenceSmokePlan -Repository $target.Repository
+			if ($evidence.State -ne "inference-smoke-stale") {
+				throw "Expected inference-smoke-stale state for $($target.Repository), got '$($evidence.State)'."
+			}
+			if ($evidence.ReportAgeHours -lt 48) {
+				throw "Expected stale evidence age to be near 48h for $($target.Repository), got $($evidence.ReportAgeHours)."
+			}
+			Write-Host "Contract stale-field case passed for $($target.Repository)."
 		}
 	} finally {
 		foreach ($target in @($targets)) {

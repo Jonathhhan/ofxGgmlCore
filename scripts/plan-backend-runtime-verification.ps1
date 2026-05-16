@@ -2,7 +2,8 @@ param(
 	[string]$OutputPath = "",
 	[switch]$SummaryOnly,
 	[switch]$Quiet,
-	[switch]$Json
+	[switch]$Json,
+	[int]$InferenceReportMaxAgeHours = 24
 )
 
 $ErrorActionPreference = "Stop"
@@ -243,6 +244,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = ""
 		}
 	}
@@ -261,6 +263,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = ""
 		}
 	}
@@ -278,10 +281,25 @@ function Get-InferenceSmokeEvidence {
 					Backend = if ($summary) { [string]$summary.Backend } else { "" }
 					ModelPath = if ($summary) { [string]$summary.ModelPath } else { "" }
 					SmokeKind = if ($summary) { [string]$summary.SmokeKind } else { "" }
+					ReportAgeHours = 0
 					Error = "smoke report contract violations: {0}" -f (($contract.Issues | Sort-Object) -join "; ")
 				}
 			}
+			$reportFileInfo = Get-Item -LiteralPath $reportPath
+			$reportAgeHours = [Math]::Round(((Get-Date) - $reportFileInfo.LastWriteTime).TotalHours, 2)
 			$passed = [bool]($summary.Passed -and $summary.InferenceChecked)
+			if ($passed -and $reportAgeHours -gt $InferenceReportMaxAgeHours) {
+				return [pscustomobject]@{
+					State = "inference-smoke-stale"
+					ReportPath = $reportPath
+					Passed = $false
+					Backend = if ($summary) { [string]$summary.Backend } else { "" }
+					ModelPath = if ($summary) { [string]$summary.ModelPath } else { "" }
+					SmokeKind = if ($summary) { [string]$summary.SmokeKind } else { "" }
+					ReportAgeHours = [double]$reportAgeHours
+					Error = "inference smoke report is stale (${reportAgeHours}h > ${InferenceReportMaxAgeHours}h)"
+				}
+			}
 			return [pscustomobject]@{
 				State = if ($passed) { "inference-checked" } else { "inference-report-failed" }
 				ReportPath = $reportPath
@@ -289,6 +307,7 @@ function Get-InferenceSmokeEvidence {
 				Backend = [string]$summary.Backend
 				ModelPath = [string]$summary.ModelPath
 				SmokeKind = [string]$summary.SmokeKind
+				ReportAgeHours = [double]$reportAgeHours
 				Error = if ($summary.Error) { [string]$summary.Error } else { "" }
 			}
 		} catch {
@@ -299,6 +318,7 @@ function Get-InferenceSmokeEvidence {
 				Backend = ""
 				ModelPath = ""
 				SmokeKind = ""
+				ReportAgeHours = 0
 				Error = $_.Exception.Message
 			}
 		}
@@ -330,6 +350,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = "run the lane-owned smoke with -OutputPath to produce local inference evidence"
 		}
 	}
@@ -341,6 +362,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = "runtime smoke script exists but is not part of local validation"
 		}
 	}
@@ -352,6 +374,7 @@ function Get-InferenceSmokeEvidence {
 		Backend = ""
 		ModelPath = ""
 		SmokeKind = ""
+		ReportAgeHours = 0
 		Error = ""
 	}
 }
