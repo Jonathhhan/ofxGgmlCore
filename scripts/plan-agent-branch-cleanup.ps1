@@ -113,7 +113,21 @@ function Test-BranchPatchEquivalent {
 	}
 
 	$remaining = @($lines | Where-Object { !$_.Trim().StartsWith("-") })
-	return $remaining.Count -eq 0
+	foreach ($line in $remaining) {
+		$parts = @($line.Trim() -split "\s+")
+		if ($parts.Count -lt 2) {
+			return $false
+		}
+		$changedPaths = @(
+			(Invoke-Git -Repository $Repository -Arguments @("diff-tree", "--no-commit-id", "--name-only", "-r", $parts[1])) -split "`n" |
+				Where-Object { ![string]::IsNullOrWhiteSpace($_) }
+		)
+		if ($changedPaths.Count -gt 0) {
+			return $false
+		}
+	}
+
+	return $true
 }
 
 function Test-BranchContentEquivalent {
