@@ -82,3 +82,9 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - `scripts\plan-release-readiness.bat` folds in `.smoke-build-ci-report.json` automatically when it exists; use `-SkipSmokeBuildCi` only when intentionally ignoring local smoke-build evidence.
 - Keep generated artifacts, local models, build output, and IDE state out of release planning.
 - Favor one repository-scoped readiness improvement per PR so agent-authored changes remain reviewable.
+
+## P3: Music Runtime Tooling
+
+- Use `scripts\setup-acestep-server.bat -Auto` in `ofxGgmlMusic` when preparing the local AceStep server build chain for ofxGgmlMusic runtime exploration.
+- Use `scripts\setup-acestep-server.ps1 -DryRun` to review selected backends and ggml source strategy before cloning/building.
+- Use `scripts\test-acestep-setup-dry-run.ps1` to verify dry-run smoke coverage in CI-like checks or after changing setup flags.
