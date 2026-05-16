@@ -181,8 +181,17 @@ function Get-InferenceSmokeEvidence {
 		}
 	}
 
-	$reportPath = Join-Path $Status.Path ".llama-runtime-smoke.json"
-	if ($Status.Name -ne "ofxGgmlLlama") {
+	$reportFiles = @{
+		ofxGgmlLlama = ".llama-runtime-smoke.json"
+		ofxGgmlSam = ".sam3-runtime-smoke.json"
+	}
+	$reportFile = $reportFiles[$Status.Name]
+	$reportPath = if (![string]::IsNullOrWhiteSpace($reportFile)) {
+		Join-Path $Status.Path $reportFile
+	} else {
+		""
+	}
+	if ([string]::IsNullOrWhiteSpace($reportFile)) {
 		return [pscustomobject]@{
 			State = "missing"
 			ReportPath = ""
@@ -194,7 +203,7 @@ function Get-InferenceSmokeEvidence {
 		}
 	}
 
-	if ($Status.Name -eq "ofxGgmlLlama" -and (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+	if (Test-Path -LiteralPath $reportPath -PathType Leaf) {
 		try {
 			$report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
 			$summary = $report.Summary
@@ -399,6 +408,7 @@ function Get-BackendRuntimeNextCommands {
 	if ($reference.Count -gt 0) {
 		$commands.Add("cd ..\ofxGgmlSam && scripts\doctor-sam.bat")
 		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun")
+		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -Backend cuda -Json -SummaryOnly -OutputPath .sam3-runtime-smoke.json")
 		$commands.Add("cd ..\ofxGgmlSam && scripts\validate-local.bat")
 	}
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
