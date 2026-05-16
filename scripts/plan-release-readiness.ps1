@@ -28,6 +28,7 @@ function Get-ReleaseReadinessNextCommands {
 	$commands = New-Object System.Collections.Generic.List[string]
 	$commands.Add("scripts\validate-local.bat")
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
+	$commands.Add("scripts\plan-local-codex.bat -Json -SummaryOnly")
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")

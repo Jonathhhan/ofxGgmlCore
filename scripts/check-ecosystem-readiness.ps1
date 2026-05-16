@@ -40,6 +40,36 @@ function Invoke-ReadinessStep {
 	return New-StepResult -Name $Name -State "OK" -Detail $ScriptPath -Output $output
 }
 
+function Invoke-LocalCodexReadinessStep {
+	param(
+		[string]$Name,
+		[string]$ScriptPath,
+		[hashtable]$Parameters = @{}
+	)
+
+	if (!(Test-Path -LiteralPath $ScriptPath -PathType Leaf)) {
+		return New-StepResult -Name $Name -State "FAIL" -Detail "missing script: $ScriptPath"
+	}
+
+	$output = & $ScriptPath @Parameters *>&1 | ForEach-Object { $_.ToString() }
+	if (!$?) {
+		return New-StepResult -Name $Name -State "FAIL" -Detail "exit code $LASTEXITCODE" -Output $output
+	}
+
+	try {
+		$parsed = ($output -join "`n") | ConvertFrom-Json -ErrorAction Stop
+		$readinessState = if ($parsed -and $parsed.Summary -and $parsed.Summary.PSObject.Properties["ReadinessState"]) {
+			[string]$parsed.Summary.ReadinessState
+		} else {
+			"unknown"
+		}
+		$detail = "readiness state: $readinessState"
+		return New-StepResult -Name $Name -State "OK" -Detail $detail -Output $output
+	} catch {
+		return New-StepResult -Name $Name -State "FAIL" -Detail "plan-local-codex output was not valid JSON" -Output $output
+	}
+}
+
 function ConvertTo-MarkdownReadiness {
 	param(
 		[string]$Root,
@@ -205,6 +235,10 @@ $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build project repair 
 	Stage = "verify-generated-project"
 	Repository = "ofxGgmlCore"
 	Example = "ofxGgmlCoreExample"
+}
+$steps += Invoke-LocalCodexReadinessStep -Name "local codex readiness" -ScriptPath (Join-Path $scriptRoot "plan-local-codex.ps1") -Parameters @{
+	Json = $true
+	SummaryOnly = $true
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build compile plan" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-compile.ps1") -Parameters @{
 	Repository = "ofxGgmlCore"
