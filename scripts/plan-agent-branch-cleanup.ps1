@@ -81,6 +81,20 @@ function ConvertTo-DeleteCommand {
 	return "git -C `"$Repository`" push $($parts[0]) --delete $($parts[1])"
 }
 
+function ConvertTo-ReviewCommand {
+	param(
+		[string]$Repository,
+		[string]$DefaultBranch,
+		[string]$Branch
+	)
+
+	if ([string]::IsNullOrWhiteSpace($DefaultBranch) -or [string]::IsNullOrWhiteSpace($Branch)) {
+		return ""
+	}
+
+	return "git -C `"$Repository`" log --oneline --decorate $DefaultBranch..$Branch"
+}
+
 function Test-BranchPatchEquivalent {
 	param(
 		[string]$Repository,
@@ -223,6 +237,46 @@ function Get-AgentBranchInventory {
 	return @($branches)
 }
 
+function Get-UnintegratedBranchReviews {
+	param(
+		[array]$Inventory,
+		[array]$Candidates
+	)
+
+	$candidateKeys = @{}
+	foreach ($candidate in @($Candidates)) {
+		$candidateKeys["$($candidate.Repository)|$($candidate.Type)|$($candidate.Branch)"] = $true
+	}
+
+	$reviews = New-Object System.Collections.Generic.List[object]
+	foreach ($branch in @($Inventory)) {
+		$key = "$($branch.Repository)|$($branch.Type)|$($branch.Branch)"
+		if ($candidateKeys.ContainsKey($key)) {
+			continue
+		}
+
+		$defaultBranch = Get-DefaultBranch -Repository ([string]$branch.Path)
+		$upstream = if ($branch.Type -eq "remote") {
+			[string]$defaultBranch.Remote
+		} else {
+			[string]$defaultBranch.Local
+		}
+
+		$reviews.Add([pscustomobject]@{
+			Repository = [string]$branch.Repository
+			Path = [string]$branch.Path
+			Type = [string]$branch.Type
+			Branch = [string]$branch.Branch
+			DefaultBranch = $upstream
+			Current = [bool]$branch.Current
+			Action = "review unintegrated branch before cleanup"
+			ReviewCommand = ConvertTo-ReviewCommand -Repository ([string]$branch.Path) -DefaultBranch $upstream -Branch ([string]$branch.Branch)
+		}) | Out-Null
+	}
+
+	return @($reviews.ToArray())
+}
+
 function Get-CleanupNextCommands {
 	param(
 		[array]$Candidates,
@@ -264,6 +318,7 @@ function ConvertTo-MarkdownCleanupPlan {
 	param(
 		[array]$Candidates,
 		[array]$Inventory,
+		[array]$UnintegratedReviews,
 		[array]$RepositorySummaries,
 		[object]$Summary,
 		[string]$Root,
@@ -346,6 +401,20 @@ function ConvertTo-MarkdownCleanupPlan {
 	}
 	$lines.Add("")
 	}
+	$lines.Add("## Unintegrated Branches To Review")
+	$lines.Add("")
+	if ($UnintegratedReviews.Count -eq 0) {
+		$lines.Add("No unintegrated matching branches were found.")
+	} else {
+		$lines.Add("| Repository | Type | Branch | Default | Current | Review command |")
+		$lines.Add("| --- | --- | --- | --- | --- | --- |")
+		foreach ($review in $UnintegratedReviews) {
+			$current = if ($review.Current) { "yes" } else { "no" }
+			$command = if ([string]::IsNullOrWhiteSpace($review.ReviewCommand)) { "" } else { $review.ReviewCommand.Replace("|", "\|") }
+			$lines.Add(("| {0} | {1} | ``{2}`` | ``{3}`` | {4} | ``{5}`` |" -f $review.Repository, $review.Type, $review.Branch, $review.DefaultBranch, $current, $command))
+		}
+	}
+	$lines.Add("")
 	$lines.Add("## Next Commands")
 	$lines.Add("")
 	$lines.Add('```powershell')
@@ -369,6 +438,7 @@ $status = $statusJson | ConvertFrom-Json
 $repositories = @($status.Addons | Where-Object { $_.Known -and $_.Present })
 $candidates = @($repositories | ForEach-Object { Get-MergedBranches -Status $_ })
 $inventory = @($repositories | ForEach-Object { Get-AgentBranchInventory -Status $_ })
+$unintegratedReviews = @(Get-UnintegratedBranchReviews -Inventory $inventory -Candidates $candidates)
 $deleteCandidates = @($candidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) })
 $summary = [pscustomobject]@{
 	RepositoriesScanned = $repositories.Count
@@ -389,6 +459,7 @@ $repositorySummaries = @(
 		$name = [string]$repository.Name
 		$repositoryInventory = @($inventory | Where-Object { $_.Repository -eq $name })
 		$repositoryCandidates = @($candidates | Where-Object { $_.Repository -eq $name })
+		$repositoryUnintegratedReviews = @($unintegratedReviews | Where-Object { $_.Repository -eq $name })
 		$deleteCandidates = @($repositoryCandidates | Where-Object { ![string]::IsNullOrWhiteSpace($_.DeleteCommand) })
 		if ($repositoryInventory.Count -eq 0 -and $repositoryCandidates.Count -eq 0) {
 			continue
@@ -404,6 +475,7 @@ $repositorySummaries = @(
 			PatchEquivalentDeleteCandidates = @($deleteCandidates | Where-Object { $_.Integration -eq "patch-equivalent" }).Count
 			IntegratedAgentBranches = $repositoryCandidates.Count
 			UnintegratedAgentBranches = [Math]::Max(0, $repositoryInventory.Count - $repositoryCandidates.Count)
+			UnintegratedBranchReviews = @($repositoryUnintegratedReviews | ForEach-Object { [string]$_.Branch })
 			CurrentBranchesSkipped = @($repositoryCandidates | Where-Object { $_.Current }).Count
 		}
 	}
@@ -419,6 +491,7 @@ if ($Json) {
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		RepositorySummaries = @($repositorySummaries)
+		UnintegratedBranchReviews = @($unintegratedReviews)
 		NextCommands = @($nextCommands)
 		SafetyNote = $safetyNote
 	}
@@ -428,7 +501,7 @@ if ($Json) {
 	}
 	$content = [pscustomobject]$payload | ConvertTo-Json -Depth 6
 } else {
-	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Inventory $inventory -RepositorySummaries $repositorySummaries -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands -SummaryOnly:$SummaryOnly
+	$content = ConvertTo-MarkdownCleanupPlan -Candidates $candidates -Inventory $inventory -UnintegratedReviews $unintegratedReviews -RepositorySummaries $repositorySummaries -Summary $summary -Root ([string]$status.Root) -NextCommands $nextCommands -SummaryOnly:$SummaryOnly
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {
