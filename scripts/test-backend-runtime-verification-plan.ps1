@@ -47,6 +47,8 @@ foreach ($property in @(
 	"InferenceCheckedRepositories",
 	"RepositoriesWithModels",
 	"RepositoriesWithBuiltExamples",
+	"ExampleBuildEvidenceGaps",
+	"ExampleBuildGapsCoveredByInference",
 	"ExampleBuildGaps",
 	"RepositoriesMissingBuiltExamples",
 	"NeedsRuntimeSmokePlan",
@@ -67,6 +69,12 @@ if ($parsed.Summary.InferenceSmokeEntrypoints -lt 0 -or $parsed.Summary.Inferenc
 }
 if ($parsed.Summary.ExampleBuildGaps -lt 0) {
 	throw "backend runtime verification JSON reported a negative example build gap count."
+}
+if ($parsed.Summary.ExampleBuildEvidenceGaps -lt $parsed.Summary.ExampleBuildGaps) {
+	throw "backend runtime verification JSON reported more actionable build gaps than total evidence gaps."
+}
+if ($parsed.Summary.ExampleBuildGapsCoveredByInference -lt 0) {
+	throw "backend runtime verification JSON reported a negative inference-covered build gap count."
 }
 if ($parsed.Summary.ExampleBuildGaps -gt 0 -and @($parsed.Summary.RepositoriesMissingBuiltExamples).Count -lt 1) {
 	throw "backend runtime verification JSON did not expose repositories for example build evidence gaps."
@@ -115,6 +123,9 @@ if (!$audio.PSObject.Properties["InferenceSmokeEvidence"]) {
 }
 if ($audio.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Audio inference smoke state."
+}
+if ($audio.InferenceSmokeEvidence -eq "inference-checked" -and @($parsed.Summary.RepositoriesMissingBuiltExamples) -contains "ofxGgmlAudio") {
+	throw "backend runtime verification JSON treated Audio's missing generated example binary as actionable despite inference evidence."
 }
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "backend runtime verification JSON did not include release-readiness follow-up."
