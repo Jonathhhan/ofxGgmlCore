@@ -159,8 +159,11 @@ $agents = $agentsRows[0]
 if (!$agents.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose Agents inference smoke evidence."
 }
-if ($agents.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "missing")) {
+if ($agents.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-failed", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Agents inference smoke state."
+}
+if ($agents.InferenceSmokeEvidence -eq "inference-report-failed" -and [string]$agents.InferenceBackend -ne "planning-boundary") {
+	throw "backend runtime verification JSON reported inference-report-failed for a non-planning boundary lane."
 }
 Assert-InferenceSmokeReportMetadata -Repository "ofxGgmlAgents" -ExpectedReportFile ".agents-runtime-smoke.json"
 if (@($parsed.NextCommands) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
