@@ -400,6 +400,9 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking backend runtime verification planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-backend-runtime-verification-plan.ps1")
+Invoke-CheckedScript `
+	-Label "Checking inference smoke contract" `
+	-ScriptPath (Join-Path $scriptRoot "test-inference-smoke-contract.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking local Codex planner" `
