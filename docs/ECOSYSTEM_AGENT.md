@@ -223,6 +223,9 @@ exactly.
 Use `scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly` when another
 agent needs only cleanup Summary counts, per-repository counts, next commands,
 and the safety note; use the full plan before actually deleting branches.
+Use `scripts\plan-agent-branch-cleanup.bat -Fetch -Json -SummaryOnly -FailOnUnintegrated`
+as a non-mutating readiness gate after merged agent work; it exits non-zero
+when any matching branch still needs manual review.
 
 ## Auto-Discovery
 
