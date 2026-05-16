@@ -61,7 +61,7 @@ foreach ($property in @("RepositoriesScanned", "DeleteCandidates", "LocalDeleteC
 if (!$parsed.Summary.PSObject.Properties["ContentEquivalentDeleteCandidates"]) {
 	throw "agent branch cleanup summary did not include content-equivalent delete candidates."
 }
-foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "IntegratedAgentBranches", "UnintegratedAgentBranches", "RepositoriesWithAgentBranches")) {
+foreach ($property in @("LocalAgentBranches", "RemoteAgentBranches", "IntegratedAgentBranches", "UnintegratedAgentBranches", "RepositoriesWithAgentBranches", "BranchCleanupReady")) {
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "agent branch cleanup inventory summary did not include property: $property"
 	}
@@ -178,6 +178,15 @@ if (@($summaryParsed.NextCommands) -notcontains "scripts\plan-agent-branch-clean
 }
 if ($summaryParsed.Summary.DeleteCandidates -gt 0 -and @($summaryParsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Fetch") {
 	throw "agent branch cleanup summary JSON did not include the detailed review command."
+}
+
+$readyGateJsonOutput = & $cleanupScript -BranchPattern "codex/no-cleanup-branch-should-match-*" -FailOnUnintegrated -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-agent-branch-cleanup.ps1 -FailOnUnintegrated failed when no matching branches were present."
+}
+$readyGateParsed = ($readyGateJsonOutput -join "`n") | ConvertFrom-Json
+if (!$readyGateParsed.Summary.BranchCleanupReady) {
+	throw "agent branch cleanup ready gate did not report BranchCleanupReady."
 }
 
 $summaryMarkdownOutput = & $cleanupScript -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }

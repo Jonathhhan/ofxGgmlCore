@@ -51,6 +51,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use the generated next-commands section as the review checklist, starting with `-Fetch` before acting on stale local refs.
 - Use `scripts\plan-agent-branch-cleanup.bat -Json` when another agent needs machine-readable cleanup commands.
 - Use `scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly` when another agent needs compact cleanup Summary counts, per-repository counts, next commands, and the safety note without branch-level inventory.
+- Use `scripts\plan-agent-branch-cleanup.bat -Fetch -Json -SummaryOnly -FailOnUnintegrated` as a non-mutating readiness gate after merged agent work; it exits non-zero only when matching branches still need review.
 - Review the summary counts before acting: scanned repositories, local and remote delete candidates, current branches skipped, local and remote agent branches, and repositories that still carry matching branches.
 - Treat `patch-equivalent` cleanup candidates as squash-merged branches whose patch is already represented on the default branch; empty no-op commits such as CI retriggers do not block this classification.
 - Treat `content-equivalent` cleanup candidates as branches whose changed paths now match the default branch exactly even when patch-id comparison cannot prove equivalence.

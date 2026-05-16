@@ -3,6 +3,7 @@ param(
 	[string]$OutputPath = "",
 	[switch]$Fetch,
 	[switch]$SummaryOnly,
+	[switch]$FailOnUnintegrated,
 	[switch]$Json
 )
 
@@ -509,6 +510,7 @@ $summary = [pscustomobject]@{
 	IntegratedAgentBranches = $candidates.Count
 	UnintegratedAgentBranches = [Math]::Max(0, $inventory.Count - $candidates.Count)
 	RepositoriesWithAgentBranches = @($inventory | ForEach-Object { $_.Repository } | Sort-Object -Unique).Count
+	BranchCleanupReady = ($inventory.Count - $candidates.Count) -eq 0
 }
 $repositorySummaries = @(
 	foreach ($repository in $repositories) {
@@ -575,4 +577,8 @@ if (![string]::IsNullOrWhiteSpace($OutputPath)) {
 	Write-Host "Wrote $target"
 } else {
 	Write-Output $content
+}
+
+if ($FailOnUnintegrated -and !$summary.BranchCleanupReady) {
+	exit 1
 }
