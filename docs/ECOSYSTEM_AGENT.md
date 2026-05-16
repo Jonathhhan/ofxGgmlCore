@@ -166,6 +166,10 @@ scripts\plan-smoke-build-compile.bat -Stage compile-example
 scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 ```
 
+Add `-Jobs 0` to `plan-smoke-build-compile`, `build-simple-example`, or
+`build-smoke-example` for local Windows runs that should use all available
+MSBuild processors. Omit it when deterministic serial build logs are preferred.
+
 On macOS/Linux:
 
 ```sh

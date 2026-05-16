@@ -5,6 +5,7 @@ param(
 	[string]$Example = "",
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
+	[int]$Jobs = 1,
 	[switch]$Json
 )
 
@@ -16,6 +17,20 @@ if ($First -lt 1) {
 if (([string]::IsNullOrWhiteSpace($Repository) -and ![string]::IsNullOrWhiteSpace($Example)) -or
 	(![string]::IsNullOrWhiteSpace($Repository) -and [string]::IsNullOrWhiteSpace($Example))) {
 	throw "-Repository and -Example must be provided together."
+}
+if ($Jobs -lt 0) {
+	throw "-Jobs must be 0 or greater."
+}
+
+function Add-JobsArgument {
+	param(
+		[string]$Command,
+		[int]$Jobs
+	)
+	if ($Jobs -eq 1) {
+		return $Command
+	}
+	return "$Command -Jobs $Jobs"
 }
 
 function Get-RepositorySmokeBuildOrder {
@@ -41,13 +56,14 @@ function Get-CompileCommand {
 		[string]$Repository,
 		[string]$Example,
 		[string]$Configuration,
-		[string]$Platform
+		[string]$Platform,
+		[int]$Jobs
 	)
 
 	switch ($Repository) {
 		"ofxGgmlCore" {
 			if ($Example -eq "ofxGgmlCoreExample") {
-				return "scripts\build-simple-example.bat -Example $Example -Configuration $Configuration -Platform $Platform"
+				return Add-JobsArgument -Command "scripts\build-simple-example.bat -Example $Example -Configuration $Configuration -Platform $Platform" -Jobs $Jobs
 			}
 		}
 		"ofxGgmlAudio" {
@@ -73,7 +89,7 @@ function Get-CompileCommand {
 		}
 	}
 
-	return "scripts\build-smoke-example.bat -Repository $Repository -Example $Example -Configuration $Configuration -Platform $Platform"
+	return Add-JobsArgument -Command "scripts\build-smoke-example.bat -Repository $Repository -Example $Example -Configuration $Configuration -Platform $Platform" -Jobs $Jobs
 }
 
 function Get-CompileTargetState {
@@ -174,7 +190,8 @@ foreach ($record in @($plan.Records)) {
 			-Repository ([string]$record.Repository) `
 			-Example ([string]$exampleMetadata.Example) `
 			-Configuration $Configuration `
-			-Platform $Platform
+			-Platform $Platform `
+			-Jobs $Jobs
 		$state = Get-CompileTargetState -ExampleMetadata $exampleMetadata -Postflight $postflight -CompileCommand $compileCommand
 		$nextCommands = New-Object System.Collections.Generic.List[string]
 		if ($state -eq "generate-project") {
@@ -256,6 +273,7 @@ $summary = [pscustomobject]@{
 	HasSelection = $selectedTargets.Count -gt 0
 	Configuration = $Configuration
 	Platform = $Platform
+	Jobs = $Jobs
 }
 
 if ($Json) {
@@ -264,6 +282,7 @@ if ($Json) {
 		Stage = $Stage
 		Configuration = $Configuration
 		Platform = $Platform
+		Jobs = $Jobs
 		Summary = $summary
 		Targets = $selectedTargets
 		AllTargets = $orderedTargets
@@ -283,6 +302,7 @@ $lines.Add("Root: $($plan.Root)")
 $lines.Add("Stage filter: $Stage")
 $lines.Add("Configuration: $Configuration")
 $lines.Add("Platform: $Platform")
+$lines.Add("Jobs: $Jobs")
 $lines.Add("")
 $lines.Add("## Summary")
 $lines.Add("")

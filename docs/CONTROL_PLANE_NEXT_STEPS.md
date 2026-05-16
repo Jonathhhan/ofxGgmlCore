@@ -40,6 +40,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\plan-smoke-build-compile.bat -Stage compile-example` after generated-project postflight is OK to get focused build commands without running them.
 - Use `scripts\plan-smoke-build-compile.bat -Repository <addon> -Example <example> -Json` when an agent needs compile-readiness Summary counts, repair status, and next commands.
 - Use `scripts\build-smoke-example.bat -Repository <addon> -Example <example>` for generated projects that pass postflight but do not have an addon-owned build wrapper.
+- Add `-Jobs 0` to Core-owned compile planners or build wrappers when a local Windows validation run should use all available MSBuild processors; the default remains serial for conservative CI-style logs.
 - Use `scripts\run-smoke-build-ci.bat` (or the `smoke-build-ci` GitHub workflow on PRs) to run the full generate-repair-compile control-plane validation loop with all managed examples; its JSON report includes top-level Summary counts for release evidence.
 - Keep reusable workflow expectations in `ofxGgmlWorkflows`, and keep caller-addon documentation in Core.
 - Prefer reporting gaps over adding new automation until the current workflow state is easy to inspect.
