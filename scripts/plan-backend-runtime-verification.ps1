@@ -370,10 +370,16 @@ function Get-BackendRuntimeSummary {
 		$_.GateState -ne "reference-lane-ready-for-runtime-smoke" -and
 		$_.GateState -ne "runtime-smoke-entrypoint-present"
 	})
-	$exampleBuildGaps = @($Entries | Where-Object {
+	$exampleBuildEvidenceGaps = @($Entries | Where-Object {
 		$_.GateState -ne "not-applicable" -and
 		$_.ExampleBuildEvidence.ExampleCount -gt 0 -and
 		$_.ExampleBuildEvidence.BuiltExamples -lt $_.ExampleBuildEvidence.ExampleCount
+	})
+	$exampleBuildGapsCoveredByInference = @($exampleBuildEvidenceGaps | Where-Object {
+		$_.InferenceSmokeEvidence.State -eq "inference-checked"
+	})
+	$actionableExampleBuildGaps = @($exampleBuildEvidenceGaps | Where-Object {
+		$_.InferenceSmokeEvidence.State -ne "inference-checked"
 	})
 
 	[pscustomobject]@{
@@ -387,8 +393,10 @@ function Get-BackendRuntimeSummary {
 		InferenceCheckedRepositories = @($Entries | Where-Object { $_.InferenceSmokeEvidence.State -eq "inference-checked" }).Count
 		RepositoriesWithModels = @($Entries | Where-Object { $_.ModelEvidence.State -eq "available" }).Count
 		RepositoriesWithBuiltExamples = @($Entries | Where-Object { $_.ExampleBuildEvidence.BuiltExamples -gt 0 }).Count
-		ExampleBuildGaps = @($exampleBuildGaps).Count
-		RepositoriesMissingBuiltExamples = @($exampleBuildGaps | Sort-Object Priority, Repository | ForEach-Object { [string]$_.Repository })
+		ExampleBuildEvidenceGaps = @($exampleBuildEvidenceGaps).Count
+		ExampleBuildGapsCoveredByInference = @($exampleBuildGapsCoveredByInference).Count
+		ExampleBuildGaps = @($actionableExampleBuildGaps).Count
+		RepositoriesMissingBuiltExamples = @($actionableExampleBuildGaps | Sort-Object Priority, Repository | ForEach-Object { [string]$_.Repository })
 		NeedsRuntimeSmokePlan = @($Entries | Where-Object { $_.GateState -eq "needs-runtime-smoke-plan" }).Count
 		BlockingRepositories = @($blocking | Sort-Object Priority, Repository | ForEach-Object { [string]$_.Repository })
 		ReferenceTarget = "ofxGgmlSam"
@@ -482,7 +490,9 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("| Inference-checked repositories | $($summary.InferenceCheckedRepositories) |")
 	$lines.Add("| Repositories with models | $($summary.RepositoriesWithModels) |")
 	$lines.Add("| Repositories with built examples | $($summary.RepositoriesWithBuiltExamples) |")
-	$lines.Add("| Repositories missing built examples | $($summary.ExampleBuildGaps) |")
+	$lines.Add("| Example build evidence gaps | $($summary.ExampleBuildEvidenceGaps) |")
+	$lines.Add("| Example build gaps covered by inference smoke | $($summary.ExampleBuildGapsCoveredByInference) |")
+	$lines.Add("| Actionable repositories missing built examples | $($summary.ExampleBuildGaps) |")
 	$lines.Add("| Repositories needing runtime-smoke plans | $($summary.NeedsRuntimeSmokePlan) |")
 	$lines.Add("")
 	$lines.Add(("Reference target: ``{0}``" -f $summary.ReferenceTarget))
@@ -517,6 +527,7 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("- Keep this as planning evidence until a lane-owned runtime-smoke script exists.")
 	$lines.Add("- Do not add model-specific code to Core; companion lanes own model loading and inference.")
 	$lines.Add("- Treat `inference-checked` as local evidence from an ignored lane-owned smoke report, not as a committed artifact.")
+	$lines.Add("- Do not treat missing generated example binaries as actionable when a lane has stronger model-backed inference evidence; generated binaries stay local-only.")
 	$lines.Add("- Treat SAM as the first reference lane because local SAM3 CPU/CUDA evidence already exists outside Core.")
 
 	return $lines -join [Environment]::NewLine
