@@ -108,6 +108,20 @@ try {
 	if (!(Test-Path -LiteralPath $outputPath -PathType Leaf)) {
 		throw "local Codex plan was not written: $outputPath"
 	}
+
+	$missingConfigPath = Join-Path $tempRoot "missing-config.toml"
+	$defaultJsonOutput = & $planScript -ConfigPath $missingConfigPath -Json *>&1 | ForEach-Object { $_.ToString() }
+	if (!$?) {
+		throw "plan-local-codex.ps1 default endpoint check failed."
+	}
+	$defaultParsed = ($defaultJsonOutput -join "`n") | ConvertFrom-Json
+	if ($defaultParsed.Summary.LocalEndpointCandidates -lt 3) {
+		throw "local Codex plan did not include default localhost endpoint candidates."
+	}
+	$firstDefaultEndpoint = @($defaultParsed.Endpoints | Select-Object -First 1)
+	if ($firstDefaultEndpoint.Count -eq 0 -or $firstDefaultEndpoint[0].BaseUrl -ne "http://127.0.0.1:8001/v1") {
+		throw "local Codex plan did not prefer the Llama-owned 8001 endpoint."
+	}
 } finally {
 	if (Test-Path -LiteralPath $tempRoot) {
 		Remove-Item -LiteralPath $tempRoot -Recurse -Force

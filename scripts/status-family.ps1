@@ -102,6 +102,10 @@ function Get-AddonStatus {
 		$examples = @(
 			Get-ChildItem -LiteralPath $path -Directory -ErrorAction SilentlyContinue |
 				Where-Object { $_.Name -like "*Example" } |
+				Where-Object {
+					(Test-Path -LiteralPath (Join-Path $_.FullName "addons.make") -PathType Leaf) -or
+					(Test-Path -LiteralPath (Join-Path $_.FullName "src") -PathType Container)
+				} |
 				Sort-Object Name |
 				Select-Object -ExpandProperty Name
 		)
