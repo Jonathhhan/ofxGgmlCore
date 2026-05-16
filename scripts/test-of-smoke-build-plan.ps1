@@ -595,7 +595,8 @@ foreach ($property in @(
 	"NextCommands",
 	"HasSelection",
 	"Configuration",
-	"Platform"
+	"Platform",
+	"Jobs"
 )) {
 	if (!$compilePlanParsed.Summary.PSObject.Properties[$property]) {
 		throw "smoke build compile plan JSON Summary did not include $property."
@@ -615,6 +616,18 @@ if ([string]$compilePlanParsed.Targets[0].CompileCommand -notmatch [regex]::Esca
 }
 if (!$compilePlanParsed.NextCommands -or $compilePlanParsed.NextCommands.Count -eq 0) {
 	throw "smoke build compile plan JSON did not include next commands."
+}
+
+$parallelCompilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" -Jobs 0 -Json *>&1 | ForEach-Object { $_.ToString() }
+if (!$?) {
+	throw "plan-smoke-build-compile.ps1 -Jobs 0 -Json failed."
+}
+$parallelCompilePlanParsed = ($parallelCompilePlanJsonOutput -join "`n") | ConvertFrom-Json
+if ($parallelCompilePlanParsed.Summary.Jobs -ne 0) {
+	throw "smoke build compile plan JSON did not preserve the requested parallel jobs value."
+}
+if ([string]$parallelCompilePlanParsed.Targets[0].CompileCommand -notmatch [regex]::Escape("-Jobs 0")) {
+	throw "parallel smoke build compile plan did not include the jobs argument in the focused build command."
 }
 
 $genericCompilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlSam" -Example "ofxGgmlSamPointExample" -Json *>&1 | ForEach-Object { $_.ToString() }

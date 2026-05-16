@@ -253,6 +253,10 @@ when another agent needs compile-readiness `Summary` counts and focused next
 commands.
 The `smoke-build-ci` workflow writes `.smoke-build-ci-report.json` with top-level
 `Summary` counts for release and agent handoff evidence.
+Use `-Jobs 0` with `scripts\build-simple-example.bat`,
+`scripts\build-smoke-example.bat`, or `scripts\plan-smoke-build-compile.bat`
+to opt into all available MSBuild processors on Windows; omitting `-Jobs`
+keeps the conservative serial build behavior.
 Use `scripts\plan-agent-branch-cleanup.bat` after merged fanout PRs to list
 merged `codex/*` branches that can be reviewed for cleanup without touching
 classified legacy snapshots.

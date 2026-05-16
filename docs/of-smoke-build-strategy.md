@@ -50,6 +50,9 @@ running those builds automatically. For examples without an addon-owned build
 script, the planner falls back to `scripts\build-smoke-example.bat`, a Core-owned
 generic builder that refuses to run until generated-project postflight is
 complete.
+On Windows, Core-owned compile planners and build wrappers accept `-Jobs 0` to
+use all available MSBuild processors; the default remains serial to keep CI-style
+logs conservative.
 
 Current Windows projectGenerator evidence: Core now prefers the embedded
 command-line generator at `projectGenerator\resources\app\app\projectGenerator.exe`
