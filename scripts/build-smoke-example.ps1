@@ -149,6 +149,7 @@ function Invoke-CheckedNative {
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $coreRoot = Resolve-Path (Join-Path $scriptRoot "..")
 $addonsRoot = Split-Path -Parent $coreRoot.Path
+$ofRoot = Split-Path -Parent $addonsRoot
 $repoRoot = Join-Path $addonsRoot $Repository
 $exampleDir = Join-Path $repoRoot $Example
 $postflightScript = Join-Path $scriptRoot "check-smoke-build-target-postflight.ps1"
@@ -186,7 +187,7 @@ if (Test-WindowsHost) {
 	$buildJobs = Resolve-BuildJobs -RequestedJobs $Jobs
 	$parallelArgs = Get-MsBuildParallelArguments -BuildJobs $buildJobs
 	Write-Step "Building $Repository / $Example $Configuration $Platform with MSBuild ($buildJobs jobs)"
-	$lockName = "Local\ofxGgml-msbuild-" + (Get-StableNameFragment $repoRoot)
+$lockName = "Local\ofxGgml-msbuild-" + (Get-StableNameFragment $ofRoot)
 	Invoke-WithNamedMutex -Name $lockName -Command {
 		$exitCode = 0
 		for ($attempt = 1; $attempt -le 2; $attempt++) {

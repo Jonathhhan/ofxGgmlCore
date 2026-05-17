@@ -199,6 +199,12 @@ if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
 if (@($parsed.NextCommands) -notcontains "scripts\check-ecosystem-readiness.bat -SkipDoctorTests") {
 	throw "release readiness JSON NextCommands did not include ecosystem readiness check."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\plan-local-codex.bat -Json -SummaryOnly") {
+	throw "release readiness JSON NextCommands did not include local codex readiness planning."
+}
+if (@($parsed.NextCommands | Where-Object { $_ -match "ofxGgmlLlama.*test-local-codex" }).Count -eq 0) {
+	throw "release readiness JSON NextCommands did not include Llama-owned local Codex smoke."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "release readiness JSON NextCommands did not include compact branch cleanup planning."
 }
@@ -286,6 +292,9 @@ if (@($summaryParsed.NextCommands) -notcontains "scripts\plan-release-readiness.
 }
 if (@($summaryParsed.NextCommands) -notcontains "scripts\release-candidate.bat") {
 	throw "release readiness summary JSON NextCommands did not include release-candidate.bat."
+}
+if (@($summaryParsed.NextCommands | Where-Object { $_ -match "ofxGgmlLlama.*test-local-codex" }).Count -eq 0) {
+	throw "release readiness summary JSON NextCommands did not include Llama-owned local Codex smoke."
 }
 
 Remove-Item -LiteralPath $workflowReport -Force

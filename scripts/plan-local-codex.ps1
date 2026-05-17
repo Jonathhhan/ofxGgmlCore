@@ -77,6 +77,20 @@ function Get-EnvKeyMatches {
 	return @($keys.ToArray() | Select-Object -Unique)
 }
 
+function Get-ConfiguredModelMatches {
+	param([string]$Content)
+
+	$matches = [regex]::Matches($Content, '(?m)^\s*model\s*=\s*"([^"]+)"')
+	$models = New-Object System.Collections.Generic.List[string]
+	foreach ($match in @($matches)) {
+		$value = $match.Groups[1].Value.Trim()
+		if (![string]::IsNullOrWhiteSpace($value)) {
+			$models.Add($value)
+		}
+	}
+	return @($models.ToArray() | Select-Object -Unique)
+}
+
 function Get-CodexConfigEvidence {
 	param([string[]]$Paths)
 
@@ -89,6 +103,7 @@ function Get-CodexConfigEvidence {
 		}
 		$localEndpoints = if ($exists) { Get-LocalEndpointMatches -Content $content } else { @() }
 		$envKeys = if ($exists) { Get-EnvKeyMatches -Content $content } else { @() }
+		$configuredModels = if ($exists) { Get-ConfiguredModelMatches -Content $content } else { @() }
 		$envKeyRecords = @($envKeys | ForEach-Object {
 			[pscustomobject]@{
 				Name = $_
@@ -101,6 +116,7 @@ function Get-CodexConfigEvidence {
 			HasModelProviders = [bool]($exists -and $content -match '\[model_providers\.')
 			HasProfiles = [bool]($exists -and $content -match '\[profiles\.')
 			LocalEndpoints = @($localEndpoints)
+			ConfiguredModels = @($configuredModels)
 			EnvKeys = @($envKeyRecords)
 		})
 	}
@@ -170,6 +186,140 @@ function Test-LocalCodexEndpoint {
 	}
 }
 
+function Get-LlamaLocalCodexMetadata {
+	param([string]$CoreRoot)
+
+	$addonsRoot = Split-Path -Parent $CoreRoot
+	$llamaRoot = Join-Path $addonsRoot "ofxGgmlLlama"
+	$metadataPath = Join-Path $llamaRoot "ofxggml-addon.json"
+	$result = [ordered]@{
+		Repository = "ofxGgmlLlama"
+		RepositoryPath = $llamaRoot
+		MetadataPath = $metadataPath
+		Present = (Test-Path -LiteralPath $llamaRoot -PathType Container)
+		MetadataPresent = (Test-Path -LiteralPath $metadataPath -PathType Leaf)
+		CodexLocalPlan = ""
+		CodexLocalPlanPresent = $false
+		CodexLocalSmoke = ""
+		CodexLocalSmokePresent = $false
+	}
+
+	if (!$result.MetadataPresent) {
+		return [pscustomobject]$result
+	}
+
+	try {
+		$metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+		if ($metadata.PSObject.Properties["codexLocalPlan"] -and ![string]::IsNullOrWhiteSpace([string]$metadata.codexLocalPlan)) {
+			$result.CodexLocalPlan = [string]$metadata.codexLocalPlan
+			$result.CodexLocalPlanPresent = Test-Path -LiteralPath (Join-Path $llamaRoot $result.CodexLocalPlan) -PathType Leaf
+		}
+		if ($metadata.PSObject.Properties["codexLocalSmoke"] -and ![string]::IsNullOrWhiteSpace([string]$metadata.codexLocalSmoke)) {
+			$result.CodexLocalSmoke = [string]$metadata.codexLocalSmoke
+			$result.CodexLocalSmokePresent = Test-Path -LiteralPath (Join-Path $llamaRoot $result.CodexLocalSmoke) -PathType Leaf
+		}
+	} catch {
+		$result.Error = $_.Exception.Message
+	}
+
+	return [pscustomobject]$result
+}
+
+function Invoke-LlamaLocalCodexPlan {
+	param(
+		[object]$LlamaCodex,
+		[array]$Endpoints,
+		[array]$Configs
+	)
+
+	$result = [ordered]@{
+		Invoked = $false
+		Succeeded = $false
+		Endpoint = ""
+		Model = ""
+		ModelSource = ""
+		ConfigPath = ""
+		Ready = $false
+		BlockerCount = 0
+		ServedModels = $null
+		LocalLlamaServer = $null
+		Error = ""
+	}
+
+	if (!$LlamaCodex -or !$LlamaCodex.CodexLocalPlanPresent) {
+		$result.Error = "Llama local Codex planner is not available."
+		return [pscustomobject]$result
+	}
+
+	$planPath = Join-Path $LlamaCodex.RepositoryPath $LlamaCodex.CodexLocalPlan
+	$endpoint = @($Endpoints | Where-Object { $_.Reachable } | Select-Object -First 1)
+	if ($endpoint.Count -eq 0) {
+		$endpoint = @($Endpoints | Select-Object -First 1)
+	}
+	if ($endpoint.Count -gt 0) {
+		$result.Endpoint = [string]$endpoint[0].BaseUrl
+	}
+
+	$configWithLocalEndpoint = @($Configs |
+		Where-Object { @($_.LocalEndpoints).Count -gt 0 } |
+		Select-Object -First 1)
+	if ($configWithLocalEndpoint.Count -gt 0) {
+		$result.ConfigPath = [string]$configWithLocalEndpoint[0].Path
+	}
+
+	$configuredModel = @($configWithLocalEndpoint |
+		Where-Object { @($_.ConfiguredModels).Count -gt 0 } |
+		ForEach-Object { @($_.ConfiguredModels) } |
+		Select-Object -First 1)
+	if ($configuredModel.Count -gt 0) {
+		$result.Model = [string]$configuredModel[0]
+		$result.ModelSource = "codex-config"
+	} elseif ($endpoint.Count -gt 0 -and @($endpoint[0].Models).Count -gt 0) {
+		$result.Model = [string]@($endpoint[0].Models)[0]
+		$result.ModelSource = "served-model"
+	}
+
+	try {
+		$args = New-Object System.Collections.Generic.List[string]
+		if (![string]::IsNullOrWhiteSpace($result.Endpoint)) {
+			$args.Add("-Endpoint")
+			$args.Add($result.Endpoint)
+		}
+		if (![string]::IsNullOrWhiteSpace($result.Model)) {
+			$args.Add("-Model")
+			$args.Add($result.Model)
+		}
+		if (![string]::IsNullOrWhiteSpace($result.ConfigPath)) {
+			$args.Add("-ConfigPath")
+			$args.Add($result.ConfigPath)
+		}
+		$args.Add("-Json")
+		$args.Add("-SummaryOnly")
+
+		$output = & $planPath @($args.ToArray()) 2>&1
+		$result.Invoked = $true
+		if (!$?) {
+			$result.Error = ($output | ForEach-Object { $_.ToString() }) -join "`n"
+			return [pscustomobject]$result
+		}
+
+		$parsed = ($output | ForEach-Object { $_.ToString() }) -join "`n" | ConvertFrom-Json
+		$result.Succeeded = $true
+		$result.Ready = [bool]$parsed.Ready
+		$result.BlockerCount = @($parsed.Blockers).Count
+		if ($parsed.PSObject.Properties["ServedModels"]) {
+			$result.ServedModels = $parsed.ServedModels
+		}
+		if ($parsed.PSObject.Properties["LocalLlamaServer"]) {
+			$result.LocalLlamaServer = $parsed.LocalLlamaServer
+		}
+	} catch {
+		$result.Error = $_.Exception.Message
+	}
+
+	return [pscustomobject]$result
+}
+
 function Get-ReadinessState {
 	param(
 		[array]$Configs,
@@ -196,12 +346,24 @@ function Get-ReadinessState {
 }
 
 function Get-NextCommands {
-	@(
+	param([object]$LlamaCodex)
+
+	$commands = New-Object System.Collections.Generic.List[string]
+	foreach ($command in @(
 		"scripts\plan-local-codex.bat -Json -SummaryOnly",
 		"scripts\plan-coding-agent-work.bat -Json",
 		"scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly",
 		"scripts\release-candidate.bat"
-	)
+	)) {
+		$commands.Add($command)
+	}
+	if ($LlamaCodex -and $LlamaCodex.CodexLocalPlanPresent) {
+		$commands.Add(("cd ..\ofxGgmlLlama && {0} -SummaryOnly" -f $LlamaCodex.CodexLocalPlan))
+	}
+	if ($LlamaCodex -and $LlamaCodex.CodexLocalSmokePresent) {
+		$commands.Add(("cd ..\ofxGgmlLlama && {0} -Json -SummaryOnly" -f $LlamaCodex.CodexLocalSmoke))
+	}
+	return @($commands.ToArray())
 }
 
 function New-LocalCodexAction {
@@ -239,9 +401,9 @@ function Get-RecommendedActions {
 			$actions.Add((New-LocalCodexAction `
 				-Priority "P2" `
 				-State $ReadinessState `
-				-Action "Use the local Codex profile only for bounded planning, documentation, validation, and small repository-scoped patches." `
-				-Rationale "The endpoint and config are visible, but release truth still comes from validation and CI." `
-				-Command "scripts\plan-coding-agent-work.bat -Json"))
+				-Action "Use local Codex only for bounded non-interactive planning, docs, validation, and small patches." `
+				-Rationale "The endpoint and config are visible, but tool-bearing sessions may still be rejected by llama-server and release truth comes from validation and CI." `
+				-Command "Prefer codex exec smoke with explicit -c provider overrides and disabled apps/browser/computer/tool_search before enabling a full desktop profile."))
 		}
 		"local-provider-missing" {
 			$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:8001/v1" }
@@ -250,9 +412,9 @@ function Get-RecommendedActions {
 			$actions.Add((New-LocalCodexAction `
 				-Priority "P1" `
 				-State $ReadinessState `
-				-Action "Add a local Codex provider/profile that points at the reachable localhost OpenAI-compatible endpoint." `
-				-Rationale "A server is reachable, but the checked Codex config does not expose a local provider endpoint." `
-				-Command "Edit $configPath and add a provider base_url for $endpoint with wire_api responses and model $model."))
+				-Action "Keep the active Codex config minimal unless the local provider is isolated from tool-bearing sessions." `
+				-Rationale "A server is reachable, but enabling the local provider globally can make Codex send non-function tools that llama-server rejects." `
+				-Command "For non-interactive smoke, pass provider fields with codex -c overrides for $endpoint and disable apps/browser/computer/tool_search; use model $model. Quarantine experimental full configs outside active $configPath."))
 		}
 		"server-missing" {
 			$endpoint = if (@($Endpoints).Count -gt 0) { [string]@($Endpoints)[0].BaseUrl } else { "http://127.0.0.1:8001/v1" }
@@ -269,9 +431,9 @@ function Get-RecommendedActions {
 			$actions.Add((New-LocalCodexAction `
 				-Priority "P1" `
 				-State $ReadinessState `
-				-Action "Create a Codex config with a local provider/profile for the reachable endpoint." `
-				-Rationale "A localhost model endpoint is reachable, but no Codex config file was found in the checked locations." `
-				-Command "Create %USERPROFILE%\.codex\config.toml with a provider base_url for $endpoint, wire_api responses, and model $model."))
+				-Action "Use explicit local-provider overrides for non-interactive Codex smoke before creating an active config." `
+				-Rationale "A localhost model endpoint is reachable, but local providers should stay isolated until their tool compatibility is proven." `
+				-Command "Run codex exec with -c provider overrides for $endpoint, disable apps/browser/computer/tool_search, and use model $model."))
 		}
 		default {
 			$actions.Add((New-LocalCodexAction `
@@ -310,25 +472,80 @@ function ConvertTo-LocalCodexMarkdown {
 	$lines.Add("| Local endpoint candidates | $($Result.Summary.LocalEndpointCandidates) |")
 	$lines.Add("| Reachable endpoints | $($Result.Summary.ReachableEndpoints) |")
 	$lines.Add("| Models reported | $($Result.Summary.ModelsReported) |")
+	$lines.Add("| Config models declared | $($Result.Summary.ConfigModelsDeclared) |")
 	$lines.Add("| Env keys declared | $($Result.Summary.EnvKeysDeclared) |")
 	$lines.Add("| Env keys present | $($Result.Summary.EnvKeysPresent) |")
+	$lines.Add("| Llama Codex model source | $($Result.Summary.LlamaCodexModelSource) |")
+	$lines.Add("| Llama Codex plan entrypoint | $($Result.Summary.LlamaCodexPlanEntrypoint) |")
+	$lines.Add("| Llama Codex smoke entrypoint | $($Result.Summary.LlamaCodexSmokeEntrypoint) |")
+	$lines.Add("| Llama Codex plan invoked | $($Result.Summary.LlamaCodexPlanInvoked) |")
+	$lines.Add("| Llama Codex plan ready | $($Result.Summary.LlamaCodexPlanReady) |")
+	$lines.Add("| Llama process inspection | $($Result.Summary.LlamaLocalServerInspection) |")
+	$lines.Add("| Llama served models reported | $($Result.Summary.LlamaServedModelsReported) |")
+	$lines.Add("| Llama local server processes | $($Result.Summary.LlamaLocalServerProcesses) |")
+	$lines.Add("| Llama model alias mismatches | $($Result.Summary.LlamaModelAliasMismatchCount) |")
 	$lines.Add("")
-	$lines.Add("## Config Evidence")
-	$lines.Add("")
-	$lines.Add("| Path | Exists | Local endpoints | Env keys |")
-	$lines.Add("| --- | --- | --- | --- |")
-	foreach ($config in @($Result.Configs)) {
-		$endpointText = if (@($config.LocalEndpoints).Count -gt 0) { @($config.LocalEndpoints) -join ", " } else { "-" }
-		$keyText = if (@($config.EnvKeys).Count -gt 0) { @($config.EnvKeys | ForEach-Object { if ($_.Present) { "$($_.Name):present" } else { "$($_.Name):missing" } }) -join ", " } else { "-" }
-		$lines.Add(('| `{0}` | {1} | `{2}` | `{3}` |' -f $config.Path, $config.Exists, $endpointText, $keyText))
+	if ($Result.PSObject.Properties["Configs"]) {
+		$lines.Add("## Config Evidence")
+		$lines.Add("")
+		$lines.Add("| Path | Exists | Local endpoints | Models | Env keys |")
+		$lines.Add("| --- | --- | --- | --- | --- |")
+		foreach ($config in @($Result.Configs)) {
+			$endpointText = if (@($config.LocalEndpoints).Count -gt 0) { @($config.LocalEndpoints) -join ", " } else { "-" }
+			$modelText = if (@($config.ConfiguredModels).Count -gt 0) { @($config.ConfiguredModels) -join ", " } else { "-" }
+			$keyText = if (@($config.EnvKeys).Count -gt 0) { @($config.EnvKeys | ForEach-Object { if ($_.Present) { "$($_.Name):present" } else { "$($_.Name):missing" } }) -join ", " } else { "-" }
+			$lines.Add(('| `{0}` | {1} | `{2}` | `{3}` | `{4}` |' -f $config.Path, $config.Exists, $endpointText, $modelText, $keyText))
+		}
+	} else {
+		$lines.Add("Config evidence omitted by -SummaryOnly; rerun without -SummaryOnly for per-file details.")
 	}
 	$lines.Add("")
-	$lines.Add("## Endpoint Evidence")
+	if ($Result.PSObject.Properties["Endpoints"]) {
+		$lines.Add("## Endpoint Evidence")
+		$lines.Add("")
+		$lines.Add("| Base URL | Reachable | Models |")
+		$lines.Add("| --- | --- | ---: |")
+		foreach ($endpoint in @($Result.Endpoints)) {
+			$lines.Add(('| `{0}` | {1} | {2} |' -f $endpoint.BaseUrl, $endpoint.Reachable, $endpoint.ModelCount))
+		}
+	} else {
+		$lines.Add("Endpoint evidence omitted by -SummaryOnly; rerun without -SummaryOnly for per-endpoint details.")
+	}
 	$lines.Add("")
-	$lines.Add("| Base URL | Reachable | Models |")
-	$lines.Add("| --- | --- | ---: |")
-	foreach ($endpoint in @($Result.Endpoints)) {
-		$lines.Add(('| `{0}` | {1} | {2} |' -f $endpoint.BaseUrl, $endpoint.Reachable, $endpoint.ModelCount))
+	$lines.Add("## Llama-Owned Evidence")
+	$lines.Add("")
+	if ($Result.LlamaCodexPlanEvidence -and $Result.LlamaCodexPlanEvidence.Invoked) {
+		$served = if ($Result.LlamaCodexPlanEvidence.ServedModels -and @($Result.LlamaCodexPlanEvidence.ServedModels.Models).Count -gt 0) {
+			@($Result.LlamaCodexPlanEvidence.ServedModels.Models) -join ", "
+		} else {
+			"-"
+		}
+		$processes = if ($Result.LlamaCodexPlanEvidence.LocalLlamaServer) {
+			@($Result.LlamaCodexPlanEvidence.LocalLlamaServer.Processes)
+		} else {
+			@()
+		}
+		$inspection = if ($Result.LlamaCodexPlanEvidence.LocalLlamaServer) {
+			if ($Result.LlamaCodexPlanEvidence.LocalLlamaServer.Available) {
+				"available"
+			} else {
+				"unavailable: $($Result.LlamaCodexPlanEvidence.LocalLlamaServer.Error)"
+			}
+		} else {
+			"not-reported"
+		}
+		$lines.Add("| Endpoint | Model source | Ready | Served models | Process inspection | Local model files | Alias mismatches |")
+		$lines.Add("| --- | --- | --- | --- | --- | --- | ---: |")
+		$modelFiles = if (@($processes).Count -gt 0) {
+			@($processes | ForEach-Object { if (![string]::IsNullOrWhiteSpace($_.ModelFile)) { $_.ModelFile } }) -join ", "
+		} else {
+			"-"
+		}
+		$mismatchCount = @($processes | Where-Object { $_.ModelAliasFamilyMismatch }).Count
+		$lines.Add(('| `{0}` | `{1}` | {2} | `{3}` | `{4}` | `{5}` | {6} |' -f $Result.LlamaCodexPlanEvidence.Endpoint, $Result.LlamaCodexPlanEvidence.ModelSource, $Result.LlamaCodexPlanEvidence.Ready, $served, $inspection, $modelFiles, $mismatchCount))
+	} else {
+		$errorText = if ($Result.LlamaCodexPlanEvidence) { $Result.LlamaCodexPlanEvidence.Error } else { "No Llama planner evidence available." }
+		$lines.Add("Llama-owned local Codex evidence was not available: $errorText")
 	}
 	$lines.Add("")
 	$lines.Add("## Recommended Actions")
@@ -361,6 +578,14 @@ $configEvidence = Get-CodexConfigEvidence -Paths $configPaths
 $endpointCandidates = Get-EndpointCandidates -ExplicitEndpoints $Endpoint -ConfigEvidence $configEvidence -SkipDefault:$SkipDefaultEndpoints
 $endpointEvidence = @($endpointCandidates | ForEach-Object { Test-LocalCodexEndpoint -BaseUrl $_ })
 $envKeyRecords = @($configEvidence | ForEach-Object { @($_.EnvKeys) })
+$configuredModelRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredModels) })
+$llamaCodex = Get-LlamaLocalCodexMetadata -CoreRoot $addonRoot
+$llamaCodexPlanEvidence = Invoke-LlamaLocalCodexPlan -LlamaCodex $llamaCodex -Endpoints $endpointEvidence -Configs $configEvidence
+$llamaProcessInspection = if ($llamaCodexPlanEvidence.LocalLlamaServer) {
+	if ($llamaCodexPlanEvidence.LocalLlamaServer.Available) { "available" } else { "unavailable" }
+} else {
+	"not-reported"
+}
 
 $summary = [pscustomobject]@{
 	ReadinessState = Get-ReadinessState -Configs $configEvidence -Endpoints $endpointEvidence
@@ -370,8 +595,19 @@ $summary = [pscustomobject]@{
 	LocalEndpointCandidates = @($endpointCandidates).Count
 	ReachableEndpoints = @($endpointEvidence | Where-Object { $_.Reachable }).Count
 	ModelsReported = (@($endpointEvidence | Measure-Object -Property ModelCount -Sum).Sum + 0)
+	ConfigModelsDeclared = @($configuredModelRecords).Count
 	EnvKeysDeclared = @($envKeyRecords).Count
 	EnvKeysPresent = @($envKeyRecords | Where-Object { $_.Present }).Count
+	LlamaCodexModelSource = [string]$llamaCodexPlanEvidence.ModelSource
+	LlamaCodexPlanEntrypoint = [bool]$llamaCodex.CodexLocalPlanPresent
+	LlamaCodexSmokeEntrypoint = [bool]$llamaCodex.CodexLocalSmokePresent
+	LlamaCodexPlanInvoked = [bool]$llamaCodexPlanEvidence.Invoked
+	LlamaCodexPlanSucceeded = [bool]$llamaCodexPlanEvidence.Succeeded
+	LlamaCodexPlanReady = [bool]$llamaCodexPlanEvidence.Ready
+	LlamaLocalServerInspection = $llamaProcessInspection
+	LlamaServedModelsReported = if ($llamaCodexPlanEvidence.ServedModels) { @($llamaCodexPlanEvidence.ServedModels.Models).Count } else { 0 }
+	LlamaLocalServerProcesses = if ($llamaCodexPlanEvidence.LocalLlamaServer) { @($llamaCodexPlanEvidence.LocalLlamaServer.Processes).Count } else { 0 }
+	LlamaModelAliasMismatchCount = if ($llamaCodexPlanEvidence.LocalLlamaServer) { @($llamaCodexPlanEvidence.LocalLlamaServer.Processes | Where-Object { $_.ModelAliasFamilyMismatch }).Count } else { 0 }
 }
 $recommendedActions = Get-RecommendedActions -ReadinessState $summary.ReadinessState -Configs $configEvidence -Endpoints $endpointEvidence
 
@@ -380,8 +616,10 @@ $result = [ordered]@{
 	SummaryOnly = [bool]$SummaryOnly
 	SkipDefaultEndpoints = [bool]$SkipDefaultEndpoints
 	Summary = $summary
+	LlamaCodex = $llamaCodex
+	LlamaCodexPlanEvidence = $llamaCodexPlanEvidence
 	RecommendedActions = @($recommendedActions)
-	NextCommands = @(Get-NextCommands)
+	NextCommands = @(Get-NextCommands -LlamaCodex $llamaCodex)
 }
 if (!$SummaryOnly) {
 	$result.Configs = @($configEvidence)

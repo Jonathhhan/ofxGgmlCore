@@ -486,6 +486,7 @@ function Get-AddonIncludeDirectories {
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
+$ofRoot = Split-Path -Parent (Split-Path -Parent $addonRoot)
 $exampleDir = Join-Path $addonRoot $Example
 if (!(Test-Path -LiteralPath $exampleDir)) {
 	throw "Example directory not found: $exampleDir"
@@ -514,7 +515,7 @@ if (Test-WindowsHost) {
 	$buildJobs = Resolve-BuildJobs -RequestedJobs $Jobs
 	$parallelArgs = Get-MsBuildParallelArguments -BuildJobs $buildJobs
 	Write-Step "Building $Example $Configuration $Platform with MSBuild ($buildJobs jobs)"
-	$lockName = "Local\ofxGgml-msbuild-" + (Get-StableNameFragment $addonRoot.Path)
+$lockName = "Local\ofxGgml-msbuild-" + (Get-StableNameFragment $ofRoot)
 	Invoke-WithNamedMutex -Name $lockName -Command {
 		$exitCode = 0
 		for ($attempt = 1; $attempt -le 2; $attempt++) {

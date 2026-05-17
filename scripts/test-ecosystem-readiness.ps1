@@ -25,6 +25,7 @@ foreach ($expected in @(
 	"openFrameworks smoke build target handoff",
 	"openFrameworks smoke build target preflight",
 	"openFrameworks smoke build target postflight",
+	"local codex readiness",
 	"release readiness plan",
 	"agent branch cleanup plan",
 	"Readiness passed"
@@ -87,6 +88,17 @@ foreach ($stepName in @("structured ecosystem plan", "structured coding agent wo
 	if (!$step[0].Output -or @($step[0].Output).Count -eq 0) {
 		throw "ecosystem readiness JSON did not retain output for $stepName."
 	}
+}
+
+$localCodexStep = @($parsed.Steps | Where-Object { $_.Name -eq "local codex readiness" } | Select-Object -First 1)
+if ($localCodexStep.Count -eq 0 -or $localCodexStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON did not report local codex readiness as OK."
+}
+if (!$localCodexStep[0].Detail -or $localCodexStep[0].Detail -notmatch "readiness state:") {
+	throw "ecosystem readiness JSON did not retain local codex readiness detail."
+}
+if (!$localCodexStep[0].Output -or @($localCodexStep[0].Output).Count -eq 0) {
+	throw "ecosystem readiness JSON did not retain output for local codex readiness."
 }
 
 $structuredPlanStep = @($parsed.Steps | Where-Object { $_.Name -eq "structured ecosystem plan" } | Select-Object -First 1)

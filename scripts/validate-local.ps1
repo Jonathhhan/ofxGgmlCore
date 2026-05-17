@@ -101,6 +101,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "scripts\
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "scripts\\plan-release-readiness.bat" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend capability evidence" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "backend runtime verification planning" "release readiness docs"
+Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "scripts\\test-local-codex.bat -Json -SummaryOnly" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "SmokeBuildCiReport" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "FetchSmokeBuildCiReport" "release readiness docs"
 Assert-FileContains (Join-Path $addonRoot "docs\RELEASE_READINESS.md") "EvidenceGaps" "release readiness docs"
@@ -174,6 +175,7 @@ Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "l
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "ofxGgmlLlamaCodexLocalExample" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "http://127.0.0.1:8001/v1" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-local-codex.bat -Json -SummaryOnly" "local Codex llama-server docs"
+Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\test-local-codex.bat -Json -SummaryOnly" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "structured recommended actions" "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") 'wire_api = "responses"' "local Codex llama-server docs"
 Assert-FileContains (Join-Path $addonRoot "docs\LOCAL_CODEX_LLAMA_SERVER.md") "scripts\\plan-ecosystem.bat -Json -SummaryOnly" "local Codex llama-server docs"
@@ -209,6 +211,12 @@ foreach ($requiredScript in @(
 	"release-candidate.bat",
 	"release-candidate.ps1",
 	"release-candidate.sh",
+	"setup-acestep-server.bat",
+	"setup-acestep-server.ps1",
+	"setup-acestep-server.sh",
+	"test-acestep-setup-dry-run.bat",
+	"test-acestep-setup-dry-run.ps1",
+	"test-acestep-setup-dry-run.sh",
 	"check-ecosystem-readiness.bat",
 	"check-ecosystem-readiness.ps1",
 	"check-ecosystem-readiness.sh",
@@ -305,6 +313,9 @@ if (!$SkipSetupDryRun) {
 			Configuration = $Configuration
 			Platform = $Platform
 		}
+	Invoke-CheckedScript `
+		-Label "Checking acestep setup dry-run plan" `
+		-ScriptPath (Join-Path $scriptRoot "test-acestep-setup-dry-run.ps1")
 }
 
 if (!$SkipProjectRepair) {
@@ -400,6 +411,9 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking backend runtime verification planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-backend-runtime-verification-plan.ps1")
+Invoke-CheckedScript `
+	-Label "Checking inference smoke contract" `
+	-ScriptPath (Join-Path $scriptRoot "test-inference-smoke-contract.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking local Codex planner" `

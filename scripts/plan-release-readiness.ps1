@@ -24,10 +24,45 @@ function Write-Step {
 	Write-Host "==> $Message"
 }
 
+function Get-LlamaCodexSmokeCommand {
+	param([string]$CoreRoot)
+
+	$addonsRoot = Split-Path -Parent $CoreRoot
+	$llamaRoot = Join-Path $addonsRoot "ofxGgmlLlama"
+	$metadataPath = Join-Path $llamaRoot "ofxggml-addon.json"
+	if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+		return ""
+	}
+
+	try {
+		$metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+		if (!$metadata.PSObject.Properties["codexLocalSmoke"]) {
+			return ""
+		}
+		$scriptPath = [string]$metadata.codexLocalSmoke
+		if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+			return ""
+		}
+		if (!(Test-Path -LiteralPath (Join-Path $llamaRoot $scriptPath) -PathType Leaf)) {
+			return ""
+		}
+		return "cd ..\ofxGgmlLlama && $scriptPath -Json -SummaryOnly"
+	} catch {
+		return ""
+	}
+}
+
 function Get-ReleaseReadinessNextCommands {
+	param([string]$CoreRoot)
+
 	$commands = New-Object System.Collections.Generic.List[string]
 	$commands.Add("scripts\validate-local.bat")
 	$commands.Add("scripts\audit-ecosystem.bat -Strict")
+	$commands.Add("scripts\plan-local-codex.bat -Json -SummaryOnly")
+	$codexSmokeCommand = Get-LlamaCodexSmokeCommand -CoreRoot $CoreRoot
+	if (![string]::IsNullOrWhiteSpace($codexSmokeCommand)) {
+		$commands.Add($codexSmokeCommand)
+	}
 	$commands.Add("scripts\check-ecosystem-readiness.bat -SkipDoctorTests")
 	$commands.Add("scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly")
 	$commands.Add("scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly")
@@ -216,7 +251,7 @@ $summary = [pscustomobject]@{
 }
 $evidenceGaps = [string[]](Get-ReleaseEvidenceGaps -Summary $summary)
 $summary | Add-Member -NotePropertyName EvidenceGapCount -NotePropertyValue ([int]$evidenceGaps.Count)
-$nextCommands = Get-ReleaseReadinessNextCommands
+$nextCommands = Get-ReleaseReadinessNextCommands -CoreRoot $addonRoot
 $evidenceSummaries = @(
 	New-ReleaseEvidenceSummary `
 		-Name "workflow status" `

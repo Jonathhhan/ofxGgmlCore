@@ -63,6 +63,20 @@ cd ../ofxGgmlLlama
 ./scripts/run-example.sh embedding -Build -Model /path/to/embedding-model.gguf
 ```
 
+For music-generation runtime setup, prepare AceStep once in the sibling music repo:
+
+```powershell
+cd ..\ofxGgmlMusic
+.\scripts\setup-acestep-server.bat -Auto -InstallDir .\libs\acestep
+```
+
+or macOS/Linux:
+
+```sh
+cd ../ofxGgmlMusic
+./scripts/setup-acestep-server.sh -Auto -InstallDir ./libs/acestep
+```
+
 ## Scripts
 
 | Script | Purpose |
@@ -74,6 +88,8 @@ cd ../ofxGgmlLlama
 | `scripts\run-simple-example.bat` | Launch the Core smoke example |
 | `scripts\validate-local.bat` | Run the local Core validation suite |
 | `scripts\release-candidate.bat` | Run the pre-release validation gate |
+| `scripts\setup-acestep-server.bat` | Prepare the AceStep ggml-backed `ace-server` helper in `ofxGgmlMusic` |
+| `scripts\test-acestep-setup-dry-run.ps1` | Verify AceStep setup CLI contract without mutating files |
 | `scripts\get-ecosystem.ps1` | Shared auto-discovery helper for ofxGgml sibling repositories |
 | `scripts\check-ecosystem-readiness.bat` | Run the non-mutating agent readiness pass across the managed ecosystem |
 | `scripts\audit-ecosystem.bat` | Audit managed and detected repositories for agent readiness |
@@ -158,7 +174,14 @@ outside Core; the repository contract remains the planning queue, guardrails,
 and validation commands.
 Use `scripts\plan-local-codex.bat -Json -SummaryOnly` when another agent needs
 compact evidence for optional local Codex config and localhost `llama-server`
-endpoint readiness without mutating local setup.
+endpoint readiness without mutating local setup. When `ofxGgmlLlama` metadata
+declares a Codex smoke entrypoint, the plan also reports the lane-owned
+`scripts\test-local-codex.bat -Json -SummaryOnly` follow-up. When the
+Llama-owned planner is present, Core carries through its served-model and local
+process evidence, including unavailable process inspection, so handoffs can see
+whether the actual GGUF file behind the configured Codex model alias is known.
+Keep experimental local-provider TOML quarantined until `codex exec` works with
+tool-bearing features disabled through explicit `-c` overrides.
 Use `scripts\check-ecosystem-readiness.bat` when you need a single
 non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,

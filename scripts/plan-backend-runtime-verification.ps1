@@ -2,7 +2,8 @@ param(
 	[string]$OutputPath = "",
 	[switch]$SummaryOnly,
 	[switch]$Quiet,
-	[switch]$Json
+	[switch]$Json,
+	[int]$InferenceReportMaxAgeHours = 24
 )
 
 $ErrorActionPreference = "Stop"
@@ -169,6 +170,72 @@ function Get-RuntimeSmokeEvidence {
 function Get-InferenceSmokeEvidence {
 	param([object]$Status)
 
+	function Get-RequiredSummaryProperty {
+		param(
+			[object]$Target,
+			[string]$Name,
+			[string]$Type,
+			[bool]$AllowEmpty
+		)
+
+		if (-not ($Target -and $Target.PSObject.Properties[$Name])) {
+			return [pscustomobject]@{
+				Found = $false
+				Value = ""
+			}
+		}
+
+		$value = $Target.$Name
+		switch ($Type) {
+			"bool" {
+				if ($value -is [bool]) {
+					return [pscustomobject]@{ Found = $true; Value = [bool]$value }
+				}
+				return [pscustomobject]@{ Found = $false; Value = "" }
+			}
+			"string" {
+				if ($value -is [string] -and ($AllowEmpty -or -not [string]::IsNullOrWhiteSpace($value))) {
+					return [pscustomobject]@{ Found = $true; Value = [string]$value }
+				}
+				return [pscustomobject]@{ Found = false; Value = "" }
+			}
+		}
+
+		return [pscustomobject]@{ Found = $false; Value = "" }
+	}
+
+	function Assert-InferenceSmokeContract {
+		param([object]$Summary)
+
+		$missing = New-Object System.Collections.Generic.List[string]
+		$required = @(
+			@{ Name = "Passed"; Type = "bool"; AllowEmpty = $true },
+			@{ Name = "InferenceChecked"; Type = "bool"; AllowEmpty = $true },
+			@{ Name = "SmokeKind"; Type = "string"; AllowEmpty = $false },
+			@{ Name = "Backend"; Type = "string"; AllowEmpty = $false },
+			@{ Name = "ModelPath"; Type = "string"; AllowEmpty = $false }
+		)
+
+		foreach ($field in @($required)) {
+			$result = Get-RequiredSummaryProperty -Target $Summary -Name $field.Name -Type $field.Type -AllowEmpty $field.AllowEmpty
+			if (-not $result.Found) {
+				$missing.Add("$($field.Name) is missing or malformed")
+			}
+		}
+
+		if ($missing.Count -gt 0) {
+			return [pscustomobject]@{
+				Valid = $false
+				Issues = @($missing.ToArray())
+			}
+		}
+
+		[pscustomobject]@{
+			Valid = $true
+			Issues = @()
+		}
+	}
+
 	if (!$Status.Present) {
 		return [pscustomobject]@{
 			State = "missing-repository"
@@ -177,16 +244,12 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = ""
 		}
 	}
 
-	$reportFiles = @{
-		ofxGgmlLlama = ".llama-runtime-smoke.json"
-		ofxGgmlSam = ".sam3-runtime-smoke.json"
-		ofxGgmlAudio = ".audio-runtime-smoke.json"
-	}
-	$reportFile = $reportFiles[$Status.Name]
+	$reportFile = Get-InferenceSmokeReportFile -Metadata $Status.Metadata
 	$reportPath = if (![string]::IsNullOrWhiteSpace($reportFile)) {
 		Join-Path $Status.Path $reportFile
 	} else {
@@ -200,6 +263,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = ""
 		}
 	}
@@ -208,15 +272,43 @@ function Get-InferenceSmokeEvidence {
 		try {
 			$report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
 			$summary = $report.Summary
-			$passed = [bool]($summary -and $summary.Passed -and $summary.InferenceChecked)
+			$contract = Assert-InferenceSmokeContract -Summary $summary
+			if (-not $contract.Valid) {
+				return [pscustomobject]@{
+					State = "inference-report-invalid"
+					ReportPath = $reportPath
+					Passed = $false
+					Backend = if ($summary) { [string]$summary.Backend } else { "" }
+					ModelPath = if ($summary) { [string]$summary.ModelPath } else { "" }
+					SmokeKind = if ($summary) { [string]$summary.SmokeKind } else { "" }
+					ReportAgeHours = 0
+					Error = "smoke report contract violations: {0}" -f (($contract.Issues | Sort-Object) -join "; ")
+				}
+			}
+			$reportFileInfo = Get-Item -LiteralPath $reportPath
+			$reportAgeHours = [Math]::Round(((Get-Date) - $reportFileInfo.LastWriteTime).TotalHours, 2)
+			$passed = [bool]($summary.Passed -and $summary.InferenceChecked)
+			if ($passed -and $reportAgeHours -gt $InferenceReportMaxAgeHours) {
+				return [pscustomobject]@{
+					State = "inference-smoke-stale"
+					ReportPath = $reportPath
+					Passed = $false
+					Backend = if ($summary) { [string]$summary.Backend } else { "" }
+					ModelPath = if ($summary) { [string]$summary.ModelPath } else { "" }
+					SmokeKind = if ($summary) { [string]$summary.SmokeKind } else { "" }
+					ReportAgeHours = [double]$reportAgeHours
+					Error = "inference smoke report is stale (${reportAgeHours}h > ${InferenceReportMaxAgeHours}h)"
+				}
+			}
 			return [pscustomobject]@{
 				State = if ($passed) { "inference-checked" } else { "inference-report-failed" }
 				ReportPath = $reportPath
 				Passed = $passed
-				Backend = if ($summary) { [string]$summary.Backend } else { "" }
-				ModelPath = if ($summary) { [string]$summary.ModelPath } else { "" }
-				SmokeKind = if ($summary) { [string]$summary.SmokeKind } else { "" }
-				Error = if ($summary) { [string]$summary.Error } else { "missing report summary" }
+				Backend = [string]$summary.Backend
+				ModelPath = [string]$summary.ModelPath
+				SmokeKind = [string]$summary.SmokeKind
+				ReportAgeHours = [double]$reportAgeHours
+				Error = if ($summary.Error) { [string]$summary.Error } else { "" }
 			}
 		} catch {
 			return [pscustomobject]@{
@@ -226,6 +318,7 @@ function Get-InferenceSmokeEvidence {
 				Backend = ""
 				ModelPath = ""
 				SmokeKind = ""
+				ReportAgeHours = 0
 				Error = $_.Exception.Message
 			}
 		}
@@ -257,6 +350,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = "run the lane-owned smoke with -OutputPath to produce local inference evidence"
 		}
 	}
@@ -268,6 +362,7 @@ function Get-InferenceSmokeEvidence {
 			Backend = ""
 			ModelPath = ""
 			SmokeKind = ""
+			ReportAgeHours = 0
 			Error = "runtime smoke script exists but is not part of local validation"
 		}
 	}
@@ -279,8 +374,26 @@ function Get-InferenceSmokeEvidence {
 		Backend = ""
 		ModelPath = ""
 		SmokeKind = ""
+		ReportAgeHours = 0
 		Error = ""
 	}
+}
+
+function Get-InferenceSmokeReportFile {
+	param(
+		[object]$Metadata
+	)
+
+	$declared = if ($Metadata -and $Metadata.PSObject.Properties["inferenceSmokeReport"]) {
+		$Metadata.inferenceSmokeReport
+	} else {
+		""
+	}
+	if ($declared -is [string] -and -not [string]::IsNullOrWhiteSpace($declared)) {
+		return [string]$declared.Trim()
+	}
+
+	return ""
 }
 
 function Get-BackendRuntimePriority {
@@ -305,6 +418,7 @@ function New-BackendRuntimeEntry {
 	param([object]$Status)
 
 	$metadata = Get-AddonMetadata -RepositoryPath $Status.Path
+	$Status | Add-Member -NotePropertyName Metadata -NotePropertyValue $metadata -Force
 	$declaredBackends = @()
 	if ($metadata -and $metadata.PSObject.Properties["backends"]) {
 		$declaredBackends = @($metadata.backends | ForEach-Object { [string]$_ })
@@ -424,6 +538,10 @@ function Get-BackendRuntimeNextCommands {
 	if ($audio.Count -gt 0) {
 		$commands.Add("cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -DryRun")
 		$commands.Add("cd ..\ofxGgmlAudio && scripts\run-audio-runtime-smoke.bat -Mode simple -Json -SummaryOnly -OutputPath .audio-runtime-smoke.json")
+	}
+	$agents = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlAgents" } | Select-Object -First 1)
+	if ($agents.Count -gt 0) {
+		$commands.Add("cd ..\ofxGgmlAgents && scripts\run-agents-runtime-smoke.bat -Json -SummaryOnly -OutputPath .agents-runtime-smoke.json")
 	}
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	return @($commands.ToArray())
