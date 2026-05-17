@@ -74,7 +74,13 @@ scripts\plan-local-codex.bat -Json -SummaryOnly
 The planner probes only localhost OpenAI-compatible `/v1/models` endpoints,
 reads local Codex config candidates, and emits structured recommended actions
 for the detected readiness state. It does not start a server, write config, or
-change addon runtime behavior.
+change addon runtime behavior. When `ofxGgmlLlama\ofxggml-addon.json` declares
+`codexLocalPlan` or `codexLocalSmoke`, Core also reports those lane-owned
+follow-up commands so agents can move from preflight to a real non-interactive
+Codex smoke without hard-coding Llama scripts in Core. Core also invokes the
+Llama-owned planner read-only and carries its served-model evidence through the
+report, including `/v1/models` IDs, the detected local `llama-server` model
+file, and any likely model/alias mismatch.
 
 ## Codex Provider Sketch
 
@@ -83,7 +89,7 @@ the exact keys against your local Codex documentation before relying on this
 sketch. The important contract for the ofxGgml ecosystem is the endpoint shape
 and the repository guardrail prompt, not the specific TOML field names.
 
-Illustrative `%USERPROFILE%\.codex\config.toml` shape:
+Illustrative provider shape:
 
 ```toml
 [model_providers.local_llama]
@@ -96,6 +102,13 @@ model = "unsloth/GLM-4.7-Flash"
 model_provider = "local_llama"
 ```
 
+Keep this out of the active desktop `config.toml` until tool compatibility is
+proven for the installed Codex build. A full local provider config can make
+Codex send tool entries that `llama-server` rejects with
+`'type' of tool must be 'function'`. For smoke tests, prefer explicit `codex -c`
+provider overrides and disable apps, browser, computer use, image generation,
+tool search, and web search for that one non-interactive run.
+
 Most local OpenAI-compatible servers ignore the API key. Add `env_key` only if
 your endpoint enforces authentication:
 
@@ -106,7 +119,9 @@ $env:LOCAL_LLAMA_API_KEY = "local"
 Use the wire API supported by your installed Codex version and the local
 server. Current Codex builds reject the legacy `chat` wire API for custom
 providers and expect `responses`; set `model` to a model id returned by the
-local `/v1/models` endpoint.
+local `/v1/models` endpoint. If you quarantine an experimental provider file by
+renaming it away from `config.toml`, pass its endpoint and model explicitly to
+the planner with `-ConfigPath`, or use one-shot `codex -c` overrides for smoke.
 
 ## Required Repository Prompt
 
@@ -140,6 +155,20 @@ scripts\plan-ecosystem.bat -Json -SummaryOnly
 scripts\plan-coding-agent-work.bat -Json
 scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly
 ```
+
+When `ofxGgmlLlama` is present and its metadata advertises the smoke entry
+point, the local Codex planner will include:
+
+```powershell
+cd ..\ofxGgmlLlama && scripts\test-local-codex.bat -Json -SummaryOnly
+```
+
+Use the served-model fields before trusting a local profile. A config entry such
+as `model = "unsloth/GLM-4.7-Flash"` only selects a server alias; the Core plan
+should also show that the Llama-owned evidence sees the expected `/v1/models`
+ID and the matching local GGUF file loaded by `llama-server`. If process
+inspection is unavailable, treat alias/GGUF mismatch evidence as unknown rather
+than clean.
 
 Before selecting model-backed runtime work, ask for runtime planning evidence:
 

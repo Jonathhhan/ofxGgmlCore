@@ -120,7 +120,7 @@ if ($sam.RuntimeSmokeEvidence -ne "available-and-validated") {
 if (!$sam.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose SAM inference smoke evidence."
 }
-if ($sam.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "missing")) {
+if ($sam.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected SAM inference smoke state."
 }
 Assert-InferenceSmokeReportMetadata -Repository "ofxGgmlSam" -ExpectedReportFile ".sam3-runtime-smoke.json"
@@ -132,7 +132,7 @@ $llama = $llamaRows[0]
 if (!$llama.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose Llama inference smoke evidence."
 }
-if ($llama.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "missing")) {
+if ($llama.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Llama inference smoke state."
 }
 Assert-InferenceSmokeReportMetadata -Repository "ofxGgmlLlama" -ExpectedReportFile ".llama-runtime-smoke.json"
@@ -144,7 +144,7 @@ $audio = $audioRows[0]
 if (!$audio.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose Audio inference smoke evidence."
 }
-if ($audio.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "missing")) {
+if ($audio.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Audio inference smoke state."
 }
 if ($audio.InferenceSmokeEvidence -eq "inference-checked" -and @($parsed.Summary.RepositoriesMissingBuiltExamples) -contains "ofxGgmlAudio") {

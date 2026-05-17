@@ -31,6 +31,7 @@ try {
 		"Readiness state",
 		"server-missing",
 		"Recommended Actions",
+		"Llama-Owned Evidence",
 		"Start or repoint the local OpenAI-compatible llama-server endpoint",
 		"http://127.0.0.1:9/v1",
 		"scripts\plan-local-codex.bat -Json -SummaryOnly"
@@ -53,12 +54,35 @@ try {
 		"LocalEndpointCandidates",
 		"ReachableEndpoints",
 		"ModelsReported",
+		"ConfigModelsDeclared",
 		"EnvKeysDeclared",
-		"EnvKeysPresent"
+		"EnvKeysPresent",
+		"LlamaCodexModelSource",
+		"LlamaCodexPlanEntrypoint",
+		"LlamaCodexSmokeEntrypoint",
+		"LlamaCodexPlanInvoked",
+		"LlamaCodexPlanSucceeded",
+		"LlamaCodexPlanReady",
+		"LlamaLocalServerInspection",
+		"LlamaServedModelsReported",
+		"LlamaLocalServerProcesses",
+		"LlamaModelAliasMismatchCount"
 	)) {
 		if (!$parsed.Summary.PSObject.Properties[$property]) {
 			throw "local Codex plan JSON Summary did not include $property."
 		}
+	}
+	if (!$parsed.LlamaCodex -or !$parsed.LlamaCodex.PSObject.Properties["CodexLocalSmoke"]) {
+		throw "local Codex plan JSON did not include Llama-owned Codex smoke metadata."
+	}
+	if (!$parsed.LlamaCodexPlanEvidence -or !$parsed.LlamaCodexPlanEvidence.PSObject.Properties["ServedModels"] -or !$parsed.LlamaCodexPlanEvidence.PSObject.Properties["LocalLlamaServer"]) {
+		throw "local Codex plan JSON did not include Llama-owned served-model and local-server evidence."
+	}
+	if ($parsed.LlamaCodex.CodexLocalPlanPresent -and !$parsed.Summary.LlamaCodexPlanInvoked) {
+		throw "local Codex plan did not invoke the Llama-owned planner despite the entrypoint being present."
+	}
+	if (@($parsed.NextCommands | Where-Object { $_ -match "ofxGgmlLlama.*test-local-codex" }).Count -eq 0) {
+		throw "local Codex plan JSON did not include the Llama-owned Codex smoke follow-up command."
 	}
 	if ($parsed.Summary.ReadinessState -ne "server-missing") {
 		throw "local Codex plan did not report server-missing for an unreachable configured endpoint."
@@ -96,6 +120,9 @@ try {
 	}
 	if ($summaryParsed.PSObject.Properties["Configs"] -or $summaryParsed.PSObject.Properties["Endpoints"]) {
 		throw "local Codex summary JSON should omit full config and endpoint evidence."
+	}
+	if (!$summaryParsed.LlamaCodexPlanEvidence) {
+		throw "local Codex summary JSON should retain Llama-owned planner evidence."
 	}
 	if (!$summaryParsed.RecommendedActions -or @($summaryParsed.RecommendedActions).Count -eq 0) {
 		throw "local Codex summary JSON should retain recommended actions."

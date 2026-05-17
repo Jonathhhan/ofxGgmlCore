@@ -174,7 +174,14 @@ outside Core; the repository contract remains the planning queue, guardrails,
 and validation commands.
 Use `scripts\plan-local-codex.bat -Json -SummaryOnly` when another agent needs
 compact evidence for optional local Codex config and localhost `llama-server`
-endpoint readiness without mutating local setup.
+endpoint readiness without mutating local setup. When `ofxGgmlLlama` metadata
+declares a Codex smoke entrypoint, the plan also reports the lane-owned
+`scripts\test-local-codex.bat -Json -SummaryOnly` follow-up. When the
+Llama-owned planner is present, Core carries through its served-model and local
+process evidence, including unavailable process inspection, so handoffs can see
+whether the actual GGUF file behind the configured Codex model alias is known.
+Keep experimental local-provider TOML quarantined until `codex exec` works with
+tool-bearing features disabled through explicit `-c` overrides.
 Use `scripts\check-ecosystem-readiness.bat` when you need a single
 non-mutating readiness pass for Codex, Copilot, or Hermes Agent. It checks
 agent instruction freshness, strict ecosystem audit status, planning handoffs,

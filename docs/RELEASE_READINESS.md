@@ -60,6 +60,18 @@ Copilot, Hermes, and release automation can tell whether a report is final
 release evidence or still waiting on workflow, backend, runtime, or smoke-build
 CI inputs.
 
+When `ofxGgmlLlama\ofxggml-addon.json` declares a local Codex smoke entrypoint,
+the release planner also reports the lane-owned
+`scripts\test-local-codex.bat -Json -SummaryOnly` follow-up. That check is
+optional operator evidence for Codex-local workflows; it does not replace
+workflow, backend runtime, or smoke-build CI release gates. The Core local
+Codex planner also records the Llama-owned served-model and local
+`llama-server` process evidence, so a release handoff can see when a Codex
+profile alias does not match the actual GGUF model being served. If local
+process inspection is unavailable, release handoff should treat the alias/GGUF
+match as unknown. Keep experimental local-provider TOML quarantined until a
+non-interactive `codex exec` smoke passes with tool-bearing features disabled.
+
 To fetch the latest uploaded smoke-build CI artifact before planning:
 
 ```bat
