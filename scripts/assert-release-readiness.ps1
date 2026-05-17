@@ -6,7 +6,11 @@ param(
 	[string]$SmokeBuildCiReport = "",
 	[int]$StaleDays = 30,
 	[switch]$FetchSmokeBuildCiReport,
+	[switch]$AllowDefaultBackendCapability,
+	[switch]$AllowDefaultSmokeBuildCi,
+	[switch]$AllowBackendRuntimeEvidenceGaps,
 	[switch]$AllowMissingSmokeBuildCi,
+	[switch]$SkipManagedGitStatus,
 	[switch]$Json
 )
 
@@ -17,6 +21,12 @@ function Add-Blocker {
 		[System.Collections.Generic.List[string]]$Blockers,
 		[string]$Message
 	)
+	if ([string]::IsNullOrWhiteSpace($Message)) {
+		return
+	}
+	if ($Blockers.Contains($Message)) {
+		return
+	}
 	$Blockers.Add($Message) | Out-Null
 }
 
@@ -118,6 +128,18 @@ if (![string]::IsNullOrWhiteSpace($SmokeBuildCiReport)) {
 if ($FetchSmokeBuildCiReport) {
 	$planParams.FetchSmokeBuildCiReport = $true
 }
+if ($AllowDefaultBackendCapability) {
+	$planParams.AllowDefaultBackendCapability = $true
+}
+if ($AllowDefaultSmokeBuildCi) {
+	$planParams.AllowDefaultSmokeBuildCi = $true
+}
+if ($AllowBackendRuntimeEvidenceGaps) {
+	$planParams.AllowBackendRuntimeEvidenceGaps = $true
+}
+if ($SkipManagedGitStatus) {
+	$planParams.SkipManagedGitStatus = $true
+}
 
 $planOutput = @(& $planScript @planParams 2>&1)
 if (!$?) {
@@ -141,6 +163,12 @@ if (!$summary.BackendCapabilityEvidenceExists) {
 }
 if (!$summary.BackendRuntimePlanEvidenceExists) {
 	Add-Blocker -Blockers $blockers -Message "backend runtime verification evidence is missing"
+}
+foreach ($gap in @($plan.EvidenceGaps)) {
+	$gapText = [string]$gap
+	if (![string]::IsNullOrWhiteSpace($gapText)) {
+		Add-Blocker -Blockers $blockers -Message "release readiness evidence gap: $gapText"
+	}
 }
 if (!$AllowMissingSmokeBuildCi) {
 	Test-SmokeBuildReportPassed -Path ([string]$plan.SmokeBuildCiReport) -Blockers $blockers

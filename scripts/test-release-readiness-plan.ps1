@@ -58,16 +58,21 @@ $repoSmokeBuildBackup = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smo
 	'| Core runtime-smoke seeded | 1 |',
 	'| Reference lanes ready | 1 |',
 	'| Runtime-smoke entrypoints | 1 |',
+	'| Validated runtime-smoke entrypoints | 1 |',
+	'| Inference-smoke entrypoints | 1 |',
+	'| Inference-checked repositories | 1 |',
 	'| Repositories with models | 8 |',
 	'| Repositories with built examples | 4 |',
+	'| Example build evidence gaps | 0 |',
+	'| Actionable repositories missing built examples | 0 |',
 	'| Repositories needing runtime-smoke plans | 8 |',
 	'',
 	'## Repository Evidence',
 	'',
-	'| Repository | Lane | Backends | Models | Built examples | Runtime smoke | Gate state | Action |',
-	'| --- | --- | --- | --- | --- | --- | --- | --- |',
-	'| ofxGgmlCore | backend-neutral runtime base | cpu, cuda | available (1) | complete (1/1) | available-and-validated | core-runtime-smoke-seeded | keep Core CPU graph smoke active |',
-	'| ofxGgmlSam | segmentation | cpu, cuda, metal | available (1) | complete (1/1) | missing | reference-lane-ready-for-runtime-smoke | add SAM3 CPU/CUDA runtime-smoke handoff |'
+	'| Repository | Lane | Backends | Models | Built examples | Runtime smoke | Inference smoke | Gate state | Action |',
+	'| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+	'| ofxGgmlCore | backend-neutral runtime base | cpu, cuda | available (1) | complete (1/1) | available-and-validated | inference-checked (cpu) | core-runtime-smoke-seeded | keep Core CPU graph smoke active |',
+	'| ofxGgmlSam | segmentation | cpu, cuda, metal | available (1) | complete (1/1) | missing | inference-checked (cuda) | inference-checked | add SAM3 CPU/CUDA runtime-smoke handoff |'
 ) | Set-Content -LiteralPath $backendRuntimePlan
 
 @{
@@ -132,7 +137,7 @@ foreach ($expected in @(
 	"Backend capability evidence",
 	"runtime smoke passed",
 	"Backend runtime verification evidence",
-	"reference-lane-ready-for-runtime-smoke",
+	"inference-checked",
 	"Smoke-build CI evidence",
 	"passed 14 target(s), 3 stage(s), 14 command(s)",
 	"Repository readiness checklist"
@@ -142,7 +147,7 @@ foreach ($expected in @(
 	}
 }
 
-$jsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $jsonOutputPath -Json)
+$jsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $jsonOutputPath -Json -SkipManagedGitStatus)
 if (!$?) {
 	throw "plan-release-readiness.ps1 JSON run failed."
 }
@@ -167,10 +172,19 @@ foreach ($property in @(
 	"BackendRuntimePlanEvidenceProvided",
 	"BackendRuntimePlanEvidenceGenerated",
 	"BackendRuntimePlanEvidenceExists",
+	"BackendRuntimeInferenceSmokeEntrypoints",
+	"BackendRuntimeInferenceCheckedRepositories",
+	"BackendRuntimeExampleBuildGaps",
 	"SmokeBuildCiEvidenceProvided",
 	"SmokeBuildCiDefaultUsed",
 	"SmokeBuildCiEvidenceFetched",
 	"SmokeBuildCiEvidenceExists",
+	"ManagedGitStatusChecked",
+	"ManagedGitStatusAvailable",
+	"DirtyManagedRepositories",
+	"DirtyManagedRepositoryNames",
+	"DirtyReferenceRepositories",
+	"DirtyReferenceRepositoryNames",
 	"OutputPathIsTemporary",
 	"EvidenceGapCount"
 )) {
@@ -241,7 +255,7 @@ try {
 		Move-Item -LiteralPath $repoSmokeBuildReport -Destination $repoSmokeBuildBackup -Force
 	}
 
-	$missingSmokeJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -OutputPath $missingSmokeJsonOutputPath -Json -SummaryOnly)
+	$missingSmokeJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -OutputPath $missingSmokeJsonOutputPath -Json -SummaryOnly -SkipManagedGitStatus)
 	if (!$?) {
 		throw "plan-release-readiness.ps1 missing-smoke JSON run failed."
 	}
@@ -265,7 +279,7 @@ $summaryJsonOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-re
 if (Test-Path -LiteralPath $summaryJsonOutputPath) {
 	Remove-Item -LiteralPath $summaryJsonOutputPath -Force
 }
-$summaryJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $summaryJsonOutputPath -Json -SummaryOnly)
+$summaryJsonOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -SmokeBuildCiReport $smokeBuildReport -OutputPath $summaryJsonOutputPath -Json -SummaryOnly -SkipManagedGitStatus)
 if (!$?) {
 	throw "plan-release-readiness.ps1 summary JSON run failed."
 }

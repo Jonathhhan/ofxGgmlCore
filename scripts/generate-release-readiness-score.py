@@ -150,8 +150,15 @@ def parse_backend_runtime_plan(path):
         if not line.startswith("| ofxGgml"):
             continue
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if len(cells) != 8:
+        if len(cells) not in (8, 9):
             continue
+        inference_smoke = ""
+        gate_state_index = 6
+        action_index = 7
+        if len(cells) == 9:
+            inference_smoke = cells[6]
+            gate_state_index = 7
+            action_index = 8
         rows.append({
             "repository": cells[0],
             "lane": cells[1],
@@ -159,8 +166,9 @@ def parse_backend_runtime_plan(path):
             "models": cells[3],
             "built_examples": cells[4],
             "runtime_smoke": cells[5],
-            "gate_state": cells[6],
-            "action": cells[7],
+            "inference_smoke": inference_smoke,
+            "gate_state": cells[gate_state_index],
+            "action": cells[action_index],
         })
 
     return {
@@ -178,6 +186,15 @@ def backend_runtime_evidence_status(runtime_plan):
     core_seeded = metrics.get("Core runtime-smoke seeded", 0)
     reference_ready = metrics.get("Reference lanes ready", 0)
     needs_plan = metrics.get("Repositories needing runtime-smoke plans", 0)
+    inference_entrypoints = metrics.get("Inference-smoke entrypoints", 0)
+    inference_checked = metrics.get("Inference-checked repositories", 0)
+    example_gaps = metrics.get("Actionable repositories missing built examples", 0)
+    if inference_entrypoints > 0 and inference_checked == 0:
+        return (
+            f"{core_seeded} core runtime seed(s), "
+            f"{inference_entrypoints} inference entrypoint(s), 0 inference-checked repository(s), "
+            f"{example_gaps} example build gap(s)"
+        )
     if core_seeded > 0 and reference_ready > 0:
         return f"{core_seeded} core runtime seed(s), {reference_ready} reference lane(s) ready, {needs_plan} lane(s) still need plans"
     if core_seeded > 0:
@@ -337,27 +354,32 @@ def main():
             "Core runtime-smoke seeded",
             "Reference lanes ready",
             "Runtime-smoke entrypoints",
+            "Validated runtime-smoke entrypoints",
+            "Inference-smoke entrypoints",
+            "Inference-checked repositories",
             "Repositories with models",
             "Repositories with built examples",
+            "Example build evidence gaps",
+            "Actionable repositories missing built examples",
             "Repositories needing runtime-smoke plans",
         ):
             lines.append(f"| {key} | {backend_runtime_plan['metrics'].get(key, 0)} |")
         lines.extend([
             "",
-            "| Repository | Backends | Models | Built examples | Runtime smoke | Gate state |",
-            "| --- | --- | --- | --- | --- | --- |",
+            "| Repository | Backends | Models | Built examples | Runtime smoke | Inference smoke | Gate state |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ])
         rows = backend_runtime_plan.get("rows", [])
         if rows:
             for row in rows:
                 lines.append(
-                    f"| {row['repository']} | {row['backends']} | {row['models']} | {row['built_examples']} | {row['runtime_smoke']} | {row['gate_state']} |"
+                    f"| {row['repository']} | {row['backends']} | {row['models']} | {row['built_examples']} | {row['runtime_smoke']} | {row.get('inference_smoke') or '-'} | {row['gate_state']} |"
                 )
         else:
-            lines.append("| - | - | - | - | - | no backend runtime rows found |")
+            lines.append("| - | - | - | - | - | - | no backend runtime rows found |")
         lines.extend([
             "",
-            "Backend runtime verification evidence is planning evidence until a lane reports a runtime-smoke entry point and validation hook.",
+            "Backend runtime verification evidence is planning evidence until a lane reports current model-backed inference evidence or an explicitly accepted runtime-smoke gate.",
             "",
         ])
 

@@ -119,6 +119,7 @@ try {
 		-BackendCapabilityReport $backendReport `
 		-BackendRuntimePlan $backendRuntimePlan `
 		-SmokeBuildCiReport $smokeBuildReport `
+		-SkipManagedGitStatus `
 		-Json 2>&1)
 	if (!$?) {
 		throw "assert-release-readiness.ps1 failed for passing evidence: $($passOutput -join "`n")"
@@ -139,6 +140,7 @@ try {
 		-BackendCapabilityReport $backendReport `
 		-BackendRuntimePlan $backendRuntimePlan `
 		-SmokeBuildCiReport $failedSmokeBuildReport `
+		-SkipManagedGitStatus `
 		-Json 2>&1)
 	$failedExitCode = $LASTEXITCODE
 	if ($failedExitCode -eq 0) {
@@ -154,6 +156,7 @@ try {
 		-BackendCapabilityReport $backendReport `
 		-BackendRuntimePlan $backendRuntimePlan `
 		-SmokeBuildCiReport $smokeBuildReport `
+		-SkipManagedGitStatus `
 		-Json 2>&1)
 	$blockedExitCode = $LASTEXITCODE
 	if ($blockedExitCode -eq 0) {

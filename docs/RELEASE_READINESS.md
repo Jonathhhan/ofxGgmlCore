@@ -60,6 +60,16 @@ Copilot, Hermes, and release automation can tell whether a report is final
 release evidence or still waiting on workflow, backend, runtime, or smoke-build
 CI inputs.
 
+`EvidenceGaps` also reports evidence that exists but should not be trusted as a
+final release signal yet: default repository reports used without an explicit
+path, local smoke-build CI evidence that was not freshly fetched, stale or
+incomplete backend runtime inference evidence, actionable example-build gaps,
+and dirty managed repositories. Use the explicit `-BackendCapabilityReport`,
+`-SmokeBuildCiReport`, and `-FetchSmokeBuildCiReport` paths for final evidence.
+The `-AllowDefaultBackendCapability`, `-AllowDefaultSmokeBuildCi`,
+`-AllowBackendRuntimeEvidenceGaps`, and `-SkipManagedGitStatus` switches are for
+planning dry runs where those gaps are intentionally accepted.
+
 When `ofxGgmlLlama\ofxggml-addon.json` declares a local Codex smoke entrypoint,
 the release planner also reports the lane-owned
 `scripts\test-local-codex.bat -Json -SummaryOnly` follow-up. That check is
@@ -96,9 +106,10 @@ Use the strict assertion gate before tagging:
 scripts\assert-release-readiness.bat -SmokeBuildCiReport .smoke-build-ci-report.json
 ```
 
-That command fails when workflow evidence has required blockers, backend
-capability/runtime evidence is missing, smoke-build CI evidence is missing, or
-the smoke-build CI report has failed targets or commands.
+That command fails when workflow evidence has required blockers, release
+planning reports evidence gaps, backend capability/runtime evidence is missing,
+smoke-build CI evidence is missing, or the smoke-build CI report has failed
+targets or commands.
 
 The `release-gate` GitHub workflow runs the same strict gate on demand and
 automatically for `release/**` branches and `v*` tags. It fetches the latest

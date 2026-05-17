@@ -5,6 +5,10 @@ param(
 	[string]$BackendRuntimePlan = "",
 	[string]$SmokeBuildCiReport = "",
 	[int]$StaleDays = 30,
+	[switch]$AllowDefaultBackendCapability,
+	[switch]$AllowDefaultSmokeBuildCi,
+	[switch]$AllowBackendRuntimeEvidenceGaps,
+	[switch]$SkipManagedGitStatus,
 	[switch]$SkipWorkflowStatus,
 	[switch]$SkipBackendCapability,
 	[switch]$SkipBackendRuntimePlan,
@@ -96,6 +100,78 @@ function New-ReleaseEvidenceSummary {
 	[pscustomobject]$result
 }
 
+function Get-FamilyGitEvidence {
+	param([string]$ScriptsRoot)
+
+	if ($SkipManagedGitStatus) {
+		return [pscustomobject]@{
+			Checked = $false
+			Available = $false
+			DirtyManagedRepositories = 0
+			DirtyManagedRepositoryNames = @()
+			DirtyReferenceRepositories = 0
+			DirtyReferenceRepositoryNames = @()
+		}
+	}
+
+	try {
+		$statusOutput = @(& (Join-Path $ScriptsRoot "status-family.ps1") -Json -SummaryOnly 2>&1)
+		if (!$?) {
+			throw "status-family.ps1 failed: $($statusOutput -join "`n")"
+		}
+		$status = ($statusOutput -join "`n") | ConvertFrom-Json
+		$managedDirty = @(
+			$status.RepositorySummaries |
+				Where-Object { $_.Known -and [int]$_.DirtyCount -gt 0 } |
+				Sort-Object Name
+		)
+		$referenceDirty = @(
+			$status.RepositorySummaries |
+				Where-Object { !$_.Known -and [int]$_.DirtyCount -gt 0 } |
+				Sort-Object Name
+		)
+		return [pscustomobject]@{
+			Checked = $true
+			Available = $true
+			DirtyManagedRepositories = @($managedDirty).Count
+			DirtyManagedRepositoryNames = @($managedDirty | ForEach-Object { [string]$_.Name })
+			DirtyReferenceRepositories = @($referenceDirty).Count
+			DirtyReferenceRepositoryNames = @($referenceDirty | ForEach-Object { [string]$_.Name })
+		}
+	} catch {
+		return [pscustomobject]@{
+			Checked = $true
+			Available = $false
+			DirtyManagedRepositories = 0
+			DirtyManagedRepositoryNames = @()
+			DirtyReferenceRepositories = 0
+			DirtyReferenceRepositoryNames = @()
+		}
+	}
+}
+
+function Get-BackendRuntimePlanMetrics {
+	param([string]$Path)
+
+	$metrics = @{}
+	if ([string]::IsNullOrWhiteSpace($Path) -or !(Test-Path -LiteralPath $Path -PathType Leaf)) {
+		return $metrics
+	}
+
+	foreach ($line in @(Get-Content -LiteralPath $Path)) {
+		$match = [regex]::Match($line, "^\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|$")
+		if (!$match.Success) {
+			continue
+		}
+		$name = $match.Groups[1].Value.Trim()
+		if ($name -in @("Metric", "---")) {
+			continue
+		}
+		$metrics[$name] = [int]$match.Groups[2].Value
+	}
+	return $metrics
+}
+
 function Get-ReleaseEvidenceGaps {
 	param(
 		[pscustomobject]$Summary
@@ -111,11 +187,49 @@ function Get-ReleaseEvidenceGaps {
 	if (!$SkipBackendCapability -and !$Summary.BackendCapabilityEvidenceExists) {
 		$gaps.Add("backend capability evidence is missing") | Out-Null
 	}
+	if (
+		!$SkipBackendCapability -and
+		!$AllowDefaultBackendCapability -and
+		$Summary.BackendCapabilityDefaultUsed
+	) {
+		$gaps.Add("backend capability evidence is using the default repository report") | Out-Null
+	}
 	if (!$SkipBackendRuntimePlan -and !$Summary.BackendRuntimePlanEvidenceExists) {
 		$gaps.Add("backend runtime verification evidence is missing") | Out-Null
 	}
+	if (
+		!$SkipBackendRuntimePlan -and
+		!$AllowBackendRuntimeEvidenceGaps -and
+		$Summary.BackendRuntimePlanEvidenceExists -and
+		$Summary.BackendRuntimeInferenceSmokeEntrypoints -gt 0 -and
+		$Summary.BackendRuntimeInferenceCheckedRepositories -eq 0
+	) {
+		$gaps.Add("backend runtime inference evidence is present but no repository is inference-checked") | Out-Null
+	}
+	if (
+		!$SkipBackendRuntimePlan -and
+		!$AllowBackendRuntimeEvidenceGaps -and
+		$Summary.BackendRuntimePlanEvidenceExists -and
+		$Summary.BackendRuntimeExampleBuildGaps -gt 0
+	) {
+		$gaps.Add("backend runtime example build evidence has actionable gaps") | Out-Null
+	}
 	if (!$SkipSmokeBuildCi -and !$Summary.SmokeBuildCiEvidenceExists) {
 		$gaps.Add("smoke-build CI evidence is missing") | Out-Null
+	}
+	if (
+		!$SkipSmokeBuildCi -and
+		!$AllowDefaultSmokeBuildCi -and
+		$Summary.SmokeBuildCiDefaultUsed -and
+		!$Summary.SmokeBuildCiEvidenceFetched
+	) {
+		$gaps.Add("smoke-build CI evidence is using the default local report instead of freshly fetched evidence") | Out-Null
+	}
+	if (!$SkipManagedGitStatus -and !$Summary.ManagedGitStatusAvailable) {
+		$gaps.Add("managed repository git status evidence is unavailable") | Out-Null
+	}
+	if (!$SkipManagedGitStatus -and $Summary.DirtyManagedRepositories -gt 0) {
+		$gaps.Add("managed repositories have uncommitted changes: $(@($Summary.DirtyManagedRepositoryNames) -join ', ')") | Out-Null
 	}
 	return @($gaps.ToArray())
 }
@@ -232,6 +346,26 @@ if (!$Json -and $releaseOutput.Count -gt 0) {
 	$releaseOutput | Write-Host
 }
 
+$gitEvidence = Get-FamilyGitEvidence -ScriptsRoot $scriptRoot
+$backendRuntimeMetrics = Get-BackendRuntimePlanMetrics -Path $backendRuntimePlan
+$backendRuntimeInferenceEntrypoints = if ($backendRuntimeMetrics.ContainsKey("Inference-smoke entrypoints")) {
+	[int]$backendRuntimeMetrics["Inference-smoke entrypoints"]
+} else {
+	-1
+}
+$backendRuntimeInferenceChecked = if ($backendRuntimeMetrics.ContainsKey("Inference-checked repositories")) {
+	[int]$backendRuntimeMetrics["Inference-checked repositories"]
+} else {
+	-1
+}
+$backendRuntimeExampleBuildGaps = if ($backendRuntimeMetrics.ContainsKey("Actionable repositories missing built examples")) {
+	[int]$backendRuntimeMetrics["Actionable repositories missing built examples"]
+} elseif ($backendRuntimeMetrics.ContainsKey("Example build gaps")) {
+	[int]$backendRuntimeMetrics["Example build gaps"]
+} else {
+	-1
+}
+
 $summary = [pscustomobject]@{
 	ReleaseReportExists = Test-Path -LiteralPath $resolvedOutputPath -PathType Leaf
 	WorkflowStatusEvidenceProvided = ![string]::IsNullOrWhiteSpace($workflowReport)
@@ -243,10 +377,19 @@ $summary = [pscustomobject]@{
 	BackendRuntimePlanEvidenceProvided = ![string]::IsNullOrWhiteSpace($backendRuntimePlan)
 	BackendRuntimePlanEvidenceGenerated = $generatedBackendRuntimePlan
 	BackendRuntimePlanEvidenceExists = (![string]::IsNullOrWhiteSpace($backendRuntimePlan) -and (Test-Path -LiteralPath $backendRuntimePlan -PathType Leaf))
+	BackendRuntimeInferenceSmokeEntrypoints = $backendRuntimeInferenceEntrypoints
+	BackendRuntimeInferenceCheckedRepositories = $backendRuntimeInferenceChecked
+	BackendRuntimeExampleBuildGaps = $backendRuntimeExampleBuildGaps
 	SmokeBuildCiEvidenceProvided = ![string]::IsNullOrWhiteSpace($smokeBuildReport)
 	SmokeBuildCiDefaultUsed = $usedDefaultSmokeBuildReport
 	SmokeBuildCiEvidenceFetched = $fetchedSmokeBuildReport
 	SmokeBuildCiEvidenceExists = (![string]::IsNullOrWhiteSpace($smokeBuildReport) -and (Test-Path -LiteralPath $smokeBuildReport -PathType Leaf))
+	ManagedGitStatusChecked = [bool]$gitEvidence.Checked
+	ManagedGitStatusAvailable = [bool]$gitEvidence.Available
+	DirtyManagedRepositories = [int]$gitEvidence.DirtyManagedRepositories
+	DirtyManagedRepositoryNames = @($gitEvidence.DirtyManagedRepositoryNames)
+	DirtyReferenceRepositories = [int]$gitEvidence.DirtyReferenceRepositories
+	DirtyReferenceRepositoryNames = @($gitEvidence.DirtyReferenceRepositoryNames)
 	OutputPathIsTemporary = [string]::IsNullOrWhiteSpace($OutputPath)
 }
 $evidenceGaps = [string[]](Get-ReleaseEvidenceGaps -Summary $summary)
@@ -283,6 +426,10 @@ if ($Json) {
 	$result = [ordered]@{
 		Root = $addonRoot
 		StaleDays = $StaleDays
+		AllowDefaultBackendCapability = [bool]$AllowDefaultBackendCapability
+		AllowDefaultSmokeBuildCi = [bool]$AllowDefaultSmokeBuildCi
+		AllowBackendRuntimeEvidenceGaps = [bool]$AllowBackendRuntimeEvidenceGaps
+		SkipManagedGitStatus = [bool]$SkipManagedGitStatus
 		SkipWorkflowStatus = [bool]$SkipWorkflowStatus
 		SkipBackendCapability = [bool]$SkipBackendCapability
 		SkipBackendRuntimePlan = [bool]$SkipBackendRuntimePlan

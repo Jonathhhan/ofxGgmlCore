@@ -128,6 +128,10 @@ evidence `Summary` counts, generated report paths, evidence paths, and next
 commands before deciding whether CI truth is strong enough for a release gate.
 Use `scripts\plan-release-readiness.bat -Json -SummaryOnly` when another agent
 needs compact release evidence summaries without generated report paths.
+Treat non-zero `EvidenceGapCount` as a handoff blocker for release work. Gaps
+include missing evidence, default-only reports that were not passed explicitly,
+backend runtime plans with stale or missing model-backed inference evidence,
+actionable example-build gaps, and dirty managed repositories.
 Use `scripts\fetch-smoke-build-ci-report.bat -Force` when an agent needs to
 download the latest uploaded `ofx-smoke-build-ci-report` artifact into
 `.smoke-build-ci-report.json` before release planning; this requires
@@ -137,7 +141,7 @@ release agent should fetch that artifact into a temporary path and fold it into
 the release-readiness score in one pass.
 Use `scripts\assert-release-readiness.bat -SmokeBuildCiReport .smoke-build-ci-report.json`
 when a release gate should fail on missing required evidence, required workflow
-blockers, or failed smoke-build CI evidence.
+blockers, planner evidence gaps, or failed smoke-build CI evidence.
 Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` when
 another agent needs compact CPU/CUDA/Metal/Vulkan declaration, model-path,
 example-build, runtime-smoke, and reference-lane readiness evidence before
