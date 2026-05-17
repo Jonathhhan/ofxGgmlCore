@@ -78,6 +78,7 @@ $autoOutput = Invoke-DryRun @{
 	DryRun = $true
 }
 Assert-Contains $autoOutput "Dry run: ggml setup plan" "Auto setup dry-run"
+Assert-Contains $autoOutput "revision: v0.12.0" "Auto setup dry-run"
 Assert-Contains $autoOutput "mode: Auto" "Auto setup dry-run"
 Assert-Contains $autoOutput "enabled backends:" "Auto setup dry-run"
 Assert-Contains $autoOutput "Dry run complete; no files were changed" "Auto setup dry-run"

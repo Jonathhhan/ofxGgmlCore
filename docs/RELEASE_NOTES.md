@@ -50,7 +50,7 @@
 ## 1.0.0
 
 - Started the rewritten main line from the frozen `legacy-full` archive.
-- Added ggml setup scripts pinned to `v0.11.0`, with CPU, CUDA, Vulkan, Metal,
+- Added ggml setup scripts pinned to `v0.12.0`, with CPU, CUDA, Vulkan, Metal,
   OpenCL, auto, and all-backend setup modes.
 - Added local validation, generated project repair, launch dry-run, and artifact
   hygiene checks.

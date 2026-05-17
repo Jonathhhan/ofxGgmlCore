@@ -1,5 +1,5 @@
 param(
-	[string]$Revision = "v0.11.0",
+	[string]$Revision = "v0.12.0",
 	[string]$Repo = "https://github.com/ggml-org/ggml.git",
 	[int]$Jobs = 0,
 	# Default behavior when no backend switch is supplied.

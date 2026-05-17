@@ -6,7 +6,7 @@ This is the pre-tag checklist for `ofxGgmlCore` after the companion-addon split.
 
 `1.0.1` should promise a narrow, dependable Core addon:
 
-- ggml setup pinned to `v0.11.0`
+- ggml setup pinned to `v0.12.0`
 - backend selection through `setup-ggml` and `first-run`
 - runtime, tensor, graph, GGUF metadata, and result helpers
 - the `ofxGgmlCoreExample` smoke example

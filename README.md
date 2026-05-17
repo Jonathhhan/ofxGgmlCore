@@ -81,7 +81,7 @@ cd ../ofxGgmlMusic
 
 | Script | Purpose |
 | --- | --- |
-| `scripts\setup-ggml.bat` | Fetch and build ggml 0.11.0 for the selected backend |
+| `scripts\setup-ggml.bat` | Fetch and build ggml 0.12.0 for the selected backend |
 | `scripts\first-run.bat` | Setup ggml, then run `doctor` |
 | `scripts\doctor.bat` | Check local Core readiness |
 | `scripts\build-simple-example.bat` | Build the Core smoke example |
