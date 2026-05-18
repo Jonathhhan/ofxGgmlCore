@@ -79,6 +79,9 @@ foreach ($property in @(
 		throw "backend runtime verification JSON Summary did not include $property."
 	}
 }
+if (!$parsed.Summary.PSObject.Properties["BlockingRepositories"]) {
+	throw "backend runtime verification JSON Summary did not include BlockingRepositories."
+}
 if ($parsed.Summary.ReferenceTarget -ne "ofxGgmlSam") {
 	throw "backend runtime verification JSON did not prioritize ofxGgmlSam."
 }
@@ -111,7 +114,7 @@ if ($samRows.Count -eq 0) {
 	throw "backend runtime verification JSON did not include SAM repository summary."
 }
 $sam = $samRows[0]
-if (!$sam.CudaDeclared -or $sam.GateState -notin @("runtime-smoke-entrypoint-present", "inference-checked")) {
+if (!$sam.CudaDeclared -or $sam.GateState -notin @("runtime-smoke-entrypoint-present", "inference-checked", "inference-evidence-blocked")) {
 	throw "backend runtime verification JSON did not expose SAM CUDA runtime-smoke readiness."
 }
 if ($sam.RuntimeSmokeEvidence -ne "available-and-validated") {
@@ -120,8 +123,11 @@ if ($sam.RuntimeSmokeEvidence -ne "available-and-validated") {
 if (!$sam.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose SAM inference smoke evidence."
 }
-if ($sam.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "missing")) {
+if ($sam.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "inference-report-failed", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected SAM inference smoke state."
+}
+if ($sam.InferenceSmokeEvidence -in @("inference-smoke-stale", "inference-report-invalid", "inference-report-failed") -and $sam.GateState -ne "inference-evidence-blocked") {
+	throw "backend runtime verification JSON did not block stale or invalid SAM inference evidence."
 }
 Assert-InferenceSmokeReportMetadata -Repository "ofxGgmlSam" -ExpectedReportFile ".sam3-runtime-smoke.json"
 $llamaRows = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlLlama" } | Select-Object -First 1)
@@ -132,8 +138,11 @@ $llama = $llamaRows[0]
 if (!$llama.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose Llama inference smoke evidence."
 }
-if ($llama.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "missing")) {
+if ($llama.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "inference-report-failed", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Llama inference smoke state."
+}
+if ($llama.InferenceSmokeEvidence -in @("inference-smoke-stale", "inference-report-invalid", "inference-report-failed") -and $llama.GateState -ne "inference-evidence-blocked") {
+	throw "backend runtime verification JSON did not block stale or invalid Llama inference evidence."
 }
 Assert-InferenceSmokeReportMetadata -Repository "ofxGgmlLlama" -ExpectedReportFile ".llama-runtime-smoke.json"
 $audioRows = @($parsed.RepositorySummaries | Where-Object { $_.Repository -eq "ofxGgmlAudio" } | Select-Object -First 1)
@@ -144,8 +153,11 @@ $audio = $audioRows[0]
 if (!$audio.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose Audio inference smoke evidence."
 }
-if ($audio.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "missing")) {
+if ($audio.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "inference-report-failed", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Audio inference smoke state."
+}
+if ($audio.InferenceSmokeEvidence -in @("inference-smoke-stale", "inference-report-invalid", "inference-report-failed") -and $audio.GateState -ne "inference-evidence-blocked") {
+	throw "backend runtime verification JSON did not block stale or invalid Audio inference evidence."
 }
 if ($audio.InferenceSmokeEvidence -eq "inference-checked" -and @($parsed.Summary.RepositoriesMissingBuiltExamples) -contains "ofxGgmlAudio") {
 	throw "backend runtime verification JSON treated Audio's missing generated example binary as actionable despite inference evidence."
@@ -159,8 +171,11 @@ $agents = $agentsRows[0]
 if (!$agents.PSObject.Properties["InferenceSmokeEvidence"]) {
 	throw "backend runtime verification JSON did not expose Agents inference smoke evidence."
 }
-if ($agents.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-failed", "missing")) {
+if ($agents.InferenceSmokeEvidence -notin @("inference-checked", "inference-smoke-entrypoint-validated", "inference-smoke-entrypoint-present", "inference-smoke-stale", "inference-report-invalid", "inference-report-failed", "missing")) {
 	throw "backend runtime verification JSON reported an unexpected Agents inference smoke state."
+}
+if ($agents.InferenceSmokeEvidence -in @("inference-smoke-stale", "inference-report-invalid", "inference-report-failed") -and $agents.GateState -ne "inference-evidence-blocked") {
+	throw "backend runtime verification JSON did not block stale or invalid Agents inference evidence."
 }
 if ($agents.InferenceSmokeEvidence -eq "inference-report-failed" -and [string]$agents.InferenceBackend -ne "planning-boundary") {
 	throw "backend runtime verification JSON reported inference-report-failed for a non-planning boundary lane."

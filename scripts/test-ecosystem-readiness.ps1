@@ -4,9 +4,7 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $readinessScript = Join-Path $scriptRoot "check-ecosystem-readiness.ps1"
 
 $output = & $readinessScript -SkipDoctorTests *>&1 | ForEach-Object { $_.ToString() }
-if (!$?) {
-	throw "check-ecosystem-readiness.ps1 -SkipDoctorTests failed."
-}
+$markdownExitCode = $LASTEXITCODE
 
 $text = $output -join "`n"
 foreach ($expected in @(
@@ -28,7 +26,7 @@ foreach ($expected in @(
 	"local codex readiness",
 	"release readiness plan",
 	"agent branch cleanup plan",
-	"Readiness passed"
+	"Readiness"
 )) {
 	if ($text -notmatch [regex]::Escape($expected)) {
 		throw "ecosystem readiness output did not contain expected text: $expected"
@@ -36,25 +34,26 @@ foreach ($expected in @(
 }
 
 $jsonOutput = & $readinessScript -SkipDoctorTests -Json *>&1 | ForEach-Object { $_.ToString() }
-if (!$?) {
-	throw "check-ecosystem-readiness.ps1 -Json failed."
-}
+$jsonExitCode = $LASTEXITCODE
 
 $parsed = ($jsonOutput -join "`n") | ConvertFrom-Json
-if (!$parsed.Passed) {
-	throw "ecosystem readiness JSON did not report Passed."
-}
 if (!$parsed.Summary) {
 	throw "ecosystem readiness JSON did not include Summary."
 }
-if ($parsed.Summary.TotalSteps -le 0 -or $parsed.Summary.FailedSteps -ne 0) {
-	throw "ecosystem readiness JSON Summary did not report passing control-plane steps."
+if ($parsed.Summary.TotalSteps -le 0) {
+	throw "ecosystem readiness JSON Summary did not report control-plane steps."
 }
 if ($parsed.Summary.TotalDoctorTests -ne 0 -or $parsed.Summary.FailedDoctorTests -ne 0) {
 	throw "ecosystem readiness JSON Summary did not reflect skipped doctor tests."
 }
-if (@($parsed.Summary.FailedChecks).Count -ne 0) {
-	throw "ecosystem readiness JSON Summary reported failed checks for a passing run."
+if ([bool]$parsed.Passed -ne ($parsed.Summary.FailedSteps -eq 0 -and $parsed.Summary.FailedDoctorTests -eq 0)) {
+	throw "ecosystem readiness JSON Passed did not match failed check counts."
+}
+if ($parsed.Passed -and ($markdownExitCode -ne 0 -or $jsonExitCode -ne 0)) {
+	throw "ecosystem readiness returned a failing exit code for a passing run."
+}
+if (!$parsed.Passed -and ($markdownExitCode -eq 0 -or $jsonExitCode -eq 0)) {
+	throw "ecosystem readiness returned a passing exit code for a failing run."
 }
 if (!$parsed.Steps -or $parsed.Steps.Count -eq 0) {
 	throw "ecosystem readiness JSON did not include steps."
@@ -91,11 +90,17 @@ foreach ($stepName in @("structured ecosystem plan", "structured coding agent wo
 }
 
 $localCodexStep = @($parsed.Steps | Where-Object { $_.Name -eq "local codex readiness" } | Select-Object -First 1)
-if ($localCodexStep.Count -eq 0 -or $localCodexStep[0].State -ne "OK") {
-	throw "ecosystem readiness JSON did not report local codex readiness as OK."
+if ($localCodexStep.Count -eq 0) {
+	throw "ecosystem readiness JSON did not include local codex readiness."
 }
 if (!$localCodexStep[0].Detail -or $localCodexStep[0].Detail -notmatch "readiness state:") {
 	throw "ecosystem readiness JSON did not retain local codex readiness detail."
+}
+if ($localCodexStep[0].Detail -match "readiness state: ready" -and $localCodexStep[0].State -ne "OK") {
+	throw "ecosystem readiness JSON failed local Codex despite a ready state."
+}
+if ($localCodexStep[0].Detail -notmatch "readiness state: ready" -and $localCodexStep[0].State -ne "FAIL") {
+	throw "ecosystem readiness JSON did not fail local Codex for a non-ready state."
 }
 if (!$localCodexStep[0].Output -or @($localCodexStep[0].Output).Count -eq 0) {
 	throw "ecosystem readiness JSON did not retain output for local codex readiness."
@@ -111,8 +116,8 @@ if (!$structuredPlanJson.RepositorySummaries -or $structuredPlanJson.PSObject.Pr
 }
 
 $releaseReadinessStep = @($parsed.Steps | Where-Object { $_.Name -eq "release readiness plan" } | Select-Object -First 1)
-if ($releaseReadinessStep.Count -eq 0 -or $releaseReadinessStep[0].State -ne "OK") {
-	throw "ecosystem readiness JSON did not report release readiness plan as OK."
+if ($releaseReadinessStep.Count -eq 0) {
+	throw "ecosystem readiness JSON did not include release readiness plan."
 }
 if (!$releaseReadinessStep[0].Output -or @($releaseReadinessStep[0].Output).Count -eq 0) {
 	throw "ecosystem readiness JSON did not retain output for release readiness plan."
@@ -123,6 +128,12 @@ if (!$releaseReadinessJson.SummaryOnly) {
 }
 if (!$releaseReadinessJson.EvidenceSummaries -or $releaseReadinessJson.PSObject.Properties["OutputPath"]) {
 	throw "ecosystem readiness release readiness plan did not use compact evidence summaries."
+}
+if ($releaseReadinessJson.Summary.EvidenceGapCount -gt 0 -and $releaseReadinessStep[0].State -ne "FAIL") {
+	throw "ecosystem readiness did not fail release readiness evidence gaps."
+}
+if ($releaseReadinessJson.Summary.EvidenceGapCount -eq 0 -and $releaseReadinessStep[0].State -ne "OK") {
+	throw "ecosystem readiness failed release readiness despite zero evidence gaps."
 }
 
 $smokeBuildStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build plan" } | Select-Object -First 1)
@@ -207,16 +218,20 @@ if (!$doctorRolloutJson.RepositorySummaries -or $doctorRolloutJson.PSObject.Prop
 }
 
 $summaryJsonOutput = & $readinessScript -SkipDoctorTests -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
-if (!$?) {
-	throw "check-ecosystem-readiness.ps1 -Json -SummaryOnly failed."
-}
+$summaryExitCode = $LASTEXITCODE
 
 $summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
 if (!$summaryParsed.SummaryOnly) {
 	throw "ecosystem readiness summary JSON did not report SummaryOnly."
 }
-if (!$summaryParsed.Passed -or !$summaryParsed.Summary) {
-	throw "ecosystem readiness summary JSON did not preserve pass summary."
+if (!$summaryParsed.Summary) {
+	throw "ecosystem readiness summary JSON did not preserve summary."
+}
+if ($summaryParsed.Passed -and $summaryExitCode -ne 0) {
+	throw "ecosystem readiness summary JSON failed despite passing status."
+}
+if (!$summaryParsed.Passed -and $summaryExitCode -eq 0) {
+	throw "ecosystem readiness summary JSON passed despite failing status."
 }
 $omittedOutputs = @($summaryParsed.Steps | Where-Object { $_.OutputOmitted })
 if ($omittedOutputs.Count -eq 0) {

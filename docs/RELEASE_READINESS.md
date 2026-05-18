@@ -58,7 +58,8 @@ Actions artifact as release evidence.
 The JSON mode includes `EvidenceGaps` and `Summary.EvidenceGapCount` so Codex,
 Copilot, Hermes, and release automation can tell whether a report is final
 release evidence or still waiting on workflow, backend, runtime, or smoke-build
-CI inputs.
+CI inputs. Use `-FailOnEvidenceGaps` when a script should exit nonzero instead
+of only reporting those gaps in JSON.
 
 `EvidenceGaps` also reports evidence that exists but should not be trusted as a
 final release signal yet: default repository reports used without an explicit
@@ -69,6 +70,11 @@ and dirty managed repositories. Use the explicit `-BackendCapabilityReport`,
 The `-AllowDefaultBackendCapability`, `-AllowDefaultSmokeBuildCi`,
 `-AllowBackendRuntimeEvidenceGaps`, and `-SkipManagedGitStatus` switches are for
 planning dry runs where those gaps are intentionally accepted.
+
+`scripts\check-ecosystem-readiness.bat` and `scripts\release-candidate.bat`
+use the stricter path: local Codex must report `ReadinessState=ready`, and
+release-readiness evidence gaps fail the readiness gate instead of being
+treated as advisory text.
 
 When `ofxGgmlLlama\ofxggml-addon.json` declares a local Codex smoke entrypoint,
 the release planner also reports the lane-owned

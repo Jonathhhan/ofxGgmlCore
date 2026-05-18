@@ -34,6 +34,19 @@ function Get-ModelEvidence {
 		}
 	}
 
+	$metadata = $Status.Metadata
+	$declaredBackends = @()
+	if ($metadata -and $metadata.PSObject.Properties["backends"]) {
+		$declaredBackends = @($metadata.backends | ForEach-Object { [string]$_ })
+	}
+	if ($Status.Name -eq "ofxGgmlWorkflows" -or $declaredBackends.Count -eq 0) {
+		return [pscustomobject]@{
+			State = "not-applicable"
+			Count = 0
+			Directories = @()
+		}
+	}
+
 	$candidates = New-Object System.Collections.Generic.List[string]
 	$candidates.Add((Join-Path $Status.Path "models"))
 	foreach ($example in @($Status.Examples)) {
@@ -91,15 +104,50 @@ function Get-ExampleBuildEvidence {
 	foreach ($example in @($Status.Examples)) {
 		$binPath = Join-Path $Status.Path "$example\bin"
 		$executables = @()
+		$newestExecutableTime = $null
 		if (Test-Path -LiteralPath $binPath -PathType Container) {
-			$executables = @(
+			$executableFiles = @(
 				Get-ChildItem -LiteralPath $binPath -Filter "*.exe" -File -ErrorAction SilentlyContinue |
-					Select-Object -ExpandProperty Name
+					Sort-Object LastWriteTimeUtc -Descending
 			)
+			$executables = @($executableFiles | Select-Object -ExpandProperty Name)
+			if ($executableFiles.Count -gt 0) {
+				$newestExecutableTime = $executableFiles[0].LastWriteTimeUtc
+			}
+		}
+
+		$inputFiles = New-Object System.Collections.Generic.List[object]
+		foreach ($inputPath in @(
+			(Join-Path $Status.Path "addon_config.mk"),
+			(Join-Path $Status.Path "$example\addons.make")
+		)) {
+			if (Test-Path -LiteralPath $inputPath -PathType Leaf) {
+				$inputFiles.Add((Get-Item -LiteralPath $inputPath)) | Out-Null
+			}
+		}
+		foreach ($inputRoot in @(
+			(Join-Path $Status.Path "src"),
+			(Join-Path $Status.Path "$example\src")
+		)) {
+			if (Test-Path -LiteralPath $inputRoot -PathType Container) {
+				Get-ChildItem -LiteralPath $inputRoot -Recurse -File -ErrorAction SilentlyContinue |
+					Where-Object { $_.Extension -in @(".h", ".hpp", ".c", ".cc", ".cpp", ".mm") } |
+					ForEach-Object { $inputFiles.Add($_) | Out-Null }
+			}
+		}
+		$newestInputTime = $null
+		$newestInput = @($inputFiles.ToArray() | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1)
+		if ($newestInput.Count -gt 0) {
+			$newestInputTime = $newestInput[0].LastWriteTimeUtc
+		}
+		$fresh = $false
+		if ($newestExecutableTime) {
+			$fresh = !$newestInputTime -or $newestExecutableTime -ge $newestInputTime
 		}
 		$records.Add([pscustomobject]@{
 			Example = [string]$example
-			Built = $executables.Count -gt 0
+			Built = $fresh
+			BuildEvidence = if ($fresh) { "fresh-local-executable" } elseif ($executables.Count -gt 0) { "stale-local-executable" } else { "missing" }
 			Executables = @($executables)
 		})
 	}
@@ -197,7 +245,7 @@ function Get-InferenceSmokeEvidence {
 				if ($value -is [string] -and ($AllowEmpty -or -not [string]::IsNullOrWhiteSpace($value))) {
 					return [pscustomobject]@{ Found = $true; Value = [string]$value }
 				}
-				return [pscustomobject]@{ Found = false; Value = "" }
+				return [pscustomobject]@{ Found = $false; Value = "" }
 			}
 		}
 
@@ -435,6 +483,8 @@ function New-BackendRuntimeEntry {
 		"missing-repository"
 	} elseif ($inferenceEvidence.State -eq "inference-checked") {
 		"inference-checked"
+	} elseif ($inferenceEvidence.State -in @("inference-smoke-stale", "inference-report-invalid", "inference-report-failed")) {
+		"inference-evidence-blocked"
 	} elseif ($Status.Name -eq "ofxGgmlCore" -and $runtimeEvidence.State -ne "missing") {
 		"core-runtime-smoke-seeded"
 	} elseif ($runtimeEvidence.State -ne "missing") {
@@ -449,6 +499,7 @@ function New-BackendRuntimeEntry {
 		"not-applicable" { "skip workflow-only repository" }
 		"missing-repository" { "restore repository before planning runtime verification" }
 		"inference-checked" { "use model-backed inference smoke as release evidence" }
+		"inference-evidence-blocked" { "refresh or fix the lane-owned inference smoke report before release gating" }
 		"core-runtime-smoke-seeded" { "keep Core CPU graph smoke active and require reports as release evidence" }
 		"reference-lane-ready-for-runtime-smoke" { "add SAM3 CPU/CUDA runtime-smoke handoff before broadening other lanes" }
 		"runtime-smoke-entrypoint-present" { "use runtime smoke as validation and release evidence" }

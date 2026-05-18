@@ -14,6 +14,7 @@ param(
 	[switch]$SkipBackendRuntimePlan,
 	[switch]$SkipSmokeBuildCi,
 	[switch]$FetchSmokeBuildCiReport,
+	[switch]$FailOnEvidenceGaps,
 	[switch]$SummaryOnly,
 	[switch]$Json
 )
@@ -435,6 +436,7 @@ if ($Json) {
 		SkipBackendRuntimePlan = [bool]$SkipBackendRuntimePlan
 		SkipSmokeBuildCi = [bool]$SkipSmokeBuildCi
 		FetchSmokeBuildCiReport = [bool]$FetchSmokeBuildCiReport
+		FailOnEvidenceGaps = [bool]$FailOnEvidenceGaps
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		EvidenceSummaries = $evidenceSummaries
@@ -451,4 +453,8 @@ if ($Json) {
 	[pscustomobject]$result | ConvertTo-Json -Depth 5
 } else {
 	Write-Host "Release readiness plan: $resolvedOutputPath"
+}
+
+if ($FailOnEvidenceGaps -and $evidenceGaps.Count -gt 0) {
+	exit 1
 }

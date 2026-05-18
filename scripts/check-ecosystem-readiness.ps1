@@ -64,7 +64,8 @@ function Invoke-LocalCodexReadinessStep {
 			"unknown"
 		}
 		$detail = "readiness state: $readinessState"
-		return New-StepResult -Name $Name -State "OK" -Detail $detail -Output $output
+		$state = if ($readinessState -eq "ready") { "OK" } else { "FAIL" }
+		return New-StepResult -Name $Name -State $state -Detail $detail -Output $output
 	} catch {
 		return New-StepResult -Name $Name -State "FAIL" -Detail "plan-local-codex output was not valid JSON" -Output $output
 	}
@@ -249,6 +250,7 @@ $steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-
 	SkipWorkflowStatus = $true
 	Json = $true
 	SummaryOnly = $true
+	FailOnEvidenceGaps = $true
 }
 $steps += Invoke-ReadinessStep -Name "backend runtime verification plan" -ScriptPath (Join-Path $scriptRoot "plan-backend-runtime-verification.ps1") -Parameters @{
 	Json = $true

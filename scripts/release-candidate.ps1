@@ -2,6 +2,7 @@ param(
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
 	[switch]$SkipExampleBuild,
+	[switch]$SkipEcosystemReadiness,
 	[switch]$AllowGpuAddonConfig
 )
 
@@ -74,6 +75,17 @@ try {
 	Invoke-CheckedScript `
 		-Label "Checking family status output" `
 		-ScriptPath (Join-Path $scriptRoot "status-family.ps1")
+
+	if (!$SkipEcosystemReadiness) {
+		Invoke-CheckedScript `
+			-Label "Checking ecosystem readiness gate" `
+			-ScriptPath (Join-Path $scriptRoot "check-ecosystem-readiness.ps1") `
+			-Parameters @{
+				SkipDoctorTests = $true
+				Json = $true
+				SummaryOnly = $true
+			}
+	}
 
 	Write-Step "Checking ignored/generated artifact view"
 	$null = Invoke-GitCheck @("status", "--short", "--ignored")

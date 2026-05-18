@@ -246,6 +246,9 @@ if (!$parsed.EvidenceSummaries[0].PSObject.Properties["Path"]) {
 if (!$parsed.PSObject.Properties["EvidenceGaps"]) {
 	throw "release readiness JSON did not include EvidenceGaps."
 }
+if (!$parsed.PSObject.Properties["FailOnEvidenceGaps"]) {
+	throw "release readiness JSON did not include FailOnEvidenceGaps."
+}
 if ($parsed.Summary.EvidenceGapCount -ne 0) {
 	throw "release readiness JSON unexpectedly reported evidence gaps for complete evidence."
 }
@@ -268,6 +271,16 @@ try {
 	}
 	if (!(Test-Path -LiteralPath $missingSmokeJsonOutputPath -PathType Leaf)) {
 		throw "release readiness missing-smoke JSON run did not write report: $missingSmokeJsonOutputPath"
+	}
+
+	$failOnGapOutput = @(& $planScript -WorkflowStatusReport $workflowReport -BackendCapabilityReport $backendReport -BackendRuntimePlan $backendRuntimePlan -OutputPath $missingSmokeJsonOutputPath -Json -SummaryOnly -SkipManagedGitStatus -FailOnEvidenceGaps 2>&1)
+	$failOnGapExitCode = $LASTEXITCODE
+	if ($failOnGapExitCode -eq 0) {
+		throw "plan-release-readiness.ps1 -FailOnEvidenceGaps unexpectedly passed missing evidence."
+	}
+	$failOnGapParsed = ($failOnGapOutput -join "`n") | ConvertFrom-Json
+	if (!$failOnGapParsed.FailOnEvidenceGaps -or $failOnGapParsed.Summary.EvidenceGapCount -lt 1) {
+		throw "plan-release-readiness.ps1 -FailOnEvidenceGaps did not preserve evidence gap details."
 	}
 } finally {
 	if (Test-Path -LiteralPath $repoSmokeBuildBackup -PathType Leaf) {
