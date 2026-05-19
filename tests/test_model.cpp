@@ -28,14 +28,17 @@ void writeTinyGguf(const std::filesystem::path & path, const std::string & archi
 	std::ofstream output(path, std::ios::binary);
 	output.write("GGUF", 4);
 	writeU32(output, 3);
-	writeU64(output, 2);
-	writeU64(output, 2);
+	writeU64(output, 3);
+	writeU64(output, 3);
 	writeString(output, "general.architecture");
 	writeU32(output, 8);
 	writeString(output, architecture);
 	writeString(output, architecture + ".block_count");
 	writeU32(output, 4);
 	writeU32(output, 32);
+	writeString(output, architecture + ".context_length");
+	writeU32(output, 4);
+	writeU32(output, 131072);
 }
 }
 
@@ -82,8 +85,9 @@ OFXGGML_TEST(model_reads_tiny_gguf_metadata) {
 	OFXGGML_REQUIRE(result.value().path == path.string());
 	OFXGGML_REQUIRE(result.value().architecture == "llama");
 	OFXGGML_REQUIRE(result.value().tensorCount == 2);
-	OFXGGML_REQUIRE(result.value().metadataCount == 2);
+	OFXGGML_REQUIRE(result.value().metadataCount == 3);
 	OFXGGML_REQUIRE(result.value().layerCount == 32);
+	OFXGGML_REQUIRE(result.value().contextLength == 131072);
 
 	std::filesystem::remove(path);
 }

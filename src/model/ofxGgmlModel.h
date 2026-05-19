@@ -11,6 +11,7 @@ struct ofxGgmlModelInfo {
 	uint64_t tensorCount = 0;
 	uint64_t metadataCount = 0;
 	uint64_t layerCount = 0;
+	uint64_t contextLength = 0;
 };
 
 class ofxGgmlModel {

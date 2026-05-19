@@ -73,6 +73,7 @@ ofxGgmlResult<ofxGgmlModelInfo> ofxGgmlModel::inspect(const std::string & path) 
 	}
 	if (!info.architecture.empty()) {
 		info.layerCount = readUnsignedMetadataValue(ctx, info.architecture + ".block_count");
+		info.contextLength = readUnsignedMetadataValue(ctx, info.architecture + ".context_length");
 	}
 	gguf_free(ctx);
 	return ofxGgmlResult<ofxGgmlModelInfo>::success(std::move(info));

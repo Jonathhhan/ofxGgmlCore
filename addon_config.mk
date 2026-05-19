@@ -26,16 +26,16 @@ common:
 	ADDON_SOURCES_EXCLUDE += libs/llama.cpp/build/%
 	ADDON_SOURCES_EXCLUDE += libs/llama.cpp/build-cuda/%
 	ADDON_SOURCES_EXCLUDE += libs/llama.cpp/build-native/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/.git/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/sam3.cpp
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/build/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/build-cuda/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/build-native/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/ggml/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/examples/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/media/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/scripts/%
-	ADDON_SOURCES_EXCLUDE += libs/sam3.cpp/tests/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/.git/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/sam3.cpp
+	ADDON_SOURCES_EXCLUDE += libs/sam3/build/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/build-cuda/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/build-native/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/ggml/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/media/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/scripts/%
+	ADDON_SOURCES_EXCLUDE += libs/sam3/tests/%
 	ADDON_INCLUDES_EXCLUDE = build/%
 	ADDON_INCLUDES_EXCLUDE += libs/ggml/.source/%
 	ADDON_INCLUDES_EXCLUDE += libs/ggml/build/%
@@ -46,15 +46,15 @@ common:
 	ADDON_INCLUDES_EXCLUDE += libs/llama.cpp/build/%
 	ADDON_INCLUDES_EXCLUDE += libs/llama.cpp/build-cuda/%
 	ADDON_INCLUDES_EXCLUDE += libs/llama.cpp/build-native/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/.git/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/build/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/build-cuda/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/build-native/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/ggml/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/examples/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/media/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/scripts/%
-	ADDON_INCLUDES_EXCLUDE += libs/sam3.cpp/tests/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/.git/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/build/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/build-cuda/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/build-native/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/ggml/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/examples/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/media/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/scripts/%
+	ADDON_INCLUDES_EXCLUDE += libs/sam3/tests/%
 
 vs:
 	# @OFXGGML_LIBS_START vs
