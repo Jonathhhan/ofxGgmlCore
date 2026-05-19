@@ -81,6 +81,15 @@ Codex smoke without hard-coding Llama scripts in Core. Core also invokes the
 Llama-owned planner read-only and carries its served-model evidence through the
 report, including `/v1/models` IDs, the detected local `llama-server` model
 file, and any likely model/alias mismatch.
+Core also checks role-specific agent files under project and user Codex agent
+folders, including `.codex\agents\*.toml`, `%CODEX_HOME%\agents\*.toml`, and
+the matching `%USERPROFILE%\.codex\agents` paths. Those files are not provider
+configs and are not expected to contain `base_url`. Current Codex docs require
+standalone agent files to declare `name`, `description`, and
+`developer_instructions`; they may also include supported config keys such as
+`model`, `model_provider`, `model_reasoning_effort`, `sandbox_mode`,
+`mcp_servers`, or `skills.config`. Keep stale agent TOML quarantined if Codex
+starts disconnecting, failing config reads, or refusing normal model selection.
 
 ## Codex Provider Sketch
 
@@ -122,6 +131,15 @@ providers and expect `responses`; set `model` to a model id returned by the
 local `/v1/models` endpoint. If you quarantine an experimental provider file by
 renaming it away from `config.toml`, pass its endpoint and model explicitly to
 the planner with `-ConfigPath`, or use one-shot `codex -c` overrides for smoke.
+If you pass an agent role TOML file with `-ConfigPath`, the planner will read
+its model, provider, reasoning, and instruction declarations while still looking
+to explicit or default localhost endpoints for server evidence. Current Codex
+desktop builds may still ignore named subagent TOML settings at spawn time; in
+that case the planner reports the TOML evidence, but the workaround is still to
+restate role instructions when spawning until Codex itself applies the named
+agent config. If the app must be unblocked immediately, move the files out of
+`.codex\agents` and `%USERPROFILE%\.codex\agents` first, then restore only
+schema-valid agent TOML one file at a time.
 
 ## Required Repository Prompt
 

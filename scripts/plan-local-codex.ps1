@@ -35,16 +35,43 @@ function Get-UniqueFullPath {
 	return @($items.ToArray())
 }
 
+function Add-CodexConfigCandidates {
+	param(
+		[System.Collections.Generic.List[string]]$Candidates,
+		[string]$CodexRoot
+	)
+
+	if ([string]::IsNullOrWhiteSpace($CodexRoot)) {
+		return
+	}
+
+	$Candidates.Add((Join-Path $CodexRoot "config.toml"))
+	$agentRoot = Join-Path $CodexRoot "agents"
+	if (Test-Path -LiteralPath $agentRoot -PathType Container) {
+		foreach ($agentConfig in @(Get-ChildItem -LiteralPath $agentRoot -Filter "*.toml" -File)) {
+			$Candidates.Add($agentConfig.FullName)
+		}
+	} else {
+		$Candidates.Add((Join-Path $agentRoot "explorer.toml"))
+		$Candidates.Add((Join-Path $agentRoot "worker.toml"))
+	}
+}
+
 function Get-DefaultCodexConfigPaths {
+	param([string]$ProjectRoot = "")
+
 	$candidates = New-Object System.Collections.Generic.List[string]
+	if (![string]::IsNullOrWhiteSpace($ProjectRoot)) {
+		Add-CodexConfigCandidates -Candidates $candidates -CodexRoot (Join-Path $ProjectRoot ".codex")
+	}
 	if (![string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
-		$candidates.Add((Join-Path $env:CODEX_HOME "config.toml"))
+		Add-CodexConfigCandidates -Candidates $candidates -CodexRoot $env:CODEX_HOME
 	}
 	if (![string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
-		$candidates.Add((Join-Path $env:USERPROFILE ".codex\config.toml"))
+		Add-CodexConfigCandidates -Candidates $candidates -CodexRoot (Join-Path $env:USERPROFILE ".codex")
 	}
 	if (![string]::IsNullOrWhiteSpace($HOME)) {
-		$candidates.Add((Join-Path $HOME ".codex\config.toml"))
+		Add-CodexConfigCandidates -Candidates $candidates -CodexRoot (Join-Path $HOME ".codex")
 	}
 	return Get-UniqueFullPath -Paths @($candidates.ToArray())
 }
@@ -91,6 +118,68 @@ function Get-ConfiguredModelMatches {
 	return @($models.ToArray() | Select-Object -Unique)
 }
 
+function Get-ConfiguredModelProviderMatches {
+	param([string]$Content)
+
+	$matches = [regex]::Matches($Content, '(?m)^\s*model_provider\s*=\s*"([^"]+)"')
+	$providers = New-Object System.Collections.Generic.List[string]
+	foreach ($match in @($matches)) {
+		$value = $match.Groups[1].Value.Trim()
+		if (![string]::IsNullOrWhiteSpace($value)) {
+			$providers.Add($value)
+		}
+	}
+	return @($providers.ToArray() | Select-Object -Unique)
+}
+
+function Get-ConfiguredReasoningEffortMatches {
+	param([string]$Content)
+
+	$matches = [regex]::Matches($Content, '(?m)^\s*(model_reasoning_effort|reasoning_effort)\s*=\s*"([^"]+)"')
+	$efforts = New-Object System.Collections.Generic.List[string]
+	foreach ($match in @($matches)) {
+		$value = $match.Groups[2].Value.Trim()
+		if (![string]::IsNullOrWhiteSpace($value)) {
+			$efforts.Add($value)
+		}
+	}
+	return @($efforts.ToArray() | Select-Object -Unique)
+}
+
+function Get-AgentInstructionSignalMatches {
+	param([string]$Content)
+
+	$signals = New-Object System.Collections.Generic.List[string]
+	foreach ($key in @("instructions", "developer_instructions", "model_instructions_file")) {
+		if ($Content -match "(?m)^\s*$([regex]::Escape($key))\s*=") {
+			$signals.Add($key)
+		}
+	}
+	return @($signals.ToArray() | Select-Object -Unique)
+}
+
+function Get-MissingRequiredAgentFields {
+	param([string]$Content)
+
+	$missing = New-Object System.Collections.Generic.List[string]
+	foreach ($key in @("name", "description", "developer_instructions")) {
+		if ($Content -notmatch "(?m)^\s*$([regex]::Escape($key))\s*=") {
+			$missing.Add($key)
+		}
+	}
+	return @($missing.ToArray())
+}
+
+function Test-CodexAgentConfigPath {
+	param([string]$Path)
+
+	$parent = Split-Path -Parent $Path
+	if ([string]::IsNullOrWhiteSpace($parent)) {
+		return $false
+	}
+	return ((Split-Path -Leaf $parent) -ieq "agents")
+}
+
 function Get-CodexConfigEvidence {
 	param([string[]]$Paths)
 
@@ -104,6 +193,11 @@ function Get-CodexConfigEvidence {
 		$localEndpoints = if ($exists) { Get-LocalEndpointMatches -Content $content } else { @() }
 		$envKeys = if ($exists) { Get-EnvKeyMatches -Content $content } else { @() }
 		$configuredModels = if ($exists) { Get-ConfiguredModelMatches -Content $content } else { @() }
+		$configuredModelProviders = if ($exists) { Get-ConfiguredModelProviderMatches -Content $content } else { @() }
+		$configuredReasoningEfforts = if ($exists) { Get-ConfiguredReasoningEffortMatches -Content $content } else { @() }
+		$instructionSignals = if ($exists) { Get-AgentInstructionSignalMatches -Content $content } else { @() }
+		$isAgentConfig = Test-CodexAgentConfigPath -Path $path
+		$missingAgentFields = if ($exists -and $isAgentConfig) { Get-MissingRequiredAgentFields -Content $content } else { @() }
 		$envKeyRecords = @($envKeys | ForEach-Object {
 			[pscustomobject]@{
 				Name = $_
@@ -113,10 +207,16 @@ function Get-CodexConfigEvidence {
 		$records.Add([pscustomobject]@{
 			Path = $path
 			Exists = [bool]$exists
+			Kind = if ($isAgentConfig) { "agent" } else { "provider" }
+			IsAgentConfig = [bool]$isAgentConfig
 			HasModelProviders = [bool]($exists -and $content -match '\[model_providers\.')
 			HasProfiles = [bool]($exists -and $content -match '\[profiles\.')
 			LocalEndpoints = @($localEndpoints)
 			ConfiguredModels = @($configuredModels)
+			ConfiguredModelProviders = @($configuredModelProviders)
+			ConfiguredReasoningEfforts = @($configuredReasoningEfforts)
+			InstructionSignals = @($instructionSignals)
+			MissingRequiredAgentFields = @($missingAgentFields)
 			EnvKeys = @($envKeyRecords)
 		})
 	}
@@ -261,19 +361,28 @@ function Invoke-LlamaLocalCodexPlan {
 	}
 
 	$configWithLocalEndpoint = @($Configs |
+		Where-Object { !$_.IsAgentConfig } |
 		Where-Object { @($_.LocalEndpoints).Count -gt 0 } |
 		Select-Object -First 1)
 	if ($configWithLocalEndpoint.Count -gt 0) {
 		$result.ConfigPath = [string]$configWithLocalEndpoint[0].Path
 	}
 
+	$configuredModelSource = "codex-config"
 	$configuredModel = @($configWithLocalEndpoint |
 		Where-Object { @($_.ConfiguredModels).Count -gt 0 } |
 		ForEach-Object { @($_.ConfiguredModels) } |
 		Select-Object -First 1)
+	if ($configuredModel.Count -eq 0) {
+		$configuredModel = @($Configs |
+			Where-Object { $_.IsAgentConfig -and @($_.ConfiguredModels).Count -gt 0 } |
+			ForEach-Object { @($_.ConfiguredModels) } |
+			Select-Object -First 1)
+		$configuredModelSource = "codex-agent-config"
+	}
 	if ($configuredModel.Count -gt 0) {
 		$result.Model = [string]$configuredModel[0]
-		$result.ModelSource = "codex-config"
+		$result.ModelSource = $configuredModelSource
 	} elseif ($endpoint.Count -gt 0 -and @($endpoint[0].Models).Count -gt 0) {
 		$result.Model = [string]@($endpoint[0].Models)[0]
 		$result.ModelSource = "served-model"
@@ -326,8 +435,9 @@ function Get-ReadinessState {
 		[array]$Endpoints
 	)
 
-	$configFound = @($Configs | Where-Object { $_.Exists }).Count -gt 0
-	$configWithLocalEndpoint = @($Configs | Where-Object { @($_.LocalEndpoints).Count -gt 0 }).Count -gt 0
+	$providerConfigs = @($Configs | Where-Object { !$_.IsAgentConfig })
+	$configFound = @($providerConfigs | Where-Object { $_.Exists }).Count -gt 0
+	$configWithLocalEndpoint = @($providerConfigs | Where-Object { @($_.LocalEndpoints).Count -gt 0 }).Count -gt 0
 	$reachable = @($Endpoints | Where-Object { $_.Reachable }).Count -gt 0
 
 	if ($configWithLocalEndpoint -and $reachable) {
@@ -394,7 +504,7 @@ function Get-RecommendedActions {
 	$actions = New-Object System.Collections.Generic.List[object]
 	$reachable = @($Endpoints | Where-Object { $_.Reachable })
 	$firstReachable = @($reachable | Select-Object -First 1)
-	$config = @($Configs | Where-Object { $_.Exists } | Select-Object -First 1)
+	$config = @($Configs | Where-Object { $_.Exists -and !$_.IsAgentConfig } | Select-Object -First 1)
 
 	switch ($ReadinessState) {
 		"ready" {
@@ -413,7 +523,7 @@ function Get-RecommendedActions {
 				-Priority "P1" `
 				-State $ReadinessState `
 				-Action "Keep the active Codex config minimal unless the local provider is isolated from tool-bearing sessions." `
-				-Rationale "A server is reachable, but enabling the local provider globally can make Codex send non-function tools that llama-server rejects." `
+				-Rationale "A Codex config exists, but no local provider endpoint was detected; enabling one globally can make Codex send non-function tools that llama-server rejects." `
 				-Command "For non-interactive smoke, pass provider fields with codex -c overrides for $endpoint and disable apps/browser/computer/tool_search; use model $model. Quarantine experimental full configs outside active $configPath."))
 		}
 		"server-missing" {
@@ -469,10 +579,15 @@ function ConvertTo-LocalCodexMarkdown {
 	$lines.Add("| --- | --- |")
 	$lines.Add(('| Readiness state | `{0}` |' -f $Result.Summary.ReadinessState))
 	$lines.Add("| Config files found | $($Result.Summary.ConfigFilesFound) |")
+	$lines.Add("| Agent config files found | $($Result.Summary.AgentConfigFilesFound) |")
 	$lines.Add("| Local endpoint candidates | $($Result.Summary.LocalEndpointCandidates) |")
 	$lines.Add("| Reachable endpoints | $($Result.Summary.ReachableEndpoints) |")
 	$lines.Add("| Models reported | $($Result.Summary.ModelsReported) |")
 	$lines.Add("| Config models declared | $($Result.Summary.ConfigModelsDeclared) |")
+	$lines.Add("| Config model providers declared | $($Result.Summary.ConfigModelProvidersDeclared) |")
+	$lines.Add("| Config reasoning efforts declared | $($Result.Summary.ConfigReasoningEffortsDeclared) |")
+	$lines.Add("| Agent instruction signals declared | $($Result.Summary.AgentInstructionSignalsDeclared) |")
+	$lines.Add("| Agent configs missing required fields | $($Result.Summary.AgentConfigsMissingRequiredFields) |")
 	$lines.Add("| Env keys declared | $($Result.Summary.EnvKeysDeclared) |")
 	$lines.Add("| Env keys present | $($Result.Summary.EnvKeysPresent) |")
 	$lines.Add("| Llama Codex model source | $($Result.Summary.LlamaCodexModelSource) |")
@@ -488,13 +603,17 @@ function ConvertTo-LocalCodexMarkdown {
 	if ($Result.PSObject.Properties["Configs"]) {
 		$lines.Add("## Config Evidence")
 		$lines.Add("")
-		$lines.Add("| Path | Exists | Local endpoints | Models | Env keys |")
-		$lines.Add("| --- | --- | --- | --- | --- |")
+		$lines.Add("| Path | Kind | Exists | Local endpoints | Models | Providers | Reasoning | Instructions | Missing required agent fields | Env keys |")
+		$lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 		foreach ($config in @($Result.Configs)) {
 			$endpointText = if (@($config.LocalEndpoints).Count -gt 0) { @($config.LocalEndpoints) -join ", " } else { "-" }
 			$modelText = if (@($config.ConfiguredModels).Count -gt 0) { @($config.ConfiguredModels) -join ", " } else { "-" }
+			$providerText = if (@($config.ConfiguredModelProviders).Count -gt 0) { @($config.ConfiguredModelProviders) -join ", " } else { "-" }
+			$reasoningText = if (@($config.ConfiguredReasoningEfforts).Count -gt 0) { @($config.ConfiguredReasoningEfforts) -join ", " } else { "-" }
+			$instructionText = if (@($config.InstructionSignals).Count -gt 0) { @($config.InstructionSignals) -join ", " } else { "-" }
+			$missingAgentText = if (@($config.MissingRequiredAgentFields).Count -gt 0) { @($config.MissingRequiredAgentFields) -join ", " } else { "-" }
 			$keyText = if (@($config.EnvKeys).Count -gt 0) { @($config.EnvKeys | ForEach-Object { if ($_.Present) { "$($_.Name):present" } else { "$($_.Name):missing" } }) -join ", " } else { "-" }
-			$lines.Add(('| `{0}` | {1} | `{2}` | `{3}` | `{4}` |' -f $config.Path, $config.Exists, $endpointText, $modelText, $keyText))
+			$lines.Add(('| `{0}` | `{1}` | {2} | `{3}` | `{4}` | `{5}` | `{6}` | `{7}` | `{8}` | `{9}` |' -f $config.Path, $config.Kind, $config.Exists, $endpointText, $modelText, $providerText, $reasoningText, $instructionText, $missingAgentText, $keyText))
 		}
 	} else {
 		$lines.Add("Config evidence omitted by -SummaryOnly; rerun without -SummaryOnly for per-file details.")
@@ -572,13 +691,17 @@ $addonRoot = Split-Path -Parent $scriptRoot
 $configPaths = if ($ConfigPath.Count -gt 0) {
 	Get-UniqueFullPath -Paths $ConfigPath
 } else {
-	Get-DefaultCodexConfigPaths
+	Get-DefaultCodexConfigPaths -ProjectRoot $addonRoot
 }
 $configEvidence = Get-CodexConfigEvidence -Paths $configPaths
 $endpointCandidates = Get-EndpointCandidates -ExplicitEndpoints $Endpoint -ConfigEvidence $configEvidence -SkipDefault:$SkipDefaultEndpoints
 $endpointEvidence = @($endpointCandidates | ForEach-Object { Test-LocalCodexEndpoint -BaseUrl $_ })
 $envKeyRecords = @($configEvidence | ForEach-Object { @($_.EnvKeys) })
 $configuredModelRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredModels) })
+$configuredModelProviderRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredModelProviders) })
+$configuredReasoningEffortRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredReasoningEfforts) })
+$instructionSignalRecords = @($configEvidence | ForEach-Object { @($_.InstructionSignals) })
+$agentConfigsMissingRequiredFields = @($configEvidence | Where-Object { $_.IsAgentConfig -and @($_.MissingRequiredAgentFields).Count -gt 0 })
 $llamaCodex = Get-LlamaLocalCodexMetadata -CoreRoot $addonRoot
 $llamaCodexPlanEvidence = Invoke-LlamaLocalCodexPlan -LlamaCodex $llamaCodex -Endpoints $endpointEvidence -Configs $configEvidence
 $llamaProcessInspection = if ($llamaCodexPlanEvidence.LocalLlamaServer) {
@@ -591,11 +714,16 @@ $summary = [pscustomobject]@{
 	ReadinessState = Get-ReadinessState -Configs $configEvidence -Endpoints $endpointEvidence
 	ConfigFilesChecked = @($configEvidence).Count
 	ConfigFilesFound = @($configEvidence | Where-Object { $_.Exists }).Count
+	AgentConfigFilesFound = @($configEvidence | Where-Object { $_.Exists -and $_.IsAgentConfig }).Count
 	ConfigFilesWithLocalEndpoints = @($configEvidence | Where-Object { @($_.LocalEndpoints).Count -gt 0 }).Count
 	LocalEndpointCandidates = @($endpointCandidates).Count
 	ReachableEndpoints = @($endpointEvidence | Where-Object { $_.Reachable }).Count
 	ModelsReported = (@($endpointEvidence | Measure-Object -Property ModelCount -Sum).Sum + 0)
 	ConfigModelsDeclared = @($configuredModelRecords).Count
+	ConfigModelProvidersDeclared = @($configuredModelProviderRecords).Count
+	ConfigReasoningEffortsDeclared = @($configuredReasoningEffortRecords).Count
+	AgentInstructionSignalsDeclared = @($instructionSignalRecords).Count
+	AgentConfigsMissingRequiredFields = @($agentConfigsMissingRequiredFields).Count
 	EnvKeysDeclared = @($envKeyRecords).Count
 	EnvKeysPresent = @($envKeyRecords | Where-Object { $_.Present }).Count
 	LlamaCodexModelSource = [string]$llamaCodexPlanEvidence.ModelSource

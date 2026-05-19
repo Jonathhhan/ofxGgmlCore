@@ -5,9 +5,15 @@ $planScript = Join-Path $scriptRoot "plan-local-codex.ps1"
 $testId = [guid]::NewGuid().ToString("N")
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-local-codex-$testId"
 $configPath = Join-Path $tempRoot "config.toml"
+$agentRoot = Join-Path $tempRoot "agents"
+$agentPath = Join-Path $agentRoot "worker.toml"
+$developerAgentPath = Join-Path $agentRoot "developer.toml"
+$staleAgentPath = Join-Path $agentRoot "stale.toml"
 $outputPath = Join-Path $tempRoot "local-codex-plan.md"
+$previousCodexHome = $env:CODEX_HOME
 
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+New-Item -ItemType Directory -Path $agentRoot -Force | Out-Null
 Set-Content -LiteralPath $configPath -Value @"
 [model_providers.local_llama]
 name = "local-llama"
@@ -17,6 +23,31 @@ wire_api = "responses"
 [profiles.ofxggml_local]
 model = "local-coder"
 model_provider = "local_llama"
+"@
+Set-Content -LiteralPath $agentPath -Value @"
+name = "worker"
+description = "Execution-focused local worker using llama.cpp."
+model = "local-agent-coder"
+model_provider = "local_llama"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Keep edits scoped.
+"""
+"@
+Set-Content -LiteralPath $developerAgentPath -Value @"
+name = "developer"
+description = "Developer subagent for implementation/status work."
+model = "local-developer-coder"
+model_provider = "local_llama"
+model_reasoning_effort = "high"
+developer_instructions = """
+Report implementation status and keep edits scoped.
+"""
+"@
+Set-Content -LiteralPath $staleAgentPath -Value @"
+name = "stale"
+model = "stale-local-coder"
+reasoning_effort = "medium"
 "@
 
 try {
@@ -51,10 +82,15 @@ try {
 		"ConfigFilesChecked",
 		"ConfigFilesFound",
 		"ConfigFilesWithLocalEndpoints",
+		"AgentConfigFilesFound",
 		"LocalEndpointCandidates",
 		"ReachableEndpoints",
 		"ModelsReported",
 		"ConfigModelsDeclared",
+		"ConfigModelProvidersDeclared",
+		"ConfigReasoningEffortsDeclared",
+		"AgentInstructionSignalsDeclared",
+		"AgentConfigsMissingRequiredFields",
 		"EnvKeysDeclared",
 		"EnvKeysPresent",
 		"LlamaCodexModelSource",
@@ -89,6 +125,9 @@ try {
 	}
 	if ($parsed.Summary.ConfigFilesFound -ne 1 -or $parsed.Summary.ConfigFilesWithLocalEndpoints -ne 1) {
 		throw "local Codex plan did not detect the test config local endpoint."
+	}
+	if ($parsed.Summary.AgentConfigFilesFound -ne 0) {
+		throw "local Codex plan unexpectedly counted a provider config as an agent config."
 	}
 	if ($parsed.Summary.EnvKeysDeclared -ne 0) {
 		throw "local Codex plan unexpectedly detected env keys for the unauthenticated test config."
@@ -136,6 +175,78 @@ try {
 		throw "local Codex plan was not written: $outputPath"
 	}
 
+	$agentJsonOutput = & $planScript -ConfigPath $agentPath -Endpoint "http://127.0.0.1:9/v1" -SkipDefaultEndpoints -Json *>&1 | ForEach-Object { $_.ToString() }
+	if (!$?) {
+		throw "plan-local-codex.ps1 agent config check failed."
+	}
+	$agentParsed = ($agentJsonOutput -join "`n") | ConvertFrom-Json
+	if ($agentParsed.Summary.AgentConfigFilesFound -ne 1) {
+		throw "local Codex plan did not count the agent TOML file."
+	}
+	if ($agentParsed.Summary.ConfigFilesFound -ne 1) {
+		throw "local Codex plan should still report the existing agent TOML as a checked config file."
+	}
+	if ($agentParsed.Summary.ConfigFilesWithLocalEndpoints -ne 0) {
+		throw "local Codex plan should not require local endpoints inside agent TOML files."
+	}
+	if ($agentParsed.Summary.ConfigModelsDeclared -ne 1 -or $agentParsed.Summary.ConfigModelProvidersDeclared -ne 1) {
+		throw "local Codex plan did not read model and model_provider from the agent TOML file."
+	}
+	if ($agentParsed.Summary.ConfigReasoningEffortsDeclared -ne 1 -or $agentParsed.Summary.AgentInstructionSignalsDeclared -ne 1) {
+		throw "local Codex plan did not read reasoning or instruction fields from the agent TOML file."
+	}
+	$agentConfig = @($agentParsed.Configs | Select-Object -First 1)
+	if ($agentConfig.Count -eq 0 -or !$agentConfig[0].IsAgentConfig -or $agentConfig[0].Kind -ne "agent") {
+		throw "local Codex plan did not classify the TOML file as an agent config."
+	}
+	if (@($agentParsed.Configs[0].ConfiguredModels) -notcontains "local-agent-coder") {
+		throw "local Codex plan did not preserve the agent TOML model declaration."
+	}
+	if (@($agentParsed.Configs[0].ConfiguredModelProviders) -notcontains "local_llama") {
+		throw "local Codex plan did not preserve the agent TOML provider declaration."
+	}
+	if (@($agentParsed.Configs[0].ConfiguredReasoningEfforts) -notcontains "medium") {
+		throw "local Codex plan did not preserve the agent TOML reasoning declaration."
+	}
+	if (@($agentParsed.Configs[0].InstructionSignals) -notcontains "developer_instructions") {
+		throw "local Codex plan did not preserve the agent TOML instruction signal."
+	}
+	if ($agentParsed.Summary.AgentConfigsMissingRequiredFields -ne 0) {
+		throw "local Codex plan incorrectly marked a schema-valid agent TOML as missing required fields."
+	}
+	if ($agentParsed.LlamaCodexPlanEvidence.ModelSource -ne "codex-agent-config" -and $agentParsed.LlamaCodexPlanEvidence.ModelSource -ne "") {
+		throw "local Codex plan did not source the Llama planner model from agent TOML when available."
+	}
+
+	$env:CODEX_HOME = $tempRoot
+	$defaultAgentJsonOutput = & $planScript -Endpoint "http://127.0.0.1:9/v1" -SkipDefaultEndpoints -Json *>&1 | ForEach-Object { $_.ToString() }
+	if (!$?) {
+		throw "plan-local-codex.ps1 default agent discovery check failed."
+	}
+	$defaultAgentParsed = ($defaultAgentJsonOutput -join "`n") | ConvertFrom-Json
+	if ($defaultAgentParsed.Summary.AgentConfigFilesFound -lt 2) {
+		throw "local Codex plan did not discover all agent TOML files under CODEX_HOME agents."
+	}
+	if ($defaultAgentParsed.Summary.ConfigFilesFound -lt 3) {
+		throw "local Codex plan did not discover config.toml plus agent TOML files under CODEX_HOME."
+	}
+	if (@($defaultAgentParsed.Configs | Where-Object { $_.Path -eq $developerAgentPath -and $_.Kind -eq "agent" }).Count -ne 1) {
+		throw "local Codex plan did not classify arbitrary developer.toml as an agent config."
+	}
+	if ($defaultAgentParsed.Summary.ConfigReasoningEffortsDeclared -lt 2 -or $defaultAgentParsed.Summary.AgentInstructionSignalsDeclared -lt 2) {
+		throw "local Codex plan did not count reasoning and instruction fields across discovered agent TOML files."
+	}
+	if (@($defaultAgentParsed.Configs | Where-Object { @($_.ConfiguredModels) -contains "local-developer-coder" }).Count -ne 1) {
+		throw "local Codex plan did not preserve the arbitrary developer TOML model declaration."
+	}
+	if ($defaultAgentParsed.Summary.AgentConfigsMissingRequiredFields -ne 1) {
+		throw "local Codex plan did not count the stale agent TOML with missing required fields."
+	}
+	$staleConfig = @($defaultAgentParsed.Configs | Where-Object { $_.Path -eq $staleAgentPath } | Select-Object -First 1)
+	if ($staleConfig.Count -ne 1 -or @($staleConfig[0].MissingRequiredAgentFields) -notcontains "description" -or @($staleConfig[0].MissingRequiredAgentFields) -notcontains "developer_instructions") {
+		throw "local Codex plan did not report the stale agent TOML missing description and developer_instructions."
+	}
+
 	$missingConfigPath = Join-Path $tempRoot "missing-config.toml"
 	$defaultJsonOutput = & $planScript -ConfigPath $missingConfigPath -Json *>&1 | ForEach-Object { $_.ToString() }
 	if (!$?) {
@@ -150,6 +261,7 @@ try {
 		throw "local Codex plan did not prefer the Llama-owned 8001 endpoint."
 	}
 } finally {
+	$env:CODEX_HOME = $previousCodexHome
 	if (Test-Path -LiteralPath $tempRoot) {
 		Remove-Item -LiteralPath $tempRoot -Recurse -Force
 	}
