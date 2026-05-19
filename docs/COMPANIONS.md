@@ -29,7 +29,7 @@ Every active companion addon should keep the same boring project shape:
 - one or more root-level openFrameworks examples, with `ofxImGui` allowed for
   example UX
 - `scripts\validate-local.bat`, `scripts\validate-local.ps1`, and
-  `scripts\validate-local.sh` where practical
+  `scripts\validate-local` where practical
 - `scripts\release-candidate.*` for pre-tag checks where practical
 - headless request/helper tests that do not need model downloads
 - no generated build output, model files, sample media dumps, or runtime caches

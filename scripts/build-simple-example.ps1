@@ -167,12 +167,7 @@ function Test-GeneratedAddonPath {
 		($normalized -match '(^|\\)libs\\llama(\\|$)') -or
 		($normalized -match '(^|\\)libs\\llama\.cpp(\\|$)') -or
 		($normalized -match '(^|\\)libs\\llama\.cpp\\\.source(\\|$)') -or
-		($normalized -match '(^|\\)libs\\llama\.cpp\\build[^\\]*(\\|$)') -or
-		($normalized -match '(^|\\)libs\\sam3(\\|$)') -or
-		($normalized -match '(^|\\)libs\\sam3\.cpp(\\|$)') -or
-		($normalized -match '(^|\\)libs\\sam3\.cpp\\build[^\\]*(\\|$)') -or
-		($normalized -match '(^|\\)libs\\sam3\.cpp\\(ggml|examples|media|scripts|tests)(\\|$)') -or
-		($normalized -match '(^|\\)libs\\sam3\.cpp\\sam3\.cpp$')
+		($normalized -match '(^|\\)libs\\llama\.cpp\\build[^\\]*(\\|$)')
 }
 
 function Test-StaleAddonLibrary {
@@ -185,8 +180,7 @@ function Test-StaleAddonLibrary {
 	return $name -in @(
 		"llama.lib",
 		"llama-common.lib",
-		"llama-common-base.lib",
-		"sam3.lib"
+		"llama-common-base.lib"
 	)
 }
 
@@ -411,7 +405,6 @@ function Repair-VisualStudioProjectFile {
 				!($_ -match '^-D([^=\s]+)$' -and $valuedDefines.ContainsKey($matches[1]))
 			})
 			$staleOptions = @(
-				"OFXGGML_ENABLE_SAM3_ADAPTER",
 				"OFXIMGUI_DEBUG",
 				"IMGUI_IMPL_OPENGL_ES2",
 				"IMGUI_IMPL_OPENGL_ES3",

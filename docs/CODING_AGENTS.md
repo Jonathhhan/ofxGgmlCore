@@ -26,7 +26,7 @@ repository:
   Copilot cloud agent and code review guardrails on ecosystem work.
 
 For addon repositories, it also writes
-`.github/workflows/coding-agent-instructions.yml`, a small caller workflow that
+`.github/workflows/ecosystem-ci.yml`, a small caller workflow that
 uses the reusable check from `ofxGgmlWorkflows`.
 
 Use `-DryRun` to preview targets and `-Check` to fail when generated instruction
@@ -67,5 +67,5 @@ serving outside Core and uses the existing planning, validation, and release
 commands as the handoff contract.
 
 `ofxGgmlWorkflows` is included as the reusable GitHub Actions workflow repo. It
-owns `.github/workflows/coding-agent-instructions.yml`; companion addons consume
+owns `.github/workflows/ecosystem-ci.yml`; companion addons consume
 that workflow through `workflow_call`.

@@ -501,7 +501,6 @@ function New-BackendRuntimeEntry {
 		"inference-checked" { "use model-backed inference smoke as release evidence" }
 		"inference-evidence-blocked" { "refresh or fix the lane-owned inference smoke report before release gating" }
 		"core-runtime-smoke-seeded" { "keep Core CPU graph smoke active and require reports as release evidence" }
-		"reference-lane-ready-for-runtime-smoke" { "add SAM3 CPU/CUDA runtime-smoke handoff before broadening other lanes" }
 		"runtime-smoke-entrypoint-present" { "use runtime smoke as validation and release evidence" }
 		default { "add lane-owned runtime-smoke planner after the reference SAM lane is gated" }
 	}
@@ -581,8 +580,6 @@ function Get-BackendRuntimeNextCommands {
 	$reference = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlSam" } | Select-Object -First 1)
 	if ($reference.Count -gt 0) {
 		$commands.Add("cd ..\ofxGgmlSam && scripts\doctor-sam.bat")
-		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -DryRun")
-		$commands.Add("cd ..\ofxGgmlSam && scripts\run-sam3-runtime-smoke.bat -Backend cuda -Json -SummaryOnly -OutputPath .sam3-runtime-smoke.json")
 		$commands.Add("cd ..\ofxGgmlSam && scripts\validate-local.bat")
 	}
 	$audio = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlAudio" } | Select-Object -First 1)
@@ -697,7 +694,6 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("- Do not add model-specific code to Core; companion lanes own model loading and inference.")
 	$lines.Add("- Treat `inference-checked` as local evidence from an ignored lane-owned smoke report, not as a committed artifact.")
 	$lines.Add("- Do not treat missing generated example binaries as actionable when a lane has stronger model-backed inference evidence; generated binaries stay local-only.")
-	$lines.Add("- Treat SAM as the first reference lane because local SAM3 CPU/CUDA evidence already exists outside Core.")
 
 	return $lines -join [Environment]::NewLine
 }

@@ -1,0 +1,104 @@
+﻿name: ecosystem-ci
+
+on:
+  workflow_dispatch:
+    inputs:
+    - name:
+      description: 'Operation to run (multiple comma-separated)'
+      required: true
+      default: 'health,compatibility,metadata'
+      type: choice
+      options:
+        - health,compatibility,metadata
+        - health
+        - compatibility
+        - metadata
+        - capability-report
+        - readiness-score
+        - release-plan
+        - docs-regenerate
+        - all
+  push:
+    branches:
+      - main
+    paths:
+      - ecosystem.json
+      - '**/ofxggml-addon.json'
+      - docs/**
+      - scripts/*.py
+      - scripts/*.ps1
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  ecosystem-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run ecosystem health check
+        if: contains(inputs.name, 'health') || inputs.name == 'all' || github.event_name == 'push'
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\audit-ecosystem.ps1" -Json
+        continue-on-error: true
+
+      - name: Run baseline compatibility check
+        if: contains(inputs.name, 'compatibility') || inputs.name == 'all' || github.event_name == 'push'
+        run: |
+          python3 scripts/check-baseline-compatibility.py
+        continue-on-error: true
+
+      - name: Validate addon metadata
+        if: contains(inputs.name, 'metadata') || inputs.name == 'all' || github.event_name == 'push'
+        run: |
+          python3 scripts/validate-addon-metadata.py
+        continue-on-error: true
+
+      - name: Generate backend capability report
+        if: contains(inputs.name, 'capability-report') || inputs.name == 'all'
+        run: |
+          python3 scripts/generate-backend-capability-report.py
+        continue-on-error: true
+
+      - name: Generate release readiness score
+        if: contains(inputs.name, 'readiness-score') || inputs.name == 'all'
+        run: |
+          python3 scripts/generate-release-readiness-score.py
+        continue-on-error: true
+
+      - name: Generate release plan
+        if: inputs.name == 'all'
+        run: |
+          python3 scripts/plan-release.py
+        continue-on-error: true
+
+      - name: Regenerate ecosystem docs
+        if: inputs.name == 'docs-regenerate' || inputs.name == 'all'
+        run: |
+          python3 scripts/generate-ecosystem-dashboard.py
+          python3 scripts/generate-capability-map.py
+          python3 scripts/generate-compatibility-matrix.py
+        continue-on-error: true
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: ecosystem-ci-reports
+          path: |
+            docs/ecosystem-dashboard.md
+            docs/compatibility-matrix.md
+            docs/release-plan.md
+            docs/backend-capability-report.md
+          if-no-files-found: ignore

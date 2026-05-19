@@ -34,9 +34,6 @@ libs/ggml/lib/*
 !libs/ggml/include/.gitkeep
 !libs/ggml/lib/.gitkeep
 
-libs/sam3/
-libs/sam3/lib/*
-!libs/sam3/lib/.gitkeep
 
 libs/llama.cpp/
 libs/llama/bin/*

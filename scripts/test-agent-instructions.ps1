@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptRoot "..")
@@ -21,8 +21,7 @@ foreach ($expectedPath in @(
 	"AGENTS.md",
 	"HERMES.md",
 	".github\copilot-instructions.md",
-	".github\instructions\ofxggml-ecosystem.instructions.md",
-	".github\workflows\coding-agent-instructions.yml"
+	".github\instructions\ofxggml-ecosystem.instructions.md"
 )) {
 	$path = Join-Path $repoRoot $expectedPath
 	if (!(Test-Path -LiteralPath $path -PathType Leaf)) {

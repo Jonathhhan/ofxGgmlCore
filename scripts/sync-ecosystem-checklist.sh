@@ -12,8 +12,8 @@ ROOT_FILES=(
 GITHUB_FILES=(
   ".github/copilot-instructions.md"
   ".github/pull_request_template.md"
-  ".github/workflows/addon-hygiene.yml"
-  ".github/workflows/release-check.yml"
+  ".github/workflows/smoke-build-ci.yml"
+  ".github/workflows/release-gate.yml"
 )
 
 missing=0

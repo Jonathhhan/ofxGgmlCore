@@ -1,8 +1,0 @@
-name: of-smoke-build
-
-on:
-  workflow_dispatch:
-
-jobs:
-  of-smoke-build:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/of-smoke-build.yml@main

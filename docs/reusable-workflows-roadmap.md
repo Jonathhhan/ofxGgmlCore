@@ -1,41 +1,24 @@
 # Reusable Workflow Roadmap
 
-## Goal
+## Current Structure
 
-Move ecosystem automation toward centralized reusable GitHub workflows and coordinated release orchestration.
+Core now ships 5 focused workflows:
 
-## Proposed future structure
+| Workflow | Purpose |
+| --- | --- |
+| `smoke-build-ci.yml` | Full compile loop across ecosystem |
+| `release-gate.yml` | Pre-release readiness gate |
+| `pages.yml` | GitHub Pages deployment |
+| `backend-runtime-check.yml` | Backend runtime verification |
+| `ecosystem-ci.yml` | Health, compatibility, metadata, reports |
 
-```txt
-ofxGgmlWorkflows/
-  .github/workflows/
-    addon-hygiene.yml
-    release-check.yml
-    ecosystem-dashboard.yml
-    compatibility-matrix.yml
-```
+Reusable workflows from `ofxGgmlWorkflows` are still available for companion
+addons that need specific checks.
 
-Companion addons would consume shared workflows using:
-
-```yaml
-uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/addon-hygiene.yml@main
-```
-
-## Benefits
-
-- centralized CI maintenance
-- consistent policy enforcement
-- simpler repo bootstrapping
-- ecosystem-wide updates from one repository
-- improved Codex predictability across repos
-
-## Future automation ideas
+## Future Work
 
 - ecosystem-wide PR fanout
 - semantic-release orchestration
 - cross-repo version propagation
-- compatibility verification
 - generated docs portal
 - addon dependency visualization
-- ecosystem health dashboards
-- automated changelog aggregation

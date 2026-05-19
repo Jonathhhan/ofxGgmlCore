@@ -1,8 +1,0 @@
-name: cuda-runtime-certification
-
-on:
-  workflow_dispatch:
-
-jobs:
-  cuda-runtime-certification:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/cuda-runtime-certification.yml@main

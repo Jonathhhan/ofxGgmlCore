@@ -50,7 +50,7 @@ $gateOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-g
 	'',
 	'### Required Workflow Blockers',
 	'',
-	'- `Jonathhhan/ofxGgmlCore` / `release-check.yml`: failed.',
+	'- `Jonathhhan/ofxGgmlCore` / `smoke-build-ci.yml`: failed.',
 	'',
 	'### Optional Workflow Rollout Gaps',
 	'',

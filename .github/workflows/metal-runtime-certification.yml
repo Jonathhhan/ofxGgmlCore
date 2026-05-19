@@ -1,8 +1,0 @@
-name: metal-runtime-certification
-
-on:
-  workflow_dispatch:
-
-jobs:
-  metal-runtime-certification:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/metal-runtime-certification.yml@main

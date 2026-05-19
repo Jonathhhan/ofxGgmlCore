@@ -65,7 +65,6 @@ try {
 		"^libs/ggml/build",
 		"^libs/llama\.cpp/",
 		"^libs/llama/",
-		"^libs/sam3\.cpp/",
 		"(^|/)(models)(/|$)",
 		"\.(exe|dll|exp|ilk|lib|pdb|sln|suo|user|vcxproj|vcxproj\.filters|VC\.db|VC\.VC\.opendb)$",
 		"\.(gguf|safetensors|onnx|pt|pth|ckpt)$"
@@ -88,8 +87,6 @@ try {
 		"libs/ggml/lib/ggml.lib",
 		"libs/llama.cpp/CMakeLists.txt",
 		"libs/llama/bin/llama-server.exe",
-		"libs/sam3.cpp/CMakeLists.txt",
-		"libs/sam3/lib/sam3.lib",
 		"models/model.gguf",
 		"ofxGgmlCoreExample/ofxGgmlCoreExample.vcxproj",
 		"ofxGgmlCoreExample/bin/ofxGgmlCoreExample.exe"

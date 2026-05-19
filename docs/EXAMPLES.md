@@ -4,43 +4,19 @@
 
 | Example | Purpose | Model |
 | --- | --- | --- |
-| `ofxGgmlCoreExample` | Smoke-test the addon, ggml runtime discovery, and ofxImGui integration | none |
+| `ofxGgmlCoreExample` | Smoke-test addon, runtime discovery, ofxImGui | none |
 
-Run it from the Core addon folder:
-
-Windows:
+Run it:
 
 ```powershell
-scripts\run-simple-example.bat -Build
+.\scripts\run-simple-example.bat -Build
 ```
 
-macOS/Linux:
-
-```sh
-./scripts/run-simple-example.sh -Build
-```
-
-Text, chat, and embedding examples moved to `ofxGgmlLlama` so Core stays
-backend-neutral:
-
-Windows:
+Text, chat, and embedding examples live in `ofxGgmlLlama`:
 
 ```powershell
 cd ..\ofxGgmlLlama
-scripts\run-example.bat text -Build -Model C:\path\to\model.gguf
-scripts\run-example.bat chat -Build -Model C:\path\to\model.gguf
-scripts\run-example.bat embedding -Build -Model C:\path\to\embedding-model.gguf
+.\scripts\run-example.bat text -Build -Model C:\path\to\model.gguf
 ```
 
-macOS/Linux:
-
-```sh
-cd ../ofxGgmlLlama
-./scripts/run-example.sh text -Build -Model /path/to/model.gguf
-./scripts/run-example.sh chat -Build -Model /path/to/model.gguf
-./scripts/run-example.sh embedding -Build -Model /path/to/embedding-model.gguf
-```
-
-The Llama addon keeps the server lifecycle scripts, CLI fallback, and model
-launch logic. Core examples should remain small enough to build without a model
-or a model-specific runtime.
+Core examples stay small and build without a model or model-specific runtime.

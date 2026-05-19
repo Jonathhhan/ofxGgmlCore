@@ -1,8 +1,0 @@
-name: vulkan-runtime-certification
-
-on:
-  workflow_dispatch:
-
-jobs:
-  vulkan-runtime-certification:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/vulkan-runtime-certification.yml@main

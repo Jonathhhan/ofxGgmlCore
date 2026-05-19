@@ -31,14 +31,14 @@ function New-AuditEntry {
 	$hasAgents = Test-RepoPath -Status $Status -RelativePath "AGENTS.md"
 	$hasCopilot = Test-RepoPath -Status $Status -RelativePath ".github\copilot-instructions.md"
 	$hasCopilotEcosystem = Test-RepoPath -Status $Status -RelativePath ".github\instructions\ofxggml-ecosystem.instructions.md"
-	$hasInstructionWorkflow = Test-RepoPath -Status $Status -RelativePath ".github\workflows\coding-agent-instructions.yml"
+	$hasInstructionWorkflow = Test-RepoPath -Status $Status -RelativePath ".github\workflows\ecosystem-ci.yml"
 	$hasReleaseCandidate = Test-RepoPath -Status $Status -RelativePath "scripts\release-candidate.ps1"
 	$hasDocs = Test-RepoPath -Status $Status -RelativePath "docs" -Directory
 
 	$instructionCount = @(@($hasHermes, $hasAgents, $hasCopilot, $hasCopilotEcosystem) | Where-Object { $_ }).Count
 	$instructionState = if ($instructionCount -eq 4) { "complete" } elseif ($instructionCount -gt 0) { "partial" } else { "missing" }
 	$workflowState = if ($Status.Name -eq "ofxGgmlWorkflows") {
-		if (Test-RepoPath -Status $Status -RelativePath ".github\workflows\coding-agent-instructions.yml") { "owner" } else { "missing-owner" }
+		if (Test-RepoPath -Status $Status -RelativePath ".github\workflows\ecosystem-ci.yml") { "owner" } else { "missing-owner" }
 	} elseif ($hasInstructionWorkflow) {
 		"caller"
 	} else {

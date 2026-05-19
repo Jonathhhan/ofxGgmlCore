@@ -1,8 +1,0 @@
-name: live-workflow-status
-
-on:
-  workflow_dispatch:
-
-jobs:
-  workflow-status:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/live-workflow-status.yml@main

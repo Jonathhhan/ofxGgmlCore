@@ -10,9 +10,6 @@ Use this checklist when creating or upgrading companion addons.
 - [ ] AGENTS.md
 - [ ] .github/copilot-instructions.md
 - [ ] .github/pull_request_template.md
-- [ ] .github/workflows/addon-hygiene.yml
-- [ ] .github/workflows/release-check.yml
-- [ ] .codex/skills/openframeworks-addon/SKILL.md
 
 ## Required folders
 
@@ -50,15 +47,12 @@ Confirm the repo does not commit:
 
 ## Validation
 
-Recommended minimum checks:
-
-```txt
-./scripts/doctor.sh
-./scripts/validate-local.sh
-./scripts/release-candidate.sh
+```powershell
+.\scripts\doctor.bat
+.\scripts\validate-local.bat
+.\scripts\release-candidate.bat
 ```
 
-Windows equivalents should exist where practical. For companion addons, use the
-addon-owned build/run-example scripts named by that lane; `build-simple-example`
-is Core's compatibility wrapper for `ofxGgmlCoreExample`, not a companion-addon
-template requirement.
+For companion addons, use the addon-owned build/run-example scripts named by
+that lane; `build-simple-example` is Core's compatibility wrapper for
+`ofxGgmlCoreExample`, not a companion-addon template requirement.

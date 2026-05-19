@@ -1,9 +1,0 @@
-name: addon-hygiene
-
-on:
-  push:
-  pull_request:
-
-jobs:
-  hygiene:
-    uses: Jonathhhan/ofxGgmlWorkflows/.github/workflows/addon-hygiene.yml@main

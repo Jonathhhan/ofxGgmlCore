@@ -14,8 +14,8 @@ Every addon should provide:
 - `docs/`
 - `.github/copilot-instructions.md`
 - `.github/pull_request_template.md`
-- `.github/workflows/addon-hygiene.yml`
-- `.github/workflows/release-check.yml`
+- `.github/workflows/ecosystem-ci.yml`
+- `.github/workflows/release-gate.yml`
 - `AGENTS.md`
 - `.codex/skills/openframeworks-addon/SKILL.md`
 - `CHANGELOG.md`
