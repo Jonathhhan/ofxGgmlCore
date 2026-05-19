@@ -12,9 +12,6 @@ common:
 	ADDON_SOURCES = src/compute/ofxGgmlGraph.cpp
 	ADDON_SOURCES += src/compute/ofxGgmlTensor.cpp
 	ADDON_SOURCES += src/core/ofxGgmlRuntime.cpp
-	ADDON_SOURCES += src/inference/ofxGgmlEmbedding.cpp
-	ADDON_SOURCES += src/inference/ofxGgmlSegmentationInference.cpp
-	ADDON_SOURCES += src/inference/ofxGgmlTextGeneration.cpp
 	ADDON_SOURCES += src/model/ofxGgmlModel.cpp
 	ADDON_SOURCES_EXCLUDE = build/%
 	ADDON_SOURCES_EXCLUDE += libs/ggml/.source/%

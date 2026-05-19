@@ -12,16 +12,10 @@ add_executable(ofxGgml_rewrite_tests
 	test_graph.cpp
 	test_runtime.cpp
 	test_model.cpp
-	test_text.cpp
-	test_embedding.cpp
-	test_segmentation.cpp
 	../src/core/ofxGgmlRuntime.cpp
 	../src/compute/ofxGgmlTensor.cpp
 	../src/compute/ofxGgmlGraph.cpp
-	../src/model/ofxGgmlModel.cpp
-	../src/inference/ofxGgmlEmbedding.cpp
-	../src/inference/ofxGgmlTextGeneration.cpp
-	../src/inference/ofxGgmlSegmentationInference.cpp)
+	../src/model/ofxGgmlModel.cpp)
 
 target_include_directories(ofxGgml_rewrite_tests PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}
@@ -29,11 +23,7 @@ target_include_directories(ofxGgml_rewrite_tests PRIVATE
 
 add_library(ofxGgml_public_header_includes OBJECT
 	public_headers/include_ofxGgml.cpp
-	public_headers/include_ofxGgmlCore.cpp
-	public_headers/include_ofxGgmlEmbedding.cpp
-	public_headers/include_ofxGgmlSam3.cpp
-	public_headers/include_ofxGgmlSegmentation.cpp
-	public_headers/include_ofxGgmlText.cpp)
+	public_headers/include_ofxGgmlCore.cpp)
 
 target_include_directories(ofxGgml_public_header_includes PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}

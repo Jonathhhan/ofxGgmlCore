@@ -37,8 +37,11 @@ Those workflows belong in companion addons.
 | `ofxGgmlAgents` | local tool-using agents |
 | `ofxGgmlVideo` | video and temporal generation workflows |
 
-## Compatibility Note
+## Migration Status
 
-Core may temporarily keep shared text and embedding request/result classes while
-the split matures. New examples, scripts, and model-specific documentation should
-land in the relevant companion addon.
+Text/embedding inference modules have been moved to ofxGgmlLlama.
+Segmentation and SAM3 adapters have been removed (ofxGgmlSam provides its own implementation).
+
+Core now contains only backend-neutral primitives: runtime discovery, tensor/graph
+helpers, model inspection, and shared types. New model-specific workflows should land
+in the relevant companion addon from the start.
