@@ -157,7 +157,7 @@ function Get-FamilyStatusSummary {
 		DirtyManagedRepositories = @($managed | Where-Object { $_.DirtyCount -gt 0 }).Count
 		MissingManagedRepositories = @($managed | Where-Object { !$_.Present }).Count
 		MissingValidationEntrypoints = @($managed | Where-Object { $_.Present -and !$_.ValidateScript }).Count
-		MissingDoctorEntrypoints = @($managed | Where-Object { $_.Present -and !$_.DoctorScript }).Count
+		MissingDoctorEntrypoints = @($managed | Where-Object { $_.Present -and !$_.DoctorScript -and $_.Name -ne "ofxGgmlWorkflows" }).Count
 		AgentWorkflowGuideCoverage = @($managed | Where-Object { $_.AgentWorkflowGuide }).Count
 	}
 }
