@@ -26,7 +26,6 @@ jobs:
             "ofxGgmlRag",
             "ofxGgmlVideo",
             "ofxGgmlMusic",
-            "ofxGgmlDiffusion",
             "ofxGgmlAgents"
           )
           foreach ($repo in $repositories) {

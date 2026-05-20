@@ -85,13 +85,13 @@ The readiness pass currently verifies:
 - workflow status planning can write to a caller-selected report path for local validation without leaving generated docs in the worktree
 - backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
-- backend runtime verification reports `ofxGgmlLlama`, `ofxGgmlSam`, `ofxGgmlAudio`, `ofxGgmlMusic`, `ofxGgmlDiffusion`, `ofxGgmlVision`, `ofxGgmlVideo`, `ofxGgmlRag`, and `ofxGgmlAgents` as `available-and-validated`
+- backend runtime verification reports the managed runtime lanes as `available-and-validated`
 - release-readiness planning identifies missing smoke-build CI report evidence when `.smoke-build-ci-report.json` is absent
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs and emits explicit next commands in Markdown, full JSON, and compact summary JSON for readiness handoffs
 
 The current queue reports all managed repositories as ready, detects planning
-guides for all 11 managed repositories, and suppresses stale generic lane-uplift
+guides for all 10 managed repositories, and suppresses stale generic lane-uplift
 tasks once those guides exist. The remaining default task is Core control-plane
 maintenance before any addon runtime/source changes.
 
@@ -103,7 +103,6 @@ maintenance before any addon runtime/source changes.
 - ofxGgmlLlama
 - ofxGgmlAudio
 - ofxGgmlVision
-- ofxGgmlDiffusion
 - ofxGgmlSam
 - ofxGgmlMusic
 - ofxGgmlRag
@@ -127,8 +126,8 @@ The current smoke-build workflow:
 - plans and explicitly applies generated Visual Studio addon-wiring repair steps
 - plans focused compile targets for generated projects that pass postflight
 - provides a generic local focused compile command for generated projects that do not own addon-local build scripts
-- locally generated, repaired, and postflight-verified Visual Studio projects for all 14 managed addon examples while keeping owning addon worktrees clean
-- locally built all 14 managed addon examples on Windows Release x64 with 0 errors
+- locally generated, repaired, and postflight-verified Visual Studio projects for all managed addon examples while keeping owning addon worktrees clean
+- locally built the managed addon examples on Windows Release x64 with 0 errors
 - compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow (Windows Release x64)
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - validates CPU backend runtime initialization and lightweight graph smoke in CI for Core runtime changes

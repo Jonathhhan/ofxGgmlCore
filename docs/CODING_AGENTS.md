@@ -26,8 +26,8 @@ repository:
   Copilot cloud agent and code review guardrails on ecosystem work.
 
 For addon repositories, it also writes
-`.github/workflows/ecosystem-ci.yml`, a small caller workflow that
-uses the reusable check from `ofxGgmlWorkflows`.
+`.github/workflows/coding-agent-instructions.yml`, a small caller workflow that
+uses the reusable instruction check from `ofxGgmlWorkflows`.
 
 Use `-DryRun` to preview targets and `-Check` to fail when generated instruction
 files or caller workflows are missing or stale.
@@ -61,11 +61,16 @@ to select a concrete repository-scoped task. The planning agent layer should
 improve instructions, reusable workflows, status reporting, and validation
 before it touches addon source code.
 
+For Hermes specifically, use `scripts/plan-hermes-handoff.*` after the queue is
+current. That script packages the selected queue task into a prompt with Core
+context files, guardrails, reference-repository exclusions, and validation
+commands. The workflow is documented in `docs/HERMES_AGENT_WORKFLOW.md`.
+
 For optional local Codex work against an OpenAI-compatible `llama-server`
 endpoint, use `docs/LOCAL_CODEX_LLAMA_SERVER.md`. That guide keeps local model
 serving outside Core and uses the existing planning, validation, and release
 commands as the handoff contract.
 
 `ofxGgmlWorkflows` is included as the reusable GitHub Actions workflow repo. It
-owns `.github/workflows/ecosystem-ci.yml`; companion addons consume
-that workflow through `workflow_call`.
+owns `.github/workflows/coding-agent-instructions.yml`; companion addons
+consume that workflow through `workflow_call`.

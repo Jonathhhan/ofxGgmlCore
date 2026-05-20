@@ -80,6 +80,8 @@ foreach ($requiredScript in @(
 	"plan-ecosystem.ps1",
 	"plan-coding-agent-work.bat",
 	"plan-coding-agent-work.ps1",
+	"plan-hermes-handoff.bat",
+	"plan-hermes-handoff.ps1",
 	"plan-local-codex.bat",
 	"plan-local-codex.ps1",
 	"plan-of-smoke-build.bat",
@@ -243,6 +245,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking coding agent work planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-coding-agent-work-plan.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking Hermes handoff planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-hermes-handoff.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking openFrameworks smoke build planner" `

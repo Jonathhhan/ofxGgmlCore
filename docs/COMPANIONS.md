@@ -46,7 +46,6 @@ shape, fix the addon structure before widening the API.
 | `ofxGgmlSam` | SAM/SAM2/SAM3 segmentation models, masks, image prompts, segmentation UI | v1.0.1 companion |
 | `ofxGgmlAudio` | real-time audio inference, Whisper, transcription, denoising, voice conversion, emotion, voice workflows | v1.0.1 companion |
 | `ofxGgmlMusic` | music analysis, beat/downbeat, tempo, key/chord, stems, music embeddings, generation workflows | v1.0.1 companion |
-| `ofxGgmlDiffusion` | Stable Diffusion/SDXL/Flux-style image workflows, GAN-style image generation, identity adapters such as PhotoMaker | v1.0.1 companion |
 | `ofxGgmlVision` | CLIP, image embeddings, captions, VLM-style image understanding | v1.0.1 companion |
 | `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory | v1.0.1 companion |
 | `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation | v1.0.1 companion |
@@ -56,6 +55,7 @@ shape, fix the addon structure before widening the API.
 
 | Addon | Scope |
 | --- | --- |
+| `ofxGgmlStableDiffusion` | stable-diffusion.cpp image generation lane based on `ofxStableDiffusion`; staging until validation and release metadata are in place |
 | `ofxGgmlUI` | larger optional ImGui tools, model browser, prompt workbench |
 
 ## Dependency Direction
@@ -83,15 +83,14 @@ stream chunking, PCM, VAD, and lightweight features, but owns music-specific
 terms, examples, models, and workflows such as beats, key/chords, stems,
 embeddings, arrangement, and generation.
 
-`ofxGgmlDiffusion` is the planned home for PhotoMaker-style identity adapters
-and image GAN generation. Do not create `ofxGgmlPhotoMaker` unless identity
-personalization grows into a larger cross-addon layer with several
-non-diffusion consumers. The installed stable-diffusion.cpp PhotoMaker C API is
-covered by a model-free native capability smoke, and decoded reference images
-now map into the native request params. The next concrete step is a real local
-SDXL/PhotoMaker asset smoke outside the committed test path.
+`ofxGgmlDiffusion` is paused and intentionally excluded from managed ecosystem
+automation while the image-generation lane is reset. `ofxGgmlStableDiffusion`
+is the staging home for stable-diffusion.cpp work, based on the existing
+`ofxStableDiffusion` addon. PhotoMaker, GAN-style generation, and broader
+diffusers terminology should stay out of the active baseline until the staging
+lane has a repeatable backend path and release metadata.
 
-Diffusers is a useful design reference for `ofxGgmlDiffusion` terminology:
+Diffusers remains a useful design reference for image-generation terminology:
 pipelines, schedulers, model families, and adapters. Treat it as inspiration
 for C++ API shape, not as a runtime dependency for the addon family.
 
@@ -103,8 +102,9 @@ Current best candidates are:
 
 - `ofxGgmlAudio`: verify and polish the Whisper transcription path end to end
   with a tiny downloaded model and sample WAV.
-- `ofxGgmlDiffusion`: finish the stable-diffusion.cpp bridge and keep GAN as an
-  explicit experimental path.
+- `ofxGgmlStableDiffusion`: promote the staging stable-diffusion.cpp lane with
+  validation, release metadata, and native runtime setup based on
+  `ofxStableDiffusion`.
 - `ofxGgmlMusic`: add the first real music-generation backend boundary after
   the CLI/request validation baseline.
 - `ofxGgmlSam`: wire the first concrete SAM/SAM2/SAM3 adapter after the point

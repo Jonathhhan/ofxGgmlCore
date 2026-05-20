@@ -44,6 +44,18 @@
       "kind": "local-legacy-snapshot",
       "lane": "legacy monorepo scratch clone",
       "scope": "local scratch snapshot with generated/runtime artifacts; do not include in managed automation"
+    },
+    {
+      "name": "ofxGgmlDiffusion",
+      "kind": "paused-companion-addon",
+      "lane": "image generation",
+      "scope": "temporarily excluded from managed ecosystem automation while ofxGgmlStableDiffusion becomes the stable-diffusion.cpp lane"
+    },
+    {
+      "name": "ofxGgmlStableDiffusion",
+      "kind": "staging-companion-addon",
+      "lane": "stable-diffusion.cpp image generation",
+      "scope": "staging replacement lane based on ofxStableDiffusion; classify here until it has managed validation and release metadata"
     }
   ],
   "repositories": [
@@ -76,12 +88,6 @@
       "kind": "companion-addon",
       "lane": "music generation and analysis",
       "scope": "music analysis, beat/key/chord helpers, stems, MIDI, and generation workflows"
-    },
-    {
-      "name": "ofxGgmlDiffusion",
-      "kind": "companion-addon",
-      "lane": "image generation",
-      "scope": "diffusion, GAN, PhotoMaker-style identity adapters, and native image backend bridges"
     },
     {
       "name": "ofxGgmlVision",

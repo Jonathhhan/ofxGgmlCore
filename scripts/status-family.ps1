@@ -26,9 +26,15 @@ function Invoke-Git {
 	if (!(Test-CommandAvailable "git")) {
 		return ""
 	}
-	$output = & git -C $Repository @Arguments 2>$null
-	if ($LASTEXITCODE -ne 0) {
-		return ""
+	$previousErrorActionPreference = $ErrorActionPreference
+	$ErrorActionPreference = "Continue"
+	try {
+		$output = & git -C $Repository @Arguments 2>$null
+		if ($LASTEXITCODE -ne 0) {
+			return ""
+		}
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
 	}
 	return (@($output) -join "`n").Trim()
 }

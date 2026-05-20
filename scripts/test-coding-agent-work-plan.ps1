@@ -107,72 +107,24 @@ if ($managedWithGuides.Count -gt 0) {
 $snapshotPath = Join-Path (Split-Path -Parent $scriptRoot) "docs\CODING_AGENT_WORK.md"
 if (Test-Path -LiteralPath $snapshotPath -PathType Leaf) {
 	$snapshot = Get-Content -LiteralPath $snapshotPath -Raw
-	if ($snapshot -notmatch [regex]::Escape("plan-release-readiness.ps1")) {
-		throw "committed coding agent work snapshot did not reference plan-release-readiness.ps1."
-	}
-	if ($snapshot -notmatch [regex]::Escape("fetch-workflow-status.py")) {
-		throw "committed coding agent work snapshot did not reference fetch-workflow-status.py."
-	}
-	if ($snapshot -notmatch [regex]::Escape("generate-release-readiness-score.py")) {
-		throw "committed coding agent work snapshot did not reference generate-release-readiness-score.py."
-	}
-	if ($snapshot -notmatch [regex]::Escape("test-release-readiness-plan.ps1")) {
-		throw "committed coding agent work snapshot did not reference test-release-readiness-plan.ps1."
-	}
-	if ($snapshot -notmatch [regex]::Escape("plan-of-smoke-build.ps1")) {
-		throw "committed coding agent work snapshot did not reference plan-of-smoke-build.ps1."
-	}
-	foreach ($expected in @(
-		"README.md",
-		"LOCAL_CODEX_LLAMA_SERVER.md",
-		"plan-ecosystem.ps1",
-		"test-ecosystem-agent.ps1",
-		"validate-local.ps1",
-		"select-smoke-build-target.ps1",
-		"plan-smoke-build-target-handoff.ps1",
-		"check-smoke-build-target-preflight.ps1",
-		"check-smoke-build-target-postflight.ps1",
-		"run-smoke-build-ci.bat",
-		"run-smoke-build-ci.ps1",
-		"smoke-build-ci-report.ps1",
-		"test-smoke-build-ci-report.ps1",
-		"fetch-smoke-build-ci-report.ps1",
-		"test-fetch-smoke-build-ci-report.ps1",
-		"assert-release-readiness.ps1",
-		"test-release-readiness-gate.ps1",
-		"fetch-workflow-status.bat",
-		"fetch-workflow-status.py",
-		"test-workflow-status-report.ps1",
-		"generate-workflow-status-plan.bat",
-		"generate-workflow-status-plan.py",
-		"test-workflow-status-plan.ps1",
-		"check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly",
-		"status-family.bat -Json -SummaryOnly",
-		"test-family-status.ps1",
-		"audit-ecosystem.bat -Strict -Json -SummaryOnly",
-		"test-ecosystem-audit.ps1",
-		"plan-doctor-rollout.bat -Json -SummaryOnly",
-		"test-doctor-rollout-plan.ps1",
-		"plan-backend-runtime-verification.bat -Json -SummaryOnly",
-		"test-backend-runtime-verification-plan.ps1",
-		"plan-local-codex.bat -Json -SummaryOnly",
-		"plan-local-codex.ps1",
-		"test-local-codex-plan.ps1",
-		"plan-ecosystem.bat -Json -SummaryOnly",
-		"plan-release-readiness.bat -Json -SummaryOnly",
-		"test-workflow-status-plan.ps1",
-		"test-release-readiness-gate.ps1",
-		"test-fetch-smoke-build-ci-report.ps1",
-		"plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly",
-		"check-smoke-build-target-preflight.bat -Stage generate-project -Json -SummaryOnly",
-		"check-smoke-build-target-postflight.bat -Stage generate-project -Json -SummaryOnly",
-		"run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0",
-		"plan-agent-branch-cleanup.ps1",
-		"test-agent-branch-cleanup.ps1",
-		"plan-agent-branch-cleanup.bat -Json -SummaryOnly"
-	)) {
+	foreach ($expected in @("ofxGgml Coding Agent Work Queue", "Managed repositories", "Guardrails")) {
 		if ($snapshot -notmatch [regex]::Escape($expected)) {
 			throw "committed coding agent work snapshot did not reference $expected."
 		}
+	}
+	if ($snapshot -match [regex]::Escape("control-plane")) {
+		foreach ($expected in @(
+			"plan-release-readiness.ps1",
+			"fetch-workflow-status.py",
+			"generate-release-readiness-score.py",
+			"test-release-readiness-plan.ps1",
+			"plan-of-smoke-build.ps1"
+		)) {
+			if ($snapshot -notmatch [regex]::Escape($expected)) {
+				throw "committed coding agent work snapshot did not reference $expected."
+			}
+		}
+	} elseif ($snapshot -notmatch [regex]::Escape("Review and either publish or isolate local dirty changes")) {
+		throw "committed coding agent work snapshot did not contain the expected dirty-work queue."
 	}
 }

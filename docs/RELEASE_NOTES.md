@@ -26,6 +26,8 @@
   managed repository lanes used by agent tooling.
 - Classified legacy `ofxGgml` sibling clones and scratch snapshots as
   reference-only repositories outside managed automation.
+- Paused `ofxGgmlDiffusion` outside managed ecosystem automation and classified
+  `ofxGgmlStableDiffusion` as the staging stable-diffusion.cpp lane.
 
 ## 1.0.1 - 2026-05-12
 

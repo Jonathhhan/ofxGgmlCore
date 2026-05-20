@@ -112,9 +112,8 @@ Named companion lanes:
 - `ofxGgmlAudio` for real-time audio inference, denoising, voice conversion,
   emotion cues, speech recognition, transcription, and voice workflows.
   Whisper.cpp belongs in this lane first, not in a separate addon.
-- `ofxGgmlDiffusion` for Stable Diffusion/SDXL/Flux-style generative image
-  workflows, GAN-style image generation, and PhotoMaker-style identity
-  adapters.
+- `ofxGgmlStableDiffusion` for the staging stable-diffusion.cpp image
+  generation lane based on `ofxStableDiffusion`.
 - `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
   understanding.
 - `ofxGgmlRag` for document ingestion, web crawl, retrieval, citations, and
@@ -142,34 +141,15 @@ validation scripts, and headless request/helper tests. Next work should make one
 of them useful with a real backend rather than broadening every baseline at
 once.
 
-`ofxGgmlDiffusion` has started that migration by carrying over the useful typed
-request/result/config shape from `ofxStableDiffusion` while leaving the native
-runtime, generated binaries, sample media, and broad workflow experiments out
-of the new repo.
+`ofxGgmlDiffusion` is paused outside managed ecosystem automation. The next
+image-generation work should move through `ofxGgmlStableDiffusion`, using
+`ofxStableDiffusion` as the design and implementation baseline instead of
+continuing the GAN/PhotoMaker-heavy experimental lane.
 
-`ofxGgmlDiffusion` now has generated stable-diffusion.cpp setup/build scripts
-that default to the sibling `ofxGgmlCore` ggml install, with an explicit
-bundled-ggml escape hatch for upstream experiments.
-
-`ofxGgmlDiffusion` also has its first opt-in native bridge boundary for
-stable-diffusion.cpp text-to-image generation. It stays unavailable by default
-until the generated runtime is installed and the app explicitly enables the
-native bridge compile flag.
-
-`ofxGgmlDiffusion` now includes openFrameworks image conversion/saving helpers
-and its root prompt example has become a first text-to-image run path for
-user-provided local model assets.
-
-`ofxGgmlDiffusion` also has generated-project build/run scripts and launch
-dry-run validation for the text-to-image example.
-
-`ofxGgmlDiffusion` now wraps native text-to-image generation in a worker-thread
-async runner, with cancellation applied at the addon result boundary when the
-native call returns control.
-
-`ofxGgmlDiffusion` also has a local doctor and Windows example project repair
-path, so a clean checkout can diagnose missing model/runtime state and build the
-prompt example without committing generated Visual Studio files.
+`ofxGgmlStableDiffusion` should become active only after it has release
+metadata, local validation, setup docs, and a repeatable stable-diffusion.cpp
+runtime path that does not commit generated binaries, model weights, sample
+media dumps, or downloaded runtime caches.
 
 ## Release Rule
 

@@ -18,6 +18,7 @@ foreach ($expected in @(
 	"structured ecosystem plan",
 	"coding agent work queue",
 	"structured coding agent work queue",
+	"Hermes agent handoff",
 	"openFrameworks smoke build plan",
 	"openFrameworks smoke build target selection",
 	"openFrameworks smoke build target handoff",
@@ -79,7 +80,7 @@ if (!$auditJson.RepositorySummaries -or $auditJson.PSObject.Properties["Reposito
 	throw "ecosystem readiness strict audit did not use compact repository summaries."
 }
 
-foreach ($stepName in @("structured ecosystem plan", "structured coding agent work queue")) {
+foreach ($stepName in @("structured ecosystem plan", "structured coding agent work queue", "Hermes agent handoff")) {
 	$step = @($parsed.Steps | Where-Object { $_.Name -eq $stepName } | Select-Object -First 1)
 	if ($step.Count -eq 0 -or $step[0].State -ne "OK") {
 		throw "ecosystem readiness JSON did not report $stepName as OK."

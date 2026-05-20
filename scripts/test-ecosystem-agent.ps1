@@ -16,6 +16,7 @@ foreach ($expected in @(
 	"Agent Guardrails",
 	"Do not edit addon source",
 	"plan-coding-agent-work.bat",
+	"plan-hermes-handoff.bat",
 	"plan-doctor-rollout.bat",
 	"plan-agent-branch-cleanup.bat -Json -SummaryOnly",
 	"Smoke-Build Target Lifecycle",
@@ -84,6 +85,9 @@ if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-doctor-rollout.bat
 }
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-ecosystem.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact ecosystem plan validation command."
+}
+if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-hermes-handoff.bat -Json -SummaryOnly") {
+	throw "ecosystem agent JSON output did not include the compact Hermes handoff validation command."
 }
 if (@($parsed.SuggestedValidation) -notcontains "scripts\plan-release-readiness.bat -Json -SummaryOnly") {
 	throw "ecosystem agent JSON output did not include the compact release readiness validation command."

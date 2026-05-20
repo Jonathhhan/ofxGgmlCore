@@ -29,7 +29,6 @@ $managedAddonRepos = @(
 	"ofxGgmlRag",
 	"ofxGgmlVideo",
 	"ofxGgmlMusic",
-	"ofxGgmlDiffusion",
 	"ofxGgmlAgents"
 )
 

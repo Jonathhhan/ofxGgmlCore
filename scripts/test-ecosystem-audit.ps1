@@ -47,16 +47,16 @@ foreach ($property in @(
 		throw "ecosystem audit JSON Summary did not include $property."
 	}
 }
-if ($parsed.Summary.ManagedRepositories -lt 11) {
+if ($parsed.Summary.ManagedRepositories -lt 10) {
 	throw "ecosystem audit JSON Summary did not count managed repositories."
 }
 if ($parsed.Summary.BlockedManagedRepositories -ne 0 -or @($parsed.Summary.BlockingManagedRepositoryNames).Count -ne 0) {
 	throw "ecosystem audit JSON Summary reported managed blockers for a passing strict audit."
 }
-if (!$parsed.Repositories -or $parsed.Repositories.Count -lt 11) {
+if (!$parsed.Repositories -or $parsed.Repositories.Count -lt $parsed.Summary.ManagedRepositories) {
 	throw "ecosystem audit JSON output did not include repositories."
 }
-if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -lt 11) {
+if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -lt $parsed.Summary.ManagedRepositories) {
 	throw "ecosystem audit JSON output did not include compact repository summaries."
 }
 
@@ -82,7 +82,7 @@ $summaryParsed = ($summaryJsonOutput -join "`n") | ConvertFrom-Json
 if (!$summaryParsed.SummaryOnly) {
 	throw "ecosystem audit summary JSON did not report SummaryOnly."
 }
-if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -lt 11) {
+if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -lt $summaryParsed.Summary.ManagedRepositories) {
 	throw "ecosystem audit summary JSON did not retain compact summary evidence."
 }
 if ($summaryParsed.PSObject.Properties["Repositories"]) {

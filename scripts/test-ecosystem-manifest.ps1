@@ -12,7 +12,7 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 if ($manifest.schemaVersion -ne 1) {
 	throw "ecosystem manifest schemaVersion must be 1."
 }
-if (!$manifest.repositories -or $manifest.repositories.Count -lt 11) {
+if (!$manifest.repositories -or $manifest.repositories.Count -lt 10) {
 	throw "ecosystem manifest did not include the managed repository list."
 }
 if (!$manifest.detectedRepositoryClassifications -or $manifest.detectedRepositoryClassifications.Count -lt 7) {

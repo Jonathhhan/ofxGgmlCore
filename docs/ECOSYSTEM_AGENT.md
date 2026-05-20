@@ -50,6 +50,7 @@ scripts\audit-ecosystem.bat
 scripts\check-ecosystem-readiness.bat
 scripts\plan-ecosystem.bat
 scripts\plan-coding-agent-work.bat
+scripts\plan-hermes-handoff.bat
 scripts\plan-doctor-rollout.bat
 scripts\plan-agent-branch-cleanup.bat
 scripts\write-agent-instructions.bat -Check
@@ -95,6 +96,11 @@ Use `scripts\plan-coding-agent-work.bat -Json` when an agent needs structured
 queue summary data plus per-task `SuggestedFileList` and `ValidationCommands`
 arrays instead of parsing the Markdown table. The JSON output also includes the
 same `Guardrails` list shown in Markdown.
+Use `scripts\plan-hermes-handoff.bat` when Hermes needs a ready-to-paste prompt
+that selects one bounded task from the coding-agent queue, carries Core
+guardrails, and reports validation commands. Use
+`scripts\plan-hermes-handoff.bat -Json -SummaryOnly` for compact structured
+handoff data without the full queue.
 Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact audit
 `Summary` counts plus per-repository readiness actions before deciding whether
 to run the broader readiness pass.

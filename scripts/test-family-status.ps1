@@ -10,7 +10,6 @@ foreach ($expected in @(
 	"ofxGgml family status",
 	"ofxGgmlCore",
 	"ofxGgmlLlama",
-	"ofxGgmlDiffusion",
 	"ofxGgmlWorkflows",
 	"Validate"
 )) {
@@ -42,7 +41,7 @@ foreach ($property in @(
 		throw "family status JSON Summary did not include $property."
 	}
 }
-if ($parsed.Summary.ManagedRepositories -lt 11) {
+if ($parsed.Summary.ManagedRepositories -lt 10) {
 	throw "family status JSON Summary did not count managed repositories."
 }
 if ($parsed.Summary.ReadyManagedRepositories -lt 10) {
@@ -63,10 +62,10 @@ if (@($parsed.NextCommands) -notcontains "scripts\check-ecosystem-readiness.bat 
 if (@($parsed.NextCommands) -notcontains "scripts\plan-agent-branch-cleanup.bat -Json -SummaryOnly") {
 	throw "family status JSON NextCommands did not include compact branch cleanup planning."
 }
-if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -lt 11) {
+if (!$parsed.RepositorySummaries -or $parsed.RepositorySummaries.Count -lt 10) {
 	throw "family status JSON did not contain compact repository summaries."
 }
-if (!$parsed.Addons -or $parsed.Addons.Count -lt 11) {
+if (!$parsed.Addons -or $parsed.Addons.Count -lt 10) {
 	throw "family status JSON did not contain the expected addon list."
 }
 $core = @($parsed.Addons | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
@@ -79,7 +78,7 @@ $summaryParsed = $summaryJson | ConvertFrom-Json
 if (!$summaryParsed.SummaryOnly) {
 	throw "family status summary JSON did not report SummaryOnly."
 }
-if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -lt 11) {
+if (!$summaryParsed.Summary -or !$summaryParsed.RepositorySummaries -or $summaryParsed.RepositorySummaries.Count -lt 10) {
 	throw "family status summary JSON did not retain compact summary evidence."
 }
 if ($summaryParsed.PSObject.Properties["Addons"]) {

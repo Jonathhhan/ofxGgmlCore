@@ -11,7 +11,6 @@ This tracks the current addon-family baseline after the first companion split.
 | `ofxGgmlSam` | `v1.0.1` | `ad07e89` | SAM request/result bridge, multi-point external adapter contract, point example mask UI |
 | `ofxGgmlAudio` | `v1.0.1` | `9aa8207` | audio stream helpers, Whisper lane, rolling chunk transcript GUI, transcription example |
 | `ofxGgmlMusic` | `v1.0.1` | `21f9d3d` | music request types, procedural generation, external MusicGen profile, manifests, MIDI/stem outputs |
-| `ofxGgmlDiffusion` | `v1.0.1` | `ed02f00` | diffusion request types, shared image backend interface, GAN proof lane, PhotoMaker bridge, doctor, generated-project repair |
 | `ofxGgmlVision` | `v1.0.1` | `74ff86a` | image understanding request/example baseline |
 | `ofxGgmlVideo` | `v1.0.1` | `431f436` | video/frame request/example baseline |
 | `ofxGgmlRag` | `v1.0.1` | `c0ac283` | citation search request/example baseline |
@@ -20,6 +19,10 @@ This tracks the current addon-family baseline after the first companion split.
 Core `main` is ahead of the `v1.0.1` tag for family-map documentation and
 ecosystem agent tooling. Do not retag Core unless preparing a new patch
 release.
+
+`ofxGgmlDiffusion` is intentionally paused outside managed ecosystem automation
+as of 2026-05-20. `ofxGgmlStableDiffusion` is staging as the replacement
+stable-diffusion.cpp lane and is not part of the release-head baseline yet.
 
 ## Baseline Standard
 
@@ -38,8 +41,8 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlDiffusion`: run a real local PhotoMaker SDXL smoke with user-provided
-   model/reference assets; keep the committed smoke path model-free.
+1. `ofxGgmlStableDiffusion`: promote the staging stable-diffusion.cpp lane with
+   validation, release metadata, and setup docs based on `ofxStableDiffusion`.
 2. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
    setup/download notes against the tested multi-point adapter contract.
 3. `ofxGgmlAudio`: add a dedicated live microphone streaming example.

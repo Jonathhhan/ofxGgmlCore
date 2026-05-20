@@ -64,17 +64,16 @@ generated-project repair planner is applied.
 
 The generated-project repair planner now restores expected owner, Core, and
 ofxImGui Visual Studio references, plus addon `ADDON_CFLAGS` and `ADDON_LIBS`
-metadata needed for linking Core ggml symbols from companion examples. Local
-validation has generated and repaired all 14 managed addon examples while
-leaving every owning addon worktree clean because generated project files remain
-ignored.
+metadata needed for linking Core ggml symbols from companion examples. Previous
+local validation covered the wider example set, including the now-paused
+diffusion examples. The current managed queue excludes `ofxGgmlDiffusion` while
+`ofxGgmlStableDiffusion` stages the stable-diffusion.cpp lane.
 
-Focused local compile evidence now covers all 14 managed examples on Windows
-Release x64: Core simple; Llama text/chat/embedding; Audio transcribe; Sam point;
-Vision image; Rag search; Video frame; Music analysis/generation; Diffusion
-GAN/prompt; and Agents planner. Each completed with 0 errors; current warning
-counts are ordinary openFrameworks/ofxImGui/compiler warnings and remain outside
-the release gate.
+Focused local compile evidence covers the managed Windows Release x64 examples:
+Core simple; Llama text/chat/embedding; Audio transcribe; Sam point; Vision
+image; Rag search; Video frame; Music analysis/generation; and Agents planner.
+Each completed with 0 errors; current warning counts are ordinary
+openFrameworks/ofxImGui/compiler warnings and remain outside the release gate.
 
 ## Planned smoke-build phases
 

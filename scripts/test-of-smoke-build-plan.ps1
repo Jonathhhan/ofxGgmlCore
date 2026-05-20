@@ -63,7 +63,7 @@ foreach ($property in @(
 		throw "openFrameworks smoke build plan JSON Summary did not include $property."
 	}
 }
-if ($parsed.Summary.ManagedRecords -lt 11) {
+if ($parsed.Summary.ManagedRecords -lt 10) {
 	throw "openFrameworks smoke build plan JSON Summary did not count managed records."
 }
 if ($parsed.Summary.ReadyForProjectGenerationChecks -eq 0) {

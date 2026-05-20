@@ -17,7 +17,7 @@ small, predictable, and backend-neutral.
 - llama.cpp server lifecycle
 - text, chat, or embedding examples
 - SAM segmentation UX
-- diffusion, GAN, or image generation UX
+- stable-diffusion.cpp, diffusion, GAN, or image generation UX
 - audio, music, vision, video, RAG, or agent workflows
 - model downloads or model-specific launch policy
 
@@ -29,7 +29,7 @@ Those workflows belong in companion addons.
 | --- | --- |
 | `ofxGgmlLlama` | llama.cpp tools, text, chat, embeddings |
 | `ofxGgmlSam` | SAM segmentation |
-| `ofxGgmlDiffusion` | diffusion, GAN, and image generation |
+| `ofxGgmlStableDiffusion` | staging stable-diffusion.cpp image generation |
 | `ofxGgmlAudio` | real-time audio, Whisper, denoising, voice conversion, emotion, and speech workflows |
 | `ofxGgmlMusic` | music analysis, beat/key/chord workflows, embeddings, and generation |
 | `ofxGgmlVision` | image understanding |
@@ -45,3 +45,7 @@ Segmentation and SAM3 adapters have been removed (ofxGgmlSam provides its own im
 Core now contains only backend-neutral primitives: runtime discovery, tensor/graph
 helpers, model inspection, and shared types. New model-specific workflows should land
 in the relevant companion addon from the start.
+
+`ofxGgmlDiffusion` is currently paused outside the managed ecosystem baseline.
+New stable-diffusion.cpp work should target the staging `ofxGgmlStableDiffusion`
+lane until it is promoted into the active companion set.

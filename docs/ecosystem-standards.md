@@ -14,7 +14,7 @@ Every addon should provide:
 - `docs/`
 - `.github/copilot-instructions.md`
 - `.github/pull_request_template.md`
-- `.github/workflows/ecosystem-ci.yml`
+- `.github/workflows/coding-agent-instructions.yml`
 - `.github/workflows/release-gate.yml`
 - `AGENTS.md`
 - `.codex/skills/openframeworks-addon/SKILL.md`
@@ -33,12 +33,15 @@ Companion addons own domain workflows:
 - `ofxGgmlLlama`: text, chat, embeddings, llama.cpp server/CLI
 - `ofxGgmlAudio`: Whisper, transcription, voice/audio workflows
 - `ofxGgmlSam`: segmentation
-- `ofxGgmlDiffusion`: image generation and diffusion workflows
+- `ofxGgmlStableDiffusion`: staging stable-diffusion.cpp image generation
 - `ofxGgmlVision`: CLIP, image embeddings, captions, image understanding
 - `ofxGgmlRag`: retrieval, citations, local search
 - `ofxGgmlAgents`: tool-using local agents and planning loops
 - `ofxGgmlVideo`: video understanding and frame/temporal workflows
 - `ofxGgmlMusic`: music analysis and generation
+
+`ofxGgmlDiffusion` is paused outside managed ecosystem automation while the
+image-generation lane is rebuilt around `ofxGgmlStableDiffusion`.
 
 ## Artifact policy
 

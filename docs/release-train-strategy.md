@@ -17,12 +17,14 @@ Suggested propagation order:
 1. ofxGgmlLlama
 2. ofxGgmlAudio
 3. ofxGgmlVision
-4. ofxGgmlDiffusion
-5. ofxGgmlSam
-6. ofxGgmlMusic
-7. ofxGgmlRag
-8. ofxGgmlAgents
-9. ofxGgmlVideo
+4. ofxGgmlSam
+5. ofxGgmlMusic
+6. ofxGgmlRag
+7. ofxGgmlAgents
+8. ofxGgmlVideo
+
+`ofxGgmlDiffusion` is paused outside the managed train while
+`ofxGgmlStableDiffusion` stages the stable-diffusion.cpp lane.
 
 ## Release-train checklist
 

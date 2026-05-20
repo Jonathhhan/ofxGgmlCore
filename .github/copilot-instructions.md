@@ -21,7 +21,8 @@ smoke-test examples.
 
 Do not add model-specific workflows here. Text/chat/embeddings belong in
 ofxGgmlLlama; audio and Whisper workflows in ofxGgmlAudio; segmentation in
-ofxGgmlSam; diffusion/image generation in ofxGgmlDiffusion; vision in
+ofxGgmlSam; stable-diffusion.cpp image generation in the staging
+ofxGgmlStableDiffusion lane; vision in
 ofxGgmlVision; retrieval in ofxGgmlRag; planning/tool loops in ofxGgmlAgents;
 video in ofxGgmlVideo; and music workflows in ofxGgmlMusic.
 

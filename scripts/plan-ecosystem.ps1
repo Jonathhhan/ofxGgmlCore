@@ -118,6 +118,7 @@ function Get-SuggestedValidationCommands {
 		"scripts\plan-ecosystem.bat",
 		"scripts\plan-ecosystem.bat -Json -SummaryOnly",
 		"scripts\plan-coding-agent-work.bat",
+		"scripts\plan-hermes-handoff.bat -Json -SummaryOnly",
 		"scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly",
 		"scripts\check-smoke-build-target-preflight.bat -Stage generate-project -Json -SummaryOnly",
 		"scripts\check-smoke-build-target-postflight.bat -Stage generate-project -Json -SummaryOnly",

@@ -26,12 +26,6 @@
       "owns": ["CLIP", "image embeddings", "captions", "image understanding"]
     },
     {
-      "name": "ofxGgmlDiffusion",
-      "repo": "Jonathhhan/ofxGgmlDiffusion",
-      "lane": "image-generation",
-      "owns": ["diffusion", "GAN boundaries", "text-to-image", "PhotoMaker", "generated-project repair"]
-    },
-    {
       "name": "ofxGgmlSam",
       "repo": "Jonathhhan/ofxGgmlSam",
       "lane": "segmentation",

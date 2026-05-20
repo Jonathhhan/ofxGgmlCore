@@ -207,6 +207,10 @@ $steps += Invoke-ReadinessStep -Name "coding agent work queue" -ScriptPath (Join
 $steps += Invoke-ReadinessStep -Name "structured coding agent work queue" -ScriptPath (Join-Path $scriptRoot "plan-coding-agent-work.ps1") -Parameters @{
 	Json = $true
 }
+$steps += Invoke-ReadinessStep -Name "Hermes agent handoff" -ScriptPath (Join-Path $scriptRoot "plan-hermes-handoff.ps1") -Parameters @{
+	Json = $true
+	SummaryOnly = $true
+}
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build plan" -ScriptPath (Join-Path $scriptRoot "plan-of-smoke-build.ps1")
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build target selection" -ScriptPath (Join-Path $scriptRoot "select-smoke-build-target.ps1") -Parameters @{
 	Stage = "generate-project"

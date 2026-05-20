@@ -20,7 +20,6 @@ This document defines how declared backend support should become validated backe
 | `Jonathhhan/ofxGgmlLlama` | `text-chat-embeddings` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlAudio` | `audio` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlVision` | `vision` | from `ofxggml-addon.json` | planned |
-| `Jonathhhan/ofxGgmlDiffusion` | `image-generation` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlSam` | `segmentation` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlMusic` | `music` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlRag` | `retrieval` | from `ofxggml-addon.json` | planned |
