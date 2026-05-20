@@ -12,6 +12,13 @@
     "request/result primitives",
     "validation scripts"
   ],
+  "features": [
+    "backend-neutral runtime discovery",
+    "ggml setup and native backend validation",
+    "shared request/result primitives",
+    "model metadata inspection",
+    "ecosystem planning and release readiness scripts"
+  ],
   "platforms": [
     "windows",
     "macos",

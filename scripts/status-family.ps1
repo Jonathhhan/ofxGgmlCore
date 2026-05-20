@@ -72,6 +72,31 @@ function Get-AgentWorkflowGuide {
 	return ""
 }
 
+function Get-AddonFeatures {
+	param([string]$Repository)
+
+	$metadataPath = Join-Path $Repository "ofxggml-addon.json"
+	if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+		return @()
+	}
+
+	try {
+		$metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+	} catch {
+		return @()
+	}
+
+	if (!$metadata.PSObject.Properties["features"]) {
+		return @()
+	}
+
+	return @($metadata.features | Where-Object {
+		![string]::IsNullOrWhiteSpace([string]$_)
+	} | ForEach-Object {
+		[string]$_
+	})
+}
+
 function Get-AddonStatus {
 	param([hashtable]$Addon)
 	$path = Join-Path $addonsRoot $Addon.Name
@@ -90,6 +115,7 @@ function Get-AddonStatus {
 	$copilotEcosystemInstructions = $false
 	$agentWorkflowGuidePath = ""
 	$examples = @()
+	$features = @()
 
 	if ($present) {
 		$branch = Invoke-Git -Repository $path -Arguments @("branch", "--show-current")
@@ -105,6 +131,7 @@ function Get-AddonStatus {
 		$copilotInstructions = Test-Path -LiteralPath (Join-Path $path ".github\copilot-instructions.md") -PathType Leaf
 		$copilotEcosystemInstructions = Test-Path -LiteralPath (Join-Path $path ".github\instructions\ofxggml-ecosystem.instructions.md") -PathType Leaf
 		$agentWorkflowGuidePath = Get-AgentWorkflowGuide -Repository $path -Name $Addon.Name
+		$features = @(Get-AddonFeatures -Repository $path)
 		$examples = @(
 			Get-ChildItem -LiteralPath $path -Directory -ErrorAction SilentlyContinue |
 				Where-Object { $_.Name -like "*Example" } |
@@ -137,6 +164,8 @@ function Get-AddonStatus {
 		CopilotEcosystemInstructions = $copilotEcosystemInstructions
 		AgentWorkflowGuide = ![string]::IsNullOrWhiteSpace($agentWorkflowGuidePath)
 		AgentWorkflowGuidePath = $agentWorkflowGuidePath
+		FeatureCount = @($features).Count
+		Features = $features
 		Examples = $examples
 	}
 }
@@ -159,6 +188,7 @@ function Get-FamilyStatusSummary {
 		MissingValidationEntrypoints = @($managed | Where-Object { $_.Present -and !$_.ValidateScript }).Count
 		MissingDoctorEntrypoints = @($managed | Where-Object { $_.Present -and !$_.DoctorScript -and $_.Name -ne "ofxGgmlWorkflows" }).Count
 		AgentWorkflowGuideCoverage = @($managed | Where-Object { $_.AgentWorkflowGuide }).Count
+		FeatureMetadataCoverage = @($managed | Where-Object { $_.Present -and $_.Name -ne "ofxGgmlWorkflows" -and $_.FeatureCount -gt 0 }).Count
 	}
 }
 
@@ -185,6 +215,7 @@ function ConvertTo-FamilyRepositorySummary {
 		ValidateScript = [bool]$Status.ValidateScript
 		DoctorScript = [bool]$Status.DoctorScript
 		AgentWorkflowGuide = [bool]$Status.AgentWorkflowGuide
+		FeatureCount = [int]$Status.FeatureCount
 	}
 }
 

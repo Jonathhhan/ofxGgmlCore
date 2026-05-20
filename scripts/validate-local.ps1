@@ -48,7 +48,7 @@ $addonRoot = Split-Path -Parent $scriptRoot
 
 # Verify README references key entry points
 Assert-FileContains (Join-Path $addonRoot "README.md") "first-run" "README first-run"
-Assert-FileEntries (Join-Path $addonRoot "README.md") "doctor" "README doctor"
+Assert-FileContains (Join-Path $addonRoot "README.md") "doctor" "README doctor"
 Assert-FileContains (Join-Path $addonRoot "README.md") "validate-local" "README validate-local"
 Assert-FileContains (Join-Path $addonRoot "README.md") "release-candidate" "README release-candidate"
 Assert-FileContains (Join-Path $addonRoot "README.md") "ofxGgmlLlama" "README companion addon"

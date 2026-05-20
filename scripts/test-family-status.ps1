@@ -35,7 +35,8 @@ foreach ($property in @(
 	"MissingManagedRepositories",
 	"MissingValidationEntrypoints",
 	"MissingDoctorEntrypoints",
-	"AgentWorkflowGuideCoverage"
+	"AgentWorkflowGuideCoverage",
+	"FeatureMetadataCoverage"
 )) {
 	if (!$parsed.Summary.PSObject.Properties[$property]) {
 		throw "family status JSON Summary did not include $property."
@@ -46,6 +47,9 @@ if ($parsed.Summary.ManagedRepositories -lt 10) {
 }
 if ($parsed.Summary.ReadyManagedRepositories -lt 10) {
 	throw "family status JSON Summary did not count ready managed repositories."
+}
+if ($parsed.Summary.FeatureMetadataCoverage -lt 9) {
+	throw "family status JSON Summary did not count managed addon feature metadata."
 }
 if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
 	throw "family status JSON did not include NextCommands."
@@ -85,7 +89,7 @@ if ($summaryParsed.PSObject.Properties["Addons"]) {
 	throw "family status summary JSON should omit full Addons inventory."
 }
 $summaryCore = @($summaryParsed.RepositorySummaries | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
-foreach ($property in @("Name", "Known", "Classified", "Present", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide")) {
+foreach ($property in @("Name", "Known", "Classified", "Present", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "FeatureCount")) {
 	if (!$summaryCore[0].PSObject.Properties[$property]) {
 		throw "family status summary JSON repository summary did not include $property."
 	}
