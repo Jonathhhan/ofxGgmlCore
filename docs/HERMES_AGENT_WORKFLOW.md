@@ -12,6 +12,41 @@ From `ofxGgmlCore`:
 scripts\plan-hermes-handoff.ps1
 ```
 
+For a project-local setup command that writes the current handoff and prints
+the selected task:
+
+```powershell
+scripts\start-hermes-agent.ps1
+```
+
+To launch Hermes after the handoff is written:
+
+```powershell
+scripts\start-hermes-agent.ps1 -Tui
+```
+
+To ask Hermes to run the selected handoff once:
+
+```powershell
+scripts\start-hermes-agent.ps1 -RunOnce
+```
+
+To run the Hermes gateway in the foreground from the project handoff context:
+
+```powershell
+scripts\start-hermes-agent.ps1 -Gateway -AcceptHooks
+```
+
+On Windows, install the Hermes gateway as an optional Scheduled Task when you
+want it to auto-start at login:
+
+```powershell
+scripts\start-hermes-agent.ps1 -InstallScheduledTask
+```
+
+Keep this opt-in. The manual gateway path is better while testing provider,
+platform, and hook configuration.
+
 For machine-readable handoff data:
 
 ```powershell
@@ -51,9 +86,16 @@ The generated prompt tells Hermes to:
   first
 - avoid addon runtime/source edits unless the user explicitly asks for that
   repository and behavior
-- keep `ofxGgmlDiffusion`, `ofxGgmlStableDiffusion`, and other classified
-  reference repositories out of managed automation unless they are explicitly
-  promoted
+- keep `ofxGgmlDiffusion` and other classified reference repositories out of
+  managed automation unless they are explicitly promoted
+
+## Local Model Config Examples
+
+Use `ofxGgmlLlama` for llama.cpp-backed local model configuration examples.
+`ofxGgmlLlamaCodexLocalExample` owns Codex/OpenCode provider and profile
+snippets for a local OpenAI-compatible `llama-server` endpoint. Hermes
+integration here should point at those examples rather than copying llama.cpp
+configuration into Core.
 
 ## Validation
 
