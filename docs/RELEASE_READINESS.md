@@ -152,7 +152,8 @@ Before creating the `1.0.1` tag:
 - backend capability evidence is present or the release notes explicitly state
   why runtime evidence is unavailable.
 - `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` reports
-  managed runtime-smoke entrypoints as `available-and-validated` before release.
+  managed runtime-smoke entrypoints as `available-and-validated` and no
+  actionable backend runtime example-build gaps before release.
 - generated binaries, model files, caches, and project files are not staged.
 - optional runtimes fail clearly when not installed.
 - any new public type has a focused headless test.

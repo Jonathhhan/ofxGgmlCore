@@ -15,6 +15,8 @@ The ecosystem currently provides:
 - release-gating scaffolding
 - CPU backend runtime smoke checks through `backend-runtime-check`
 - lightweight ggml graph compute/readback validation on Windows and Ubuntu CI
+- lane-owned runtime-smoke entrypoints across 9 managed runtime/applicable repositories
+- model-backed inference smoke evidence in 3 managed repositories
 
 Current workflows validate Core CPU backend availability for relevant runtime
 changes. Optional GPU backends are still reported or validated locally, not yet
@@ -23,6 +25,11 @@ certified by shared CI runners.
 Core now generates a phase-1 backend capability report from declared metadata and
 local ggml runtime artifacts. This report is discovery evidence only; it does
 not replace model-backed inference smoke checks.
+
+The Core verification planner currently distinguishes validated runtime-smoke
+entrypoints from release-blocking example-build evidence gaps. A lane can have
+runtime-smoke evidence available while still needing generated-example build
+evidence before strict release readiness passes.
 
 ## Planned verification phases
 
@@ -45,6 +52,8 @@ Backend initialization:
 - runtime initialization without model files
 - backend capability report generation
 - status: active for Core CPU runtime smoke on Windows and Ubuntu
+- status: active for managed runtime-smoke entrypoints; example-build evidence
+  gaps remain actionable release-readiness inputs
 
 ### Phase 3
 

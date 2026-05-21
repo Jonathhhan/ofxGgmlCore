@@ -21,6 +21,7 @@ The ecosystem currently provides:
 - lane-owned runtime-smoke entrypoints across all managed runtime lanes
 - a strict release-readiness assertion script for workflow, backend, runtime, and smoke-build CI evidence
 - a `release-gate` workflow that runs manually and automatically for `release/**` branches and `v*` tags, fetches smoke-build CI artifact evidence, and runs the strict assertion gate
+- compact release-readiness evidence gaps for default backend capability reports, actionable backend runtime example-build gaps, and local smoke-build CI reports that were not freshly fetched
 
 ## Current limitations
 
@@ -28,6 +29,7 @@ Current release gates do not yet:
 
 - treat default backend capability or local smoke-build CI evidence as final release truth
 - include fresh fetched smoke-build CI artifact evidence in every local release-readiness pass
+- pass strict readiness while backend runtime verification reports actionable example-build gaps
 - validate cross-platform openFrameworks compilation and execution (Windows only in current CI smoke loop)
 - validate model-backed runtime inference
 - validate CUDA/Metal/Vulkan runtime availability in CI

@@ -28,7 +28,8 @@ The ecosystem currently provides:
 - backend runtime smoke execution through the reusable `backend-runtime-check` workflow
 - CPU backend initialization plus lightweight ggml graph compute/readback smoke on Windows and Ubuntu CI
 - lane-owned runtime-smoke entrypoints across all managed runtime lanes
-- backend runtime verification planning that reports managed runtime lanes as `available-and-validated`
+- backend runtime verification planning that reports 9 managed runtime-smoke entrypoints as `available-and-validated`
+- release-readiness evidence-gap reporting for default evidence, backend runtime example-build gaps, and local smoke-build CI evidence that has not been freshly fetched
 - feature metadata and README feature coverage across the 9 runtime/applicable managed addons
 
 ## Current agent readiness
@@ -76,18 +77,19 @@ The readiness pass currently verifies:
 - smoke-build project repair planning reports missing Visual Studio addon references, supports explicit generated-metadata repair with `-Apply`, and emits next commands for postflight and hygiene checks
 - smoke-build compile planning emits focused build commands only after generated-project postflight is complete, using addon-owned build scripts when present and the Core generic smoke builder otherwise
 - smoke-build CI writes a JSON report with top-level Summary counts for stages, targets, commands, and failures
-- release-readiness planning runs without requiring live workflow access
+- release-readiness planning runs without requiring live workflow access, while strict readiness still fails on release evidence gaps
 - release-readiness evidence preserves workflow required blockers and optional rollout gaps
 - release-readiness evidence folds in backend capability reports when available
 - release-readiness evidence folds in smoke-build CI Summary counts when available
 - release-readiness planning can fetch the latest uploaded smoke-build CI artifact when `-FetchSmokeBuildCiReport` is used in an environment with GitHub Actions artifact access
 - release-readiness assertion can fail a release gate on missing required evidence, workflow blockers, or failed smoke-build CI evidence
 - release-gate workflow dispatch and release-ref pushes run the strict release-readiness assertion against fetched smoke-build CI artifact evidence
-- workflow status reporting tracks the Core-only `release-gate` workflow as optional release-control evidence without requiring the workflow on companion addons
+- workflow status reporting tracks the Core-only `smoke-build-ci` and `release-gate` workflows as optional release-control evidence without requiring those workflows on companion addons
 - workflow status planning can write to a caller-selected report path for local validation without leaving generated docs in the worktree
 - backend-runtime-check caller workflow runs automatically for relevant Core runtime, ggml setup, metadata, and workflow changes
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
-- backend runtime verification reports the managed runtime lanes as `available-and-validated`
+- backend runtime verification reports 9 managed runtime lanes as `available-and-validated`, with 3 model-backed inference checks currently present
+- backend runtime verification reports 6 actionable example-build evidence gaps: `ofxGgmlCore`, `ofxGgmlVision`, `ofxGgmlVideo`, `ofxGgmlRag`, `ofxGgmlAgents`, and `ofxGgmlMusic`
 - release-readiness planning identifies missing smoke-build CI report evidence when `.smoke-build-ci-report.json` is absent
 - local Codex/Hermes provider readiness reports `local-provider-missing` until a localhost OpenAI-compatible endpoint is reachable and model ids match served `/v1/models` evidence
 - doctor rollout planning runs
@@ -134,9 +136,10 @@ The current smoke-build workflow:
 - compiles generated managed examples in CI on pull_request via the new `smoke-build-ci` workflow (Windows Release x64)
 - does not yet eliminate the Windows projectGenerator addon-processing crash; generated-project repair currently compensates for it
 - validates CPU backend runtime initialization and lightweight graph smoke in CI for Core runtime changes
-- plans backend runtime verification evidence from Core with compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, and reference-lane readiness summaries
+- plans backend runtime verification evidence from Core with compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, inference-smoke, and reference-lane readiness summaries
 - uses lane-owned runtime-smoke evidence across all managed runtime lanes as release-readiness handoff material
-- still needs a smoke-build CI report artifact before generated-project compile evidence can be treated as release CI truth
+- still needs fresh explicit backend capability evidence and a fetched smoke-build CI report artifact before generated-project compile evidence can be treated as release CI truth
+- still needs actionable backend runtime example-build gaps closed or explicitly waived before strict release readiness can pass
 - still needs local Codex/Hermes provider smoke evidence before local-agent readiness can be treated as ready instead of advisory
 - does not yet validate CUDA/Metal/Vulkan runtimes in CI
 - does not yet validate model-backed runtime inference
@@ -145,7 +148,9 @@ The current smoke-build workflow:
 
 - Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
 - bring up the ofxGgmlLlama-owned localhost Codex endpoint and rerun `scripts\plan-local-codex.bat -Json -SummaryOnly`
+- close the current backend runtime example-build evidence gaps reported by `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly`
 - generate and persist smoke-build CI evidence for release readiness with `scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0`
+- fetch CI smoke-build artifact evidence with `scripts\fetch-smoke-build-ci-report.bat -Force` before strict release-readiness handoff
 - keep lane-owned runtime-smoke evidence fresh as model-backed and GPU-backed lanes mature
 - GPU backend runtime verification from suitable runners
 - model-backed inference smoke tests

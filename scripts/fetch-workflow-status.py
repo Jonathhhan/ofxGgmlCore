@@ -22,6 +22,7 @@ WORKFLOWS = [
     {"name": "multi-platform-smoke.yml", "required": True},
     {"name": "release-check.yml", "required": False},
     {"name": "baseline-compatibility.yml", "required": False},
+    {"name": "smoke-build-ci.yml", "required": False, "repos": ["Jonathhhan/ofxGgmlCore"]},
     {"name": "release-gate.yml", "required": False, "repos": ["Jonathhhan/ofxGgmlCore"]},
 ]
 
