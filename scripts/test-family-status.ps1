@@ -57,6 +57,9 @@ if (!$parsed.NextCommands -or @($parsed.NextCommands).Count -eq 0) {
 if (@($parsed.NextCommands) -notcontains "scripts\plan-ecosystem.bat -Json -SummaryOnly") {
 	throw "family status JSON NextCommands did not include compact ecosystem planning."
 }
+if (@($parsed.NextCommands) -notcontains "scripts\plan-addon-features.bat -Json -SummaryOnly") {
+	throw "family status JSON NextCommands did not include compact addon feature planning."
+}
 if (@($parsed.NextCommands) -notcontains "scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly") {
 	throw "family status JSON NextCommands did not include compact strict ecosystem audit."
 }

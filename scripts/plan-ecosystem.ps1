@@ -117,6 +117,7 @@ function Get-SuggestedValidationCommands {
 		"scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly",
 		"scripts\plan-ecosystem.bat",
 		"scripts\plan-ecosystem.bat -Json -SummaryOnly",
+		"scripts\plan-addon-features.bat -Json -SummaryOnly",
 		"scripts\plan-coding-agent-work.bat",
 		"scripts\plan-hermes-handoff.bat -Json -SummaryOnly",
 		"scripts\plan-smoke-build-target-handoff.bat -Stage generate-project -Json -SummaryOnly",

@@ -78,6 +78,8 @@ foreach ($requiredScript in @(
 	"audit-ecosystem.ps1",
 	"plan-ecosystem.bat",
 	"plan-ecosystem.ps1",
+	"plan-addon-features.bat",
+	"plan-addon-features.ps1",
 	"plan-coding-agent-work.bat",
 	"plan-coding-agent-work.ps1",
 	"plan-hermes-handoff.bat",
@@ -211,6 +213,10 @@ Invoke-CheckedScript `
 Invoke-CheckedScript `
 	-Label "Checking family status smoke output" `
 	-ScriptPath (Join-Path $scriptRoot "test-family-status.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking addon feature planner" `
+	-ScriptPath (Join-Path $scriptRoot "test-addon-features-plan.ps1")
 
 Invoke-CheckedScript `
 	-Label "Checking ecosystem auto-discovery" `
