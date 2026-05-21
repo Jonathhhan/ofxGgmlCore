@@ -26,6 +26,8 @@ The ecosystem currently provides:
 
 Current release gates do not yet:
 
+- treat default backend capability or local smoke-build CI evidence as final release truth
+- include fresh fetched smoke-build CI artifact evidence in every local release-readiness pass
 - validate cross-platform openFrameworks compilation and execution (Windows only in current CI smoke loop)
 - validate model-backed runtime inference
 - validate CUDA/Metal/Vulkan runtime availability in CI

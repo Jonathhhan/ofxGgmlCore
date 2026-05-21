@@ -71,6 +71,13 @@ repository, run:
 scripts\plan-local-codex.bat -Json -SummaryOnly
 ```
 
+If the planner reports `ReadinessState=local-provider-missing`, the ecosystem
+control plane is working but no usable localhost OpenAI-compatible provider was
+found. Bring up the `ofxGgmlLlama`-owned server first, confirm
+`http://127.0.0.1:8001/v1/models` returns the model id, and keep experimental
+Codex provider TOML out of the active desktop config until one-shot smoke
+overrides prove the server accepts the current Codex wire format.
+
 The planner probes only localhost OpenAI-compatible `/v1/models` endpoints,
 reads local Codex config candidates, and emits structured recommended actions
 for the detected readiness state. It does not start a server, write config, or

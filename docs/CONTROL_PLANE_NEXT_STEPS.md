@@ -10,6 +10,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\status-family.bat -Json -SummaryOnly` when another agent needs compact inventory evidence without full addon records.
 - Run `scripts\check-ecosystem-readiness.bat -SkipDoctorTests` before starting broad cross-repository work; it now includes structured agent handoff checks and a deterministic release-readiness planning pass.
 - Use `scripts\check-ecosystem-readiness.bat -SkipDoctorTests -Json -SummaryOnly` when another agent needs compact readiness evidence without successful step logs.
+- Treat `local-provider-missing` from `scripts\plan-local-codex.bat -Json -SummaryOnly` as an environment blocker, not an addon blocker. The fix belongs in the `ofxGgmlLlama` local server setup or one-shot Codex provider overrides, while Core should keep reporting the state.
 - Use `scripts\audit-ecosystem.bat -Strict -Json -SummaryOnly` when another agent needs compact audit blocker evidence without full repository rows.
 - Use `scripts\plan-doctor-rollout.bat -Json -SummaryOnly` when another agent needs compact doctor coverage evidence without full script lists.
 - Use `scripts\plan-ecosystem.bat -Json` when another agent needs summary counts, planning priorities, guardrails, smoke-build lifecycle commands, and validation commands as structured data.
@@ -66,6 +67,7 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 - Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` when another agent needs compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, and reference-lane readiness evidence before choosing a model-backed runtime smoke target.
 - Treat the managed runtime-smoke rollout as complete only when `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly` reports every managed runtime lane as `available-and-validated`.
 - Treat missing, default-only, or stale release evidence as a release-readiness gap. Default `docs\backend-capability-report.md` and `.smoke-build-ci-report.json` inputs are useful planning hints, but final release evidence should pass explicit report paths or use `-FetchSmokeBuildCiReport` so the source of truth is visible.
+- Keep readiness failures actionable: local provider readiness is fixed by starting the Llama-owned OpenAI-compatible server, while release evidence gaps are fixed by fresh workflow, backend capability, backend runtime, and smoke-build CI reports.
 - Treat dirty managed repositories as release-readiness gaps until the work is staged, committed, or intentionally isolated. Classified legacy/reference siblings may stay dirty, but keep them out of managed automation.
 - Generate local smoke-build CI evidence with `scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0` before claiming generated-project compilation truth without a downloaded GitHub Actions artifact.
 - Use `scripts\fetch-smoke-build-ci-report.bat -Force` to download the latest uploaded `ofx-smoke-build-ci-report` artifact into `.smoke-build-ci-report.json` before release planning.

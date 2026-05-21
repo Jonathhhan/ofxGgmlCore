@@ -29,6 +29,7 @@ The ecosystem currently provides:
 - CPU backend initialization plus lightweight ggml graph compute/readback smoke on Windows and Ubuntu CI
 - lane-owned runtime-smoke entrypoints across all managed runtime lanes
 - backend runtime verification planning that reports managed runtime lanes as `available-and-validated`
+- feature metadata and README feature coverage across the 9 runtime/applicable managed addons
 
 ## Current agent readiness
 
@@ -49,6 +50,7 @@ scripts\plan-smoke-build-project-repair.bat -Stage verify-generated-project
 scripts\plan-smoke-build-compile.bat -Stage compile-example
 scripts\build-smoke-example.bat -Repository ofxGgmlSam -Example ofxGgmlSamPointExample
 scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly
+scripts\plan-local-codex.bat -Json -SummaryOnly
 scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0
 scripts\plan-release-readiness.bat -Json -SummaryOnly
 scripts\build-runtime-smoke.bat -Backend cpu
@@ -87,6 +89,7 @@ The readiness pass currently verifies:
 - CPU backend runtime smoke initializes ggml and executes a lightweight graph compute/readback check in CI
 - backend runtime verification reports the managed runtime lanes as `available-and-validated`
 - release-readiness planning identifies missing smoke-build CI report evidence when `.smoke-build-ci-report.json` is absent
+- local Codex/Hermes provider readiness reports `local-provider-missing` until a localhost OpenAI-compatible endpoint is reachable and model ids match served `/v1/models` evidence
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs and emits explicit next commands in Markdown, full JSON, and compact summary JSON for readiness handoffs
 
@@ -134,12 +137,14 @@ The current smoke-build workflow:
 - plans backend runtime verification evidence from Core with compact CPU/CUDA/Metal/Vulkan declaration, model-path, example-build, runtime-smoke, and reference-lane readiness summaries
 - uses lane-owned runtime-smoke evidence across all managed runtime lanes as release-readiness handoff material
 - still needs a smoke-build CI report artifact before generated-project compile evidence can be treated as release CI truth
+- still needs local Codex/Hermes provider smoke evidence before local-agent readiness can be treated as ready instead of advisory
 - does not yet validate CUDA/Metal/Vulkan runtimes in CI
 - does not yet validate model-backed runtime inference
 
 ## Next operational milestones
 
 - Linux and macOS real openFrameworks smoke-build coverage (generation + compile)
+- bring up the ofxGgmlLlama-owned localhost Codex endpoint and rerun `scripts\plan-local-codex.bat -Json -SummaryOnly`
 - generate and persist smoke-build CI evidence for release readiness with `scripts\run-smoke-build-ci.bat -CloneAddonRepos -TargetsPerStage 0`
 - keep lane-owned runtime-smoke evidence fresh as model-backed and GPU-backed lanes mature
 - GPU backend runtime verification from suitable runners
