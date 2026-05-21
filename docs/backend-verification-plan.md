@@ -25,6 +25,7 @@ This document defines how declared backend support should become validated backe
 | `Jonathhhan/ofxGgmlRag` | `retrieval` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlAgents` | `agents` | from `ofxggml-addon.json` | planned |
 | `Jonathhhan/ofxGgmlVideo` | `video` | from `ofxggml-addon.json` | planned |
+| `Jonathhhan/ofxGgmlStableDiffusion` | `stable-diffusion` | from `ofxggml-addon.json` | planned |
 
 ## Active runtime checks
 

@@ -12,7 +12,8 @@ Purpose: ship the rewritten addon as a narrow, stable starting point with the
 current confidence and ergonomics work included.
 
 Status: `1.0.1` release docs and validation are current. Do not widen the
-public API before this release unless a blocking validation issue requires it.
+public API before this release unless it improves companion-addon validation
+without adding model-specific workflows to Core.
 
 ## Workstreams
 
@@ -61,6 +62,8 @@ public API before this release unless a blocking validation issue requires it.
   includes.
 - Ongoing rule: document every intentional breaking change in
   `docs/RELEASE_NOTES.md`.
+- Done for `Unreleased`: add backend-neutral runtime profile validation for
+  companion addon readiness checks.
 
 ### 2. Build And Backend Confidence
 
@@ -112,7 +115,7 @@ Named companion lanes:
 - `ofxGgmlAudio` for real-time audio inference, denoising, voice conversion,
   emotion cues, speech recognition, transcription, and voice workflows.
   Whisper.cpp belongs in this lane first, not in a separate addon.
-- `ofxGgmlStableDiffusion` for the staging stable-diffusion.cpp image
+- `ofxGgmlStableDiffusion` for the managed stable-diffusion.cpp image
   generation lane based on `ofxStableDiffusion`.
 - `ofxGgmlVision` for CLIP, image embeddings, captions, and VLM-style image
   understanding.
@@ -141,15 +144,15 @@ validation scripts, and headless request/helper tests. Next work should make one
 of them useful with a real backend rather than broadening every baseline at
 once.
 
-`ofxGgmlDiffusion` is paused outside managed ecosystem automation. The next
+`ofxGgmlDiffusion` is paused outside managed ecosystem automation. The active
 image-generation work should move through `ofxGgmlStableDiffusion`, using
 `ofxStableDiffusion` as the design and implementation baseline instead of
 continuing the GAN/PhotoMaker-heavy experimental lane.
 
-`ofxGgmlStableDiffusion` should become active only after it has release
-metadata, local validation, setup docs, and a repeatable stable-diffusion.cpp
-runtime path that does not commit generated binaries, model weights, sample
-media dumps, or downloaded runtime caches.
+`ofxGgmlStableDiffusion` should stay active only while it has release metadata,
+local validation, setup docs, and a repeatable stable-diffusion.cpp runtime path
+that does not commit generated binaries, model weights, sample media dumps, or
+downloaded runtime caches.
 
 ## Release Rule
 

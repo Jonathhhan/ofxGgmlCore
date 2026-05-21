@@ -30,7 +30,7 @@ The ecosystem currently provides:
 - lane-owned runtime-smoke entrypoints across all managed runtime lanes
 - backend runtime verification planning that reports 9 managed runtime-smoke entrypoints as `available-and-validated`
 - release-readiness evidence-gap reporting for default evidence, backend runtime example-build gaps, and local smoke-build CI evidence that has not been freshly fetched
-- feature metadata and README feature coverage across the 9 runtime/applicable managed addons
+- feature metadata and README feature coverage across the 10 runtime/applicable managed addons
 
 ## Current agent readiness
 
@@ -95,10 +95,14 @@ The readiness pass currently verifies:
 - doctor rollout planning runs
 - merged agent branch cleanup planning runs and emits explicit next commands in Markdown, full JSON, and compact summary JSON for readiness handoffs
 
-The current queue reports all managed repositories as ready, detects planning
-guides for all 10 managed repositories, and suppresses stale generic lane-uplift
-tasks once those guides exist. The remaining default task is Core control-plane
-maintenance before any addon runtime/source changes.
+The current queue detects planning guides for all 11 managed repositories, so
+generic lane-uplift tasks stay suppressed once those guides exist. Current
+working-tree readiness is 9 of 11 managed repositories because Core and
+`ofxGgmlStableDiffusion` still have local dirty hygiene tasks. This is not full
+release readiness: dirty repositories, local-provider smoke evidence, backend
+runtime gaps, and smoke-build CI evidence can still block release handoff. The
+remaining default task is Core control-plane maintenance before any addon
+runtime/source changes.
 
 ## Current smoke-build coverage
 

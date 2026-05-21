@@ -21,8 +21,8 @@ ecosystem agent tooling. Do not retag Core unless preparing a new patch
 release.
 
 `ofxGgmlDiffusion` is intentionally paused outside managed ecosystem automation
-as of 2026-05-20. `ofxGgmlStableDiffusion` is staging as the replacement
-stable-diffusion.cpp lane and is not part of the release-head baseline yet.
+as of 2026-05-20. `ofxGgmlStableDiffusion` is managed as the replacement
+stable-diffusion.cpp lane.
 
 ## Baseline Standard
 
@@ -41,12 +41,15 @@ Every active companion now has:
 Pick one backend lane and make it genuinely useful before widening the whole
 family again.
 
-1. `ofxGgmlStableDiffusion`: promote the staging stable-diffusion.cpp lane with
-   validation, release metadata, and setup docs based on `ofxStableDiffusion`.
-2. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
+1. `ofxGgmlStableDiffusion`: keep the promoted managed stable-diffusion.cpp
+   lane current with validation, release metadata, and setup docs based on
+   `ofxStableDiffusion`.
+2. `ofxGgmlLlama`: publish concrete local `llama-server` config examples for
+   Codex, OpenCode, and Hermes profiles, backed by `/v1/models` evidence.
+3. `ofxGgmlSam`: choose the first real SAM/SAM2/SAM3 runner and document
    setup/download notes against the tested multi-point adapter contract.
-3. `ofxGgmlAudio`: add a dedicated live microphone streaming example.
-4. `ofxGgmlMusic`: add a smoke mode for machines with a configured
+4. `ofxGgmlAudio`: add a dedicated live microphone streaming example.
+5. `ofxGgmlMusic`: add a smoke mode for machines with a configured
    Hugging Face MusicGen Python environment.
 
 RAG, Agents, Vision, and Video should stay narrow until one lower-level runtime

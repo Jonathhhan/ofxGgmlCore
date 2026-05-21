@@ -49,13 +49,7 @@
       "name": "ofxGgmlDiffusion",
       "kind": "paused-companion-addon",
       "lane": "image generation",
-      "scope": "temporarily excluded from managed ecosystem automation while ofxGgmlStableDiffusion becomes the stable-diffusion.cpp lane"
-    },
-    {
-      "name": "ofxGgmlStableDiffusion",
-      "kind": "staging-companion-addon",
-      "lane": "stable-diffusion.cpp image generation",
-      "scope": "staging replacement lane based on ofxStableDiffusion; classify here until it has managed validation and release metadata"
+      "scope": "temporarily excluded from managed ecosystem automation while ofxGgmlStableDiffusion owns the managed stable-diffusion.cpp lane"
     }
   ],
   "repositories": [
@@ -100,6 +94,12 @@
       "kind": "companion-addon",
       "lane": "video pipelines",
       "scope": "video frame requests, temporal analysis, and video generation boundaries"
+    },
+    {
+      "name": "ofxGgmlStableDiffusion",
+      "kind": "companion-addon",
+      "lane": "stable-diffusion.cpp image generation",
+      "scope": "stable-diffusion.cpp image generation wrapper, examples, native runtime setup, and validation"
     },
     {
       "name": "ofxGgmlRag",

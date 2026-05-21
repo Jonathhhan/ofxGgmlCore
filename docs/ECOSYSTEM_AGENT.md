@@ -98,9 +98,16 @@ arrays instead of parsing the Markdown table. The JSON output also includes the
 same `Guardrails` list shown in Markdown.
 Use `scripts\plan-hermes-handoff.bat` when Hermes needs a ready-to-paste prompt
 that selects one bounded task from the coding-agent queue, carries Core
-guardrails, and reports validation commands. Use
+guardrails, and reports validation commands. Generated handoff files are
+point-in-time snapshots; rerun the planner instead of treating a committed
+`docs\HERMES_HANDOFF.md` as canonical. Use
 `scripts\plan-hermes-handoff.bat -Json -SummaryOnly` for compact structured
 handoff data without the full queue.
+Use `scripts\start-hermes-agent.bat` to write `docs\HERMES_HANDOFF.md` from
+the current queue and print the selected task. Add `-Tui` to open Hermes after
+the handoff is written, or `-RunOnce` to send the selected handoff to Hermes as
+a single non-interactive query. Keep optional Windows Scheduled Task auto-start
+operator-local; it should not become default validation or release evidence.
 Use `scripts\audit-ecosystem.bat -Json` when another agent needs compact audit
 `Summary` counts plus per-repository readiness actions before deciding whether
 to run the broader readiness pass.

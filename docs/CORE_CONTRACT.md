@@ -6,6 +6,7 @@ small, predictable, and backend-neutral.
 ## Core Owns
 
 - ggml setup and runtime discovery
+- backend-neutral runtime profile validation
 - shared C++ utility types
 - generated project repair helpers
 - artifact hygiene checks
@@ -29,7 +30,7 @@ Those workflows belong in companion addons.
 | --- | --- |
 | `ofxGgmlLlama` | llama.cpp tools, text, chat, embeddings |
 | `ofxGgmlSam` | SAM segmentation |
-| `ofxGgmlStableDiffusion` | staging stable-diffusion.cpp image generation |
+| `ofxGgmlStableDiffusion` | stable-diffusion.cpp image generation |
 | `ofxGgmlAudio` | real-time audio, Whisper, denoising, voice conversion, emotion, and speech workflows |
 | `ofxGgmlMusic` | music analysis, beat/key/chord workflows, embeddings, and generation |
 | `ofxGgmlVision` | image understanding |
@@ -42,10 +43,10 @@ Those workflows belong in companion addons.
 Text/embedding inference modules have been moved to ofxGgmlLlama.
 Segmentation and SAM3 adapters have been removed (ofxGgmlSam provides its own implementation).
 
-Core now contains only backend-neutral primitives: runtime discovery, tensor/graph
-helpers, model inspection, and shared types. New model-specific workflows should land
-in the relevant companion addon from the start.
+Core now contains only backend-neutral primitives: runtime discovery, runtime
+profile validation, tensor/graph helpers, model inspection, and shared types. New
+model-specific workflows should land in the relevant companion addon from the start.
 
 `ofxGgmlDiffusion` is currently paused outside the managed ecosystem baseline.
-New stable-diffusion.cpp work should target the staging `ofxGgmlStableDiffusion`
-lane until it is promoted into the active companion set.
+New stable-diffusion.cpp work should target the managed
+`ofxGgmlStableDiffusion` lane.

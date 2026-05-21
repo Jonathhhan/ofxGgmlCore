@@ -44,6 +44,7 @@ function ConvertTo-HermesMarkdown {
 	$lines.Add("# Hermes Agent Handoff")
 	$lines.Add("")
 	$lines.Add("Generated from Core status, ecosystem planning, and the coding-agent work queue.")
+	$lines.Add("This is a point-in-time snapshot, not the canonical source of truth; rerun the generator before acting on stale artifacts.")
 	$lines.Add("")
 	$lines.Add("## Snapshot")
 	$lines.Add("")
@@ -148,7 +149,7 @@ if (@($validationCommands).Count -eq 0) {
 }
 $validationCommands += "scripts\test-hermes-handoff.ps1"
 
-$referenceExclusionNote = "Keep classified reference repositories, including ofxGgmlDiffusion and ofxGgmlStableDiffusion, out of managed automation unless the user explicitly promotes them."
+$referenceExclusionNote = "Keep classified reference repositories, including ofxGgmlDiffusion, out of managed automation unless the user explicitly promotes them. Treat ofxGgmlStableDiffusion as the managed stable-diffusion.cpp lane."
 $promptLines = @(
 	"Read HERMES.md and docs\ECOSYSTEM_AGENT.md in ofxGgmlCore before changing files.",
 	"Use Core status and planning scripts as the source of truth, not ad hoc repository guesses.",

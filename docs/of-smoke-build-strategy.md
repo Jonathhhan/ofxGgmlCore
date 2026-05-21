@@ -67,7 +67,7 @@ ofxImGui Visual Studio references, plus addon `ADDON_CFLAGS` and `ADDON_LIBS`
 metadata needed for linking Core ggml symbols from companion examples. Previous
 local validation covered the wider example set, including the now-paused
 diffusion examples. The current managed queue excludes `ofxGgmlDiffusion` while
-`ofxGgmlStableDiffusion` stages the stable-diffusion.cpp lane.
+`ofxGgmlStableDiffusion` owns the active managed stable-diffusion.cpp lane.
 
 Focused local compile evidence covers the managed Windows Release x64 examples:
 Core simple; Llama text/chat/embedding; Audio transcribe; Sam point; Vision

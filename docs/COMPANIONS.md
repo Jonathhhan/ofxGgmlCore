@@ -50,12 +50,12 @@ shape, fix the addon structure before widening the API.
 | `ofxGgmlRag` | document ingestion, web crawl, retrieval, citations, project memory | v1.0.1 companion |
 | `ofxGgmlAgents` | assistants, tool use, planning loops, workflow automation | v1.0.1 companion |
 | `ofxGgmlVideo` | video understanding, frame pipelines, temporal analysis, temporal GAN and video generation | v1.0.1 companion |
+| `ofxGgmlStableDiffusion` | stable-diffusion.cpp image generation lane based on `ofxStableDiffusion` | managed companion |
 
 ## Candidate Lanes
 
 | Addon | Scope |
 | --- | --- |
-| `ofxGgmlStableDiffusion` | stable-diffusion.cpp image generation lane based on `ofxStableDiffusion`; staging until validation and release metadata are in place |
 | `ofxGgmlUI` | larger optional ImGui tools, model browser, prompt workbench |
 
 ## Dependency Direction
@@ -85,14 +85,33 @@ embeddings, arrangement, and generation.
 
 `ofxGgmlDiffusion` is paused and intentionally excluded from managed ecosystem
 automation while the image-generation lane is reset. `ofxGgmlStableDiffusion`
-is the staging home for stable-diffusion.cpp work, based on the existing
+is the managed home for stable-diffusion.cpp work, based on the existing
 `ofxStableDiffusion` addon. PhotoMaker, GAN-style generation, and broader
-diffusers terminology should stay out of the active baseline until the staging
-lane has a repeatable backend path and release metadata.
+diffusers terminology should stay out of the active baseline unless they fit
+that stable-diffusion.cpp wrapper lane.
 
 Diffusers remains a useful design reference for image-generation terminology:
 pipelines, schedulers, model families, and adapters. Treat it as inspiration
 for C++ API shape, not as a runtime dependency for the addon family.
+
+## Current Feature Direction
+
+- Hermes agent integration: keep Core responsible for planning handoffs,
+  readiness summaries, and guardrails; keep model-serving examples and runtime
+  smoke commands in the owning companion lanes.
+- Optional Windows auto-start: acceptable for the Hermes gateway as an explicit
+  operator-local Scheduled Task after foreground testing, but not as a release
+  requirement or committed artifact.
+- `ofxGgmlLlama` local config examples: Llama should host concrete
+  Codex/OpenCode/Hermes local `llama-server` provider snippets, including model
+  alias and `/v1/models` validation notes. Core should link to those examples
+  and report readiness, not own server lifecycle.
+- `ofxGgmlStableDiffusion` managed-lane promotion: treat it as the active
+  stable-diffusion.cpp owner based on `ofxStableDiffusion`; keep
+  `ofxGgmlDiffusion` paused as a reference unless explicitly promoted.
+- Next companion-lane priorities: first keep StableDiffusion release/setup
+  hygiene current, then prove one model-backed local path in Llama, Audio, Sam,
+  or Music before widening higher-level RAG, Agents, Vision, and Video APIs.
 
 ## Next Milestone Rule
 
@@ -102,8 +121,8 @@ Current best candidates are:
 
 - `ofxGgmlAudio`: verify and polish the Whisper transcription path end to end
   with a tiny downloaded model and sample WAV.
-- `ofxGgmlStableDiffusion`: promote the staging stable-diffusion.cpp lane with
-  validation, release metadata, and native runtime setup based on
+- `ofxGgmlStableDiffusion`: keep the promoted managed stable-diffusion.cpp lane
+  validated with release metadata and native runtime setup based on
   `ofxStableDiffusion`.
 - `ofxGgmlMusic`: add the first real music-generation backend boundary after
   the CLI/request validation baseline.

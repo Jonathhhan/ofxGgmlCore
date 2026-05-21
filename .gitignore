@@ -17,6 +17,8 @@ obj/
 *.pdb
 .smoke-build-ci-report.json
 .release-readiness-gate.md
+docs/HERMES_HANDOFF.md
+docs/HERMES_*_HANDOFF.md
 
 *.gguf
 *.safetensors

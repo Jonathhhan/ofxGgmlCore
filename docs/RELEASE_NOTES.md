@@ -26,8 +26,11 @@
   managed repository lanes used by agent tooling.
 - Classified legacy `ofxGgml` sibling clones and scratch snapshots as
   reference-only repositories outside managed automation.
-- Paused `ofxGgmlDiffusion` outside managed ecosystem automation and classified
-  `ofxGgmlStableDiffusion` as the staging stable-diffusion.cpp lane.
+- Paused `ofxGgmlDiffusion` outside managed ecosystem automation and promoted
+  `ofxGgmlStableDiffusion` as the managed stable-diffusion.cpp lane.
+- Added backend-neutral runtime profile validation so companion addons can
+  share runtime, device, and GGUF metadata readiness checks without moving
+  model-specific workflows into Core.
 
 ## 1.0.1 - 2026-05-12
 

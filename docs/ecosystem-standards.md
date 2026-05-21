@@ -33,7 +33,7 @@ Companion addons own domain workflows:
 - `ofxGgmlLlama`: text, chat, embeddings, llama.cpp server/CLI
 - `ofxGgmlAudio`: Whisper, transcription, voice/audio workflows
 - `ofxGgmlSam`: segmentation
-- `ofxGgmlStableDiffusion`: staging stable-diffusion.cpp image generation
+- `ofxGgmlStableDiffusion`: managed stable-diffusion.cpp image generation
 - `ofxGgmlVision`: CLIP, image embeddings, captions, image understanding
 - `ofxGgmlRag`: retrieval, citations, local search
 - `ofxGgmlAgents`: tool-using local agents and planning loops

@@ -66,7 +66,7 @@
 - ofxGgmlVideo
 
 `ofxGgmlDiffusion` is paused outside managed workflow inheritance while
-`ofxGgmlStableDiffusion` stages the stable-diffusion.cpp lane.
+`ofxGgmlStableDiffusion` owns the active managed stable-diffusion.cpp lane.
 
 ## Next-stage goals
 

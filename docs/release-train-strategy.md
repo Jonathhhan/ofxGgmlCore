@@ -24,7 +24,7 @@ Suggested propagation order:
 8. ofxGgmlVideo
 
 `ofxGgmlDiffusion` is paused outside the managed train while
-`ofxGgmlStableDiffusion` stages the stable-diffusion.cpp lane.
+`ofxGgmlStableDiffusion` owns the active managed stable-diffusion.cpp lane.
 
 ## Release-train checklist
 

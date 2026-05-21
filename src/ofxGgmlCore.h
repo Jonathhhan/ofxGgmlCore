@@ -2,6 +2,7 @@
 
 #include "core/ofxGgmlResult.h"
 #include "core/ofxGgmlRuntime.h"
+#include "core/ofxGgmlRuntimeProfile.h"
 #include "core/ofxGgmlTypes.h"
 #include "core/ofxGgmlVersion.h"
 #include "compute/ofxGgmlGraph.h"

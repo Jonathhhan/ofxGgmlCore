@@ -10,6 +10,7 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 - ggml setup and native backend validation
 - shared request/result primitives
 - model metadata inspection
+- runtime profile validation for companion addon readiness checks
 - ecosystem planning and release readiness scripts
 
 ## Addon Family
@@ -18,13 +19,16 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 | --- | --- |
 | [`ofxGgmlLlama`](../ofxGgmlLlama) | llama.cpp server/CLI, text, chat, embeddings |
 | [`ofxGgmlSam`](../ofxGgmlSam) | SAM/SAM2/SAM3 segmentation |
-| [`ofxGgmlDiffusion`](../ofxGgmlDiffusion) | diffusion, GAN, image generation |
+| [`ofxGgmlStableDiffusion`](../ofxGgmlStableDiffusion) | stable-diffusion.cpp image generation |
 | [`ofxGgmlAudio`](../ofxGgmlAudio) | Whisper, transcription, audio |
 | [`ofxGgmlMusic`](../ofxGgmlMusic) | music analysis and generation |
 | [`ofxGgmlVision`](../ofxGgmlVision) | CLIP, image embeddings, captions |
 | [`ofxGgmlRag`](../ofxGgmlRag) | retrieval, citations, search |
 | [`ofxGgmlAgents`](../ofxGgmlAgents) | tool-using local agents |
 | [`ofxGgmlVideo`](../ofxGgmlVideo) | video understanding and generation |
+
+`ofxGgmlDiffusion` is paused outside managed automation while
+`ofxGgmlStableDiffusion` owns the active stable-diffusion.cpp lane.
 
 ## Quick Start
 
@@ -81,7 +85,8 @@ Core stays small and boring:
 - no model-specific UX or examples
 - no generated build output committed to git
 
-Core keeps shared request/result types and domain-neutral primitives.
+Core keeps shared request/result types, runtime profile checks, and
+domain-neutral primitives.
 Concrete model adapters belong in companion addons.
 
 See [docs/CORE_CONTRACT.md](docs/CORE_CONTRACT.md) for the full contract.

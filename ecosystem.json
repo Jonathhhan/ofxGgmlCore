@@ -54,6 +54,12 @@
       "repo": "Jonathhhan/ofxGgmlVideo",
       "lane": "video",
       "owns": ["video understanding", "frame pipelines", "temporal analysis", "video generation"]
+    },
+    {
+      "name": "ofxGgmlStableDiffusion",
+      "repo": "Jonathhhan/ofxGgmlStableDiffusion",
+      "lane": "stable-diffusion",
+      "owns": ["stable-diffusion.cpp", "text-to-image", "image-to-image", "inpainting", "upscaling", "native runtime setup"]
     }
   ],
   "required_files": [

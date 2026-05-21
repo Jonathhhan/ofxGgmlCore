@@ -84,6 +84,8 @@ foreach ($requiredScript in @(
 	"plan-coding-agent-work.ps1",
 	"plan-hermes-handoff.bat",
 	"plan-hermes-handoff.ps1",
+	"start-hermes-agent.bat",
+	"start-hermes-agent.ps1",
 	"plan-local-codex.bat",
 	"plan-local-codex.ps1",
 	"plan-of-smoke-build.bat",
