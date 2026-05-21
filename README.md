@@ -4,6 +4,14 @@
 ofxGgml family. It owns ggml setup, runtime discovery, shared C++ primitives,
 and a smoke-test example. Model-specific workflows live in companion addons.
 
+## Features
+
+- backend-neutral runtime discovery
+- ggml setup and native backend validation
+- shared request/result primitives
+- model metadata inspection
+- ecosystem planning and release readiness scripts
+
 ## Addon Family
 
 | Addon | Lane |
