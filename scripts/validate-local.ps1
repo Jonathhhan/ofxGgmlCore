@@ -62,6 +62,7 @@ foreach ($requiredScript in @(
 	"first-run.ps1",
 	"doctor.bat",
 	"doctor.ps1",
+	"doctor.sh",
 	"build-simple-example.bat",
 	"build-simple-example.ps1",
 	"run-simple-example.bat",
