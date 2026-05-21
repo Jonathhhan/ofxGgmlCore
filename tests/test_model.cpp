@@ -28,7 +28,7 @@ void writeTinyGguf(const std::filesystem::path & path, const std::string & archi
 	std::ofstream output(path, std::ios::binary);
 	output.write("GGUF", 4);
 	writeU32(output, 3);
-	writeU64(output, 3);
+	writeU64(output, 2);
 	writeU64(output, 3);
 	writeString(output, "general.architecture");
 	writeU32(output, 8);

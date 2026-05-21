@@ -153,9 +153,13 @@ if (!$SkipSetupDryRun) {
 }
 
 if (!$SkipProjectRepair) {
+	Invoke-CheckedScript `
+		-Label "Checking smoke-build project repair planner" `
+		-ScriptPath (Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1") `
 		-Parameters @{
-			Configuration = $Configuration
-			Platform = $Platform
+			Stage = "verify-generated-project"
+			First = 1
+			Json = $true
 		}
 }
 
