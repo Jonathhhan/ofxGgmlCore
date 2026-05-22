@@ -7,17 +7,16 @@ Generated from local ecosystem status. This queue is intended for Codex, GitHub 
 | Metric | Count |
 | --- | ---: |
 | Managed repositories | 11 |
-| Ready managed repositories | 9 |
+| Ready managed repositories | 10 |
 | Workflow guides detected | 11 |
 | Detected reference repositories | 8 |
-| Proposed tasks | 2 |
+| Proposed tasks | 1 |
 
 ## Queue
 
 | Priority | Repository | Lane | Category | Task | Suggested files | Validation |
 | --- | --- | --- | --- | --- | --- | --- |
 | P1 | `ofxGgmlCore` | `backend-neutral runtime base` | hygiene | Review and either publish or isolate local dirty changes before starting new agent work. | `repository working tree` | `git status --short` |
-| P1 | `ofxGgmlStableDiffusion` | `stable-diffusion.cpp image generation` | hygiene | Review and either publish or isolate local dirty changes before starting new agent work. | `repository working tree` | `git status --short` |
 
 ## Auto-Detected Completed Planning Guides
 
