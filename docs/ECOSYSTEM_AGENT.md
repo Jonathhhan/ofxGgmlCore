@@ -98,11 +98,12 @@ arrays instead of parsing the Markdown table. The JSON output also includes the
 same `Guardrails` list shown in Markdown.
 Use `scripts\plan-hermes-handoff.bat` when Hermes needs a ready-to-paste prompt
 that selects one bounded task from the coding-agent queue, carries Core
-guardrails, and reports validation commands. Generated handoff files are
-point-in-time snapshots; rerun the planner instead of treating a committed
-`docs\HERMES_HANDOFF.md` as canonical. Use
+guardrails, reports validation commands, and includes a compact dirty-working-
+tree summary for the selected repository when local changes are present.
+Generated handoff files are point-in-time snapshots; rerun the planner instead
+of treating a committed `docs\HERMES_HANDOFF.md` as canonical. Use
 `scripts\plan-hermes-handoff.bat -Json -SummaryOnly` for compact structured
-handoff data without the full queue.
+handoff data, including dirty file samples, without the full queue.
 Use `scripts\start-hermes-agent.bat` to write `docs\HERMES_HANDOFF.md` from
 the current queue and print the selected task. Add `-Tui` to open Hermes after
 the handoff is written, or `-RunOnce` to send the selected handoff to Hermes as

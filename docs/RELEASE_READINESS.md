@@ -12,6 +12,7 @@ This is the pre-tag checklist for `ofxGgmlCore` after the companion-addon split.
 - the `ofxGgmlCoreExample` smoke example
 - generated Visual Studio project repair helpers
 - artifact hygiene for generated dependencies, binaries, models, and projects
+- JSON artifact hygiene summaries for CI and companion-addon handoffs
 - documentation that points model-specific workflows to companion addons
 
 `1.0.1` should not promise llama.cpp tools, text/chat/embedding examples, SAM,
@@ -35,6 +36,7 @@ servers. It includes:
 - Core example launch dry-run smoke checks
 - first-run dry-run checks
 - generated-artifact hygiene checks
+- generated-artifact hygiene JSON summary checks
 - ecosystem readiness planning
 - release-readiness planning
 - backend verification planning

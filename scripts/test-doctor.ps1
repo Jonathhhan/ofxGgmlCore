@@ -39,6 +39,7 @@ if (!$?) {
 Assert-Contains $output "ofxGgmlCore doctor" "doctor output"
 Assert-Contains $output "addon root" "doctor output"
 Assert-Contains $output "ggml runtime" "doctor output"
+Assert-Contains $output "runtime provider manifest" "doctor output"
 Assert-Contains $output "ofxGgmlCoreExample" "doctor output"
 Assert-Contains $output "ofxGgmlLlama companion" "doctor output"
 

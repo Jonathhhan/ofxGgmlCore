@@ -9,8 +9,11 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 - backend-neutral runtime discovery
 - ggml setup and native backend validation
 - shared request/result primitives
+- structured diagnostic codes for shared Core and companion error reporting
 - model metadata inspection
 - runtime profile validation for companion addon readiness checks
+- backend-neutral runtime profile presets for companion readiness checks
+- runtime provider manifest diffing for setup and backend change audits
 - ecosystem planning and release readiness scripts
 
 ## Addon Family
@@ -61,9 +64,12 @@ On macOS/Linux, run via `pwsh -File scripts\<name>.ps1`.
 | `scripts\doctor.ps1` | Check local Core readiness |
 | `scripts\build-simple-example.ps1` | Build the Core smoke example |
 | `scripts\run-simple-example.ps1` | Launch the Core smoke example |
+| `scripts\runtime-provider-manifest.ps1` | Report Core ggml include/lib/backend readiness for companions |
+| `scripts\compare-runtime-provider-manifest.ps1` | Compare saved runtime provider manifests after setup or machine changes |
 | `scripts\validate-local.ps1` | Run the local validation suite |
 | `scripts\release-candidate.ps1` | Pre-release validation gate |
 | `scripts\list-models.ps1` | List nearby GGUF files |
+| `scripts\test-artifact-hygiene.ps1 -Json -SummaryOnly` | Report generated artifact hygiene for CI and companions |
 | `scripts\plan-ecosystem.ps1` | Ecosystem planning handoff |
 | `scripts\status-family.ps1` | Local addon-family status |
 | `scripts\audit-ecosystem.ps1` | Ecosystem readiness audit |
@@ -90,6 +96,8 @@ domain-neutral primitives.
 Concrete model adapters belong in companion addons.
 
 See [docs/CORE_CONTRACT.md](docs/CORE_CONTRACT.md) for the full contract.
+See [docs/RUNTIME_PROVIDER.md](docs/RUNTIME_PROVIDER.md) for the script-level
+ggml provider manifest used by companion addon setup and doctor scripts.
 
 ## Validation
 

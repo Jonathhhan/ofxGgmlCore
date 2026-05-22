@@ -7,6 +7,7 @@ small, predictable, and backend-neutral.
 
 - ggml setup and runtime discovery
 - backend-neutral runtime profile validation
+- backend-neutral runtime profile presets for companion readiness checks
 - shared C++ utility types
 - generated project repair helpers
 - artifact hygiene checks

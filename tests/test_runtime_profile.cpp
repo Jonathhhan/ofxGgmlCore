@@ -56,6 +56,30 @@ OFXGGML_TEST(runtime_profile_accepts_default_cpu_runtime) {
 	OFXGGML_REQUIRE(report.errors.empty());
 }
 
+OFXGGML_TEST(runtime_profile_cpu_preset_uses_explicit_cpu_baseline) {
+	auto profile = ofxGgmlMakeCpuRuntimeProfile();
+
+	OFXGGML_REQUIRE(profile.name == "cpu-baseline");
+	OFXGGML_REQUIRE(profile.runtime.preferredBackend == ofxGgmlBackend::CPU);
+	OFXGGML_REQUIRE(profile.runtime.allowCpuFallback);
+	OFXGGML_REQUIRE(profile.requireRuntimeSetup);
+	OFXGGML_REQUIRE(!profile.requireModel);
+
+	auto report = ofxGgmlValidateRuntimeProfile(profile);
+
+	OFXGGML_REQUIRE(report.isReady());
+	OFXGGML_REQUIRE(report.backendName == "CPU");
+}
+
+OFXGGML_TEST(runtime_profile_backend_preset_preserves_backend_policy) {
+	auto profile = ofxGgmlMakeBackendRuntimeProfile(ofxGgmlBackend::CUDA, false);
+
+	OFXGGML_REQUIRE(profile.name == "CUDA-baseline");
+	OFXGGML_REQUIRE(profile.runtime.preferredBackend == ofxGgmlBackend::CUDA);
+	OFXGGML_REQUIRE(!profile.runtime.allowCpuFallback);
+	OFXGGML_REQUIRE(profile.requireRuntimeSetup);
+}
+
 OFXGGML_TEST(runtime_profile_can_require_model_path_without_setup) {
 	ofxGgmlRuntimeProfile profile;
 	profile.requireRuntimeSetup = false;
@@ -73,8 +97,7 @@ OFXGGML_TEST(runtime_profile_validates_tiny_gguf_metadata) {
 	const auto path = profileTestFilePath("ofxGgml_profile_tiny_model.gguf");
 	writeProfileTinyGguf(path, "llama");
 
-	ofxGgmlRuntimeProfile profile;
-	profile.modelPath = path.string();
+	auto profile = ofxGgmlMakeMetadataOnlyRuntimeProfile(path.string());
 	profile.expectedArchitecture = "llama";
 	profile.minTensorCount = 2;
 	profile.minMetadataCount = 3;
@@ -84,6 +107,10 @@ OFXGGML_TEST(runtime_profile_validates_tiny_gguf_metadata) {
 	auto report = ofxGgmlValidateRuntimeProfile(profile);
 
 	OFXGGML_REQUIRE(report.isReady());
+	OFXGGML_REQUIRE(profile.name == "metadata-only");
+	OFXGGML_REQUIRE(profile.requireModel);
+	OFXGGML_REQUIRE(!profile.requireRuntimeSetup);
+	OFXGGML_REQUIRE(report.backendName.empty());
 	OFXGGML_REQUIRE(report.hasModelInfo);
 	OFXGGML_REQUIRE(report.modelInfo.architecture == "llama");
 	OFXGGML_REQUIRE(report.modelInfo.layerCount == 32);

@@ -97,6 +97,35 @@ function Get-AddonFeatures {
 	})
 }
 
+function Get-AddonRuntimeProviderMode {
+	param(
+		[string]$Repository,
+		[string]$Name
+	)
+	switch ($Name) {
+		"ofxGgmlCore" { return "core-ggml-provider" }
+		"ofxGgmlLlama" { return "external-server-or-core-ggml" }
+		"ofxGgmlStableDiffusion" {
+			$cachePath = Join-Path $Repository "libs\stable-diffusion\build\CMakeCache.txt"
+			if (Test-Path -LiteralPath $cachePath -PathType Leaf) {
+				$cache = Get-Content -LiteralPath $cachePath -Raw
+				if ($cache -match "(?m)^SD_USE_SYSTEM_GGML:BOOL=ON") {
+					return "system-ggml-core"
+				}
+			}
+			return "standalone-native"
+		}
+		"ofxGgmlAudio" { return "native-runtime" }
+		"ofxGgmlMusic" { return "external-server-or-native-runtime" }
+		"ofxGgmlVision" { return "core-ggml-or-native-runtime" }
+		"ofxGgmlSam" { return "core-ggml-or-native-runtime" }
+		"ofxGgmlVideo" { return "core-ggml-or-native-runtime" }
+		"ofxGgmlRag" { return "external-index-or-llama-provider" }
+		"ofxGgmlAgents" { return "external-tool-runtime" }
+		default { return "unknown" }
+	}
+}
+
 function Get-AddonStatus {
 	param([hashtable]$Addon)
 	$path = Join-Path $addonsRoot $Addon.Name
@@ -114,6 +143,7 @@ function Get-AddonStatus {
 	$copilotInstructions = $false
 	$copilotEcosystemInstructions = $false
 	$agentWorkflowGuidePath = ""
+	$runtimeProviderMode = "unknown"
 	$examples = @()
 	$features = @()
 
@@ -131,6 +161,7 @@ function Get-AddonStatus {
 		$copilotInstructions = Test-Path -LiteralPath (Join-Path $path ".github\copilot-instructions.md") -PathType Leaf
 		$copilotEcosystemInstructions = Test-Path -LiteralPath (Join-Path $path ".github\instructions\ofxggml-ecosystem.instructions.md") -PathType Leaf
 		$agentWorkflowGuidePath = Get-AgentWorkflowGuide -Repository $path -Name $Addon.Name
+		$runtimeProviderMode = Get-AddonRuntimeProviderMode -Repository $path -Name $Addon.Name
 		$features = @(Get-AddonFeatures -Repository $path)
 		$examples = @(
 			Get-ChildItem -LiteralPath $path -Directory -ErrorAction SilentlyContinue |
@@ -164,6 +195,7 @@ function Get-AddonStatus {
 		CopilotEcosystemInstructions = $copilotEcosystemInstructions
 		AgentWorkflowGuide = ![string]::IsNullOrWhiteSpace($agentWorkflowGuidePath)
 		AgentWorkflowGuidePath = $agentWorkflowGuidePath
+		RuntimeProviderMode = $runtimeProviderMode
 		FeatureCount = @($features).Count
 		Features = $features
 		Examples = $examples
@@ -216,6 +248,7 @@ function ConvertTo-FamilyRepositorySummary {
 		ValidateScript = [bool]$Status.ValidateScript
 		DoctorScript = [bool]$Status.DoctorScript
 		AgentWorkflowGuide = [bool]$Status.AgentWorkflowGuide
+		RuntimeProviderMode = [string]$Status.RuntimeProviderMode
 		FeatureCount = [int]$Status.FeatureCount
 	}
 }

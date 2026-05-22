@@ -69,6 +69,10 @@ foreach ($requiredScript in @(
 	"run-simple-example.ps1",
 	"list-models.bat",
 	"list-models.ps1",
+	"runtime-provider-manifest.bat",
+	"runtime-provider-manifest.ps1",
+	"compare-runtime-provider-manifest.bat",
+	"compare-runtime-provider-manifest.ps1",
 	"validate-local.bat",
 	"validate-local.ps1",
 	"release-candidate.bat",
@@ -244,6 +248,14 @@ Invoke-CheckedScript `
 	-ScriptPath (Join-Path $scriptRoot "test-inference-smoke-contract.ps1")
 
 Invoke-CheckedScript `
+	-Label "Checking runtime provider manifest" `
+	-ScriptPath (Join-Path $scriptRoot "test-runtime-provider-manifest.ps1")
+
+Invoke-CheckedScript `
+	-Label "Checking runtime provider manifest diff" `
+	-ScriptPath (Join-Path $scriptRoot "test-runtime-provider-manifest-diff.ps1")
+
+Invoke-CheckedScript `
 	-Label "Checking local Codex planner" `
 	-ScriptPath (Join-Path $scriptRoot "test-local-codex-plan.ps1")
 
@@ -294,6 +306,16 @@ if (!$SkipArtifactHygiene) {
 		-Parameters @{
 			Configuration = $Configuration
 			Platform = $Platform
+		}
+
+	Invoke-CheckedScript `
+		-Label "Checking generated artifact hygiene JSON" `
+		-ScriptPath (Join-Path $scriptRoot "test-artifact-hygiene.ps1") `
+		-Parameters @{
+			Configuration = $Configuration
+			Platform = $Platform
+			Json = $true
+			SummaryOnly = $true
 		}
 }
 

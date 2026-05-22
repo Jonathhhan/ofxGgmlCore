@@ -66,6 +66,23 @@ addons.
 Shared code can move down into `ofxGgmlCore` only when it becomes a stable,
 domain-neutral primitive with focused tests and no heavy runtime dependency.
 
+Core provides neutral runtime profile presets for companion readiness checks:
+
+- `ofxGgmlMakeCpuRuntimeProfile()` for the required CPU baseline.
+- `ofxGgmlMakeBackendRuntimeProfile()` for optional backend checks with an
+  explicit CPU fallback policy.
+- `ofxGgmlMakeMetadataOnlyRuntimeProfile()` for GGUF metadata validation without
+  initializing a runtime backend.
+
+Companions should layer model-specific requirements, examples, downloads, and
+launch policy on top of these presets instead of moving those workflows into
+Core.
+
+Companion addons should reuse Core's `ofxGgmlDiagnosticCode` values for shared
+setup, dependency, backend, runtime, and GGUF metadata failures. Add
+companion-specific diagnostics only in the owning addon when the category is
+model- or workflow-specific.
+
 ## Llama Split Status
 
 `ofxGgmlLlama` is the home for llama.cpp-specific runtime tooling: server

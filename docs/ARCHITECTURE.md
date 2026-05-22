@@ -9,6 +9,8 @@ belong in the default addon.
 - Own and release ggml backends safely.
 - Provide small tensor and graph wrappers with explicit lifetimes.
 - Surface errors through `ofxGgmlResult<T>` rather than process-level aborts.
+- Use `ofxGgmlDiagnosticCode` for shared, backend-neutral error categories
+  while keeping result messages human-readable.
 - Keep runtime compute status result-like while preserving elapsed-time data in
   `ofxGgmlComputeResult`.
 - Keep inference result structs result-like (`isOk()`, `isError()`, bool

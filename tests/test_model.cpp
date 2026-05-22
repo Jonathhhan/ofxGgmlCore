@@ -48,6 +48,7 @@ OFXGGML_TEST(model_rejects_empty_path) {
 
 	OFXGGML_REQUIRE(result.isError());
 	OFXGGML_REQUIRE(result.error().message == "model path is empty");
+	OFXGGML_REQUIRE(result.error().getDiagnosticCode() == ofxGgmlDiagnosticCode::ModelPathEmpty);
 }
 
 OFXGGML_TEST(model_rejects_missing_file) {
@@ -58,6 +59,8 @@ OFXGGML_TEST(model_rejects_missing_file) {
 	auto result = model.inspect(path.string());
 
 	OFXGGML_REQUIRE(result.isError());
+	OFXGGML_REQUIRE(result.error().getDiagnosticCode() ==
+		ofxGgmlDiagnosticCode::ModelMetadataReadFailed);
 }
 
 OFXGGML_TEST(model_rejects_invalid_gguf_file) {
@@ -71,6 +74,8 @@ OFXGGML_TEST(model_rejects_invalid_gguf_file) {
 	auto result = model.inspect(path.string());
 
 	OFXGGML_REQUIRE(result.isError());
+	OFXGGML_REQUIRE(result.error().getDiagnosticCode() ==
+		ofxGgmlDiagnosticCode::ModelMetadataReadFailed);
 	std::filesystem::remove(path);
 }
 

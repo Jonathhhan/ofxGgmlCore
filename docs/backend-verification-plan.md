@@ -35,6 +35,22 @@ This document defines how declared backend support should become validated backe
 - The macOS lane currently verifies the runtime-smoke scaffold without compiling the local ggml runtime.
 - Local Windows validation can require CUDA with `scripts\build-runtime-smoke.ps1 -Backend cpu,cuda -RequireBackend`.
 
+## Ecosystem implementation backlog
+
+Feature metadata and README feature coverage are not the same as runtime implementation proof. Keep Core in the coordination/reporting lane and send model-specific work to the owning companion addon.
+
+| Priority | Affected addon(s) | Missing implementation or proof | Owner | Core role |
+| ---: | --- | --- | --- | --- |
+| 1 | `ofxGgmlStableDiffusion` | Lane-owned runtime-smoke plan/evidence, built-example evidence, and version metadata consistency | `ofxGgmlStableDiffusion` | Coordinate and report via backend runtime verification |
+| 2 | `ofxGgmlLlama`, `ofxGgmlSam`, `ofxGgmlAudio` | Fresh model-backed inference smoke evidence for existing runtime entrypoints | Owning companion addons | Report stale or missing evidence only |
+| 3 | `ofxGgmlCore`, `ofxGgmlLlama`, `ofxGgmlAudio`, `ofxGgmlVision`, `ofxGgmlVideo`, `ofxGgmlRag`, `ofxGgmlAgents`, `ofxGgmlMusic`, `ofxGgmlStableDiffusion` | Generated-example build evidence for release readiness | Owning addon per example | Coordinate smoke-build target lifecycle |
+| 4 | `ofxGgmlSam` | A productized SAM/SAM2/SAM3 adapter path with setup and validation | `ofxGgmlSam` | Report readiness only |
+| 5 | `ofxGgmlAudio` | Dedicated live microphone/audio-stream example | `ofxGgmlAudio` | Coordinate and report only |
+| 6 | `ofxGgmlMusic` | Release-grade model-backed MusicGen/AceStep smoke evidence | `ofxGgmlMusic` | Report evidence only |
+| 7 | `ofxGgmlVision`, `ofxGgmlRag`, `ofxGgmlAgents`, `ofxGgmlVideo` | Real model-backed implementations after lower lanes are proven | Owning companion addons | Keep boundaries narrow and report gaps |
+
+Use `scripts\plan-backend-runtime-verification.bat -Json -SummaryOnly`, `scripts\plan-of-smoke-build.bat`, and `scripts\plan-release-readiness.bat -Json -SummaryOnly` before selecting a companion-addon implementation task.
+
 ## Initial runtime checks
 
 - keep backend discovery commands/scripts available

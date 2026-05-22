@@ -50,7 +50,9 @@ uint64_t readUnsignedMetadataValue(const gguf_context * ctx, const std::string &
 
 ofxGgmlResult<ofxGgmlModelInfo> ofxGgmlModel::inspect(const std::string & path) const {
 	if (path.empty()) {
-		return ofxGgmlResult<ofxGgmlModelInfo>::failure("model path is empty");
+		return ofxGgmlResult<ofxGgmlModelInfo>::failure(
+			"model path is empty",
+			ofxGgmlDiagnosticCode::ModelPathEmpty);
 	}
 
 #if OFXGGML_HAS_GGUF
@@ -59,7 +61,9 @@ ofxGgmlResult<ofxGgmlModelInfo> ofxGgmlModel::inspect(const std::string & path) 
 	params.ctx = nullptr;
 	gguf_context * ctx = gguf_init_from_file(path.c_str(), params);
 	if (!ctx) {
-		return ofxGgmlResult<ofxGgmlModelInfo>::failure("failed to read GGUF metadata: " + path);
+		return ofxGgmlResult<ofxGgmlModelInfo>::failure(
+			"failed to read GGUF metadata: " + path,
+			ofxGgmlDiagnosticCode::ModelMetadataReadFailed);
 	}
 
 	ofxGgmlModelInfo info;
@@ -78,6 +82,8 @@ ofxGgmlResult<ofxGgmlModelInfo> ofxGgmlModel::inspect(const std::string & path) 
 	gguf_free(ctx);
 	return ofxGgmlResult<ofxGgmlModelInfo>::success(std::move(info));
 #else
-	return ofxGgmlResult<ofxGgmlModelInfo>::failure("gguf headers are not installed; run scripts/setup-ggml.ps1");
+	return ofxGgmlResult<ofxGgmlModelInfo>::failure(
+		"gguf headers are not installed; run scripts/setup-ggml.ps1",
+		ofxGgmlDiagnosticCode::MissingDependency);
 #endif
 }

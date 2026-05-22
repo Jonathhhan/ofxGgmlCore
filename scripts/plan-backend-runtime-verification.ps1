@@ -591,6 +591,11 @@ function Get-BackendRuntimeNextCommands {
 	if ($agents.Count -gt 0) {
 		$commands.Add("cd ..\ofxGgmlAgents && scripts\run-agents-runtime-smoke.bat -Json -SummaryOnly -OutputPath .agents-runtime-smoke.json")
 	}
+	$music = @($Entries | Where-Object { $_.Repository -eq "ofxGgmlMusic" } | Select-Object -First 1)
+	if ($music.Count -gt 0) {
+		$commands.Add("cd ..\ofxGgmlMusic && scripts\run-music-runtime-smoke.bat -Json -SummaryOnly -OutputPath .music-runtime-smoke.json")
+		$commands.Add("cd ..\ofxGgmlMusic && scripts\run-musicgen-hf-inference-smoke.bat -Json -SummaryOnly -OutputPath .musicgen-inference-smoke.json")
+	}
 	$commands.Add("scripts\plan-release-readiness.bat -Json -SummaryOnly")
 	return @($commands.ToArray())
 }

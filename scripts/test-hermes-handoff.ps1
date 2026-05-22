@@ -35,6 +35,7 @@ foreach ($property in @(
 	"EcosystemSummary",
 	"QueueSummary",
 	"SelectedTask",
+	"DirtyRepositoryDetail",
 	"Prompt",
 	"ContextFiles",
 	"RequiredPlanningCommands",
@@ -55,6 +56,12 @@ if ($parsed.PSObject.Properties["CodingAgentTasks"]) {
 }
 if ([string]::IsNullOrWhiteSpace([string]$parsed.Prompt)) {
 	throw "Hermes handoff JSON did not include a prompt."
+}
+if ([string]::IsNullOrWhiteSpace([string]$parsed.DirtyRepositoryDetail.Repository)) {
+	throw "Hermes handoff JSON did not include dirty repository detail."
+}
+if (!$parsed.DirtyRepositoryDetail.PSObject.Properties["Files"]) {
+	throw "Hermes handoff JSON did not include dirty file samples."
 }
 if (@($parsed.ContextFiles) -notcontains "HERMES.md") {
 	throw "Hermes handoff JSON did not include HERMES.md as context."

@@ -103,6 +103,23 @@ if ((Test-Path -LiteralPath $ggmlInclude -PathType Container) -and
 	Write-Check "WARN" "ggml runtime" "run $setupCommand"
 }
 
+$providerScript = Join-Path $scriptRoot "runtime-provider-manifest.ps1"
+if (Test-Path -LiteralPath $providerScript -PathType Leaf) {
+	$providerJson = & $providerScript -Json -SummaryOnly 2>$null
+	if ($? -and $providerJson) {
+		$provider = ($providerJson | ConvertFrom-Json)
+		$backends = @("CPU", "CUDA", "Vulkan", "Metal", "OpenCL") | Where-Object {
+			$provider.EnabledBackends.$_
+		}
+		$backendDetail = if ($backends.Count -gt 0) { $backends -join ", " } else { "none" }
+		if ($provider.ReadyForCompanions) {
+			Write-Check "OK" "runtime provider manifest" "backends: $backendDetail"
+		} else {
+			Write-Check "WARN" "runtime provider manifest" "run $setupCommand"
+		}
+	}
+}
+
 $simpleExe = Join-Path $addonRoot "ofxGgmlCoreExample\bin\ofxGgmlCoreExample$exeSuffix"
 if (Test-Path -LiteralPath $simpleExe -PathType Leaf) {
 	Write-Check "OK" "ofxGgmlCoreExample" "built"

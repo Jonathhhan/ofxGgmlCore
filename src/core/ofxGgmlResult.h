@@ -6,9 +6,74 @@
 #include <utility>
 #include <variant>
 
+enum class ofxGgmlDiagnosticCode : int {
+	Ok = 0,
+	Unknown = 1,
+	InvalidArgument = 100,
+	MissingFile = 101,
+	MissingDependency = 102,
+	BackendUnavailable = 200,
+	RuntimeSetupFailed = 201,
+	ModelPathEmpty = 300,
+	ModelMetadataReadFailed = 301
+};
+
+inline int ofxGgmlToDiagnosticCode(ofxGgmlDiagnosticCode code) {
+	return static_cast<int>(code);
+}
+
+inline ofxGgmlDiagnosticCode ofxGgmlGetDiagnosticCode(int code) {
+	switch (static_cast<ofxGgmlDiagnosticCode>(code)) {
+	case ofxGgmlDiagnosticCode::Ok:
+	case ofxGgmlDiagnosticCode::Unknown:
+	case ofxGgmlDiagnosticCode::InvalidArgument:
+	case ofxGgmlDiagnosticCode::MissingFile:
+	case ofxGgmlDiagnosticCode::MissingDependency:
+	case ofxGgmlDiagnosticCode::BackendUnavailable:
+	case ofxGgmlDiagnosticCode::RuntimeSetupFailed:
+	case ofxGgmlDiagnosticCode::ModelPathEmpty:
+	case ofxGgmlDiagnosticCode::ModelMetadataReadFailed:
+		return static_cast<ofxGgmlDiagnosticCode>(code);
+	default:
+		return ofxGgmlDiagnosticCode::Unknown;
+	}
+}
+
+inline const char * ofxGgmlGetDiagnosticCodeName(ofxGgmlDiagnosticCode code) {
+	switch (code) {
+	case ofxGgmlDiagnosticCode::Ok:
+		return "ok";
+	case ofxGgmlDiagnosticCode::InvalidArgument:
+		return "invalid-argument";
+	case ofxGgmlDiagnosticCode::MissingFile:
+		return "missing-file";
+	case ofxGgmlDiagnosticCode::MissingDependency:
+		return "missing-dependency";
+	case ofxGgmlDiagnosticCode::BackendUnavailable:
+		return "backend-unavailable";
+	case ofxGgmlDiagnosticCode::RuntimeSetupFailed:
+		return "runtime-setup-failed";
+	case ofxGgmlDiagnosticCode::ModelPathEmpty:
+		return "model-path-empty";
+	case ofxGgmlDiagnosticCode::ModelMetadataReadFailed:
+		return "model-metadata-read-failed";
+	case ofxGgmlDiagnosticCode::Unknown:
+	default:
+		return "unknown";
+	}
+}
+
 struct ofxGgmlError {
 	std::string message;
 	int code = 0;
+
+	ofxGgmlDiagnosticCode getDiagnosticCode() const {
+		return ofxGgmlGetDiagnosticCode(code);
+	}
+
+	const char * getCodeName() const {
+		return ofxGgmlGetDiagnosticCodeName(getDiagnosticCode());
+	}
 };
 
 template<typename T>
@@ -28,6 +93,10 @@ public:
 
 	static ofxGgmlResult failure(std::string message, int code = 0) {
 		return ofxGgmlResult(ofxGgmlError { std::move(message), code });
+	}
+
+	static ofxGgmlResult failure(std::string message, ofxGgmlDiagnosticCode code) {
+		return failure(std::move(message), ofxGgmlToDiagnosticCode(code));
 	}
 
 	explicit operator bool() const {
@@ -83,6 +152,10 @@ public:
 
 	static ofxGgmlResult failure(std::string message, int code = 0) {
 		return ofxGgmlResult(ofxGgmlError { std::move(message), code });
+	}
+
+	static ofxGgmlResult failure(std::string message, ofxGgmlDiagnosticCode code) {
+		return failure(std::move(message), ofxGgmlToDiagnosticCode(code));
 	}
 
 	explicit operator bool() const {

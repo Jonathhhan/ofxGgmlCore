@@ -37,6 +37,74 @@ function Join-HandoffList {
 	}) -join "; "
 }
 
+function Get-DirtyRepositoryDetail {
+	param(
+		[string]$AddonRoot,
+		[string]$Repository,
+		[int]$MaxFiles = 24
+	)
+
+	$repoPath = Join-Path $AddonRoot $Repository
+	$detail = [ordered]@{
+		Repository = $Repository
+		Path = $repoPath
+		DirtyCount = 0
+		TrackedCount = 0
+		UntrackedCount = 0
+		DeletedCount = 0
+		RenamedCount = 0
+		ConflictCount = 0
+		Files = @()
+		Truncated = $false
+		Error = ""
+	}
+
+	if (!(Test-Path -LiteralPath $repoPath -PathType Container)) {
+		$detail.Error = "repository path is missing"
+		return [pscustomobject]$detail
+	}
+
+	$lines = @(& git -C $repoPath status --short 2>&1 | ForEach-Object { $_.ToString() })
+	if ($LASTEXITCODE -ne 0) {
+		$detail.Error = ($lines -join [Environment]::NewLine)
+		return [pscustomobject]$detail
+	}
+
+	$fileRows = New-Object System.Collections.Generic.List[object]
+	foreach ($line in $lines) {
+		if ([string]::IsNullOrWhiteSpace($line)) {
+			continue
+		}
+		$status = if ($line.Length -ge 2) { $line.Substring(0, 2) } else { $line }
+		$path = if ($line.Length -gt 3) { $line.Substring(3) } else { "" }
+		$detail.DirtyCount++
+		if ($status -eq "??") {
+			$detail.UntrackedCount++
+		} else {
+			$detail.TrackedCount++
+		}
+		if ($status -match "D") {
+			$detail.DeletedCount++
+		}
+		if ($status -match "R") {
+			$detail.RenamedCount++
+		}
+		if ($status -match "U" -or $status -match "AA" -or $status -match "DD") {
+			$detail.ConflictCount++
+		}
+		if ($fileRows.Count -lt $MaxFiles) {
+			$fileRows.Add([pscustomobject]@{
+				Status = $status.Trim()
+				Path = $path
+			})
+		}
+	}
+
+	$detail.Files = @($fileRows.ToArray())
+	$detail.Truncated = $detail.DirtyCount -gt $detail.Files.Count
+	return [pscustomobject]$detail
+}
+
 function ConvertTo-HermesMarkdown {
 	param([pscustomobject]$Handoff)
 
@@ -67,6 +135,32 @@ function ConvertTo-HermesMarkdown {
 	$lines.Add(('| Suggested files | `{0}` |' -f $Handoff.SelectedTask.SuggestedFiles))
 	$lines.Add(('| Validation | `{0}` |' -f $Handoff.SelectedTask.Validation))
 	$lines.Add("")
+	if ($Handoff.PSObject.Properties["DirtyRepositoryDetail"] -and
+		$Handoff.DirtyRepositoryDetail.DirtyCount -gt 0) {
+		$detail = $Handoff.DirtyRepositoryDetail
+		$lines.Add("## Dirty Working Tree")
+		$lines.Add("")
+		$lines.Add("| Metric | Count |")
+		$lines.Add("| --- | ---: |")
+		$lines.Add("| Dirty files | $($detail.DirtyCount) |")
+		$lines.Add("| Tracked changes | $($detail.TrackedCount) |")
+		$lines.Add("| Untracked files | $($detail.UntrackedCount) |")
+		$lines.Add("| Deleted paths | $($detail.DeletedCount) |")
+		$lines.Add("| Renamed paths | $($detail.RenamedCount) |")
+		$lines.Add("| Conflicts | $($detail.ConflictCount) |")
+		$lines.Add("")
+		if ($detail.Files.Count -gt 0) {
+			$lines.Add("| Status | Path |")
+			$lines.Add("| --- | --- |")
+			foreach ($file in @($detail.Files)) {
+				$lines.Add(('| `{0}` | `{1}` |' -f $file.Status, $file.Path))
+			}
+			if ($detail.Truncated) {
+				$lines.Add(('| ... | `{0} more path(s); rerun git status --short in {1}` |' -f ($detail.DirtyCount - $detail.Files.Count), $detail.Repository))
+			}
+			$lines.Add("")
+		}
+	}
 	$lines.Add("## Prompt")
 	$lines.Add("")
 	$lines.Add('```text')
@@ -148,6 +242,9 @@ if (@($validationCommands).Count -eq 0) {
 	$validationCommands = @($selectedTask.Validation)
 }
 $validationCommands += "scripts\test-hermes-handoff.ps1"
+$dirtyRepositoryDetail = Get-DirtyRepositoryDetail `
+	-AddonRoot (Split-Path -Parent $addonRoot) `
+	-Repository $selectedTask.Repository
 
 $referenceExclusionNote = "Keep classified reference repositories, including ofxGgmlDiffusion, out of managed automation unless the user explicitly promotes them. Treat ofxGgmlStableDiffusion as the managed stable-diffusion.cpp lane."
 $promptLines = @(
@@ -175,6 +272,7 @@ $handoff = [pscustomobject]@{
 	QueueSummary = $queue.Summary
 	PlanningPriorities = @($ecosystem.PlanningPriorities)
 	SelectedTask = $selectedTask
+	DirtyRepositoryDetail = $dirtyRepositoryDetail
 	Prompt = ($promptLines -join [Environment]::NewLine)
 	ContextFiles = $contextFiles
 	RequiredPlanningCommands = $requiredPlanningCommands

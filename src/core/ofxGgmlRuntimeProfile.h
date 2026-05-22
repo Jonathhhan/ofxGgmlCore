@@ -46,5 +46,16 @@ public:
 	ofxGgmlRuntimeProfileReport validate(const ofxGgmlRuntimeProfile & profile) const;
 };
 
+ofxGgmlRuntimeProfile ofxGgmlMakeCpuRuntimeProfile(const std::string & name = "cpu-baseline");
+
+ofxGgmlRuntimeProfile ofxGgmlMakeBackendRuntimeProfile(
+	ofxGgmlBackend backend,
+	bool allowCpuFallback = true,
+	const std::string & name = "");
+
+ofxGgmlRuntimeProfile ofxGgmlMakeMetadataOnlyRuntimeProfile(
+	const std::string & modelPath,
+	const std::string & name = "metadata-only");
+
 ofxGgmlRuntimeProfileReport ofxGgmlValidateRuntimeProfile(
 	const ofxGgmlRuntimeProfile & profile);

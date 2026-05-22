@@ -62,6 +62,40 @@ void validateModelInfo(const ofxGgmlRuntimeProfile & profile,
 
 } // namespace
 
+ofxGgmlRuntimeProfile ofxGgmlMakeCpuRuntimeProfile(const std::string & name) {
+	ofxGgmlRuntimeProfile profile;
+	profile.name = name;
+	profile.runtime.preferredBackend = ofxGgmlBackend::CPU;
+	profile.runtime.allowCpuFallback = true;
+	profile.requireRuntimeSetup = true;
+	return profile;
+}
+
+ofxGgmlRuntimeProfile ofxGgmlMakeBackendRuntimeProfile(
+	ofxGgmlBackend backend,
+	bool allowCpuFallback,
+	const std::string & name) {
+	ofxGgmlRuntimeProfile profile;
+	profile.name = name.empty()
+		? std::string(ofxGgmlGetBackendName(backend)) + "-baseline"
+		: name;
+	profile.runtime.preferredBackend = backend;
+	profile.runtime.allowCpuFallback = allowCpuFallback;
+	profile.requireRuntimeSetup = true;
+	return profile;
+}
+
+ofxGgmlRuntimeProfile ofxGgmlMakeMetadataOnlyRuntimeProfile(
+	const std::string & modelPath,
+	const std::string & name) {
+	ofxGgmlRuntimeProfile profile;
+	profile.name = name;
+	profile.modelPath = modelPath;
+	profile.requireModel = true;
+	profile.requireRuntimeSetup = false;
+	return profile;
+}
+
 ofxGgmlRuntimeProfileReport ofxGgmlRuntimeProfileValidator::validate(
 	const ofxGgmlRuntimeProfile & profile) const {
 	ofxGgmlRuntimeProfileReport report;

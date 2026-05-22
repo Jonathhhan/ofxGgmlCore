@@ -79,6 +79,13 @@ $core = @($parsed.Addons | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-O
 if (!$core -or !$core.CopilotEcosystemInstructions) {
 	throw "family status JSON did not report Core Copilot ecosystem instructions."
 }
+if ($core.RuntimeProviderMode -ne "core-ggml-provider") {
+	throw "family status JSON did not report Core runtime provider mode."
+}
+$stableDiffusion = @($parsed.Addons | Where-Object { $_.Name -eq "ofxGgmlStableDiffusion" } | Select-Object -First 1)
+if (!$stableDiffusion -or [string]::IsNullOrWhiteSpace([string]$stableDiffusion.RuntimeProviderMode)) {
+	throw "family status JSON did not report Stable Diffusion runtime provider mode."
+}
 
 $summaryJson = & (Join-Path $scriptRoot "status-family.ps1") -Json -SummaryOnly
 $summaryParsed = $summaryJson | ConvertFrom-Json
@@ -92,7 +99,7 @@ if ($summaryParsed.PSObject.Properties["Addons"]) {
 	throw "family status summary JSON should omit full Addons inventory."
 }
 $summaryCore = @($summaryParsed.RepositorySummaries | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
-foreach ($property in @("Name", "Known", "Classified", "Present", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "FeatureCount")) {
+foreach ($property in @("Name", "Known", "Classified", "Present", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "RuntimeProviderMode", "FeatureCount")) {
 	if (!$summaryCore[0].PSObject.Properties[$property]) {
 		throw "family status summary JSON repository summary did not include $property."
 	}
