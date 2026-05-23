@@ -95,3 +95,11 @@ docs/ECOSYSTEM_FEATURE_PLAN_PROMPT.md
 docs/ECOSYSTEM_PLAN_SUMMARY.md
 docs/HERMES_AGENT_ROLES.md
 docs/HERMES_HANDOFF_ROLES.md
+
+# ofxGgmlMultiAgentExample generated project files
+ofxGgmlMultiAgentExample/*.sln
+ofxGgmlMultiAgentExample/*.vcxproj
+ofxGgmlMultiAgentExample/*.vcxproj.filters
+ofxGgmlMultiAgentExample/config.make
+ofxGgmlMultiAgentExample/icon.rc
+
