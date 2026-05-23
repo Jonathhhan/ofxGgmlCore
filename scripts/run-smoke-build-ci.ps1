@@ -70,12 +70,7 @@ function ConvertTo-ExecutableCommand {
 	if ($trimmed -match "^(?<script>.+?\.ps1)(?<arguments>\s.*)?$") {
 		$scriptPath = $Matches.script
 		$arguments = if ($Matches.ContainsKey("arguments")) { [string]$Matches.arguments } else { "" }
-		$powerShellExe = if (Get-Command "pwsh" -ErrorAction SilentlyContinue) {
-			"pwsh"
-		} else {
-			"powershell"
-		}
-		return "$powerShellExe -NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"$arguments"
+		return "`"$scriptPath`"`"$arguments"
 	}
 
 	return $trimmed
@@ -194,15 +189,32 @@ function Invoke-TargetCommands {
 		$commandStartedUtc = (Get-Date).ToUniversalTime().ToString("o")
 		$outputLines = New-Object System.Collections.Generic.List[string]
 		$capturedLineCount = 0
-		cmd /c $executableCommand 2>&1 | ForEach-Object {
-			$line = [string]$_
-			Write-Host $line
-			if ($capturedLineCount -lt $MaxCommandOutputLines) {
-				$outputLines.Add($line)
+		$stdoutFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid().ToString('N') + '.out')
+		$stderrFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid().ToString('N') + '.err')
+		try {
+			$psExe = if (Get-Command "pwsh" -ErrorAction SilentlyContinue) { "pwsh" } else { "powershell" }
+			if ($executableCommand -match '.ps1\s' -or $executableCommand -match '.ps1$') {
+				$scriptPath = $executableCommand.Substring(0, $executableCommand.IndexOf('.ps1') + 4)
+				$cmdArgs = $executableCommand.Substring($scriptPath.Length).Trim()
+				$proc = Start-Process -FilePath $psExe -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $scriptPath, $cmdArgs -NoNewWindow -Wait -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile -PassThru
+			} else {
+				$proc = Start-Process -FilePath $psExe -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", $executableCommand -NoNewWindow -Wait -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile -PassThru
 			}
-			$capturedLineCount++
+			$exitCode = [int]$proc.ExitCode
+			$allOutput = @()
+			if (Test-Path -LiteralPath $stdoutFile) { $allOutput += Get-Content -LiteralPath $stdoutFile }
+			if (Test-Path -LiteralPath $stderrFile) { $allOutput += Get-Content -LiteralPath $stderrFile }
+			foreach ($line in $allOutput) {
+				$lineStr = [string]$line
+				Write-Host $lineStr
+				if ($capturedLineCount -lt $MaxCommandOutputLines) { $outputLines.Add($lineStr) }
+				$capturedLineCount++
+			}
+		} finally {
+			Remove-Item -LiteralPath $stdoutFile -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $stderrFile -ErrorAction SilentlyContinue
 		}
-		$exitCode = [int]$LASTEXITCODE
+
 		$commandCompletedUtc = (Get-Date).ToUniversalTime().ToString("o")
 		$commandOutput = if ($outputLines.Count -gt 0) {
 			[string]::Join([Environment]::NewLine, @($outputLines))
