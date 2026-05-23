@@ -80,3 +80,11 @@ ofxGgmlEmbeddingExample/*.vcxproj.filters
 !ofxGgmlEmbeddingExample/bin/data/
 ofxGgmlEmbeddingExample/bin/data/*
 !ofxGgmlEmbeddingExample/bin/data/.gitkeep
+
+# Temp and backup files from editing/refactoring
+*.bak
+*.new
+*.patch
+*_new.*
+temp.*
+*threadmethods.txt

@@ -15,6 +15,7 @@ public:
 private:
 	ofxGgmlBackend getSelectedBackend() const;
 	void runBackendCheck();
+	void configureThreadMode();
 
 	ofxGgml runtime;
 	ofxGgmlGraph graph;
@@ -28,4 +29,9 @@ private:
 	bool lastRunHadError = false;
 	std::string lastBackendName = "not run";
 	std::vector<std::string> lines;
+
+	// Thread configuration
+	ofxGgmlThreadMode selectedThreadMode = ofxGgmlThreadMode::Shared;
+	int agentCount = 4;
+	int threadsPerAgent = 1;
 };

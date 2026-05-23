@@ -41,6 +41,7 @@
 #define OFXGGML_HAS_OPENCL_BACKEND 0
 #endif
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <utility>
@@ -340,4 +341,52 @@ ofxGgmlResult<void> ofxGgmlRuntime::getData(ofxGgmlTensor tensor, void * data, s
 	(void) bytes;
 	return ofxGgmlResult<void>::failure("ggml is not installed");
 #endif
+}
+void ofxGgmlRuntime::setThreadMode(ofxGgmlThreadMode mode) {
+	if (impl) {
+		impl->settings.threadMode = mode;
+	}
+}
+
+ofxGgmlThreadMode ofxGgmlRuntime::getThreadMode() const {
+	return impl ? impl->settings.threadMode : ofxGgmlThreadMode::Shared;
+}
+
+void ofxGgmlRuntime::setAgentThreadConfig(const std::string & agentId, const ofxGgmlAgentThreadConfig & config) {
+	if (impl) {
+		auto it = std::find_if(impl->settings.agentThreads.begin(), impl->settings.agentThreads.end(),
+			[&agentId](const auto & pair) { return pair.first == agentId; });
+		if (it != impl->settings.agentThreads.end()) {
+			impl->settings.agentThreads.erase(it);
+		}
+		impl->settings.agentThreads.emplace_back(agentId, config);
+	}
+}
+
+void ofxGgmlRuntime::removeAgentThreadConfig(const std::string & agentId) {
+	if (impl) {
+		auto it = std::find_if(impl->settings.agentThreads.begin(), impl->settings.agentThreads.end(),
+			[&agentId](const auto & pair) { return pair.first == agentId; });
+		if (it != impl->settings.agentThreads.end()) {
+			impl->settings.agentThreads.erase(it);
+		}
+	}
+}
+
+const ofxGgmlAgentThreadConfig * ofxGgmlRuntime::getAgentThreadConfig(const std::string & agentId) const {
+	if (!impl) return nullptr;
+	auto it = std::find_if(impl->settings.agentThreads.begin(), impl->settings.agentThreads.end(),
+		[&agentId](const auto & pair) { return pair.first == agentId; });
+	return (it != impl->settings.agentThreads.end()) ? &(it->second) : nullptr;
+}
+
+std::vector<std::pair<std::string, ofxGgmlAgentThreadConfig>> ofxGgmlRuntime::getAllAgentThreadConfigs() const {
+	if (!impl) return {};
+	return impl->settings.agentThreads;
+}
+
+void ofxGgmlRuntime::clearAgentThreadConfigs() {
+	if (impl) {
+		impl->settings.agentThreads.clear();
+	}
 }

@@ -33,6 +33,15 @@ public:
 	ofxGgmlResult<void> setData(ofxGgmlTensor tensor, const void * data, std::size_t bytes);
 	ofxGgmlResult<void> getData(ofxGgmlTensor tensor, void * data, std::size_t bytes);
 
+	// Thread pool management methods
+	void setThreadMode(ofxGgmlThreadMode mode);
+	ofxGgmlThreadMode getThreadMode() const;
+	void setAgentThreadConfig(const std::string & agentId, const ofxGgmlAgentThreadConfig & config);
+	void removeAgentThreadConfig(const std::string & agentId);
+	const ofxGgmlAgentThreadConfig * getAgentThreadConfig(const std::string & agentId) const;
+	std::vector<std::pair<std::string, ofxGgmlAgentThreadConfig>> getAllAgentThreadConfigs() const;
+	void clearAgentThreadConfigs();
+
 private:
 	struct Impl;
 	std::unique_ptr<Impl> impl;
