@@ -66,10 +66,10 @@ current. That script packages the selected queue task into a prompt with Core
 context files, guardrails, reference-repository exclusions, and validation
 commands. The workflow is documented in `docs/HERMES_AGENT_WORKFLOW.md`.
 
-For optional local Codex work against an OpenAI-compatible `llama-server`
-endpoint, use `docs/LOCAL_CODEX_LLAMA_SERVER.md`. That guide keeps local model
-serving outside Core and uses the existing planning, validation, and release
-commands as the handoff contract.
+For optional local Codex work against a localhost OpenAI-compatible provider
+such as `llama-server` or Ollama, use `docs/LOCAL_CODEX_LLAMA_SERVER.md`. That
+guide keeps local model serving outside Core and uses the existing planning,
+validation, and release commands as the handoff contract.
 
 `ofxGgmlWorkflows` is included as the reusable GitHub Actions workflow repo. It
 owns `.github/workflows/coding-agent-instructions.yml`; companion addons

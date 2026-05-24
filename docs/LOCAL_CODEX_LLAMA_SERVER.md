@@ -1,12 +1,14 @@
-# Local Codex llama-server Handoff
+# Local Codex Provider Handoff
 
 This guide describes an optional local coding-agent setup for Codex-compatible
-tools that can talk to an OpenAI-compatible `llama-server` endpoint. It is an
+tools that can talk to a localhost OpenAI-compatible endpoint. It is an
 operator handoff, not an addon runtime feature: `ofxGgmlCore` should keep the
 ecosystem guardrails, validation commands, and planning queue. `ofxGgmlLlama`
 owns the concrete llama.cpp build, GGUF model, `llama-server`, and
-`ofxGgmlLlamaCodexLocalExample` walkthrough. Endpoint credentials stay outside
-git.
+`ofxGgmlLlamaCodexLocalExample` walkthrough. Ollama may be used as an external
+operator-managed local provider for Codex agents, but its model downloads,
+server lifecycle, and cache remain outside this addon. Endpoint credentials
+stay outside git.
 
 ## When to Use
 
@@ -22,9 +24,10 @@ uncommitted.
 
 ## Server Shape
 
-Run an OpenAI-compatible `llama-server` on localhost from `ofxGgmlLlama` or an
-explicit llama.cpp runtime checkout. Keep the model path outside the repository
-unless an owning addon explicitly tracks a tiny test fixture.
+Run an OpenAI-compatible local provider on localhost. The Core planner probes
+`/v1/models`, so each provider should expose an OpenAI-compatible `/v1` base
+URL. Keep model paths and provider caches outside the repository unless an
+owning addon explicitly tracks a tiny test fixture.
 
 Recommended `ofxGgmlLlama` path:
 
@@ -35,7 +38,7 @@ scripts\start-llama-server.bat `
 	-ModelPath ..\models\unsloth\GLM-4.7-Flash-GGUF\GLM-4.7-Flash-UD-Q4_K_XL.gguf `
 	-Port 8001 `
 	-GpuLayers 999 `
-	-ContextSize 131072
+	-ContextSize 262144
 ```
 
 The projectGenerator-ready walkthrough lives at:
@@ -60,6 +63,19 @@ The expected endpoint shape is:
 http://127.0.0.1:8001/v1
 ```
 
+Ollama example:
+
+```powershell
+ollama pull qwen2.5-coder:7b
+ollama serve
+```
+
+Use Ollama's OpenAI-compatible base URL:
+
+```text
+http://127.0.0.1:11434/v1
+```
+
 Bind to `127.0.0.1` unless you have a specific reason to expose the server to
 another machine. Do not publish a local endpoint or API token in repository
 files.
@@ -73,21 +89,25 @@ scripts\plan-local-codex.bat -Json -SummaryOnly
 
 If the planner reports `ReadinessState=local-provider-missing`, the ecosystem
 control plane is working but no usable localhost OpenAI-compatible provider was
-found. Bring up the `ofxGgmlLlama`-owned server first, confirm
-`http://127.0.0.1:8001/v1/models` returns the model id, and keep experimental
-Codex provider TOML out of the active desktop config until one-shot smoke
-overrides prove the server accepts the current Codex wire format.
+found. Bring up the `ofxGgmlLlama`-owned server or operator-managed Ollama
+server first, confirm the matching `/v1/models` endpoint returns the model id,
+and keep experimental Codex provider TOML out of the active desktop config
+until one-shot smoke overrides prove the server accepts the current Codex wire
+format.
 
-The planner probes only localhost OpenAI-compatible `/v1/models` endpoints,
-reads local Codex config candidates, and emits structured recommended actions
-for the detected readiness state. It does not start a server, write config, or
-change addon runtime behavior. When `ofxGgmlLlama\ofxggml-addon.json` declares
-`codexLocalPlan` or `codexLocalSmoke`, Core also reports those lane-owned
-follow-up commands so agents can move from preflight to a real non-interactive
-Codex smoke without hard-coding Llama scripts in Core. Core also invokes the
-Llama-owned planner read-only and carries its served-model evidence through the
-report, including `/v1/models` IDs, the detected local `llama-server` model
-file, and any likely model/alias mismatch.
+The planner probes localhost OpenAI-compatible `/v1/models` endpoints,
+including `llama-server` defaults on `8001`/`8080` and Ollama defaults on
+`11434`, reads local Codex config candidates, and emits structured recommended
+actions for the detected readiness state. It does not start a server, write
+config, or change addon runtime behavior. When `ofxGgmlLlama\ofxggml-addon.json`
+declares `codexLocalPlan` or `codexLocalSmoke`, Core also reports those
+lane-owned follow-up commands so agents can move from preflight to a real
+non-interactive Codex smoke without hard-coding Llama scripts in Core. Core also
+invokes the Llama-owned planner read-only and carries its served-model evidence
+through the report, including `/v1/models` IDs, the detected local
+`llama-server` model file, and any likely model/alias mismatch. Ollama evidence
+is reported as endpoint reachability and model IDs only; Core does not inspect
+Ollama's model cache or process lifecycle.
 Core also checks role-specific agent files under project and user Codex agent
 folders, including `.codex\agents\*.toml`, `%CODEX_HOME%\agents\*.toml`, and
 the matching `%USERPROFILE%\.codex\agents` paths. Those files are not provider
@@ -105,6 +125,20 @@ the exact keys against your local Codex documentation before relying on this
 sketch. The important contract for the ofxGgml ecosystem is the endpoint shape
 and the repository guardrail prompt, not the specific TOML field names.
 
+For local agents, there are two separate Codex files to keep aligned:
+
+- `config.toml` declares the provider endpoint, such as `local_ollama`.
+- `agents\<role>.toml` declares the role, model, provider name, and
+  `developer_instructions`.
+
+The Core planner reports `AgentConfigsWithLocalProvider` so you can see whether
+agent TOML files actually match a local provider declared in the active Codex
+config. If agent files exist but no matching provider exists, it emits an
+`agent-provider-missing` action.
+It also reports `AgentConfigsWithServedModel`, `LlamaExampleProviderConfigured`,
+and `LlamaExampleProfileConfigured` so the Core handoff can tell whether the
+installed Codex config is compatible with `ofxGgmlLlamaCodexLocalExample`.
+
 Illustrative provider shape:
 
 ```toml
@@ -118,6 +152,77 @@ model = "unsloth/GLM-4.7-Flash"
 model_provider = "local_llama"
 ```
 
+Illustrative Ollama provider shape:
+
+```toml
+[model_providers.local_ollama]
+name = "local-ollama"
+base_url = "http://127.0.0.1:11434/v1"
+wire_api = "responses"
+
+[profiles.ofxggml_ollama]
+model = "qwen2.5-coder:7b"
+model_provider = "local_ollama"
+```
+
+Role-specific Codex agent example:
+
+```toml
+name = "ollama-worker"
+description = "Local implementation worker backed by Ollama."
+model = "qwen2.5-coder:7b"
+model_provider = "local_ollama"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Before editing, run the ofxGgml planning commands and keep changes scoped.
+"""
+```
+
+Minimal local-agent path:
+
+```powershell
+ollama pull qwen2.5-coder:7b
+ollama serve
+scripts\plan-local-codex.bat -Endpoint http://127.0.0.1:11434/v1 -Json -SummaryOnly
+```
+
+Then add the provider sketch to the active Codex `config.toml` and put the
+role-specific TOML under the matching `agents` folder. Rerun:
+
+```powershell
+scripts\plan-local-codex.bat -Json -SummaryOnly
+```
+
+The local-agent target is: `ReachableOllamaEndpoints` greater than zero,
+`LocalProviderConfigsDeclared` greater than zero, `AgentConfigFilesFound`
+greater than zero, and `AgentConfigsWithLocalProvider` matching the number of
+agent roles you expect to use. For the llama.cpp example path, the target is:
+`ReachableEndpoints` greater than zero, `LlamaExampleProviderConfigured` true,
+`LlamaExampleProfileConfigured` true, `AgentConfigsWithLocalProvider` matching
+the expected role count, and `AgentConfigsWithServedModel` matching the same
+role count.
+
+`ofxGgmlLlamaCodexLocalExample` also exposes a runtime provider switch. Use
+`Local llama.cpp` for the self-contained local provider, role-file, and bundled
+server flow. Use `OpenAI profile` when you want Codex to use a normal OpenAI
+profile from your existing Codex config while skipping local server startup and
+local provider overrides. Use `Hybrid: local agents` when the main Codex launch
+should use OpenAI for expensive reasoning while the built-in explorer/worker
+agent roles use the local `llama_cpp` provider for cheap bounded work. Use
+`Ollama Hermes` for an operator-managed Ollama endpoint, or `Hybrid: Ollama
+agents` when cheap explorer/worker agents should use Hermes through Ollama while
+OpenAI handles the main launch.
+
+Launcher equivalents:
+
+```powershell
+cd ..\ofxGgmlLlama
+scripts\run-example.bat codex -CodexProvider openai -ServerModel gpt-5
+scripts\run-example.bat codex -CodexProvider hybrid -OpenAiModel gpt-5
+scripts\run-example.bat codex -CodexProvider ollama -ServerModel hermes3:latest
+scripts\run-example.bat codex -CodexProvider hybrid-ollama -OpenAiModel gpt-5
+```
+
 Keep this out of the active desktop `config.toml` until tool compatibility is
 proven for the installed Codex build. A full local provider config can make
 Codex send tool entries that `llama-server` rejects with
@@ -125,8 +230,8 @@ Codex send tool entries that `llama-server` rejects with
 provider overrides and disable apps, browser, computer use, image generation,
 tool search, and web search for that one non-interactive run.
 
-Most local OpenAI-compatible servers ignore the API key. Add `env_key` only if
-your endpoint enforces authentication:
+Most local OpenAI-compatible servers, including default Ollama, ignore the API
+key. Add `env_key` only if your endpoint enforces authentication:
 
 ```powershell
 $env:LOCAL_LLAMA_API_KEY = "local"
@@ -189,11 +294,12 @@ cd ..\ofxGgmlLlama && scripts\test-local-codex.bat -Json -SummaryOnly
 ```
 
 Use the served-model fields before trusting a local profile. A config entry such
-as `model = "unsloth/GLM-4.7-Flash"` only selects a server alias; the Core plan
-should also show that the Llama-owned evidence sees the expected `/v1/models`
-ID and the matching local GGUF file loaded by `llama-server`. If process
-inspection is unavailable, treat alias/GGUF mismatch evidence as unknown rather
-than clean.
+as `model = "unsloth/GLM-4.7-Flash"` or `model = "qwen2.5-coder:7b"` only
+selects a server alias; the Core plan should also show that the expected
+`/v1/models` ID is served. For llama.cpp, the Llama-owned evidence can also
+report the matching local GGUF file loaded by `llama-server`. For Ollama, Core
+reports OpenAI-compatible endpoint evidence and leaves cache/process inspection
+to operator tooling.
 
 Before selecting model-backed runtime work, ask for runtime planning evidence:
 

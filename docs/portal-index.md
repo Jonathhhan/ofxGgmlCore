@@ -22,7 +22,7 @@
 - [control plane next steps](./CONTROL_PLANE_NEXT_STEPS.md)
 - [backend verification plan](./backend-verification-plan.md)
 - [Hermes agent workflow](./HERMES_AGENT_WORKFLOW.md)
-- [local Codex llama-server handoff](./LOCAL_CODEX_LLAMA_SERVER.md)
+- [local Codex provider handoff](./LOCAL_CODEX_LLAMA_SERVER.md)
 
 ## Automation scripts
 

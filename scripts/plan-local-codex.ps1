@@ -158,6 +158,61 @@ function Get-AgentInstructionSignalMatches {
 	return @($signals.ToArray() | Select-Object -Unique)
 }
 
+function Get-LocalProviderKind {
+	param([string]$BaseUrl)
+
+	if ($BaseUrl -match '^https?://(127\.0\.0\.1|localhost|\[::1\]|::1):11434(/v1)?/?$') {
+		return "ollama"
+	}
+	if ($BaseUrl -match '^https?://(127\.0\.0\.1|localhost|\[::1\]|::1):(8001|8080)(/v1)?/?$') {
+		return "llama-server"
+	}
+	return "openai-compatible"
+}
+
+function Get-ProviderEndpointMatches {
+	param([string]$Content)
+
+	$providers = New-Object System.Collections.Generic.List[object]
+	$sections = [regex]::Matches($Content, '(?ms)^\s*\[model_providers\.([^\]\s]+)\]\s*(.*?)(?=^\s*\[|\z)')
+	foreach ($section in @($sections)) {
+		$name = $section.Groups[1].Value.Trim().Trim('"')
+		$body = $section.Groups[2].Value
+		$baseUrlMatch = [regex]::Match($body, 'base_url\s*=\s*"([^"]+)"')
+		if (!$baseUrlMatch.Success) {
+			continue
+		}
+		$baseUrl = $baseUrlMatch.Groups[1].Value.Trim().TrimEnd("/")
+		$isLocal = $baseUrl -match '^https?://(127\.0\.0\.1|localhost|\[::1\]|::1)(:\d+)?(/.*)?$'
+		$providers.Add([pscustomobject]@{
+			Name = $name
+			BaseUrl = $baseUrl
+			ProviderKind = Get-LocalProviderKind -BaseUrl $baseUrl
+			IsLocal = [bool]$isLocal
+		})
+	}
+	return @($providers.ToArray())
+}
+
+function Get-ProfileMatches {
+	param([string]$Content)
+
+	$profiles = New-Object System.Collections.Generic.List[object]
+	$sections = [regex]::Matches($Content, '(?ms)^\s*\[profiles\.([^\]\s]+)\]\s*(.*?)(?=^\s*\[|\z)')
+	foreach ($section in @($sections)) {
+		$name = $section.Groups[1].Value.Trim().Trim('"')
+		$body = $section.Groups[2].Value
+		$modelMatch = [regex]::Match($body, '(?m)^\s*model\s*=\s*"([^"]+)"')
+		$providerMatch = [regex]::Match($body, '(?m)^\s*model_provider\s*=\s*"([^"]+)"')
+		$profiles.Add([pscustomobject]@{
+			Name = $name
+			Model = if ($modelMatch.Success) { $modelMatch.Groups[1].Value.Trim() } else { "" }
+			ModelProvider = if ($providerMatch.Success) { $providerMatch.Groups[1].Value.Trim() } else { "" }
+		})
+	}
+	return @($profiles.ToArray())
+}
+
 function Get-MissingRequiredAgentFields {
 	param([string]$Content)
 
@@ -196,6 +251,8 @@ function Get-CodexConfigEvidence {
 		$configuredModelProviders = if ($exists) { Get-ConfiguredModelProviderMatches -Content $content } else { @() }
 		$configuredReasoningEfforts = if ($exists) { Get-ConfiguredReasoningEffortMatches -Content $content } else { @() }
 		$instructionSignals = if ($exists) { Get-AgentInstructionSignalMatches -Content $content } else { @() }
+		$providerEndpoints = if ($exists) { Get-ProviderEndpointMatches -Content $content } else { @() }
+		$profiles = if ($exists) { Get-ProfileMatches -Content $content } else { @() }
 		$isAgentConfig = Test-CodexAgentConfigPath -Path $path
 		$missingAgentFields = if ($exists -and $isAgentConfig) { Get-MissingRequiredAgentFields -Content $content } else { @() }
 		$envKeyRecords = @($envKeys | ForEach-Object {
@@ -216,6 +273,8 @@ function Get-CodexConfigEvidence {
 			ConfiguredModelProviders = @($configuredModelProviders)
 			ConfiguredReasoningEfforts = @($configuredReasoningEfforts)
 			InstructionSignals = @($instructionSignals)
+			ProviderEndpoints = @($providerEndpoints)
+			Profiles = @($profiles)
 			MissingRequiredAgentFields = @($missingAgentFields)
 			EnvKeys = @($envKeyRecords)
 		})
@@ -247,6 +306,8 @@ function Get-EndpointCandidates {
 		$candidates.Add("http://localhost:8001/v1")
 		$candidates.Add("http://127.0.0.1:8080/v1")
 		$candidates.Add("http://localhost:8080/v1")
+		$candidates.Add("http://127.0.0.1:11434/v1")
+		$candidates.Add("http://localhost:11434/v1")
 	}
 
 	return @($candidates.ToArray() | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
@@ -256,6 +317,7 @@ function Test-LocalCodexEndpoint {
 	param([string]$BaseUrl)
 
 	$modelsUrl = "$($BaseUrl.TrimEnd('/'))/models"
+	$providerKind = Get-LocalProviderKind -BaseUrl $BaseUrl
 	try {
 		$response = Invoke-RestMethod -Uri $modelsUrl -Method Get -TimeoutSec 2 -ErrorAction Stop
 		$modelNames = @()
@@ -269,6 +331,7 @@ function Test-LocalCodexEndpoint {
 		return [pscustomobject]@{
 			BaseUrl = $BaseUrl
 			ModelsUrl = $modelsUrl
+			ProviderKind = $providerKind
 			Reachable = $true
 			ModelCount = $modelNames.Count
 			Models = @($modelNames | Select-Object -First 8)
@@ -278,6 +341,7 @@ function Test-LocalCodexEndpoint {
 		return [pscustomobject]@{
 			BaseUrl = $BaseUrl
 			ModelsUrl = $modelsUrl
+			ProviderKind = $providerKind
 			Reachable = $false
 			ModelCount = 0
 			Models = @()
@@ -320,6 +384,57 @@ function Get-LlamaLocalCodexMetadata {
 		}
 	} catch {
 		$result.Error = $_.Exception.Message
+	}
+
+	return [pscustomobject]$result
+}
+
+function Get-LlamaCodexExampleMetadata {
+	param([string]$CoreRoot)
+
+	$addonsRoot = Split-Path -Parent $CoreRoot
+	$llamaRoot = Join-Path $addonsRoot "ofxGgmlLlama"
+	$exampleRoot = Join-Path $llamaRoot "ofxGgmlLlamaCodexLocalExample"
+	$configPath = Join-Path $exampleRoot "codex-config.example.toml"
+	$agentRoot = Join-Path $exampleRoot "codex-agents"
+	$result = [ordered]@{
+		Repository = "ofxGgmlLlama"
+		Example = "ofxGgmlLlamaCodexLocalExample"
+		ExamplePath = $exampleRoot
+		Present = (Test-Path -LiteralPath $exampleRoot -PathType Container)
+		ConfigExamplePath = $configPath
+		ConfigExamplePresent = (Test-Path -LiteralPath $configPath -PathType Leaf)
+		AgentTemplatePath = $agentRoot
+		AgentTemplateCount = 0
+		ExpectedProvider = "llama_cpp"
+		ExpectedProfile = "ofxggml_local"
+		ExpectedEndpoint = "http://127.0.0.1:8001/v1"
+		ExampleModel = "local/example-model"
+	}
+
+	if (Test-Path -LiteralPath $agentRoot -PathType Container) {
+		$result.AgentTemplateCount = @(Get-ChildItem -LiteralPath $agentRoot -Filter "*.toml" -File).Count
+	}
+	if ($result.ConfigExamplePresent) {
+		try {
+			$content = Get-Content -LiteralPath $configPath -Raw
+			$providers = Get-ProviderEndpointMatches -Content $content
+			$profiles = Get-ProfileMatches -Content $content
+			$provider = @($providers | Select-Object -First 1)
+			$profile = @($profiles | Select-Object -First 1)
+			if ($provider.Count -gt 0) {
+				$result.ExpectedProvider = [string]$provider[0].Name
+				$result.ExpectedEndpoint = [string]$provider[0].BaseUrl
+			}
+			if ($profile.Count -gt 0) {
+				$result.ExpectedProfile = [string]$profile[0].Name
+				if (![string]::IsNullOrWhiteSpace([string]$profile[0].Model)) {
+					$result.ExampleModel = [string]$profile[0].Model
+				}
+			}
+		} catch {
+			$result.Error = $_.Exception.Message
+		}
 	}
 
 	return [pscustomobject]$result
@@ -498,13 +613,41 @@ function Get-RecommendedActions {
 	param(
 		[string]$ReadinessState,
 		[array]$Configs,
-		[array]$Endpoints
+		[array]$Endpoints,
+		[array]$ProviderEndpoints,
+		[object]$LlamaExample = $null
 	)
 
 	$actions = New-Object System.Collections.Generic.List[object]
 	$reachable = @($Endpoints | Where-Object { $_.Reachable })
 	$firstReachable = @($reachable | Select-Object -First 1)
 	$config = @($Configs | Where-Object { $_.Exists -and !$_.IsAgentConfig } | Select-Object -First 1)
+	$agentConfigs = @($Configs | Where-Object { $_.Exists -and $_.IsAgentConfig })
+	$agentProviderNames = @($agentConfigs | ForEach-Object { @($_.ConfiguredModelProviders) } | Select-Object -Unique)
+	$localProviderNames = @($ProviderEndpoints | Where-Object { $_.IsLocal } | ForEach-Object { $_.Name } | Select-Object -Unique)
+	$agentsWithMatchedLocalProvider = @($agentConfigs | Where-Object {
+		$matches = @($_.ConfiguredModelProviders | Where-Object { $localProviderNames -contains $_ })
+		$matches.Count -gt 0
+	})
+
+	if ($agentConfigs.Count -gt 0 -and $agentsWithMatchedLocalProvider.Count -eq 0) {
+		$providerName = if ($agentProviderNames.Count -gt 0) {
+			[string]$agentProviderNames[0]
+		} elseif ($LlamaExample -and ![string]::IsNullOrWhiteSpace($LlamaExample.ExpectedProvider)) {
+			[string]$LlamaExample.ExpectedProvider
+		} else {
+			"llama_cpp"
+		}
+		$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:11434/v1" }
+		$model = if ($firstReachable.Count -gt 0 -and @($firstReachable[0].Models).Count -gt 0) { [string]@($firstReachable[0].Models)[0] } else { "<served-model-id>" }
+		$profile = if ($LlamaExample -and ![string]::IsNullOrWhiteSpace($LlamaExample.ExpectedProfile)) { [string]$LlamaExample.ExpectedProfile } else { "ofxggml_local" }
+		$actions.Add((New-LocalCodexAction `
+			-Priority "P1" `
+			-State "agent-provider-missing" `
+			-Action "Add the ofxGgmlLlamaCodexLocalExample-compatible provider/profile config that matches the agent TOML files." `
+			-Rationale "Codex agent files choose roles and models, but the root provider config still needs the matching localhost endpoint before those agents can run locally." `
+			-Command "Add model = `"$model`", model_provider = `"$providerName`", [model_providers.$providerName] base_url = `"$endpoint`", and [profiles.$profile] model = `"$model`"; then rerun scripts\plan-local-codex.bat -Json -SummaryOnly."))
+	}
 
 	switch ($ReadinessState) {
 		"ready" {
@@ -512,7 +655,7 @@ function Get-RecommendedActions {
 				-Priority "P2" `
 				-State $ReadinessState `
 				-Action "Use local Codex only for bounded non-interactive planning, docs, validation, and small patches." `
-				-Rationale "The endpoint and config are visible, but tool-bearing sessions may still be rejected by llama-server and release truth comes from validation and CI." `
+				-Rationale "The endpoint and config are visible, but tool-bearing sessions may still be rejected by local OpenAI-compatible servers and release truth comes from validation and CI." `
 				-Command "Prefer codex exec smoke with explicit -c provider overrides and disabled apps/browser/computer/tool_search before enabling a full desktop profile."))
 		}
 		"local-provider-missing" {
@@ -523,17 +666,18 @@ function Get-RecommendedActions {
 				-Priority "P1" `
 				-State $ReadinessState `
 				-Action "Keep the active Codex config minimal unless the local provider is isolated from tool-bearing sessions." `
-				-Rationale "A Codex config exists, but no local provider endpoint was detected; enabling one globally can make Codex send non-function tools that llama-server rejects." `
+				-Rationale "A Codex config exists, but no local provider endpoint was detected; enabling one globally can make Codex send tool payloads that local OpenAI-compatible servers reject." `
 				-Command "For non-interactive smoke, pass provider fields with codex -c overrides for $endpoint and disable apps/browser/computer/tool_search; use model $model. Quarantine experimental full configs outside active $configPath."))
 		}
 		"server-missing" {
 			$endpoint = if (@($Endpoints).Count -gt 0) { [string]@($Endpoints)[0].BaseUrl } else { "http://127.0.0.1:8001/v1" }
+			$provider = if (@($Endpoints).Count -gt 0) { [string]@($Endpoints)[0].ProviderKind } else { "llama-server" }
 			$actions.Add((New-LocalCodexAction `
 				-Priority "P1" `
 				-State $ReadinessState `
-				-Action "Start or repoint the local OpenAI-compatible llama-server endpoint referenced by Codex config." `
-				-Rationale "Codex config contains a local provider endpoint, but the planner could not reach `/v1/models`." `
-				-Command "Start llama-server on $endpoint, then rerun scripts\plan-local-codex.bat -Json -SummaryOnly."))
+				-Action "Start or repoint the local OpenAI-compatible endpoint referenced by Codex config." `
+				-Rationale "Codex config contains a local $provider provider endpoint, but the planner could not reach `/v1/models`." `
+				-Command "Start the local $provider endpoint on $endpoint, then rerun scripts\plan-local-codex.bat -Json -SummaryOnly."))
 		}
 		"config-missing" {
 			$endpoint = if ($firstReachable.Count -gt 0) { [string]$firstReachable[0].BaseUrl } else { "http://127.0.0.1:8001/v1" }
@@ -571,7 +715,7 @@ function ConvertTo-LocalCodexMarkdown {
 	$lines = New-Object System.Collections.Generic.List[string]
 	$lines.Add("# Local Codex Readiness Plan")
 	$lines.Add("")
-	$lines.Add("This non-mutating report checks whether a local Codex setup appears ready to use an OpenAI-compatible `llama-server` endpoint. It does not start a server, edit Codex config, or change addon runtime behavior.")
+	$lines.Add("This non-mutating report checks whether a local Codex setup appears ready to use a localhost OpenAI-compatible endpoint such as `llama-server` or Ollama. It does not start a server, edit Codex config, or change addon runtime behavior.")
 	$lines.Add("")
 	$lines.Add("## Summary")
 	$lines.Add("")
@@ -580,8 +724,16 @@ function ConvertTo-LocalCodexMarkdown {
 	$lines.Add(('| Readiness state | `{0}` |' -f $Result.Summary.ReadinessState))
 	$lines.Add("| Config files found | $($Result.Summary.ConfigFilesFound) |")
 	$lines.Add("| Agent config files found | $($Result.Summary.AgentConfigFilesFound) |")
+	$lines.Add("| Agent configs with local provider | $($Result.Summary.AgentConfigsWithLocalProvider) |")
+	$lines.Add("| Agent configs with served model | $($Result.Summary.AgentConfigsWithServedModel) |")
+	$lines.Add("| Local provider configs declared | $($Result.Summary.LocalProviderConfigsDeclared) |")
+	$lines.Add("| Llama example provider configured | $($Result.Summary.LlamaExampleProviderConfigured) |")
+	$lines.Add("| Llama example profile configured | $($Result.Summary.LlamaExampleProfileConfigured) |")
+	$lines.Add("| Ollama provider configs declared | $($Result.Summary.OllamaProviderConfigsDeclared) |")
 	$lines.Add("| Local endpoint candidates | $($Result.Summary.LocalEndpointCandidates) |")
+	$lines.Add("| Ollama endpoint candidates | $($Result.Summary.OllamaEndpointCandidates) |")
 	$lines.Add("| Reachable endpoints | $($Result.Summary.ReachableEndpoints) |")
+	$lines.Add("| Reachable Ollama endpoints | $($Result.Summary.ReachableOllamaEndpoints) |")
 	$lines.Add("| Models reported | $($Result.Summary.ModelsReported) |")
 	$lines.Add("| Config models declared | $($Result.Summary.ConfigModelsDeclared) |")
 	$lines.Add("| Config model providers declared | $($Result.Summary.ConfigModelProvidersDeclared) |")
@@ -600,20 +752,33 @@ function ConvertTo-LocalCodexMarkdown {
 	$lines.Add("| Llama local server processes | $($Result.Summary.LlamaLocalServerProcesses) |")
 	$lines.Add("| Llama model alias mismatches | $($Result.Summary.LlamaModelAliasMismatchCount) |")
 	$lines.Add("")
+	if ($Result.PSObject.Properties["LlamaCodexExample"]) {
+		$lines.Add("## Llama Codex Example Contract")
+		$lines.Add("")
+		$lines.Add("| Field | Value |")
+		$lines.Add("| --- | --- |")
+		$lines.Add(('| Example | `{0}` |' -f $Result.LlamaCodexExample.Example))
+		$lines.Add(('| Provider | `{0}` |' -f $Result.LlamaCodexExample.ExpectedProvider))
+		$lines.Add(('| Profile | `{0}` |' -f $Result.LlamaCodexExample.ExpectedProfile))
+		$lines.Add(('| Endpoint | `{0}` |' -f $Result.LlamaCodexExample.ExpectedEndpoint))
+		$lines.Add(('| Agent templates | {0} |' -f $Result.LlamaCodexExample.AgentTemplateCount))
+		$lines.Add("")
+	}
 	if ($Result.PSObject.Properties["Configs"]) {
 		$lines.Add("## Config Evidence")
 		$lines.Add("")
-		$lines.Add("| Path | Kind | Exists | Local endpoints | Models | Providers | Reasoning | Instructions | Missing required agent fields | Env keys |")
-		$lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+		$lines.Add("| Path | Kind | Exists | Local endpoints | Models | Providers | Reasoning | Instructions | Provider endpoints | Missing required agent fields | Env keys |")
+		$lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 		foreach ($config in @($Result.Configs)) {
 			$endpointText = if (@($config.LocalEndpoints).Count -gt 0) { @($config.LocalEndpoints) -join ", " } else { "-" }
 			$modelText = if (@($config.ConfiguredModels).Count -gt 0) { @($config.ConfiguredModels) -join ", " } else { "-" }
 			$providerText = if (@($config.ConfiguredModelProviders).Count -gt 0) { @($config.ConfiguredModelProviders) -join ", " } else { "-" }
 			$reasoningText = if (@($config.ConfiguredReasoningEfforts).Count -gt 0) { @($config.ConfiguredReasoningEfforts) -join ", " } else { "-" }
 			$instructionText = if (@($config.InstructionSignals).Count -gt 0) { @($config.InstructionSignals) -join ", " } else { "-" }
+			$providerEndpointText = if (@($config.ProviderEndpoints).Count -gt 0) { @($config.ProviderEndpoints | ForEach-Object { "$($_.Name):$($_.BaseUrl)" }) -join ", " } else { "-" }
 			$missingAgentText = if (@($config.MissingRequiredAgentFields).Count -gt 0) { @($config.MissingRequiredAgentFields) -join ", " } else { "-" }
 			$keyText = if (@($config.EnvKeys).Count -gt 0) { @($config.EnvKeys | ForEach-Object { if ($_.Present) { "$($_.Name):present" } else { "$($_.Name):missing" } }) -join ", " } else { "-" }
-			$lines.Add(('| `{0}` | `{1}` | {2} | `{3}` | `{4}` | `{5}` | `{6}` | `{7}` | `{8}` | `{9}` |' -f $config.Path, $config.Kind, $config.Exists, $endpointText, $modelText, $providerText, $reasoningText, $instructionText, $missingAgentText, $keyText))
+			$lines.Add(('| `{0}` | `{1}` | {2} | `{3}` | `{4}` | `{5}` | `{6}` | `{7}` | `{8}` | `{9}` | `{10}` |' -f $config.Path, $config.Kind, $config.Exists, $endpointText, $modelText, $providerText, $reasoningText, $instructionText, $providerEndpointText, $missingAgentText, $keyText))
 		}
 	} else {
 		$lines.Add("Config evidence omitted by -SummaryOnly; rerun without -SummaryOnly for per-file details.")
@@ -622,10 +787,10 @@ function ConvertTo-LocalCodexMarkdown {
 	if ($Result.PSObject.Properties["Endpoints"]) {
 		$lines.Add("## Endpoint Evidence")
 		$lines.Add("")
-		$lines.Add("| Base URL | Reachable | Models |")
-		$lines.Add("| --- | --- | ---: |")
+		$lines.Add("| Base URL | Provider | Reachable | Models |")
+		$lines.Add("| --- | --- | --- | ---: |")
 		foreach ($endpoint in @($Result.Endpoints)) {
-			$lines.Add(('| `{0}` | {1} | {2} |' -f $endpoint.BaseUrl, $endpoint.Reachable, $endpoint.ModelCount))
+			$lines.Add(('| `{0}` | `{1}` | {2} | {3} |' -f $endpoint.BaseUrl, $endpoint.ProviderKind, $endpoint.Reachable, $endpoint.ModelCount))
 		}
 	} else {
 		$lines.Add("Endpoint evidence omitted by -SummaryOnly; rerun without -SummaryOnly for per-endpoint details.")
@@ -701,8 +866,21 @@ $configuredModelRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredMo
 $configuredModelProviderRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredModelProviders) })
 $configuredReasoningEffortRecords = @($configEvidence | ForEach-Object { @($_.ConfiguredReasoningEfforts) })
 $instructionSignalRecords = @($configEvidence | ForEach-Object { @($_.InstructionSignals) })
+$providerEndpointRecords = @($configEvidence | ForEach-Object { @($_.ProviderEndpoints) })
+$profileRecords = @($configEvidence | ForEach-Object { @($_.Profiles) })
+$localProviderEndpointRecords = @($providerEndpointRecords | Where-Object { $_.IsLocal })
+$ollamaProviderEndpointRecords = @($localProviderEndpointRecords | Where-Object { $_.ProviderKind -eq "ollama" })
 $agentConfigsMissingRequiredFields = @($configEvidence | Where-Object { $_.IsAgentConfig -and @($_.MissingRequiredAgentFields).Count -gt 0 })
+$localProviderNames = @($localProviderEndpointRecords | ForEach-Object { $_.Name } | Select-Object -Unique)
+$servedModelNames = @($endpointEvidence | Where-Object { $_.Reachable } | ForEach-Object { @($_.Models) } | Select-Object -Unique)
+$agentConfigsWithLocalProvider = @($configEvidence | Where-Object {
+	$_.IsAgentConfig -and $_.Exists -and @($_.ConfiguredModelProviders | Where-Object { $localProviderNames -contains $_ }).Count -gt 0
+})
+$agentConfigsWithServedModel = @($configEvidence | Where-Object {
+	$_.IsAgentConfig -and $_.Exists -and @($_.ConfiguredModels | Where-Object { $servedModelNames -contains $_ }).Count -gt 0
+})
 $llamaCodex = Get-LlamaLocalCodexMetadata -CoreRoot $addonRoot
+$llamaCodexExample = Get-LlamaCodexExampleMetadata -CoreRoot $addonRoot
 $llamaCodexPlanEvidence = Invoke-LlamaLocalCodexPlan -LlamaCodex $llamaCodex -Endpoints $endpointEvidence -Configs $configEvidence
 $llamaProcessInspection = if ($llamaCodexPlanEvidence.LocalLlamaServer) {
 	if ($llamaCodexPlanEvidence.LocalLlamaServer.Available) { "available" } else { "unavailable" }
@@ -715,9 +893,17 @@ $summary = [pscustomobject]@{
 	ConfigFilesChecked = @($configEvidence).Count
 	ConfigFilesFound = @($configEvidence | Where-Object { $_.Exists }).Count
 	AgentConfigFilesFound = @($configEvidence | Where-Object { $_.Exists -and $_.IsAgentConfig }).Count
+	AgentConfigsWithLocalProvider = @($agentConfigsWithLocalProvider).Count
+	AgentConfigsWithServedModel = @($agentConfigsWithServedModel).Count
+	LocalProviderConfigsDeclared = @($localProviderEndpointRecords).Count
+	LlamaExampleProviderConfigured = @($localProviderEndpointRecords | Where-Object { $_.Name -eq $llamaCodexExample.ExpectedProvider }).Count -gt 0
+	LlamaExampleProfileConfigured = @($profileRecords | Where-Object { $_.Name -eq $llamaCodexExample.ExpectedProfile }).Count -gt 0
+	OllamaProviderConfigsDeclared = @($ollamaProviderEndpointRecords).Count
 	ConfigFilesWithLocalEndpoints = @($configEvidence | Where-Object { @($_.LocalEndpoints).Count -gt 0 }).Count
 	LocalEndpointCandidates = @($endpointCandidates).Count
+	OllamaEndpointCandidates = @($endpointEvidence | Where-Object { $_.ProviderKind -eq "ollama" }).Count
 	ReachableEndpoints = @($endpointEvidence | Where-Object { $_.Reachable }).Count
+	ReachableOllamaEndpoints = @($endpointEvidence | Where-Object { $_.ProviderKind -eq "ollama" -and $_.Reachable }).Count
 	ModelsReported = (@($endpointEvidence | Measure-Object -Property ModelCount -Sum).Sum + 0)
 	ConfigModelsDeclared = @($configuredModelRecords).Count
 	ConfigModelProvidersDeclared = @($configuredModelProviderRecords).Count
@@ -737,7 +923,7 @@ $summary = [pscustomobject]@{
 	LlamaLocalServerProcesses = if ($llamaCodexPlanEvidence.LocalLlamaServer) { @($llamaCodexPlanEvidence.LocalLlamaServer.Processes).Count } else { 0 }
 	LlamaModelAliasMismatchCount = if ($llamaCodexPlanEvidence.LocalLlamaServer) { @($llamaCodexPlanEvidence.LocalLlamaServer.Processes | Where-Object { $_.ModelAliasFamilyMismatch }).Count } else { 0 }
 }
-$recommendedActions = Get-RecommendedActions -ReadinessState $summary.ReadinessState -Configs $configEvidence -Endpoints $endpointEvidence
+$recommendedActions = Get-RecommendedActions -ReadinessState $summary.ReadinessState -Configs $configEvidence -Endpoints $endpointEvidence -ProviderEndpoints $providerEndpointRecords -LlamaExample $llamaCodexExample
 
 $result = [ordered]@{
 	Root = $addonRoot
@@ -745,6 +931,7 @@ $result = [ordered]@{
 	SkipDefaultEndpoints = [bool]$SkipDefaultEndpoints
 	Summary = $summary
 	LlamaCodex = $llamaCodex
+	LlamaCodexExample = $llamaCodexExample
 	LlamaCodexPlanEvidence = $llamaCodexPlanEvidence
 	RecommendedActions = @($recommendedActions)
 	NextCommands = @(Get-NextCommands -LlamaCodex $llamaCodex)

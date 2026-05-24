@@ -63,7 +63,7 @@ try {
 		"server-missing",
 		"Recommended Actions",
 		"Llama-Owned Evidence",
-		"Start or repoint the local OpenAI-compatible llama-server endpoint",
+		"Start or repoint the local OpenAI-compatible endpoint",
 		"http://127.0.0.1:9/v1",
 		"scripts\plan-local-codex.bat -Json -SummaryOnly"
 	)) {
@@ -83,12 +83,20 @@ try {
 		"ConfigFilesFound",
 		"ConfigFilesWithLocalEndpoints",
 		"AgentConfigFilesFound",
+		"AgentConfigsWithLocalProvider",
+		"AgentConfigsWithServedModel",
+		"LocalProviderConfigsDeclared",
+		"LlamaExampleProviderConfigured",
+		"LlamaExampleProfileConfigured",
+		"OllamaProviderConfigsDeclared",
 		"LocalEndpointCandidates",
 		"ReachableEndpoints",
 		"ModelsReported",
 		"ConfigModelsDeclared",
 		"ConfigModelProvidersDeclared",
 		"ConfigReasoningEffortsDeclared",
+		"OllamaEndpointCandidates",
+		"ReachableOllamaEndpoints",
 		"AgentInstructionSignalsDeclared",
 		"AgentConfigsMissingRequiredFields",
 		"EnvKeysDeclared",
@@ -111,6 +119,9 @@ try {
 	if (!$parsed.LlamaCodex -or !$parsed.LlamaCodex.PSObject.Properties["CodexLocalSmoke"]) {
 		throw "local Codex plan JSON did not include Llama-owned Codex smoke metadata."
 	}
+	if (!$parsed.LlamaCodexExample -or $parsed.LlamaCodexExample.ExpectedProvider -ne "llama_cpp" -or $parsed.LlamaCodexExample.ExpectedProfile -ne "ofxggml_local") {
+		throw "local Codex plan JSON did not include the ofxGgmlLlamaCodexLocalExample provider/profile contract."
+	}
 	if (!$parsed.LlamaCodexPlanEvidence -or !$parsed.LlamaCodexPlanEvidence.PSObject.Properties["ServedModels"] -or !$parsed.LlamaCodexPlanEvidence.PSObject.Properties["LocalLlamaServer"]) {
 		throw "local Codex plan JSON did not include Llama-owned served-model and local-server evidence."
 	}
@@ -126,6 +137,15 @@ try {
 	if ($parsed.Summary.ConfigFilesFound -ne 1 -or $parsed.Summary.ConfigFilesWithLocalEndpoints -ne 1) {
 		throw "local Codex plan did not detect the test config local endpoint."
 	}
+	if ($parsed.Summary.LocalProviderConfigsDeclared -ne 1) {
+		throw "local Codex plan did not count the test local provider config."
+	}
+	if ($parsed.Summary.LlamaExampleProviderConfigured) {
+		throw "local Codex plan unexpectedly recognized local_llama as the Llama example provider."
+	}
+	if (!$parsed.Summary.LlamaExampleProfileConfigured) {
+		throw "local Codex plan did not recognize the ofxggml_local profile name."
+	}
 	if ($parsed.Summary.AgentConfigFilesFound -ne 0) {
 		throw "local Codex plan unexpectedly counted a provider config as an agent config."
 	}
@@ -134,6 +154,10 @@ try {
 	}
 	if ($parsed.Summary.ReachableEndpoints -ne 0) {
 		throw "local Codex plan unexpectedly reached the closed test endpoint."
+	}
+	$explicitEndpoint = @($parsed.Endpoints | Where-Object { $_.BaseUrl -eq "http://127.0.0.1:9/v1" } | Select-Object -First 1)
+	if ($explicitEndpoint.Count -ne 1 -or $explicitEndpoint[0].ProviderKind -ne "openai-compatible") {
+		throw "local Codex plan did not classify the explicit test endpoint."
 	}
 	if (!$parsed.Configs -or !$parsed.Endpoints) {
 		throw "local Codex full JSON did not include config and endpoint evidence."
@@ -214,6 +238,16 @@ try {
 	if ($agentParsed.Summary.AgentConfigsMissingRequiredFields -ne 0) {
 		throw "local Codex plan incorrectly marked a schema-valid agent TOML as missing required fields."
 	}
+	if ($agentParsed.Summary.AgentConfigsWithLocalProvider -ne 0) {
+		throw "local Codex plan should not report a matched local provider for a standalone agent TOML."
+	}
+	if ($agentParsed.Summary.AgentConfigsWithServedModel -ne 0) {
+		throw "local Codex plan should not report served-model agent matches against an unreachable test endpoint."
+	}
+	$agentProviderAction = @($agentParsed.RecommendedActions | Where-Object { $_.State -eq "agent-provider-missing" } | Select-Object -First 1)
+	if ($agentProviderAction.Count -ne 1) {
+		throw "local Codex plan did not recommend adding a matching provider config for a standalone local agent."
+	}
 	if ($agentParsed.LlamaCodexPlanEvidence.ModelSource -ne "codex-agent-config" -and $agentParsed.LlamaCodexPlanEvidence.ModelSource -ne "") {
 		throw "local Codex plan did not source the Llama planner model from agent TOML when available."
 	}
@@ -226,6 +260,15 @@ try {
 	$defaultAgentParsed = ($defaultAgentJsonOutput -join "`n") | ConvertFrom-Json
 	if ($defaultAgentParsed.Summary.AgentConfigFilesFound -lt 2) {
 		throw "local Codex plan did not discover all agent TOML files under CODEX_HOME agents."
+	}
+	if ($defaultAgentParsed.Summary.LocalProviderConfigsDeclared -ne 1) {
+		throw "local Codex plan did not count local provider declarations under CODEX_HOME config."
+	}
+	if ($defaultAgentParsed.Summary.AgentConfigsWithLocalProvider -lt 2) {
+		throw "local Codex plan did not match agent TOML files to the local provider config."
+	}
+	if ($null -eq $defaultAgentParsed.Summary.LlamaExampleProviderConfigured) {
+		throw "local Codex plan did not expose Llama example provider compatibility."
 	}
 	if ($defaultAgentParsed.Summary.ConfigFilesFound -lt 3) {
 		throw "local Codex plan did not discover config.toml plus agent TOML files under CODEX_HOME."
@@ -259,6 +302,21 @@ try {
 	$firstDefaultEndpoint = @($defaultParsed.Endpoints | Select-Object -First 1)
 	if ($firstDefaultEndpoint.Count -eq 0 -or $firstDefaultEndpoint[0].BaseUrl -ne "http://127.0.0.1:8001/v1") {
 		throw "local Codex plan did not prefer the Llama-owned 8001 endpoint."
+	}
+	if (@($defaultParsed.Endpoints | Where-Object { $_.ProviderKind -eq "ollama" }).Count -lt 2) {
+		throw "local Codex plan did not include default Ollama OpenAI-compatible endpoint candidates."
+	}
+	$ollamaJsonOutput = & $planScript -ConfigPath $missingConfigPath -Endpoint "http://127.0.0.1:11434/v1" -SkipDefaultEndpoints -Json *>&1 | ForEach-Object { $_.ToString() }
+	if (!$?) {
+		throw "plan-local-codex.ps1 Ollama endpoint check failed."
+	}
+	$ollamaParsed = ($ollamaJsonOutput -join "`n") | ConvertFrom-Json
+	$ollamaEndpoint = @($ollamaParsed.Endpoints | Select-Object -First 1)
+	if ($ollamaEndpoint.Count -ne 1 -or $ollamaEndpoint[0].ProviderKind -ne "ollama") {
+		throw "local Codex plan did not classify the Ollama endpoint."
+	}
+	if ($ollamaParsed.Summary.OllamaEndpointCandidates -ne 1) {
+		throw "local Codex plan did not count the explicit Ollama endpoint candidate."
 	}
 } finally {
 	$env:CODEX_HOME = $previousCodexHome
