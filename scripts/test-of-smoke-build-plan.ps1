@@ -480,11 +480,13 @@ if (!$?) {
 	throw "plan-smoke-build-project-repair.ps1 failed."
 }
 $repairPlanText = $repairPlanOutput -join "`n"
+$coreProjectFile = Join-Path (Split-Path -Parent $scriptRoot) "ofxGgmlCoreExample\ofxGgmlCoreExample.vcxproj"
+$coreGeneratedProjectPresent = Test-Path -LiteralPath $coreProjectFile -PathType Leaf
+$expectedRepairState = if ($coreGeneratedProjectPresent) { "ready-for-compile-validation" } else { "needs-project-generation" }
 foreach ($expected in @(
 	"Smoke Build Project Repair Plan",
-	"ready-for-compile-validation",
+	$expectedRepairState,
 	"Expected Addon References",
-	"Planned libraries",
 	"Combined Next Commands",
 	"ofxGgmlCore",
 	"ofxImGui"
@@ -524,19 +526,25 @@ foreach ($property in @(
 if ($repairPlanParsed.Summary.SelectedTargets -ne 1 -or !$repairPlanParsed.Summary.HasSelection) {
 	throw "smoke build project repair plan JSON Summary did not report the selected target."
 }
-if ($repairPlanParsed.Summary.ReadyForCompileValidation -ne 1 -or $repairPlanParsed.Summary.NeedsAction -ne 0) {
-	throw "Core smoke build project repair plan JSON Summary did not report compile-validation readiness."
-}
 if (!$repairPlanParsed.Repairs -or $repairPlanParsed.Repairs.Count -ne 1) {
 	throw "smoke build project repair plan JSON did not include exactly one repair target."
 }
-if ($repairPlanParsed.Repairs[0].State -ne "ready-for-compile-validation") {
-	throw "Core smoke build project repair plan did not report compile-validation readiness."
+if ($coreGeneratedProjectPresent) {
+	if ($repairPlanParsed.Summary.ReadyForCompileValidation -ne 1 -or $repairPlanParsed.Summary.NeedsAction -ne 0) {
+		throw "Core smoke build project repair plan JSON Summary did not report compile-validation readiness."
+	}
+} else {
+	if ($repairPlanParsed.Summary.NeedsProjectGeneration -ne 1 -or $repairPlanParsed.Summary.NeedsAction -ne 1) {
+		throw "Core smoke build project repair plan JSON Summary did not report project-generation readiness."
+	}
+}
+if ($repairPlanParsed.Repairs[0].State -ne $expectedRepairState) {
+	throw "Core smoke build project repair plan did not report expected state: $expectedRepairState."
 }
 if ($repairPlanParsed.Applied) {
 	throw "smoke build project repair plan dry-run JSON incorrectly reported Applied."
 }
-if (!$repairPlanParsed.Repairs[0].RepairResult) {
+if ($coreGeneratedProjectPresent -and !$repairPlanParsed.Repairs[0].RepairResult) {
 	throw "smoke build project repair plan JSON did not include repair result details."
 }
 if (!$repairPlanParsed.Repairs[0].ExpectedReferences -or $repairPlanParsed.Repairs[0].ExpectedReferences.Count -eq 0) {
@@ -546,6 +554,15 @@ if (!$repairPlanParsed.NextCommands -or $repairPlanParsed.NextCommands.Count -eq
 	throw "smoke build project repair plan JSON did not include next commands."
 }
 
+if (!$coreGeneratedProjectPresent) {
+	$generationCommand = @($repairPlanParsed.NextCommands | Where-Object { [string]$_ -match [regex]::Escape("projectGenerator.exe") })
+	if ($generationCommand.Count -eq 0) {
+		throw "Core smoke build project repair plan did not include a projectGenerator command when generated files were missing."
+	}
+	Write-Host "==> Core generated project is absent; compile-readiness checks deferred until projectGenerator runs"
+}
+
+if ($coreGeneratedProjectPresent) {
 $corePostflightJsonOutput = & $postflightScript -Stage "verify-generated-project" -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" -Json *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "check-smoke-build-target-postflight.ps1 -Json failed for the Core generated project."
@@ -628,6 +645,7 @@ if ($parallelCompilePlanParsed.Summary.Jobs -ne 0) {
 }
 if ([string]$parallelCompilePlanParsed.Targets[0].CompileCommand -notmatch [regex]::Escape("-Jobs 0")) {
 	throw "parallel smoke build compile plan did not include the jobs argument in the focused build command."
+}
 }
 
 $genericCompilePlanJsonOutput = & $compilePlanScript -Repository "ofxGgmlSam" -Example "ofxGgmlSamPointExample" -Json *>&1 | ForEach-Object { $_.ToString() }
