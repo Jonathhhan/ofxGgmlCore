@@ -78,10 +78,22 @@ $autoOutput = Invoke-DryRun @{
 	DryRun = $true
 }
 Assert-Contains $autoOutput "Dry run: ggml setup plan" "Auto setup dry-run"
-Assert-Contains $autoOutput "revision: v0.12.0" "Auto setup dry-run"
+Assert-Contains $autoOutput "revision: v0.13.1" "Auto setup dry-run"
+Assert-Contains $autoOutput "ACE-Step ops: not required" "Auto setup dry-run"
 Assert-Contains $autoOutput "mode: Auto" "Auto setup dry-run"
 Assert-Contains $autoOutput "enabled backends:" "Auto setup dry-run"
 Assert-Contains $autoOutput "Dry run complete; no files were changed" "Auto setup dry-run"
+
+Write-Step "setup-ggml ACE-Step ops dry-run"
+$aceStepOutput = Invoke-DryRun @{
+	DryRun = $true
+	AceStepOps = $true
+}
+Assert-Contains $aceStepOutput "revision: master" "ACE-Step setup dry-run"
+Assert-Contains $aceStepOutput "repo: https://github.com/ServeurpersoCom/ggml.git" "ACE-Step setup dry-run"
+Assert-Contains $aceStepOutput "ACE-Step ops: required" "ACE-Step setup dry-run"
+Assert-Contains $aceStepOutput "ACE-Step expected commit: f3bc6505c4e2ede83a193e0fb4695938ff3804fd" "ACE-Step setup dry-run"
+Assert-Contains $aceStepOutput "Dry run complete; no files were changed" "ACE-Step setup dry-run"
 
 Write-Step "setup-ggml CPU-only dry-run"
 $cpuOutput = Invoke-DryRun @{

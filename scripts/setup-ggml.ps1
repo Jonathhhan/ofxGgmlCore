@@ -1,7 +1,8 @@
 param(
-	[string]$Revision = "v0.12.0",
+	[string]$Revision = "v0.13.1",
 	[string]$Repo = "https://github.com/ggml-org/ggml.git",
 	[int]$Jobs = 0,
+	[switch]$AceStepOps,
 	# Default behavior when no backend switch is supplied.
 	[switch]$Auto,
 	[switch]$CpuOnly,
@@ -23,6 +24,21 @@ $Source = Join-Path $GgmlRoot ".source"
 $Build = Join-Path $GgmlRoot "build"
 $Include = Join-Path $GgmlRoot "include"
 $Lib = Join-Path $GgmlRoot "lib"
+
+$DefaultGgmlRepo = "https://github.com/ggml-org/ggml.git"
+$DefaultGgmlRevision = "v0.13.1"
+$AceStepGgmlRepo = "https://github.com/ServeurpersoCom/ggml.git"
+$AceStepGgmlRevision = "master"
+$AceStepGgmlExpectedCommit = "f3bc6505c4e2ede83a193e0fb4695938ff3804fd"
+
+if ($AceStepOps) {
+	if ($Repo -eq $DefaultGgmlRepo) {
+		$Repo = $AceStepGgmlRepo
+	}
+	if ($Revision -eq $DefaultGgmlRevision) {
+		$Revision = $AceStepGgmlRevision
+	}
+}
 
 function Write-Step {
 	param([string]$Message)
@@ -222,6 +238,49 @@ function Test-SourceRevisionMatches {
 	}
 
 	return $false
+}
+
+function Get-SourceOriginUrl {
+	param([string]$Path)
+	if (!(Test-Path -LiteralPath (Join-Path $Path ".git") -PathType Container)) {
+		return ""
+	}
+	$origin = Invoke-GitProbe @("-C", $Path, "remote", "get-url", "origin")
+	if ($origin.ExitCode -ne 0) {
+		return ""
+	}
+	return $origin.Output
+}
+
+function Test-SourceRepositoryMatches {
+	param(
+		[string]$Path,
+		[string]$ExpectedRepo
+	)
+	$origin = Get-SourceOriginUrl $Path
+	return $origin -eq $ExpectedRepo
+}
+
+function Test-RevisionLooksLikeCommit {
+	param([string]$Value)
+	return $Value -match '^[0-9a-fA-F]{7,40}$'
+}
+
+function Test-GgmlSourceHasAceStepOps {
+	param([string]$Path)
+	$ggmlHeader = Join-Path $Path "include\ggml.h"
+	if (!(Test-Path -LiteralPath $ggmlHeader -PathType Leaf)) {
+		return $false
+	}
+	$headerText = Get-Content -LiteralPath $ggmlHeader -Raw
+	return $headerText -match "ggml_col2im_1d"
+}
+
+function Assert-GgmlSourceHasAceStepOps {
+	param([string]$Path)
+	if (!(Test-GgmlSourceHasAceStepOps $Path)) {
+		throw "ggml source does not expose the ACE-Step patched ggml_col2im_1d op. Use -AceStepOps with the ACE-compatible ggml provider, or pass an equivalent -Repo/-Revision."
+	}
 }
 
 $script:VsDevCmd = $null
@@ -482,6 +541,9 @@ function Get-SourceActionLabel {
 	if (!(Test-Path -LiteralPath $Source)) {
 		return "clone"
 	}
+	if (!(Test-SourceRepositoryMatches -Path $Source -ExpectedRepo $Repo)) {
+		return "clone"
+	}
 	if (Test-SourceRevisionMatches $Source $Revision) {
 		return "reuse"
 	}
@@ -499,6 +561,10 @@ function Write-DryRunPlan {
 	Write-Step "Dry run: ggml setup plan"
 	Write-Host "  revision: $Revision"
 	Write-Host "  repo: $Repo"
+	Write-Host "  ACE-Step ops: $(if ($AceStepOps) { 'required' } else { 'not required' })"
+	if ($AceStepOps) {
+		Write-Host "  ACE-Step expected commit: $AceStepGgmlExpectedCommit"
+	}
 	Write-Host "  root: $GgmlRoot"
 	Write-Host "  source action: $(Get-SourceActionLabel)"
 	Write-Host "  mode: $(Get-SetupModeLabel)"
@@ -570,9 +636,20 @@ if ($Clean) {
 	Clear-DirectoryContents $Lib
 }
 
+if ((Test-Path -LiteralPath $Source) -and !(Test-SourceRepositoryMatches -Path $Source -ExpectedRepo $Repo)) {
+	Write-Step "Removing ggml source from a different remote"
+	Remove-Item -LiteralPath $Source -Recurse -Force
+}
+
 if (!(Test-Path -LiteralPath $Source)) {
 	Write-Step "Cloning ggml $Revision"
-	Invoke-CheckedNative "git clone ggml" { git clone --depth 1 --branch $Revision $Repo $Source }
+	if (Test-RevisionLooksLikeCommit $Revision) {
+		Invoke-CheckedNative "git clone ggml" { git clone --depth 1 $Repo $Source }
+		Invoke-CheckedNative "git fetch ggml commit" { git -C $Source fetch --depth 1 origin $Revision }
+		Invoke-CheckedNative "git checkout ggml" { git -C $Source checkout --detach FETCH_HEAD }
+	} else {
+		Invoke-CheckedNative "git clone ggml" { git clone --depth 1 --branch $Revision $Repo $Source }
+	}
 } elseif (Test-SourceRevisionMatches $Source $Revision) {
 	Write-Step "ggml source already at $Revision; skipping fetch"
 } else {
@@ -586,6 +663,18 @@ if ($LASTEXITCODE -ne 0) {
 	throw "git rev-parse ggml failed with exit code $LASTEXITCODE"
 }
 Write-Step "Using ggml commit $commit"
+
+if ($AceStepOps) {
+	$fullCommit = git -C $Source rev-parse HEAD
+	if ($LASTEXITCODE -ne 0) {
+		throw "git rev-parse ggml HEAD failed with exit code $LASTEXITCODE"
+	}
+	if (!$fullCommit.StartsWith($AceStepGgmlExpectedCommit, [System.StringComparison]::OrdinalIgnoreCase)) {
+		throw "ACE-Step ggml provider expected commit $AceStepGgmlExpectedCommit but source is at $fullCommit."
+	}
+	Assert-GgmlSourceHasAceStepOps $Source
+	Write-Step "Verified ACE-Step ggml ops"
+}
 
 function Get-WindowsNativeGeneratorArgs {
 	if ($script:WindowsNativeCMakeGenerator) {

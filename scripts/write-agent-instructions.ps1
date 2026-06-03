@@ -91,8 +91,9 @@ Do not replace this backend with ofxGgmlDiffusion, GGUF GAN experiments, or
 unrelated image-generation workflows. ofxGgmlDiffusion is paused and should stay
 out of managed automation unless explicitly promoted.
 
-Keep the default runtime standalone. Do not add a default dependency on
-ofxGgmlCore or shared ggml binaries.
+Use ofxGgmlCore as the default ggml provider for the stable-diffusion.cpp
+runtime. Keep a bundled/standalone ggml fallback available for compatibility and
+bisecting, but do not make it the default ecosystem path.
 "@
 }
 
@@ -122,7 +123,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Read the existing code and docs before changing behavior.
 - Keep edits scoped to this addon's lane and preserve the companion-addon split.
 - Start with an ecosystem plan when a task asks for cross-repo improvement or planning.
-- Keep ofxGgmlCore as the shared base; do not add reverse dependencies from Core to companion addons.
+- Use ofxGgmlCore as the default shared ggml/runtime base for companion addons; do not add reverse dependencies from Core to companion addons.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
@@ -160,7 +161,7 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 - Scope: $scope
 - Keep changes inside this addon's lane unless a task explicitly asks for a cross-addon update.
 - For ecosystem planning tasks, prefer instruction, documentation, workflow, and validation changes before addon source changes.
-- Use ofxGgmlCore for shared runtime primitives and keep companion workflows out of Core.
+- Use ofxGgmlCore as the default shared ggml/runtime base for companion addons and keep companion workflows out of Core.
 - Avoid committing generated outputs, local models, build directories, IDE metadata, downloaded runtimes, caches, or media dumps.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Add or update headless tests for public helper behavior.
@@ -203,7 +204,7 @@ applyTo: "**"
 - If the readiness pass is too broad for the task, generate a planning handoff first: $corePlan.
 - Work in instruction, documentation, workflow, validation, or planning files before addon source when the task is about the ecosystem or coding agents.
 - Do not edit addon runtime behavior unless the user explicitly asks for addon behavior.
-- Keep companion changes inside this repository's lane and keep ofxGgmlCore as the shared base.
+- Keep companion changes inside this repository's lane and use ofxGgmlCore as the default shared ggml/runtime base.
 - Preserve generated artifact hygiene: no binaries, build folders, IDE metadata, model weights, downloaded runtimes, caches, media dumps, or memory indexes.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.$coreSmokeBuildLifecycle$stableDiffusionAppendix
@@ -236,7 +237,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Read README.md, addon_config.mk, docs, scripts, and tests before changing behavior.
 - Keep changes inside this repository's lane unless the task explicitly requires cross-repo coordination.
 - For ecosystem improvement work, create or update a plan before touching addon source.
-- Keep ofxGgmlCore as the shared base; companion addons may depend on Core, but Core must not depend on companions.
+- Use ofxGgmlCore as the default shared ggml/runtime base for companion addons; companion addons may depend on Core, but Core must not depend on companions.
 - Do not commit generated binaries, model files, downloaded runtimes, build folders, IDE metadata, memory indexes, caches, or media dumps.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Prefer small, validated changes over broad refactors.

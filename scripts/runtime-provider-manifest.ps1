@@ -40,6 +40,16 @@ function Get-VendorPinValue {
 	return ""
 }
 
+function Test-GgmlIncludeHasAceStepOps {
+	param([string]$IncludeDir)
+	$ggmlHeader = Join-Path $IncludeDir "ggml.h"
+	if (!(Test-PathExists -Path $ggmlHeader)) {
+		return $false
+	}
+	$headerText = Get-Content -LiteralPath $ggmlHeader -Raw
+	return $headerText -match "ggml_col2im_1d"
+}
+
 function New-ReadinessCheck {
 	param(
 		[string]$Name,
@@ -95,6 +105,7 @@ $libraries = @{
 }
 
 $headersReady = (Test-PathExists -Path (Join-Path $includeDir "ggml.h"))
+$aceStepOpsReady = Test-GgmlIncludeHasAceStepOps -IncludeDir $includeDir
 $baseReady = (Test-PathExists -Path $libraries.Core) -and
 	(Test-PathExists -Path $libraries.Base) -and
 	(Test-PathExists -Path $libraries.Cpu)
@@ -109,6 +120,7 @@ $enabledBackends = [ordered]@{
 
 $readiness = @(
 	New-ReadinessCheck -Name "ggml headers" -Ready $headersReady -Detail $includeDir
+	New-ReadinessCheck -Name "ACE-Step ggml ops" -Ready $aceStepOpsReady -Detail "ggml_col2im_1d"
 	New-ReadinessCheck -Name "ggml base libraries" -Ready $baseReady -Detail $libDir
 	New-ReadinessCheck -Name "CPU backend" -Ready ([bool]$enabledBackends.CPU) -Detail $libraries.Cpu
 )
@@ -140,6 +152,7 @@ $manifest = [pscustomobject]@{
 		SourceDir = $sourceDir
 		ReleaseTag = Get-VendorPinValue -Prefix "Upstream release tag:"
 		Commit = Get-VendorPinValue -Prefix "Upstream commit:"
+		AceStepOpsReady = $aceStepOpsReady
 		Libraries = [pscustomobject]$libraries
 	}
 	EnabledBackends = [pscustomobject]$enabledBackends
@@ -162,6 +175,7 @@ if ($SummaryOnly) {
 		BackendReadiness = $manifest.BackendReadiness
 		GgmlIncludeDir = $manifest.Ggml.IncludeDir
 		GgmlLibDir = $manifest.Ggml.LibDir
+		AceStepOpsReady = $manifest.Ggml.AceStepOpsReady
 	}
 }
 
@@ -174,6 +188,7 @@ if ($Json) {
 	Write-Host ("Ready for companions: {0}" -f $manifest.ReadyForCompanions)
 	Write-Host ("ggml include: {0}" -f $includeDir)
 	Write-Host ("ggml libs:    {0}" -f $libDir)
+	Write-Host ("ACE-Step ops: {0}" -f $aceStepOpsReady)
 	Write-Host "Backends:"
 	foreach ($name in @("CPU", "CUDA", "Vulkan", "Metal", "OpenCL")) {
 		Write-Host ("  {0,-6} {1}" -f $name, $enabledBackends.$name)
