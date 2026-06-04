@@ -115,6 +115,7 @@ $resolvedToken = Get-GitHubAccessToken -Token $Token
 
 $apiRoot = "https://api.github.com/repos/$Repository/actions"
 $selectedRun = $null
+$candidateRuns = @()
 if (![string]::IsNullOrWhiteSpace($RunId)) {
 	Write-Step "Using smoke-build CI workflow run $RunId"
 	$selectedRun = [pscustomobject]@{
@@ -125,6 +126,7 @@ if (![string]::IsNullOrWhiteSpace($RunId)) {
 		conclusion = "unknown"
 		html_url = "https://github.com/$Repository/actions/runs/$RunId"
 	}
+	$candidateRuns = @($selectedRun)
 } else {
 	$query = "status=success&per_page=50"
 	if (![string]::IsNullOrWhiteSpace($Branch)) {
@@ -140,20 +142,28 @@ if (![string]::IsNullOrWhiteSpace($RunId)) {
 		$runs = Invoke-GitHubJson -Uri $runsUri -Token $resolvedToken
 		$workflowRuns = @($runs.workflow_runs)
 	}
-	$selectedRun = @($workflowRuns | Where-Object { [string]$_.conclusion -eq "success" } | Select-Object -First 1)[0]
-	if (!$selectedRun) {
+	$candidateRuns = @($workflowRuns | Where-Object { [string]$_.conclusion -eq "success" })
+	if ($candidateRuns.Count -eq 0) {
 		throw "No successful $WorkflowFile workflow run with a smoke-build report was found for $Repository."
 	}
 }
 
-$artifactsUri = "$apiRoot/runs/$($selectedRun.id)/artifacts"
-Write-Step "Finding smoke-build CI report artifact"
-$artifacts = Invoke-GitHubJson -Uri $artifactsUri -Token $resolvedToken
-$artifact = @(@($artifacts.artifacts) | Where-Object {
-	[string]$_.name -eq $ArtifactName -and ![bool]$_.expired
-} | Sort-Object -Property created_at -Descending | Select-Object -First 1)[0]
+$artifact = $null
+foreach ($candidateRun in @($candidateRuns)) {
+	$selectedRun = $candidateRun
+	$artifactsUri = "$apiRoot/runs/$($selectedRun.id)/artifacts"
+	Write-Step "Finding smoke-build CI report artifact for run $($selectedRun.id)"
+	$artifacts = Invoke-GitHubJson -Uri $artifactsUri -Token $resolvedToken
+	$artifact = @(@($artifacts.artifacts) | Where-Object {
+		[string]$_.name -eq $ArtifactName -and ![bool]$_.expired
+	} | Sort-Object -Property created_at -Descending | Select-Object -First 1)[0]
+	if ($artifact) {
+		break
+	}
+}
 if (!$artifact) {
-	throw "Workflow run $($selectedRun.id) did not expose a non-expired $ArtifactName artifact."
+	$runIds = (@($candidateRuns) | ForEach-Object { [string]$_.id }) -join ", "
+	throw "No recent successful $WorkflowFile workflow run exposed a non-expired $ArtifactName artifact. Checked runs: $runIds"
 }
 
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-artifact-$([guid]::NewGuid().ToString('N'))"

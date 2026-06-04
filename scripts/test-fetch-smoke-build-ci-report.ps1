@@ -9,6 +9,9 @@ foreach ($expected in @(
 	"gh.Source auth token",
 	"authenticate gh locally",
 	'$resolvedToken = Get-GitHubAccessToken -Token $Token',
+	'$candidateRuns = @()',
+	'foreach ($candidateRun in @($candidateRuns))',
+	"No recent successful `$WorkflowFile workflow run exposed a non-expired `$ArtifactName artifact.",
 	"Invoke-GitHubDownload -Uri ([string]`$artifact.archive_download_url) -Token `$resolvedToken"
 )) {
 	if ($content -notmatch [regex]::Escape($expected)) {
