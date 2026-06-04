@@ -4,6 +4,7 @@ param(
 	[string]$BackendRuntimePlan = "",
 	[string]$SmokeBuildCiReport = "",
 	[switch]$SkipDoctorTests,
+	[switch]$SkipLocalCodexReadiness,
 	[switch]$FetchSmokeBuildCiReport,
 	[switch]$AllowDefaultBackendCapability,
 	[switch]$AllowDefaultSmokeBuildCi,
@@ -248,9 +249,11 @@ $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build project repair 
 	Repository = "ofxGgmlCore"
 	Example = "ofxGgmlCoreExample"
 }
-$steps += Invoke-LocalCodexReadinessStep -Name "local codex readiness" -ScriptPath (Join-Path $scriptRoot "plan-local-codex.ps1") -Parameters @{
-	Json = $true
-	SummaryOnly = $true
+if (!$SkipLocalCodexReadiness) {
+	$steps += Invoke-LocalCodexReadinessStep -Name "local codex readiness" -ScriptPath (Join-Path $scriptRoot "plan-local-codex.ps1") -Parameters @{
+		Json = $true
+		SummaryOnly = $true
+	}
 }
 $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build compile plan" -ScriptPath (Join-Path $scriptRoot "plan-smoke-build-compile.ps1") -Parameters @{
 	Repository = "ofxGgmlCore"

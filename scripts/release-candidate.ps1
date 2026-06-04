@@ -6,6 +6,7 @@ param(
 	[string]$SmokeBuildCiReport = "",
 	[switch]$SkipExampleBuild,
 	[switch]$SkipEcosystemReadiness,
+	[switch]$SkipLocalCodexReadiness,
 	[switch]$FetchSmokeBuildCiReport,
 	[switch]$AllowDefaultBackendCapability,
 	[switch]$AllowDefaultSmokeBuildCi,
@@ -86,6 +87,7 @@ try {
 	if (!$SkipEcosystemReadiness) {
 		$ecosystemReadinessParameters = @{
 			SkipDoctorTests = $true
+			SkipLocalCodexReadiness = [bool]$SkipLocalCodexReadiness
 			Json = $true
 			SummaryOnly = $true
 		}
