@@ -1,8 +1,15 @@
 param(
 	[string]$Configuration = "Release",
 	[string]$Platform = "x64",
+	[string]$BackendCapabilityReport = "",
+	[string]$BackendRuntimePlan = "",
+	[string]$SmokeBuildCiReport = "",
 	[switch]$SkipExampleBuild,
 	[switch]$SkipEcosystemReadiness,
+	[switch]$FetchSmokeBuildCiReport,
+	[switch]$AllowDefaultBackendCapability,
+	[switch]$AllowDefaultSmokeBuildCi,
+	[switch]$AllowBackendRuntimeEvidenceGaps,
 	[switch]$AllowGpuAddonConfig
 )
 
@@ -77,14 +84,37 @@ try {
 		-ScriptPath (Join-Path $scriptRoot "status-family.ps1")
 
 	if (!$SkipEcosystemReadiness) {
+		$ecosystemReadinessParameters = @{
+			SkipDoctorTests = $true
+			Json = $true
+			SummaryOnly = $true
+		}
+		if (![string]::IsNullOrWhiteSpace($BackendCapabilityReport)) {
+			$ecosystemReadinessParameters.BackendCapabilityReport = $BackendCapabilityReport
+		}
+		if (![string]::IsNullOrWhiteSpace($BackendRuntimePlan)) {
+			$ecosystemReadinessParameters.BackendRuntimePlan = $BackendRuntimePlan
+		}
+		if (![string]::IsNullOrWhiteSpace($SmokeBuildCiReport)) {
+			$ecosystemReadinessParameters.SmokeBuildCiReport = $SmokeBuildCiReport
+		}
+		if ($FetchSmokeBuildCiReport) {
+			$ecosystemReadinessParameters.FetchSmokeBuildCiReport = $true
+		}
+		if ($AllowDefaultBackendCapability) {
+			$ecosystemReadinessParameters.AllowDefaultBackendCapability = $true
+		}
+		if ($AllowDefaultSmokeBuildCi) {
+			$ecosystemReadinessParameters.AllowDefaultSmokeBuildCi = $true
+		}
+		if ($AllowBackendRuntimeEvidenceGaps) {
+			$ecosystemReadinessParameters.AllowBackendRuntimeEvidenceGaps = $true
+		}
+
 		Invoke-CheckedScript `
 			-Label "Checking ecosystem readiness gate" `
 			-ScriptPath (Join-Path $scriptRoot "check-ecosystem-readiness.ps1") `
-			-Parameters @{
-				SkipDoctorTests = $true
-				Json = $true
-				SummaryOnly = $true
-			}
+			-Parameters $ecosystemReadinessParameters
 	}
 
 	Write-Step "Checking ignored/generated artifact view"

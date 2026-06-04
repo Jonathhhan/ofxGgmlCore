@@ -1,6 +1,13 @@
 param(
 	[string]$OutputPath = "",
+	[string]$BackendCapabilityReport = "",
+	[string]$BackendRuntimePlan = "",
+	[string]$SmokeBuildCiReport = "",
 	[switch]$SkipDoctorTests,
+	[switch]$FetchSmokeBuildCiReport,
+	[switch]$AllowDefaultBackendCapability,
+	[switch]$AllowDefaultSmokeBuildCi,
+	[switch]$AllowBackendRuntimeEvidenceGaps,
 	[switch]$SummaryOnly,
 	[switch]$Json
 )
@@ -249,13 +256,35 @@ $steps += Invoke-ReadinessStep -Name "openFrameworks smoke build compile plan" -
 	Repository = "ofxGgmlCore"
 	Example = "ofxGgmlCoreExample"
 }
-$steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters @{
+$releaseReadinessParameters = @{
 	OutputPath = $releaseReadinessOutput
 	SkipWorkflowStatus = $true
 	Json = $true
 	SummaryOnly = $true
 	FailOnEvidenceGaps = $true
 }
+if (![string]::IsNullOrWhiteSpace($BackendCapabilityReport)) {
+	$releaseReadinessParameters.BackendCapabilityReport = $BackendCapabilityReport
+}
+if (![string]::IsNullOrWhiteSpace($BackendRuntimePlan)) {
+	$releaseReadinessParameters.BackendRuntimePlan = $BackendRuntimePlan
+}
+if (![string]::IsNullOrWhiteSpace($SmokeBuildCiReport)) {
+	$releaseReadinessParameters.SmokeBuildCiReport = $SmokeBuildCiReport
+}
+if ($FetchSmokeBuildCiReport) {
+	$releaseReadinessParameters.FetchSmokeBuildCiReport = $true
+}
+if ($AllowDefaultBackendCapability) {
+	$releaseReadinessParameters.AllowDefaultBackendCapability = $true
+}
+if ($AllowDefaultSmokeBuildCi) {
+	$releaseReadinessParameters.AllowDefaultSmokeBuildCi = $true
+}
+if ($AllowBackendRuntimeEvidenceGaps) {
+	$releaseReadinessParameters.AllowBackendRuntimeEvidenceGaps = $true
+}
+$steps += Invoke-ReadinessStep -Name "release readiness plan" -ScriptPath (Join-Path $scriptRoot "plan-release-readiness.ps1") -Parameters $releaseReadinessParameters
 $steps += Invoke-ReadinessStep -Name "backend runtime verification plan" -ScriptPath (Join-Path $scriptRoot "plan-backend-runtime-verification.ps1") -Parameters @{
 	Json = $true
 	SummaryOnly = $true

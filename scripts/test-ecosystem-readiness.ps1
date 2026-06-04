@@ -137,6 +137,23 @@ if ($releaseReadinessJson.Summary.EvidenceGapCount -eq 0 -and $releaseReadinessS
 	throw "ecosystem readiness failed release readiness despite zero evidence gaps."
 }
 
+$evidenceOptionOutput = & $readinessScript `
+	-SkipDoctorTests `
+	-Json `
+	-SummaryOnly `
+	-AllowDefaultBackendCapability `
+	-AllowDefaultSmokeBuildCi `
+	-AllowBackendRuntimeEvidenceGaps *>&1 | ForEach-Object { $_.ToString() }
+$evidenceOptionParsed = ($evidenceOptionOutput -join "`n") | ConvertFrom-Json
+$evidenceOptionReleaseStep = @($evidenceOptionParsed.Steps | Where-Object { $_.Name -eq "release readiness plan" } | Select-Object -First 1)
+if ($evidenceOptionReleaseStep.Count -eq 0 -or !$evidenceOptionReleaseStep[0].Output -or @($evidenceOptionReleaseStep[0].Output).Count -eq 0) {
+	throw "ecosystem readiness evidence option run did not retain release readiness output."
+}
+$evidenceOptionReleaseJson = (@($evidenceOptionReleaseStep[0].Output) -join "`n") | ConvertFrom-Json
+if (!$evidenceOptionReleaseJson.AllowDefaultBackendCapability -or !$evidenceOptionReleaseJson.AllowDefaultSmokeBuildCi -or !$evidenceOptionReleaseJson.AllowBackendRuntimeEvidenceGaps) {
+	throw "ecosystem readiness did not forward release evidence options."
+}
+
 $smokeBuildStep = @($parsed.Steps | Where-Object { $_.Name -eq "openFrameworks smoke build plan" } | Select-Object -First 1)
 if ($smokeBuildStep.Count -eq 0 -or $smokeBuildStep[0].State -ne "OK") {
 	throw "ecosystem readiness JSON did not report openFrameworks smoke build plan as OK."

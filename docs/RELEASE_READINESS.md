@@ -76,7 +76,24 @@ planning dry runs where those gaps are intentionally accepted.
 `scripts\check-ecosystem-readiness.bat` and `scripts\release-candidate.bat`
 use the stricter path: local Codex must report `ReadinessState=ready`, and
 release-readiness evidence gaps fail the readiness gate instead of being
-treated as advisory text.
+treated as advisory text. When final evidence is stored outside the default
+repository paths, pass it through the same wrappers:
+
+```bat
+scripts\check-ecosystem-readiness.bat -SkipDoctorTests ^
+  -BackendCapabilityReport <backend-capability-report.md> ^
+  -BackendRuntimePlan <backend-runtime-plan.md> ^
+  -SmokeBuildCiReport .smoke-build-ci-report.json
+
+scripts\release-candidate.bat ^
+  -BackendCapabilityReport <backend-capability-report.md> ^
+  -BackendRuntimePlan <backend-runtime-plan.md> ^
+  -SmokeBuildCiReport .smoke-build-ci-report.json
+```
+
+For a planning dry run, the wrappers also forward
+`-AllowDefaultBackendCapability`, `-AllowDefaultSmokeBuildCi`, and
+`-AllowBackendRuntimeEvidenceGaps` to the nested release-readiness planner.
 
 When `ofxGgmlLlama\ofxggml-addon.json` declares a local Codex smoke entrypoint,
 the release planner also reports the lane-owned
