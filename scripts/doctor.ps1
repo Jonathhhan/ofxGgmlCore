@@ -118,7 +118,7 @@ if (Test-Path -LiteralPath $providerScript -PathType Leaf) {
 			Write-Check "WARN" "runtime provider manifest" "run $setupCommand"
 		}
 		if ($provider.PSObject.Properties["AceStepOpsReady"] -and $provider.AceStepOpsReady) {
-			Write-Check "OK" "ACE-Step ggml ops" "ggml_col2im_1d is available"
+			Write-Check "OK" "ACE-Step ggml ops" "ggml_col2im_1d and fused Snake support are available"
 		} else {
 			Write-Check "NOTE" "ACE-Step ggml ops" "run $setupCommand -AceStepOps to make Core the ACE-Step-compatible ggml provider"
 		}

@@ -266,20 +266,46 @@ function Test-RevisionLooksLikeCommit {
 	return $Value -match '^[0-9a-fA-F]{7,40}$'
 }
 
-function Test-GgmlSourceHasAceStepOps {
+function Get-GgmlSourceAceStepOpReadiness {
 	param([string]$Path)
 	$ggmlHeader = Join-Path $Path "include\ggml.h"
 	if (!(Test-Path -LiteralPath $ggmlHeader -PathType Leaf)) {
-		return $false
+		return [pscustomobject]@{
+			Col2Im1DReady = $false
+			SnakeFusedReady = $false
+		}
 	}
 	$headerText = Get-Content -LiteralPath $ggmlHeader -Raw
-	return $headerText -match "ggml_col2im_1d"
+	$snakeFusedReady = $false
+	foreach ($candidate in @(
+		(Join-Path $Path "src\ggml-cpu\ops.h"),
+		(Join-Path $Path "src\ggml-cuda\snake.cuh"),
+		(Join-Path $Path "src\ggml-vulkan\vulkan-shaders\snake.comp"),
+		(Join-Path $Path "src\ggml-metal\ggml-metal-ops.h")
+	)) {
+		if ((Test-Path -LiteralPath $candidate -PathType Leaf) -and
+			((Get-Content -LiteralPath $candidate -Raw) -match "snake")) {
+			$snakeFusedReady = $true
+			break
+		}
+	}
+	return [pscustomobject]@{
+		Col2Im1DReady = [bool]($headerText -match "ggml_col2im_1d")
+		SnakeFusedReady = [bool]$snakeFusedReady
+	}
+}
+
+function Test-GgmlSourceHasAceStepOps {
+	param([string]$Path)
+	$readiness = Get-GgmlSourceAceStepOpReadiness $Path
+	return [bool]($readiness.Col2Im1DReady -and $readiness.SnakeFusedReady)
 }
 
 function Assert-GgmlSourceHasAceStepOps {
 	param([string]$Path)
-	if (!(Test-GgmlSourceHasAceStepOps $Path)) {
-		throw "ggml source does not expose the ACE-Step patched ggml_col2im_1d op. Use -AceStepOps with the ACE-compatible ggml provider, or pass an equivalent -Repo/-Revision."
+	$readiness = Get-GgmlSourceAceStepOpReadiness $Path
+	if (!($readiness.Col2Im1DReady -and $readiness.SnakeFusedReady)) {
+		throw "ggml source does not expose the ACE-Step patched ggml_col2im_1d op and fused Snake support. Use -AceStepOps with the ACE-compatible ggml provider, or pass an equivalent -Repo/-Revision."
 	}
 }
 
@@ -673,7 +699,7 @@ if ($AceStepOps) {
 		throw "ACE-Step ggml provider expected commit $AceStepGgmlExpectedCommit but source is at $fullCommit."
 	}
 	Assert-GgmlSourceHasAceStepOps $Source
-	Write-Step "Verified ACE-Step ggml ops"
+	Write-Step "Verified ACE-Step ggml ops: ggml_col2im_1d and fused Snake support"
 }
 
 function Get-WindowsNativeGeneratorArgs {
