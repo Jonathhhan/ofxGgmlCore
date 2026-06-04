@@ -97,6 +97,21 @@ bisecting, but do not make it the default ecosystem path.
 "@
 }
 
+function New-WorkflowsAppendix {
+	param([string]$AddonName)
+	if ($AddonName -ne "ofxGgmlWorkflows") {
+		return ""
+	}
+	return @"
+
+## Workflows Lane Contract
+
+- Mirror the shared guidance in docs\agent-baseline.md.
+- For cross-repo workflow rollout, evidence promotion, release planning, or companion PR fanout, use docs\agent-handoff-contract.md.
+- Preserve workflow_call contracts and keep reusable workflow inputs stable unless the change is intentionally breaking.
+"@
+}
+
 function New-AgentInstructions {
 	param([hashtable]$Addon)
 
@@ -107,6 +122,7 @@ function New-AgentInstructions {
 	$coreAppendix = New-CoreAgentAppendix $name
 	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	$stableDiffusionAppendix = New-StableDiffusionAppendix $name
+	$workflowsAppendix = New-WorkflowsAppendix $name
 	return @"
 # Codex Repository Instructions
 
@@ -127,7 +143,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
-- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix$coreSmokeBuildLifecycle$stableDiffusionAppendix
+- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix$coreSmokeBuildLifecycle$stableDiffusionAppendix$workflowsAppendix
 
 ## Validation
 
@@ -153,6 +169,7 @@ function New-CopilotInstructions {
 	$coreAppendix = New-CoreAgentAppendix $name
 	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	$stableDiffusionAppendix = New-StableDiffusionAppendix $name
+	$workflowsAppendix = New-WorkflowsAppendix $name
 	return @"
 # GitHub Copilot Repository Instructions
 
@@ -166,7 +183,7 @@ $name is part of the ofxGgml openFrameworks addon ecosystem.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
 - Add or update headless tests for public helper behavior.
 - Validation before handoff: $validation.
-- Keep explanations concise and include the files and checks that matter.$coreAppendix$coreSmokeBuildLifecycle$stableDiffusionAppendix
+- Keep explanations concise and include the files and checks that matter.$coreAppendix$coreSmokeBuildLifecycle$stableDiffusionAppendix$workflowsAppendix
 "@
 }
 
@@ -189,6 +206,7 @@ function New-CopilotEcosystemInstructions {
 	}
 	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	$stableDiffusionAppendix = New-StableDiffusionAppendix $name
+	$workflowsAppendix = New-WorkflowsAppendix $name
 	return @"
 ---
 applyTo: "**"
@@ -207,7 +225,7 @@ applyTo: "**"
 - Keep companion changes inside this repository's lane and use ofxGgmlCore as the default shared ggml/runtime base.
 - Preserve generated artifact hygiene: no binaries, build folders, IDE metadata, model weights, downloaded runtimes, caches, media dumps, or memory indexes.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
-- Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.$coreSmokeBuildLifecycle$stableDiffusionAppendix
+- Validate before handoff with $validation; for cross-repo planning also report the Core readiness or planning command used.$coreSmokeBuildLifecycle$stableDiffusionAppendix$workflowsAppendix
 "@
 }
 
@@ -220,6 +238,7 @@ function New-HermesInstructions {
 	$validation = ConvertTo-ValidationCommand $name
 	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	$stableDiffusionAppendix = New-StableDiffusionAppendix $name
+	$workflowsAppendix = New-WorkflowsAppendix $name
 	return @"
 # Hermes Project Context
 
@@ -248,7 +267,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Use `scripts\status-family.ps1` and `scripts\plan-ecosystem.ps1` from ofxGgmlCore for cross-repo planning.
 - Classify each task as documentation, automation, validation, or addon-code work.
 - Work in the agent layer first when the goal is better Codex, Copilot, or Hermes planning.
-- Touch addon source only when the user explicitly asks for addon behavior.$coreSmokeBuildLifecycle$stableDiffusionAppendix
+- Touch addon source only when the user explicitly asks for addon behavior.$coreSmokeBuildLifecycle$stableDiffusionAppendix$workflowsAppendix
 
 ## Ecosystem Split
 
