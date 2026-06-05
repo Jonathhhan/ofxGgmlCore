@@ -508,12 +508,12 @@ function Update-AddonConfig {
 			$lines.Add("`tADDON_LIBS += Advapi32.lib")
 		}
 		if (($orderedPaths | Where-Object { (Split-Path $_ -Leaf) -eq "ggml-cuda.lib" }) -and $env:CUDA_PATH) {
-			$lines.Add("`tADDON_LIBS += `$`(CUDA_PATH`)/lib/x64/cublas.lib")
-			$lines.Add("`tADDON_LIBS += `$`(CUDA_PATH`)/lib/x64/cudart.lib")
-			$lines.Add("`tADDON_LIBS += `$`(CUDA_PATH`)/lib/x64/cuda.lib")
+			$lines.Add("`tADDON_LIBS += cublas.lib")
+			$lines.Add("`tADDON_LIBS += cudart.lib")
+			$lines.Add("`tADDON_LIBS += cuda.lib")
 		}
 		if (($orderedPaths | Where-Object { (Split-Path $_ -Leaf) -eq "ggml-vulkan.lib" }) -and $env:VULKAN_SDK) {
-			$lines.Add("`tADDON_LIBS += `$`(VULKAN_SDK`)/Lib/vulkan-1.lib")
+			$lines.Add("`tADDON_LIBS += vulkan-1.lib")
 		}
 	}
 
