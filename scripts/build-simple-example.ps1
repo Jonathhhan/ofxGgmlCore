@@ -195,6 +195,14 @@ function Get-RelativeProjectPath {
 		$projectUri.MakeRelativeUri($fileUri).ToString()).Replace("/", "\")
 }
 
+function Normalize-ProjectItemInclude {
+	param([string]$Include)
+	if ([string]::IsNullOrWhiteSpace($Include)) {
+		return ""
+	}
+	return (($Include -replace "/", "\").Trim()).ToLowerInvariant()
+}
+
 function Get-FirstItemGroup {
 	param(
 		[xml]$Doc,
@@ -221,9 +229,12 @@ function Add-VisualStudioProjectItem {
 		[string]$Include,
 		[string]$Filter = ""
 	)
-	$existing = $Doc.SelectSingleNode("//msb:$Tag[@Include='$Include']", $Namespace)
-	if ($existing) {
-		return $false
+	$normalizedInclude = Normalize-ProjectItemInclude $Include
+	$existingNodes = @($Doc.SelectNodes("//msb:$Tag[@Include]", $Namespace))
+	foreach ($node in $existingNodes) {
+		if ((Normalize-ProjectItemInclude ([string]$node.Include)) -eq $normalizedInclude) {
+			return $false
+		}
 	}
 	$itemGroup = Get-FirstItemGroup -Doc $Doc -Namespace $Namespace -PreferredTag $Tag
 	if (!$itemGroup) {
@@ -238,6 +249,31 @@ function Add-VisualStudioProjectItem {
 	}
 	[void]$itemGroup.AppendChild($item)
 	return $true
+}
+
+function Remove-DuplicateVisualStudioProjectItems {
+	param(
+		[xml]$Doc,
+		[System.Xml.XmlNamespaceManager]$Namespace,
+		[string]$Tag
+	)
+
+	$seen = @{}
+	$changed = $false
+	$nodes = @($Doc.SelectNodes("//msb:$Tag[@Include]", $Namespace))
+	foreach ($node in $nodes) {
+		$key = Normalize-ProjectItemInclude ([string]$node.Include)
+		if ([string]::IsNullOrWhiteSpace($key)) {
+			continue
+		}
+		if ($seen.ContainsKey($key)) {
+			[void]$node.ParentNode.RemoveChild($node)
+			$changed = $true
+		} else {
+			$seen[$key] = $true
+		}
+	}
+	return $changed
 }
 
 function Repair-VisualStudioAddonItems {
@@ -343,6 +379,9 @@ function Repair-VisualStudioProjectFile {
 				[void]$node.ParentNode.RemoveChild($node)
 				$changed = $true
 			}
+		}
+		if (Remove-DuplicateVisualStudioProjectItems -Doc $doc -Namespace $namespace -Tag $tag) {
+			$changed = $true
 		}
 	}
 
