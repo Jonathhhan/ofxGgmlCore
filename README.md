@@ -44,6 +44,9 @@ and a smoke-test example. Model-specific workflows live in companion addons.
 that openFrameworks can include the addon, see the ggml runtime, and render
 a small ofxImGui UI.
 
+For agent planning, tool loops, and orchestration UX, use
+[`ofxGgmlAgentsPlannerExample`](../ofxGgmlAgents/ofxGgmlAgentsPlannerExample).
+
 For text, chat, and embedding examples, use `ofxGgmlLlama`:
 
 ```powershell

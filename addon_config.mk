@@ -38,7 +38,7 @@ common:
 	ADDON_INCLUDES_EXCLUDE += libs/llama.cpp/build-cuda/%
 	ADDON_INCLUDES_EXCLUDE += libs/llama.cpp/build-native/%
 
-	ADDON_EXAMPLES = ofxGgmlCoreExample ofxGgmlMultiAgentExample
+	ADDON_EXAMPLES = ofxGgmlCoreExample
 
 vs:
 	# @OFXGGML_LIBS_START vs

@@ -1,2 +1,0 @@
-ofxGgmlCore
-ofxImGui
