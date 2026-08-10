@@ -22,8 +22,15 @@ function Invoke-Git {
 	if (!(Test-CommandAvailable "git")) {
 		return ""
 	}
-	$output = & git -C $Repository @Arguments 2>$null
-	if ($LASTEXITCODE -ne 0) {
+	$previousErrorActionPreference = $ErrorActionPreference
+	try {
+		$ErrorActionPreference = "Continue"
+		$output = & git -C $Repository @Arguments 2>$null
+		$exitCode = $LASTEXITCODE
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
+	}
+	if ($exitCode -ne 0) {
 		return ""
 	}
 	return (@($output) -join "`n").Trim()
@@ -171,9 +178,16 @@ function Get-MergedBranches {
 	param([object]$Status)
 
 	$repo = [string]$Status.Path
-	if ($Fetch) {
-		& git -C $repo fetch --prune --quiet 2>$null
-		if ($LASTEXITCODE -ne 0) {
+	if ($Fetch -and ![string]::IsNullOrWhiteSpace([string]$Status.Branch)) {
+		$previousErrorActionPreference = $ErrorActionPreference
+		try {
+			$ErrorActionPreference = "Continue"
+			& git -C $repo fetch --prune --quiet 2>$null
+			$fetchExitCode = $LASTEXITCODE
+		} finally {
+			$ErrorActionPreference = $previousErrorActionPreference
+		}
+		if ($fetchExitCode -ne 0) {
 			throw "Failed to fetch $($Status.Name)."
 		}
 	}

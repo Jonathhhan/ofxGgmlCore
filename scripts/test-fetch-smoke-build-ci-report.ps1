@@ -19,4 +19,21 @@ foreach ($expected in @(
 	}
 }
 
+$addonRoot = Split-Path -Parent $scriptRoot
+$workflowPath = Join-Path $addonRoot ".github\workflows\smoke-build-ci.yml"
+$workflowContent = Get-Content -LiteralPath $workflowPath -Raw
+foreach ($expected in @(
+	"name: ofx-smoke-build-ci-report",
+	"path: .smoke-build-ci-report.json",
+	"if-no-files-found: error",
+	"include-hidden-files: true"
+)) {
+	if ($workflowContent -notmatch [regex]::Escape($expected)) {
+		throw "smoke-build-ci.yml did not preserve required report upload behavior: $expected"
+	}
+}
+if ($workflowContent -match "(?m)^\s*continue-on-error:\s*true\s*$") {
+	throw "smoke-build-ci.yml must not hide report upload failures."
+}
+
 Write-Host "==> Smoke-build CI artifact fetch auth coverage passed"

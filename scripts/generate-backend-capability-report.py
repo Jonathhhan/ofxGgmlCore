@@ -96,11 +96,17 @@ def main():
         default=os.environ.get("OFXGGML_RUNTIME_SMOKE_REPORT", ""),
         help="Optional runtime smoke JSON report to include as local validation evidence.",
     )
+    parser.add_argument(
+        "--output",
+        default=str(OUTPUT),
+        help="Markdown report output path. Defaults to docs/backend-capability-report.md.",
+    )
     args = parser.parse_args()
 
     metadata = json.loads(METADATA.read_text(encoding="utf-8"))
     declared_backends = metadata.get("backends", [])
     runtime_report = Path(args.runtime_smoke_report).resolve() if args.runtime_smoke_report else None
+    output = Path(args.output).resolve()
     runtime_results = load_runtime_smoke_results(runtime_report)
 
     lines = [
@@ -129,8 +135,9 @@ def main():
         "- Release gating still needs phase-2 runtime initialization and phase-3 inference smoke evidence.",
     ])
 
-    OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Wrote {OUTPUT.relative_to(ROOT)}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote {display_path(output)}")
 
 
 if __name__ == "__main__":

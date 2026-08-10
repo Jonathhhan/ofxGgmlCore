@@ -20,6 +20,20 @@ function Assert-FileContains {
 	}
 }
 
+$temporaryCapabilityReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-capability-$([guid]::NewGuid().ToString('N')).md"
+try {
+	python (Join-Path $scriptRoot "generate-backend-capability-report.py") --output $temporaryCapabilityReport
+	if ($LASTEXITCODE -ne 0) {
+		throw "generate-backend-capability-report.py explicit output failed."
+	}
+	Assert-FileContains `
+		-Path $temporaryCapabilityReport `
+		-Pattern "phase-1 backend discovery evidence" `
+		-Label "explicit backend capability report"
+} finally {
+	Remove-Item -LiteralPath $temporaryCapabilityReport -Force -ErrorAction SilentlyContinue
+}
+
 python (Join-Path $scriptRoot "generate-backend-capability-report.py")
 if ($LASTEXITCODE -ne 0) {
 	throw "generate-backend-capability-report.py failed."

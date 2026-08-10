@@ -110,6 +110,7 @@ function Get-FamilyGitEvidence {
 			Available = $false
 			DirtyManagedRepositories = 0
 			DirtyManagedRepositoryNames = @()
+			UnavailableManagedRepositoryNames = @()
 			DirtyReferenceRepositories = 0
 			DirtyReferenceRepositoryNames = @()
 		}
@@ -131,11 +132,17 @@ function Get-FamilyGitEvidence {
 				Where-Object { !$_.Known -and [int]$_.DirtyCount -gt 0 } |
 				Sort-Object Name
 		)
+		$managedUnavailable = @(
+			$status.RepositorySummaries |
+				Where-Object { $_.Known -and $_.Present -and (!$_.PSObject.Properties["GitStatusAvailable"] -or ![bool]$_.GitStatusAvailable) } |
+				Sort-Object Name
+		)
 		return [pscustomobject]@{
 			Checked = $true
-			Available = $true
+			Available = @($managedUnavailable).Count -eq 0
 			DirtyManagedRepositories = @($managedDirty).Count
 			DirtyManagedRepositoryNames = @($managedDirty | ForEach-Object { [string]$_.Name })
+			UnavailableManagedRepositoryNames = @($managedUnavailable | ForEach-Object { [string]$_.Name })
 			DirtyReferenceRepositories = @($referenceDirty).Count
 			DirtyReferenceRepositoryNames = @($referenceDirty | ForEach-Object { [string]$_.Name })
 		}
@@ -145,6 +152,7 @@ function Get-FamilyGitEvidence {
 			Available = $false
 			DirtyManagedRepositories = 0
 			DirtyManagedRepositoryNames = @()
+			UnavailableManagedRepositoryNames = @()
 			DirtyReferenceRepositories = 0
 			DirtyReferenceRepositoryNames = @()
 		}
@@ -389,6 +397,7 @@ $summary = [pscustomobject]@{
 	ManagedGitStatusAvailable = [bool]$gitEvidence.Available
 	DirtyManagedRepositories = [int]$gitEvidence.DirtyManagedRepositories
 	DirtyManagedRepositoryNames = @($gitEvidence.DirtyManagedRepositoryNames)
+	UnavailableManagedRepositoryNames = @($gitEvidence.UnavailableManagedRepositoryNames)
 	DirtyReferenceRepositories = [int]$gitEvidence.DirtyReferenceRepositories
 	DirtyReferenceRepositoryNames = @($gitEvidence.DirtyReferenceRepositoryNames)
 	OutputPathIsTemporary = [string]::IsNullOrWhiteSpace($OutputPath)

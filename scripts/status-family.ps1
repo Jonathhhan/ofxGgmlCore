@@ -18,12 +18,39 @@ function Test-CommandAvailable {
 	return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+function Test-GitMetadataReadable {
+	param([string]$Repository)
+
+	$gitMetadata = Join-Path $Repository ".git"
+	if (!(Test-Path -LiteralPath $gitMetadata)) {
+		return $false
+	}
+
+	try {
+		$item = Get-Item -LiteralPath $gitMetadata -Force -ErrorAction Stop
+		if ($item.PSIsContainer) {
+			$headPath = Join-Path $item.FullName "HEAD"
+			$stream = [System.IO.File]::Open($headPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+			$stream.Dispose()
+		} else {
+			$stream = [System.IO.File]::Open($item.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+			$stream.Dispose()
+		}
+		return $true
+	} catch {
+		return $false
+	}
+}
+
 function Invoke-Git {
 	param(
 		[string]$Repository,
 		[string[]]$Arguments
 	)
 	if (!(Test-CommandAvailable "git")) {
+		return ""
+	}
+	if (!(Test-GitMetadataReadable -Repository $Repository)) {
 		return ""
 	}
 	$previousErrorActionPreference = $ErrorActionPreference
@@ -136,6 +163,7 @@ function Get-AddonStatus {
 	$head = ""
 	$dirty = ""
 	$dirtyCount = 0
+	$gitStatusAvailable = $false
 	$validate = $false
 	$doctor = $false
 	$agentsInstructions = $false
@@ -148,6 +176,7 @@ function Get-AddonStatus {
 	$features = @()
 
 	if ($present) {
+		$gitStatusAvailable = (Test-CommandAvailable "git") -and (Test-GitMetadataReadable -Repository $path)
 		$branch = Invoke-Git -Repository $path -Arguments @("branch", "--show-current")
 		$head = Invoke-Git -Repository $path -Arguments @("rev-parse", "--short", "HEAD")
 		$dirty = Invoke-Git -Repository $path -Arguments @("status", "--short")
@@ -167,8 +196,10 @@ function Get-AddonStatus {
 			Get-ChildItem -LiteralPath $path -Directory -ErrorAction SilentlyContinue |
 				Where-Object { $_.Name -like "*Example" } |
 				Where-Object {
+					$sourceRoot = Join-Path $_.FullName "src"
+					$sourceFile = Get-ChildItem -LiteralPath $sourceRoot -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @(".h", ".hpp", ".c", ".cc", ".cpp", ".mm") } | Select-Object -First 1
 					(Test-Path -LiteralPath (Join-Path $_.FullName "addons.make") -PathType Leaf) -or
-					(Test-Path -LiteralPath (Join-Path $_.FullName "src") -PathType Container)
+					$null -ne $sourceFile
 				} |
 				Sort-Object Name |
 				Select-Object -ExpandProperty Name
@@ -184,6 +215,7 @@ function Get-AddonStatus {
 		Classified = $classified
 		Path = $path
 		Present = $present
+		GitStatusAvailable = $gitStatusAvailable
 		Branch = $branch
 		Head = $head
 		DirtyCount = $dirtyCount
@@ -216,6 +248,7 @@ function Get-FamilyStatusSummary {
 		ClassifiedReferenceRepositories = @($detected | Where-Object { $_.Classified }).Count
 		UnclassifiedDetectedRepositories = @($detected | Where-Object { !$_.Classified }).Count
 		DirtyManagedRepositories = @($managed | Where-Object { $_.DirtyCount -gt 0 }).Count
+		ManagedGitStatusUnavailableRepositories = @($managed | Where-Object { $_.Present -and !$_.GitStatusAvailable }).Count
 		MissingManagedRepositories = @($managed | Where-Object { !$_.Present }).Count
 		MissingValidationEntrypoints = @($managed | Where-Object { $_.Present -and !$_.ValidateScript }).Count
 		MissingDoctorEntrypoints = @($managed | Where-Object { $_.Present -and !$_.DoctorScript -and $_.Name -ne "ofxGgmlWorkflows" }).Count
@@ -243,6 +276,7 @@ function ConvertTo-FamilyRepositorySummary {
 		Known = [bool]$Status.Known
 		Classified = [bool]$Status.Classified
 		Present = [bool]$Status.Present
+		GitStatusAvailable = [bool]$Status.GitStatusAvailable
 		Head = [string]$Status.Head
 		DirtyCount = [int]$Status.DirtyCount
 		ValidateScript = [bool]$Status.ValidateScript

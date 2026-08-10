@@ -32,6 +32,7 @@ foreach ($property in @(
 	"ClassifiedReferenceRepositories",
 	"UnclassifiedDetectedRepositories",
 	"DirtyManagedRepositories",
+	"ManagedGitStatusUnavailableRepositories",
 	"MissingManagedRepositories",
 	"MissingValidationEntrypoints",
 	"MissingDoctorEntrypoints",
@@ -82,6 +83,18 @@ if (!$core -or !$core.CopilotEcosystemInstructions) {
 if ($core.RuntimeProviderMode -ne "core-ggml-provider") {
 	throw "family status JSON did not report Core runtime provider mode."
 }
+foreach ($addon in @($parsed.Addons | Where-Object { $_.Present })) {
+	foreach ($example in @($addon.Examples)) {
+		$examplePath = Join-Path ([string]$addon.Path) ([string]$example)
+		$sourceRoot = Join-Path $examplePath "src"
+		$sourceFile = Get-ChildItem -LiteralPath $sourceRoot -Recurse -File -ErrorAction SilentlyContinue |
+			Where-Object { $_.Extension -in @(".h", ".hpp", ".c", ".cc", ".cpp", ".mm") } |
+			Select-Object -First 1
+		if (!(Test-Path -LiteralPath (Join-Path $examplePath "addons.make") -PathType Leaf) -and $null -eq $sourceFile) {
+			throw "family status reported an example without addons.make or source files: $($addon.Name)/$example"
+		}
+	}
+}
 $stableDiffusion = @($parsed.Addons | Where-Object { $_.Name -eq "ofxGgmlStableDiffusion" } | Select-Object -First 1)
 if (!$stableDiffusion -or [string]::IsNullOrWhiteSpace([string]$stableDiffusion.RuntimeProviderMode)) {
 	throw "family status JSON did not report Stable Diffusion runtime provider mode."
@@ -99,7 +112,7 @@ if ($summaryParsed.PSObject.Properties["Addons"]) {
 	throw "family status summary JSON should omit full Addons inventory."
 }
 $summaryCore = @($summaryParsed.RepositorySummaries | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
-foreach ($property in @("Name", "Known", "Classified", "Present", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "RuntimeProviderMode", "FeatureCount")) {
+foreach ($property in @("Name", "Known", "Classified", "Present", "GitStatusAvailable", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "RuntimeProviderMode", "FeatureCount")) {
 	if (!$summaryCore[0].PSObject.Properties[$property]) {
 		throw "family status summary JSON repository summary did not include $property."
 	}
