@@ -89,10 +89,10 @@ $aceStepOutput = Invoke-DryRun @{
 	DryRun = $true
 	AceStepOps = $true
 }
-Assert-Contains $aceStepOutput "revision: master" "ACE-Step setup dry-run"
+Assert-Contains $aceStepOutput "revision: c044c6f03892f9d5e98213b05f8afea1f8b0d3c9" "ACE-Step setup dry-run"
 Assert-Contains $aceStepOutput "repo: https://github.com/ServeurpersoCom/ggml.git" "ACE-Step setup dry-run"
 Assert-Contains $aceStepOutput "ACE-Step ops: required" "ACE-Step setup dry-run"
-Assert-Contains $aceStepOutput "ACE-Step expected commit: f3bc6505c4e2ede83a193e0fb4695938ff3804fd" "ACE-Step setup dry-run"
+Assert-Contains $aceStepOutput "ACE-Step expected commit: c044c6f03892f9d5e98213b05f8afea1f8b0d3c9" "ACE-Step setup dry-run"
 Assert-Contains $aceStepOutput "Dry run complete; no files were changed" "ACE-Step setup dry-run"
 
 Write-Step "setup-ggml CPU-only dry-run"

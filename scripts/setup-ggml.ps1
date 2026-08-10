@@ -28,8 +28,8 @@ $Lib = Join-Path $GgmlRoot "lib"
 $DefaultGgmlRepo = "https://github.com/ggml-org/ggml.git"
 $DefaultGgmlRevision = "v0.13.1"
 $AceStepGgmlRepo = "https://github.com/ServeurpersoCom/ggml.git"
-$AceStepGgmlRevision = "master"
-$AceStepGgmlExpectedCommit = "f3bc6505c4e2ede83a193e0fb4695938ff3804fd"
+$AceStepGgmlRevision = "c044c6f03892f9d5e98213b05f8afea1f8b0d3c9"
+$AceStepGgmlExpectedCommit = "c044c6f03892f9d5e98213b05f8afea1f8b0d3c9"
 
 if ($AceStepOps) {
 	if ($Repo -eq $DefaultGgmlRepo) {
@@ -340,6 +340,20 @@ function Test-CudaBuildAvailable {
 		return Test-CudaLinkLibrariesAvailable
 	}
 	return $true
+}
+
+function Get-CudaArchitectures {
+	if (!(Test-Command "nvidia-smi")) {
+		return $null
+	}
+	$capabilities = @(& nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>$null) |
+		ForEach-Object { $_.Trim() -replace "\.", "" } |
+		Where-Object { $_ -match "^\d+$" } |
+		Select-Object -Unique
+	if ($LASTEXITCODE -ne 0 -or $capabilities.Count -eq 0) {
+		return $null
+	}
+	return ($capabilities -join ";")
 }
 
 function Test-VulkanAvailable {
@@ -769,6 +783,13 @@ function New-GgmlConfigureArgs {
 	)
 	if ($EnableCuda -and $env:CUDA_PATH) {
 		$args += "-DCUDAToolkit_ROOT=$env:CUDA_PATH"
+	}
+	if ($EnableCuda -and !$IsLinux -and !$IsMacOS) {
+		$cudaArchitectures = Get-CudaArchitectures
+		if ($cudaArchitectures) {
+			Write-Step "Using detected CUDA architectures: $cudaArchitectures"
+			$args += "-DCMAKE_CUDA_ARCHITECTURES=$cudaArchitectures"
+		}
 	}
 	return $args
 }
