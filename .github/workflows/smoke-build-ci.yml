@@ -10,14 +10,68 @@ jobs:
   smoke-build-ci:
     runs-on: windows-latest
     timeout-minutes: 240
+    env:
+      OF_VERSION: 0.12.1
+      OF_ARCHIVE: of_v0.12.1_vs_64_release.zip
+      OFXIMGUI_COMMIT: 4b5d04a3e73bbae34d564c9b78143e021f67377a
     steps:
       - name: Checkout core repository
         uses: actions/checkout@v4
 
-      - name: Prepare sibling ofxGgml addons for managed compile checks
+      - name: Cache openFrameworks Windows package
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\openframeworks-cache\of_v0.12.1_vs_64_release.zip
+          key: openframeworks-${{ runner.os }}-vs-0.12.1
+
+      - name: Install openFrameworks Windows package
         shell: pwsh
         run: |
-          $addonsRoot = Split-Path -Parent $env:GITHUB_WORKSPACE
+          $cacheRoot = Join-Path $env:RUNNER_TEMP "openframeworks-cache"
+          $archivePath = Join-Path $cacheRoot $env:OF_ARCHIVE
+          $extractRoot = Join-Path $env:RUNNER_TEMP "openframeworks"
+          New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
+          if (!(Test-Path -LiteralPath $archivePath -PathType Leaf)) {
+            $url = "https://github.com/openframeworks/openFrameworks/releases/download/$env:OF_VERSION/$env:OF_ARCHIVE"
+            curl.exe --fail --location --retry 3 --output $archivePath $url
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to download openFrameworks $env:OF_VERSION."
+            }
+          }
+          if (Test-Path -LiteralPath $extractRoot -PathType Container) {
+            Remove-Item -LiteralPath $extractRoot -Recurse -Force
+          }
+          Expand-Archive -LiteralPath $archivePath -DestinationPath $extractRoot
+          $ofRoot = Get-ChildItem -LiteralPath $extractRoot -Directory |
+            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName "addons") -PathType Container } |
+            Select-Object -First 1
+          if (!$ofRoot) {
+            throw "Extracted openFrameworks package did not contain an addons directory."
+          }
+          "OF_ROOT=$($ofRoot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Stage ofxGgml ecosystem under openFrameworks addons
+        shell: pwsh
+        run: |
+          $addonsRoot = Join-Path $env:OF_ROOT "addons"
+          $corePath = Join-Path $addonsRoot "ofxGgmlCore"
+          git clone --no-local $env:GITHUB_WORKSPACE $corePath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to stage the current ofxGgmlCore checkout."
+          }
+          git -C $corePath checkout --detach $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to check out the current ofxGgmlCore revision in the openFrameworks tree."
+          }
+          $ofxImGuiPath = Join-Path $addonsRoot "ofxImGui"
+          git clone --depth 1 --branch develop https://github.com/jvcleave/ofxImGui.git $ofxImGuiPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to clone ofxImGui."
+          }
+          git -C $ofxImGuiPath checkout --detach $env:OFXIMGUI_COMMIT
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to pin ofxImGui to $env:OFXIMGUI_COMMIT."
+          }
           $repositories = @(
             "ofxGgmlLlama",
             "ofxGgmlSam",
@@ -39,7 +93,9 @@ jobs:
       - name: Run smoke build control plane compile loop
         shell: pwsh
         run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\scripts\run-smoke-build-ci.ps1" -CloneAddonRepos -TargetsPerStage 0
+          $corePath = Join-Path (Join-Path $env:OF_ROOT "addons") "ofxGgmlCore"
+          $reportPath = Join-Path $env:GITHUB_WORKSPACE ".smoke-build-ci-report.json"
+          pwsh -NoProfile -ExecutionPolicy Bypass -File "$corePath\scripts\run-smoke-build-ci.ps1" -CloneAddonRepos -TargetsPerStage 0 -RequireCompileStage -ReportPath $reportPath
 
       - name: Upload smoke build control-plane report
         if: always()

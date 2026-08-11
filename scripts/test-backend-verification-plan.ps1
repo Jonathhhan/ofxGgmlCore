@@ -84,4 +84,45 @@ Assert-FileContains `
 	-Pattern "ofxGgmlStableDiffusion" `
 	-Label "backend verification plan"
 
+$runtimePlan = Join-Path $scriptRoot "plan-backend-runtime-verification.ps1"
+$temporaryCompileReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-compile-$([guid]::NewGuid().ToString('N')).json"
+try {
+	$fixture = [ordered]@{
+		Outcome = "passed"
+		Configuration = "Release"
+		Platform = "x64"
+		CompletedUtc = [DateTime]::UtcNow.ToString("o")
+		Stages = @(
+			[ordered]@{
+				Name = "compile-example"
+				Outcome = "passed"
+				Targets = @(
+					[ordered]@{
+						Repository = "ofxGgmlStableDiffusion"
+						Example = "ofxGgmlStableDiffusionBasicGenerationExample"
+						Status = "passed"
+						Commands = @()
+					}
+				)
+			}
+		)
+	}
+	Set-Content -LiteralPath $temporaryCompileReport -Value ($fixture | ConvertTo-Json -Depth 8) -Encoding utf8
+	$runtimeJson = & $runtimePlan -SmokeBuildCiReport $temporaryCompileReport -Json
+	if (!$?) {
+		throw "plan-backend-runtime-verification.ps1 compile evidence fixture failed."
+	}
+	$runtime = $runtimeJson | ConvertFrom-Json
+	if ($runtime.SmokeBuildCiEvidence.State -ne "available" -or $runtime.SmokeBuildCiEvidence.CompileTargetCount -ne 1) {
+		throw "runtime planner did not expose the compile-example report evidence."
+	}
+	$stableDiffusion = @($runtime.Repositories | Where-Object { $_.Repository -eq "ofxGgmlStableDiffusion" } | Select-Object -First 1)
+	$basicExample = @($stableDiffusion[0].ExampleBuildEvidence.Examples | Where-Object { $_.Example -eq "ofxGgmlStableDiffusionBasicGenerationExample" } | Select-Object -First 1)
+	if (!$basicExample -or !$basicExample[0].CiCompilePassed -or !$basicExample[0].Built) {
+		throw "runtime planner did not count passed CI compile evidence for the Stable Diffusion basic example."
+	}
+} finally {
+	Remove-Item -LiteralPath $temporaryCompileReport -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host "Backend verification planning coverage passed"

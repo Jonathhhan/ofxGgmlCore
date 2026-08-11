@@ -23,6 +23,9 @@ $parsed = $json | ConvertFrom-Json
 if (!$parsed.Summary) {
 	throw "family status JSON did not include Summary."
 }
+if (!$parsed.DevelopmentPriorityAvailable -or [string]::IsNullOrWhiteSpace([string]$parsed.DevelopmentPrioritySource)) {
+	throw "family status JSON did not load the canonical development order."
+}
 foreach ($property in @(
 	"Repositories",
 	"ManagedRepositories",
@@ -99,6 +102,9 @@ $stableDiffusion = @($parsed.Addons | Where-Object { $_.Name -eq "ofxGgmlStableD
 if (!$stableDiffusion -or [string]::IsNullOrWhiteSpace([string]$stableDiffusion.RuntimeProviderMode)) {
 	throw "family status JSON did not report Stable Diffusion runtime provider mode."
 }
+if ([int]$stableDiffusion.DevelopmentPriority -ne 2) {
+	throw "family status JSON did not derive Stable Diffusion priority from ofxGgmlWorkflows/ecosystem.yaml."
+}
 
 $summaryJson = & (Join-Path $scriptRoot "status-family.ps1") -Json -SummaryOnly
 $summaryParsed = $summaryJson | ConvertFrom-Json
@@ -112,7 +118,7 @@ if ($summaryParsed.PSObject.Properties["Addons"]) {
 	throw "family status summary JSON should omit full Addons inventory."
 }
 $summaryCore = @($summaryParsed.RepositorySummaries | Where-Object { $_.Name -eq "ofxGgmlCore" } | Select-Object -First 1)
-foreach ($property in @("Name", "Known", "Classified", "Present", "GitStatusAvailable", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "RuntimeProviderMode", "FeatureCount")) {
+foreach ($property in @("Name", "Known", "Classified", "Present", "GitStatusAvailable", "Head", "DirtyCount", "ValidateScript", "DoctorScript", "AgentWorkflowGuide", "RuntimeProviderMode", "FeatureCount", "DevelopmentPriority")) {
 	if (!$summaryCore[0].PSObject.Properties[$property]) {
 		throw "family status summary JSON repository summary did not include $property."
 	}

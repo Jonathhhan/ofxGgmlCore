@@ -93,6 +93,18 @@ function Test-SmokeBuildReportPassed {
 	}
 	if ($outcome -ne "passed" -or $hasFailures -or $failedTargets -gt 0 -or $failedCommands -gt 0) {
 		Add-Blocker -Blockers $Blockers -Message "smoke-build CI evidence is not passing"
+		return
+	}
+	$stageNames = @()
+	if ($summary.PSObject.Properties["StageNames"] -and $null -ne $summary.StageNames) {
+		$stageNames = @($summary.StageNames | ForEach-Object { [string]$_ })
+	}
+	$compiledTargets = 0
+	if ($summary.PSObject.Properties["CompiledTargets"] -and $null -ne $summary.CompiledTargets) {
+		$compiledTargets = [int]$summary.CompiledTargets
+	}
+	if ($stageNames -notcontains "compile-example" -or $compiledTargets -lt 1) {
+		Add-Blocker -Blockers $Blockers -Message "smoke-build CI evidence does not include a compiled example"
 	}
 }
 

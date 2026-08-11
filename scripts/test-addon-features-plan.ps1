@@ -65,6 +65,10 @@ $workflows = @($parsed.Repositories | Where-Object { $_.Repository -eq "ofxGgmlW
 if (!$workflows -or $workflows.State -ne "not-applicable") {
 	throw "addon feature plan JSON did not mark ofxGgmlWorkflows as not applicable."
 }
+$stableDiffusion = @($parsed.Repositories | Where-Object { $_.Repository -eq "ofxGgmlStableDiffusion" } | Select-Object -First 1)
+if (!$stableDiffusion -or [int]$stableDiffusion.Priority -ne 2) {
+	throw "addon feature plan did not use the canonical Stable Diffusion development priority."
+}
 
 $summaryJsonOutput = & $planScript -Json -SummaryOnly *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {

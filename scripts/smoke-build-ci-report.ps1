@@ -64,6 +64,12 @@ function Get-SmokeBuildCiReportSummary {
 		Where-Object { [string](Get-SmokeBuildCiReportValue -Object $_ -Name "Outcome") -ne "passed" } |
 		ForEach-Object { [string](Get-SmokeBuildCiReportValue -Object $_ -Name "Name") } |
 		Where-Object { ![string]::IsNullOrWhiteSpace($_) })
+	$compileStages = @($stages | Where-Object {
+		[string](Get-SmokeBuildCiReportValue -Object $_ -Name "Name") -eq "compile-example"
+	})
+	$compileTargets = @($compileStages | ForEach-Object {
+		ConvertTo-SmokeBuildCiReportArray -Value (Get-SmokeBuildCiReportValue -Object $_ -Name "Targets")
+	})
 
 	return [pscustomobject]@{
 		Outcome = [string](Get-SmokeBuildCiReportValue -Object $Report -Name "Outcome")
@@ -78,6 +84,8 @@ function Get-SmokeBuildCiReportSummary {
 		FailedCommands = $failedCommands.Count
 		StageNames = @($stageNames)
 		FailedStageNames = @($failedStageNames)
+		HasCompileStage = ($compileStages.Count -gt 0)
+		CompiledTargets = $compileTargets.Count
 		HasFailures = ([string](Get-SmokeBuildCiReportValue -Object $Report -Name "Outcome") -ne "passed" -or $failedTargets.Count -gt 0 -or $failedCommands.Count -gt 0)
 	}
 }

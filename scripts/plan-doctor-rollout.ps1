@@ -77,19 +77,7 @@ function New-DoctorRolloutEntry {
 		default { "add doctor entry point, wrappers, smoke test, and validate-local hook" }
 	}
 
-	$priority = switch ($Status.Name) {
-		"ofxGgmlCore" { 0 }
-		"ofxGgmlLlama" { 1 }
-		"ofxGgmlSam" { 2 }
-		"ofxGgmlAudio" { 3 }
-		"ofxGgmlDiffusion" { 4 }
-		"ofxGgmlVision" { 5 }
-		"ofxGgmlVideo" { 6 }
-		"ofxGgmlRag" { 7 }
-		"ofxGgmlAgents" { 8 }
-		"ofxGgmlMusic" { 9 }
-		default { 99 }
-	}
+	$priority = [int]$Status.DevelopmentPriority
 
 	[pscustomobject]@{
 		Repository = [string]$Status.Name

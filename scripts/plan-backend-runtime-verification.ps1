@@ -1,5 +1,6 @@
 param(
 	[string]$OutputPath = "",
+	[string]$SmokeBuildCiReport = "",
 	[switch]$SummaryOnly,
 	[switch]$Quiet,
 	[switch]$Json,
@@ -88,8 +89,78 @@ function Get-ModelEvidence {
 	}
 }
 
+function Get-SmokeBuildCompileEvidence {
+	param(
+		[string]$ReportPath,
+		[string]$AddonRoot
+	)
+
+	$path = if ([string]::IsNullOrWhiteSpace($ReportPath)) {
+		Join-Path $AddonRoot ".smoke-build-ci-report.json"
+	} elseif ([System.IO.Path]::IsPathRooted($ReportPath)) {
+		$ReportPath
+	} else {
+		Join-Path $AddonRoot $ReportPath
+	}
+	$targets = @{}
+	if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+		return [pscustomobject]@{
+			State = "missing"
+			Path = $path
+			Configuration = ""
+			Platform = ""
+			CompletedUtc = ""
+			CompileTargetCount = 0
+			Targets = $targets
+		}
+	}
+
+	try {
+		$report = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+	} catch {
+		return [pscustomobject]@{
+			State = "invalid"
+			Path = $path
+			Configuration = ""
+			Platform = ""
+			CompletedUtc = ""
+			CompileTargetCount = 0
+			Targets = $targets
+		}
+	}
+
+	$compileStages = @($report.Stages | Where-Object { [string]$_.Name -eq "compile-example" })
+	foreach ($target in @($compileStages | ForEach-Object { @($_.Targets) })) {
+		$repository = [string]$target.Repository
+		$example = [string]$target.Example
+		if ([string]::IsNullOrWhiteSpace($repository) -or [string]::IsNullOrWhiteSpace($example)) {
+			continue
+		}
+		$key = ($repository + "|" + $example).ToLowerInvariant()
+		$targets[$key] = [pscustomobject]@{
+			Repository = $repository
+			Example = $example
+			Passed = [string]$target.Status -eq "passed"
+			Status = [string]$target.Status
+		}
+	}
+
+	return [pscustomobject]@{
+		State = if ($compileStages.Count -gt 0) { "available" } else { "no-compile-stage" }
+		Path = $path
+		Configuration = [string]$report.Configuration
+		Platform = [string]$report.Platform
+		CompletedUtc = [string]$report.CompletedUtc
+		CompileTargetCount = $targets.Count
+		Targets = $targets
+	}
+}
+
 function Get-ExampleBuildEvidence {
-	param([object]$Status)
+	param(
+		[object]$Status,
+		[object]$CompileEvidence
+	)
 
 	if (!$Status.Present) {
 		return [pscustomobject]@{
@@ -144,10 +215,20 @@ function Get-ExampleBuildEvidence {
 		if ($newestExecutableTime) {
 			$fresh = !$newestInputTime -or $newestExecutableTime -ge $newestInputTime
 		}
+		$key = (([string]$Status.Name) + "|" + ([string]$example)).ToLowerInvariant()
+		$ciTarget = if ($CompileEvidence -and $CompileEvidence.Targets.ContainsKey($key)) {
+			$CompileEvidence.Targets[$key]
+		} else {
+			$null
+		}
+		$ciCompilePassed = $null -ne $ciTarget -and [bool]$ciTarget.Passed
+		$built = $fresh -or $ciCompilePassed
 		$records.Add([pscustomobject]@{
 			Example = [string]$example
-			Built = $fresh
-			BuildEvidence = if ($fresh) { "fresh-local-executable" } elseif ($executables.Count -gt 0) { "stale-local-executable" } else { "missing" }
+			Built = $built
+			LocalBuilt = $fresh
+			CiCompilePassed = $ciCompilePassed
+			BuildEvidence = if ($fresh) { "fresh-local-executable" } elseif ($ciCompilePassed) { "smoke-build-ci-compile-passed" } elseif ($executables.Count -gt 0) { "stale-local-executable" } else { "missing" }
 			Executables = @($executables)
 		})
 	}
@@ -447,23 +528,14 @@ function Get-InferenceSmokeReportFile {
 function Get-BackendRuntimePriority {
 	param([object]$Status)
 
-	switch ($Status.Name) {
-		"ofxGgmlCore" { return 0 }
-		"ofxGgmlSam" { return 1 }
-		"ofxGgmlLlama" { return 2 }
-		"ofxGgmlAudio" { return 3 }
-		"ofxGgmlDiffusion" { return 4 }
-		"ofxGgmlVision" { return 5 }
-		"ofxGgmlVideo" { return 6 }
-		"ofxGgmlRag" { return 7 }
-		"ofxGgmlAgents" { return 8 }
-		"ofxGgmlMusic" { return 9 }
-		default { return 99 }
-	}
+	return [int]$Status.DevelopmentPriority
 }
 
 function New-BackendRuntimeEntry {
-	param([object]$Status)
+	param(
+		[object]$Status,
+		[object]$CompileEvidence
+	)
 
 	$metadata = Get-AddonMetadata -RepositoryPath $Status.Path
 	$Status | Add-Member -NotePropertyName Metadata -NotePropertyValue $metadata -Force
@@ -472,7 +544,7 @@ function New-BackendRuntimeEntry {
 		$declaredBackends = @($metadata.backends | ForEach-Object { [string]$_ })
 	}
 	$modelEvidence = Get-ModelEvidence -Status $Status
-	$buildEvidence = Get-ExampleBuildEvidence -Status $Status
+	$buildEvidence = Get-ExampleBuildEvidence -Status $Status -CompileEvidence $CompileEvidence
 	$runtimeEvidence = Get-RuntimeSmokeEvidence -Status $Status
 	$inferenceEvidence = Get-InferenceSmokeEvidence -Status $Status
 	$priority = Get-BackendRuntimePriority -Status $Status
@@ -636,7 +708,8 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	param(
 		[array]$Entries,
 		[string]$Root,
-		[array]$NextCommands
+		[array]$NextCommands,
+		[object]$CompileEvidence
 	)
 
 	$summary = Get-BackendRuntimeSummary -Entries $Entries
@@ -646,6 +719,7 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("Non-mutating Core control-plane handoff for turning declared backend support into release evidence.")
 	$lines.Add("")
 	$lines.Add("Root: $Root")
+	$lines.Add("Smoke-build CI compile evidence: $($CompileEvidence.State) ($($CompileEvidence.CompileTargetCount) targets, $($CompileEvidence.Path))")
 	$lines.Add("")
 	$lines.Add("## Summary")
 	$lines.Add("")
@@ -699,6 +773,7 @@ function ConvertTo-MarkdownBackendRuntimePlan {
 	$lines.Add("- Do not add model-specific code to Core; companion lanes own model loading and inference.")
 	$lines.Add("- Treat `inference-checked` as local evidence from an ignored lane-owned smoke report, not as a committed artifact.")
 	$lines.Add("- Do not treat missing generated example binaries as actionable when a lane has stronger model-backed inference evidence; generated binaries stay local-only.")
+	$lines.Add("- CI compile evidence belongs to the report configuration and revision; it does not prove that a different local dirty tree compiled.")
 
 	return $lines -join [Environment]::NewLine
 }
@@ -711,13 +786,22 @@ if (!$?) {
 }
 $status = $statusJson | ConvertFrom-Json
 $managed = @($status.Addons | Where-Object { $_.Known })
-$entries = @($managed | ForEach-Object { New-BackendRuntimeEntry -Status $_ })
+$compileEvidence = Get-SmokeBuildCompileEvidence -ReportPath $SmokeBuildCiReport -AddonRoot $addonRoot
+$entries = @($managed | ForEach-Object { New-BackendRuntimeEntry -Status $_ -CompileEvidence $compileEvidence })
 $summary = Get-BackendRuntimeSummary -Entries $entries
 $nextCommands = Get-BackendRuntimeNextCommands -Entries $entries
 
 if ($Json) {
 	$result = [ordered]@{
 		Root = [string]$status.Root
+		SmokeBuildCiEvidence = [pscustomobject]@{
+			State = [string]$compileEvidence.State
+			Path = [string]$compileEvidence.Path
+			Configuration = [string]$compileEvidence.Configuration
+			Platform = [string]$compileEvidence.Platform
+			CompletedUtc = [string]$compileEvidence.CompletedUtc
+			CompileTargetCount = [int]$compileEvidence.CompileTargetCount
+		}
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		NextCommands = @($nextCommands)
@@ -728,7 +812,7 @@ if ($Json) {
 	}
 	$content = [pscustomobject]$result | ConvertTo-Json -Depth 8
 } else {
-	$content = ConvertTo-MarkdownBackendRuntimePlan -Entries $entries -Root ([string]$status.Root) -NextCommands $nextCommands
+	$content = ConvertTo-MarkdownBackendRuntimePlan -Entries $entries -Root ([string]$status.Root) -NextCommands $nextCommands -CompileEvidence $compileEvidence
 }
 
 if (![string]::IsNullOrWhiteSpace($OutputPath)) {

@@ -9,6 +9,7 @@ $backendReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-ca
 $backendRuntimePlan = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-backend-runtime-gate-evidence-$testId.md"
 $smokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-gate-evidence-$testId.json"
 $failedSmokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-gate-failed-$testId.json"
+$generationOnlySmokeBuildReport = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-smoke-build-ci-gate-generation-only-$testId.json"
 $gateOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-gate-output-$testId.md"
 
 @(
@@ -96,6 +97,8 @@ $gateOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-g
 		CommandsRun = 14
 		FailedTargets = 0
 		FailedCommands = 0
+		StageNames = @("generate-project", "repair-generated-project", "compile-example")
+		CompiledTargets = 14
 		HasFailures = $false
 	}
 } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $smokeBuildReport
@@ -108,9 +111,25 @@ $gateOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) "ofxGgml-release-g
 		CommandsRun = 14
 		FailedTargets = 1
 		FailedCommands = 1
+		StageNames = @("generate-project", "repair-generated-project", "compile-example")
+		CompiledTargets = 13
 		HasFailures = $true
 	}
 } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $failedSmokeBuildReport
+
+@{
+	Summary = @{
+		Outcome = "passed"
+		ReportedStages = 1
+		ReportedTargets = 14
+		CommandsRun = 14
+		FailedTargets = 0
+		FailedCommands = 0
+		StageNames = @("generate-project")
+		CompiledTargets = 0
+		HasFailures = $false
+	}
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $generationOnlySmokeBuildReport
 
 try {
 	$passOutput = @(& $gateScript `
@@ -151,6 +170,22 @@ try {
 		throw "release readiness gate did not report failed smoke-build evidence."
 	}
 
+	$generationOnlyOutput = @(& $gateScript `
+		-WorkflowStatusReport $workflowReport `
+		-BackendCapabilityReport $backendReport `
+		-BackendRuntimePlan $backendRuntimePlan `
+		-SmokeBuildCiReport $generationOnlySmokeBuildReport `
+		-SkipManagedGitStatus `
+		-Json 2>&1)
+	$generationOnlyExitCode = $LASTEXITCODE
+	if ($generationOnlyExitCode -eq 0) {
+		throw "assert-release-readiness.ps1 unexpectedly passed generation-only smoke-build evidence."
+	}
+	$generationOnly = ($generationOnlyOutput -join "`n") | ConvertFrom-Json
+	if ($generationOnly.Ready -or @($generationOnly.Blockers) -notcontains "smoke-build CI evidence does not include a compiled example") {
+		throw "release readiness gate did not reject generation-only smoke-build evidence."
+	}
+
 	$blockedOutput = @(& $gateScript `
 		-WorkflowStatusReport $blockedWorkflowReport `
 		-BackendCapabilityReport $backendReport `
@@ -176,6 +211,7 @@ try {
 		$backendRuntimePlan,
 		$smokeBuildReport,
 		$failedSmokeBuildReport,
+		$generationOnlySmokeBuildReport,
 		$gateOutputPath
 	)) {
 		Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue

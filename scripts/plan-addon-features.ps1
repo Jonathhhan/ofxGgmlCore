@@ -48,23 +48,6 @@ function Get-FeatureAction {
 	}
 }
 
-function Get-FeaturePriority {
-	param([string]$Name)
-
-	switch ($Name) {
-		"ofxGgmlCore" { return 0 }
-		"ofxGgmlSam" { return 1 }
-		"ofxGgmlLlama" { return 2 }
-		"ofxGgmlAudio" { return 3 }
-		"ofxGgmlVision" { return 4 }
-		"ofxGgmlRag" { return 5 }
-		"ofxGgmlAgents" { return 6 }
-		"ofxGgmlVideo" { return 7 }
-		"ofxGgmlMusic" { return 8 }
-		default { return 99 }
-	}
-}
-
 function New-FeatureEntry {
 	param([object]$Status)
 
@@ -79,7 +62,7 @@ function New-FeatureEntry {
 		Repository = [string]$Status.Name
 		Lane = [string]$Status.Lane
 		Present = [bool]$Status.Present
-		Priority = [int](Get-FeaturePriority -Name ([string]$Status.Name))
+		Priority = [int]$Status.DevelopmentPriority
 		State = [string]$state
 		FeatureCount = @($features).Count
 		Features = @($features)

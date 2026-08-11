@@ -13,6 +13,56 @@ $addonsRoot = Split-Path -Parent $coreRoot
 . (Join-Path $scriptRoot "get-ecosystem.ps1")
 $family = @(Get-OfxGgmlEcosystem -AddonsRoot $addonsRoot)
 
+function Get-DevelopmentPriorityState {
+	param([string]$AddonsRoot)
+
+	$path = Join-Path $AddonsRoot "ofxGgmlWorkflows\ecosystem.yaml"
+	$priorities = @{}
+	if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+		return [pscustomobject]@{
+			Available = $false
+			Path = $path
+			Priorities = $priorities
+		}
+	}
+
+	$currentOrder = $null
+	foreach ($rawLine in Get-Content -LiteralPath $path) {
+		$line = [string]$rawLine
+		if ($line -match '^\s*-\s+order:\s*(\d+)\s*(?:#.*)?$') {
+			$currentOrder = [int]$matches[1]
+			continue
+		}
+		if ($null -ne $currentOrder -and $line -match '^\s+lane:\s*([^#]+?)\s*(?:#.*)?$') {
+			$lane = ([string]$matches[1]).Trim().Trim('"').Trim("'")
+			if (![string]::IsNullOrWhiteSpace($lane)) {
+				$priorities[$lane] = $currentOrder
+			}
+			$currentOrder = $null
+		}
+	}
+
+	return [pscustomobject]@{
+		Available = $priorities.Count -gt 0
+		Path = $path
+		Priorities = $priorities
+	}
+}
+
+$developmentPriorityState = Get-DevelopmentPriorityState -AddonsRoot $addonsRoot
+
+function Get-DevelopmentPriority {
+	param([string]$Name)
+
+	if ($Name -eq "ofxGgmlCore") {
+		return 0
+	}
+	if ($developmentPriorityState.Priorities.ContainsKey($Name)) {
+		return [int]$developmentPriorityState.Priorities[$Name]
+	}
+	return 999
+}
+
 function Test-CommandAvailable {
 	param([string]$Name)
 	return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
@@ -210,6 +260,7 @@ function Get-AddonStatus {
 		Name = $Addon.Name
 		Kind = $Addon.Kind
 		Lane = $Addon.Lane
+		DevelopmentPriority = [int](Get-DevelopmentPriority -Name ([string]$Addon.Name))
 		Scope = $Addon.Scope
 		Known = $known
 		Classified = $classified
@@ -284,6 +335,7 @@ function ConvertTo-FamilyRepositorySummary {
 		AgentWorkflowGuide = [bool]$Status.AgentWorkflowGuide
 		RuntimeProviderMode = [string]$Status.RuntimeProviderMode
 		FeatureCount = [int]$Status.FeatureCount
+		DevelopmentPriority = [int]$Status.DevelopmentPriority
 	}
 }
 
@@ -294,6 +346,8 @@ $nextCommands = Get-FamilyStatusNextCommands
 if ($Json) {
 	$result = [pscustomobject]@{
 		Root = $addonsRoot
+		DevelopmentPrioritySource = [string]$developmentPriorityState.Path
+		DevelopmentPriorityAvailable = [bool]$developmentPriorityState.Available
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		NextCommands = $nextCommands

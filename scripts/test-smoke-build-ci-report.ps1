@@ -64,6 +64,8 @@ foreach ($property in @(
 	"FailedCommands",
 	"StageNames",
 	"FailedStageNames",
+	"HasCompileStage",
+	"CompiledTargets",
 	"HasFailures"
 )) {
 	if (!$summary.PSObject.Properties[$property]) {
@@ -79,6 +81,9 @@ if ($summary.ReportedStages -ne 2 -or $summary.ReportedTargets -ne 2 -or $summar
 }
 if (@($summary.StageNames) -notcontains "compile-example") {
 	throw "smoke-build CI report Summary did not include stage names."
+}
+if (!$summary.HasCompileStage -or $summary.CompiledTargets -ne 1) {
+	throw "smoke-build CI report Summary did not count compiled targets."
 }
 
 $failedReport = $report.PSObject.Copy()
@@ -130,6 +135,9 @@ if ($genericListSummary.ReportedStages -ne 1 -or $genericListSummary.ReportedTar
 }
 if ($genericListSummary.HasFailures) {
 	throw "smoke-build CI report Summary reported failures for a passing generic-list report."
+}
+if ($genericListSummary.HasCompileStage -or $genericListSummary.CompiledTargets -ne 0) {
+	throw "smoke-build CI report Summary treated generation-only evidence as compilation."
 }
 
 Write-Host "==> Smoke-build CI report summary coverage passed"

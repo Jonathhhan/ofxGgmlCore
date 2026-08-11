@@ -4,6 +4,7 @@ param(
 	[string]$Platform = "x64",
 	[int]$TargetsPerStage = 0,
 	[int]$MaxCommandOutputLines = 2000,
+	[switch]$RequireCompileStage,
 	[string]$ReportPath = ""
 )
 
@@ -327,6 +328,10 @@ try {
 
 		$stageEntry.CompletedUtc = (Get-Date).ToUniversalTime().ToString("o")
 		$report.Stages.Add($stageEntry)
+	}
+
+	if ($RequireCompileStage -and @($report.Stages | Where-Object { $_.Name -eq "compile-example" }).Count -eq 0) {
+		throw "No compile-example targets ran. Install openFrameworks with projectGenerator and compiler support before treating this report as compile evidence."
 	}
 
 } catch {

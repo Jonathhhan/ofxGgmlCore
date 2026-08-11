@@ -17,15 +17,15 @@ function Get-EcosystemPlanBuckets {
 	$missingValidation = @($managedStatuses | Where-Object { $_.Present -and !$_.ValidateScript })
 	$dirtyRepos = @($managedStatuses | Where-Object { $_.Present -and $_.DirtyCount -gt 0 })
 	$missingDoctor = @($managedStatuses | Where-Object { $_.Present -and !$_.DoctorScript -and $_.Name -ne "ofxGgmlWorkflows" })
-	$readyManaged = @($managedStatuses | Where-Object {
+	$planningReadyManaged = @($managedStatuses | Where-Object {
 		$_.Present -and
-		$_.DirtyCount -eq 0 -and
 		$_.ValidateScript -and
 		$_.AgentsInstructions -and
 		$_.HermesInstructions -and
 		$_.CopilotInstructions -and
 		$_.CopilotEcosystemInstructions
 	})
+	$cleanReadyManaged = @($planningReadyManaged | Where-Object { $_.DirtyCount -eq 0 })
 
 	[pscustomobject]@{
 		ManagedStatuses = $managedStatuses
@@ -36,7 +36,8 @@ function Get-EcosystemPlanBuckets {
 		MissingValidation = $missingValidation
 		DirtyRepos = $dirtyRepos
 		MissingDoctor = $missingDoctor
-		ReadyManaged = $readyManaged
+		PlanningReadyManaged = $planningReadyManaged
+		CleanReadyManaged = $cleanReadyManaged
 	}
 }
 
@@ -46,7 +47,8 @@ function Get-EcosystemSummary {
 	[pscustomobject]@{
 		ManagedRepositories = @($Buckets.ManagedStatuses).Count
 		PresentManagedRepositories = @($Buckets.ManagedStatuses | Where-Object { $_.Present }).Count
-		ReadyManagedRepositories = @($Buckets.ReadyManaged).Count
+		ReadyManagedRepositories = @($Buckets.PlanningReadyManaged).Count
+		CleanReadyManagedRepositories = @($Buckets.CleanReadyManaged).Count
 		DetectedReferenceRepositories = @($Buckets.DetectedStatuses).Count
 		ClassifiedReferenceRepositories = @($Buckets.ClassifiedDetected).Count
 		UnclassifiedDetectedRepositories = @($Buckets.UnclassifiedDetected).Count

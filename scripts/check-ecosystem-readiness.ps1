@@ -168,7 +168,8 @@ function ConvertTo-SummaryStepResult {
 
 	$output = @()
 	$outputOmitted = $false
-	if ($Step.State -eq "OK" -and @($Step.Output).Count -gt 0) {
+	$preserveOutput = $Step.Name -eq "release readiness plan"
+	if (!$preserveOutput -and $Step.State -eq "OK" -and @($Step.Output).Count -gt 0) {
 		$outputOmitted = $true
 	} else {
 		$output = @($Step.Output)

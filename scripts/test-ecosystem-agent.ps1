@@ -53,6 +53,7 @@ foreach ($property in @(
 	"ManagedRepositories",
 	"PresentManagedRepositories",
 	"ReadyManagedRepositories",
+	"CleanReadyManagedRepositories",
 	"DetectedReferenceRepositories",
 	"ClassifiedReferenceRepositories",
 	"UnclassifiedDetectedRepositories",
