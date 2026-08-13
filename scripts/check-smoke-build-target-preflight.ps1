@@ -3,6 +3,7 @@ param(
 	[int]$First = 1,
 	[string]$Repository = "",
 	[string]$Example = "",
+	[switch]$AllowDirtyRepository,
 	[switch]$SummaryOnly,
 	[switch]$Json
 )
@@ -116,12 +117,22 @@ $preflights = @($targets | ForEach-Object {
 	$exampleDetail = if ($exampleExists) { $examplePath } else { "example directory was not found" }
 	$checks += New-Check -Name "example directory" -Ok $exampleExists -Detail $exampleDetail
 
-	$metadataOk = $exampleMetadata.HasAddonsMake -and $exampleMetadata.HasOwnerAddon -and $exampleMetadata.HasCoreAddon
-	$metadataDetail = if ($metadataOk) { "addons.make includes owner addon and ofxGgmlCore" } else { "example metadata is incomplete" }
+	$metadataOk = $exampleMetadata.HasAddonsMake -and $exampleMetadata.HasOwnerAddon -and $exampleMetadata.HasRequiredAddons
+	$declaredRequirements = @($exampleMetadata.RequiredAddons)
+	$requirementDetail = if ($declaredRequirements.Count -gt 0) { $declaredRequirements -join ", " } else { "none" }
+	$metadataDetail = if ($metadataOk) { "addons.make includes owner addon and declared requirements ($requirementDetail)" } else { "example metadata is incomplete or misses declared requirements" }
 	$checks += New-Check -Name "example addon metadata" -Ok $metadataOk -Detail $metadataDetail
 
-	$repoClean = $dirtyCount -eq 0
-	$repoDetail = if ($dirtyCount -ge 0) { "$dirtyCount pending git changes in $repoPath" } else { "could not inspect git status for $repoPath" }
+	$repoClean = $dirtyCount -eq 0 -or ($AllowDirtyRepository -and $dirtyCount -gt 0)
+	$repoDetail = if ($dirtyCount -eq 0) {
+		"0 pending git changes in $repoPath"
+	} elseif ($dirtyCount -gt 0 -and $AllowDirtyRepository) {
+		"$dirtyCount pending git changes explicitly allowed for this preflight in $repoPath"
+	} elseif ($dirtyCount -ge 0) {
+		"$dirtyCount pending git changes in $repoPath"
+	} else {
+		"could not inspect git status for $repoPath"
+	}
 	$checks += New-Check -Name "owning repository clean" -Ok $repoClean -Detail $repoDetail
 
 	$stageStateOk = $true
@@ -185,6 +196,7 @@ if ($Json) {
 	$result = [ordered]@{
 		Root = $plan.Root
 		Stage = $Stage
+		AllowDirtyRepository = [bool]$AllowDirtyRepository
 		SummaryOnly = [bool]$SummaryOnly
 		Summary = $summary
 		PreflightSummaries = @($preflights | ForEach-Object {

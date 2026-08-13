@@ -66,6 +66,23 @@ function Test-GeneratedProjectAddonReference {
 		$ProjectText -match "\$\(OF_ROOT\)[\\/]+addons[\\/]+$escapedAddon([\\/;`"'<]|$)"
 }
 
+function Get-GeneratedProjectAddonReferences {
+	param([string]$ProjectText)
+
+	if ([string]::IsNullOrWhiteSpace($ProjectText)) {
+		return @()
+	}
+	$references = New-Object System.Collections.Generic.List[string]
+	$pattern = '(?:\.\.[\\/]+\.\.[\\/]+|\$\(OF_ROOT\)[\\/]+addons[\\/]+)(ofx[A-Za-z0-9_.-]+)(?=[\\/;`"''<]|$)'
+	foreach ($match in [regex]::Matches($ProjectText, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
+		$name = [string]$match.Groups[1].Value
+		if (!$references.Contains($name)) {
+			$references.Add($name)
+		}
+	}
+	return @($references)
+}
+
 function Get-GeneratedProjectWiring {
 	param(
 		[array]$GeneratedFiles,
@@ -82,6 +99,7 @@ function Get-GeneratedProjectWiring {
 			Detail = "generated project files are not present yet"
 			ProjectFile = ""
 			MissingAddons = @($expectedAddons)
+			UnexpectedAddons = @()
 		}
 	}
 	if (!$vcxproj) {
@@ -90,6 +108,7 @@ function Get-GeneratedProjectWiring {
 			Detail = "no Visual Studio project file was found for addon wiring inspection"
 			ProjectFile = ""
 			MissingAddons = @()
+			UnexpectedAddons = @()
 		}
 	}
 	if ($expectedAddons.Count -eq 0) {
@@ -98,6 +117,7 @@ function Get-GeneratedProjectWiring {
 			Detail = "example metadata did not declare expected addons"
 			ProjectFile = [string]$vcxproj
 			MissingAddons = @()
+			UnexpectedAddons = @()
 		}
 	}
 
@@ -105,12 +125,27 @@ function Get-GeneratedProjectWiring {
 	$missingAddons = @($expectedAddons | Where-Object {
 		!(Test-GeneratedProjectAddonReference -ProjectText $projectText -Addon $_ -OwnerAddon $OwnerAddon)
 	})
-	if ($missingAddons.Count -gt 0) {
+	$referencedAddons = @(Get-GeneratedProjectAddonReferences -ProjectText $projectText)
+	$unexpectedAddons = @($referencedAddons | Where-Object {
+		$reference = $_
+		$reference -ne $OwnerAddon -and @($expectedAddons | Where-Object {
+			$_.Equals($reference, [System.StringComparison]::OrdinalIgnoreCase)
+		}).Count -eq 0
+	})
+	if ($missingAddons.Count -gt 0 -or $unexpectedAddons.Count -gt 0) {
+		$issues = New-Object System.Collections.Generic.List[string]
+		if ($missingAddons.Count -gt 0) {
+			$issues.Add("missing: $($missingAddons -join ', ')")
+		}
+		if ($unexpectedAddons.Count -gt 0) {
+			$issues.Add("unexpected/stale: $($unexpectedAddons -join ', ')")
+		}
 		return [pscustomobject]@{
 			State = "PENDING"
-			Detail = "Visual Studio project is missing addon wiring for: $($missingAddons -join ', ')"
+			Detail = "Visual Studio project addon wiring requires repair ($($issues -join '; '))"
 			ProjectFile = [string]$vcxproj
 			MissingAddons = @($missingAddons)
+			UnexpectedAddons = @($unexpectedAddons)
 		}
 	}
 
@@ -119,6 +154,7 @@ function Get-GeneratedProjectWiring {
 		Detail = "Visual Studio project references expected addons: $($expectedAddons -join ', ')"
 		ProjectFile = [string]$vcxproj
 		MissingAddons = @()
+		UnexpectedAddons = @()
 	}
 }
 
@@ -225,6 +261,7 @@ $postflights = @($targets | ForEach-Object {
 		GeneratedProjectFiles = $generatedFiles
 		GeneratedProjectFile = [string]$projectWiring.ProjectFile
 		MissingProjectAddons = @($projectWiring.MissingAddons)
+		UnexpectedProjectAddons = @($projectWiring.UnexpectedAddons)
 		GitStatus = $gitStatus
 		Checks = @($checks)
 		NextValidation = @($nextValidation.ToArray())
@@ -251,6 +288,7 @@ $safetyNote = "This postflight is non-mutating. Review generated files and git i
 $completePostflights = @($postflights | Where-Object { $_.Complete })
 $generatedProjectFiles = @($postflights | ForEach-Object { $_.GeneratedProjectFiles } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
 $missingProjectAddons = @($postflights | ForEach-Object { $_.MissingProjectAddons } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
+$unexpectedProjectAddons = @($postflights | ForEach-Object { $_.UnexpectedProjectAddons } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
 $summary = [pscustomobject]@{
 	Stage = $Stage
 	RequestedTargets = $First
@@ -260,6 +298,7 @@ $summary = [pscustomobject]@{
 	ReviewTargets = $reviewPostflights.Count
 	GeneratedProjectFiles = $generatedProjectFiles.Count
 	MissingProjectAddons = $missingProjectAddons.Count
+	UnexpectedProjectAddons = $unexpectedProjectAddons.Count
 	NextCommands = $nextCommandArray.Count
 	HasSelection = $postflights.Count -gt 0
 }
@@ -279,6 +318,7 @@ if ($Json) {
 				Complete = [bool]$_.Complete
 				GeneratedProjectFiles = @($_.GeneratedProjectFiles).Count
 				MissingProjectAddons = @($_.MissingProjectAddons).Count
+				UnexpectedProjectAddons = @($_.UnexpectedProjectAddons).Count
 				GitStatusLines = @($_.GitStatus).Count
 				ReviewChecks = $reviewChecks.Count
 			}

@@ -358,7 +358,9 @@ function Repair-VisualStudioProjectFile {
 	param(
 		[string]$Path,
 		[string[]]$AddonDefines = @(),
-		[string[]]$AddonIncludeDirs = @()
+		[string[]]$AddonIncludeDirs = @(),
+		[string[]]$AddonLibraries = @(),
+		[string[]]$AddonLibraryDirs = @()
 	)
 	if (!(Test-Path -LiteralPath $Path)) {
 		return
@@ -406,6 +408,14 @@ function Repair-VisualStudioProjectFile {
 	$libraryDirNodes = @($doc.SelectNodes("//msb:AdditionalLibraryDirectories", $namespace))
 	foreach ($node in $libraryDirNodes) {
 		$parts = @($node.InnerText -split ";" | Where-Object { $_ -and !(Test-GeneratedAddonPath $_) })
+		if ($Path.EndsWith(".vcxproj", [System.StringComparison]::OrdinalIgnoreCase)) {
+			foreach ($libraryDir in $AddonLibraryDirs) {
+				if (@($parts | Where-Object { $_.Equals($libraryDir, [System.StringComparison]::OrdinalIgnoreCase) }).Count -eq 0) {
+					$parts += $libraryDir
+					$changed = $true
+				}
+			}
+		}
 		$updated = $parts -join ";"
 		if ($updated -ne $node.InnerText) {
 			$node.InnerText = $updated
@@ -416,6 +426,23 @@ function Repair-VisualStudioProjectFile {
 	$dependencyNodes = @($doc.SelectNodes("//msb:AdditionalDependencies", $namespace))
 	foreach ($node in $dependencyNodes) {
 		$parts = @($node.InnerText -split ";" | Where-Object { $_ -and !(Test-StaleAddonLibrary $_) })
+		if ($Path.EndsWith(".vcxproj", [System.StringComparison]::OrdinalIgnoreCase)) {
+			$managedLibraries = @(
+				"ggml.lib", "ggml-base.lib", "ggml-cpu.lib", "ggml-cuda.lib",
+				"ggml-vulkan.lib", "ggml-metal.lib", "ggml-opencl.lib",
+				"cublas.lib", "cublasLt.lib", "cudart.lib", "cuda.lib", "vulkan-1.lib"
+			)
+			$parts = @($parts | Where-Object {
+				$name = [System.IO.Path]::GetFileName(($_ -replace '"', '').Trim())
+				!($managedLibraries -contains $name) -or $AddonLibraries -contains $name
+			})
+			foreach ($library in $AddonLibraries) {
+				if (@($parts | Where-Object { $_.Equals($library, [System.StringComparison]::OrdinalIgnoreCase) }).Count -eq 0) {
+					$parts += $library
+					$changed = $true
+				}
+			}
+		}
 		$updated = $parts -join ";"
 		if ($updated -ne $node.InnerText) {
 			$node.InnerText = $updated
@@ -447,7 +474,11 @@ function Repair-VisualStudioProjectFile {
 				"OFXIMGUI_DEBUG",
 				"IMGUI_IMPL_OPENGL_ES2",
 				"IMGUI_IMPL_OPENGL_ES3",
-				"USE_PI_LEGACY"
+				"USE_PI_LEGACY",
+				"OFXGGML_WITH_CUDA",
+				"OFXGGML_WITH_VULKAN",
+				"OFXGGML_WITH_METAL",
+				"OFXGGML_WITH_OPENCL"
 			)
 			$cleanOptions = @($cleanOptions | Where-Object {
 				!($_ -match '^-D([^=\s]+)(?:=.*)?$' -and
@@ -516,6 +547,37 @@ function Get-AddonIncludeDirectories {
 	return @($includeDirs)
 }
 
+function Get-CoreAddonLibraries {
+	$libraries = New-Object System.Collections.Generic.List[string]
+	$configPath = Join-Path $addonRoot "addon_config.mk"
+	if (!(Test-Path -LiteralPath $configPath)) {
+		return @()
+	}
+	$section = ""
+	Get-Content -LiteralPath $configPath | ForEach-Object {
+		if ($_ -match '^([A-Za-z0-9_/]+):\s*$') {
+			$section = $matches[1]
+		}
+		if (($section -eq "common" -or $section -eq "vs") -and
+			$_ -match '^\s*ADDON_LIBS\s*(?:\+)?=\s*([^#]+?)\s*$') {
+			$name = [System.IO.Path]::GetFileName(($matches[1] -replace '"', '').Trim())
+			if (![string]::IsNullOrWhiteSpace($name) -and !$libraries.Contains($name)) {
+				$libraries.Add($name)
+			}
+		}
+	}
+	return @($libraries)
+}
+
+function Get-CoreAddonLibraryDirectories {
+	param([string[]]$AddonLibraries)
+	$directories = New-Object System.Collections.Generic.List[string]
+	if (@($AddonLibraries | Where-Object { $_ -in @("cublas.lib", "cublasLt.lib", "cudart.lib", "cuda.lib") }).Count -gt 0) {
+		$directories.Add('$(CUDA_PATH)\lib\x64')
+	}
+	return @($directories)
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $addonRoot = Resolve-Path (Join-Path $scriptRoot "..")
 $ofRoot = Split-Path -Parent (Split-Path -Parent $addonRoot)
@@ -532,7 +594,9 @@ if (Test-WindowsHost) {
 	}
 	$addonDefines = Get-AddonDefines
 	$addonIncludeDirs = Get-AddonIncludeDirectories
-	Repair-VisualStudioProjectFile -Path $project -AddonDefines $addonDefines -AddonIncludeDirs $addonIncludeDirs
+	$addonLibraries = Get-CoreAddonLibraries
+	$addonLibraryDirs = Get-CoreAddonLibraryDirectories -AddonLibraries $addonLibraries
+	Repair-VisualStudioProjectFile -Path $project -AddonDefines $addonDefines -AddonIncludeDirs $addonIncludeDirs -AddonLibraries $addonLibraries -AddonLibraryDirs $addonLibraryDirs
 	Repair-VisualStudioProjectFile -Path "$project.filters"
 	if ($RepairOnly) {
 		Write-Step "Repair-only project metadata check completed for $Example"

@@ -10,7 +10,8 @@ Use `ecosystem.json` together with each repository's `ofxggml-addon.json` to val
 - addon name matches ecosystem registration
 - lane matches ecosystem registration
 - `coreBaseline` matches ecosystem baseline
-- companion addons declare `ofxGgmlCore` in `requires`
+- each example declares its owner addon plus the addon's explicit `requires`
+- dependency-light companion addons may keep `requires` empty; `coreBaseline` still records ecosystem compatibility
 
 ## Generated reports
 

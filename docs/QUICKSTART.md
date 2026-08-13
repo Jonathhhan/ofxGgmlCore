@@ -51,7 +51,13 @@ pwsh -File scripts/setup-ggml.ps1 -CpuOnly
 ```
 
 The example opens a small openFrameworks window showing Core runtime status.
-No model required.
+No model required. It discovers the backends compiled into the local binary,
+prefers an available accelerator such as CUDA, runs a verified tensor benchmark
+at startup, and shows the requested and active backend separately. Discovery,
+runtime setup, graph execution, and readback stay on a dedicated `ofThread`
+worker so the openFrameworks update/draw thread remains responsive. CPU fallback
+is disabled by default so an unavailable accelerator cannot be mistaken for a
+successful accelerator run.
 
 ## 4. Run Llama Examples
 

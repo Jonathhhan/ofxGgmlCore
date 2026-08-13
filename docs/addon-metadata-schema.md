@@ -41,6 +41,25 @@ ofxggml-addon.json
 
 `inferenceSmokeReport` (optional, recommended for inference/runtime-capable lanes) is the filename of the lane-owned inference smoke report expected by Core's backend-runtime planning scripts. It is read by `scripts/plan-backend-runtime-verification.ps1`.
 
+## `requires` and `coreBaseline`
+
+`requires` lists direct build/runtime addon dependencies. It may be empty for a
+dependency-light companion that does not compile or link Core. Smoke-project
+planning requires examples to include the owner addon and exactly the declared
+direct dependencies; it does not inject `ofxGgmlCore` implicitly.
+
+`coreBaseline` remains the ecosystem compatibility baseline even when Core is
+not a direct dependency.
+
+Generated-project postflight checks both sides of this contract: every addon in
+`addons.make` must be wired, and no other managed ofxGgml addon may remain as a
+stale generated-project reference. Missing wiring may be repaired additively;
+stale wiring requires regeneration from `addons.make`.
+
+When regenerating ignored project files while intentional source edits are
+already present, smoke-build preflight may use `-AllowDirtyRepository`. The
+override is explicit and per invocation; the default still blocks dirty owners.
+
 ### Migration note
 
 Lanes that currently participate in model-backed runtime planning should add `inferenceSmokeReport` to `ofxggml-addon.json`. Core now resolves inference smoke evidence from metadata first-classly and no longer maintains a hard-coded per-lane filename map.

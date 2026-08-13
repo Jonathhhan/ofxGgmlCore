@@ -35,6 +35,9 @@ function Get-RepairState {
 	if (!$Postflight.GeneratedProjectFiles -or @($Postflight.GeneratedProjectFiles).Count -eq 0) {
 		return "needs-project-generation"
 	}
+	if (@($Postflight.UnexpectedProjectAddons).Count -gt 0) {
+		return "needs-project-regeneration"
+	}
 	if (@($Postflight.MissingProjectAddons).Count -gt 0) {
 		return "needs-addon-wiring-repair"
 	}
@@ -49,6 +52,7 @@ function Get-RepairAction {
 
 	switch ($State) {
 		"needs-project-generation" { "run projectGenerator before repair planning can inspect generated metadata" }
+		"needs-project-regeneration" { "regenerate the Visual Studio project to remove unexpected or stale addon wiring before compile gates" }
 		"needs-addon-wiring-repair" { "regenerate or repair the Visual Studio project so expected addons are referenced before compile gates" }
 		"ready-for-compile-validation" { "generated project addon wiring is ready for focused compile validation" }
 		default { "review generated project state before compile validation" }
@@ -579,6 +583,7 @@ $repairs = @($postflight.Postflights | ForEach-Object {
 	$exampleMetadata = @($record.ExampleMetadata | Where-Object { $_.Example -eq $targetPostflight.Example } | Select-Object -First 1)
 	$addons = @($exampleMetadata.Addons | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
 	$missingAddons = @($targetPostflight.MissingProjectAddons | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
+	$unexpectedAddons = @($targetPostflight.UnexpectedProjectAddons | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
 	$state = Get-RepairState -Postflight $targetPostflight
 	$expectedReferences = @($addons | ForEach-Object {
 		[pscustomobject]@{
@@ -615,7 +620,7 @@ $repairs = @($postflight.Postflights | ForEach-Object {
 	}
 	$nextCommands = New-Object System.Collections.Generic.List[string]
 	$nextCommands.Add("scripts\check-smoke-build-target-preflight.bat -Stage $($targetPostflight.Stage) -Repository $($targetPostflight.Repository) -Example $($targetPostflight.Example)")
-	if (($state -eq "needs-project-generation" -or $state -eq "needs-addon-wiring-repair") -and
+	if (($state -eq "needs-project-generation" -or $state -eq "needs-project-regeneration" -or $state -eq "needs-addon-wiring-repair") -and
 		![string]::IsNullOrWhiteSpace($projectGeneratorCommand)) {
 		$nextCommands.Add($projectGeneratorCommand)
 	}
@@ -638,6 +643,7 @@ $repairs = @($postflight.Postflights | ForEach-Object {
 		GeneratedProjectFiles = @($targetPostflight.GeneratedProjectFiles)
 		ExpectedReferences = @($expectedReferences)
 		MissingProjectAddons = @($missingAddons)
+		UnexpectedProjectAddons = @($unexpectedAddons)
 		RepairResult = $repairResult
 		ProjectGeneratorCommand = $projectGeneratorCommand
 		NextCommands = @($nextCommands.ToArray())
@@ -647,10 +653,12 @@ $repairs = @($postflight.Postflights | ForEach-Object {
 $needsAction = @($repairs | Where-Object { $_.State -ne "ready-for-compile-validation" })
 $readyForCompile = @($repairs | Where-Object { $_.State -eq "ready-for-compile-validation" })
 $needsProjectGeneration = @($repairs | Where-Object { $_.State -eq "needs-project-generation" })
+$needsProjectRegeneration = @($repairs | Where-Object { $_.State -eq "needs-project-regeneration" })
 $needsAddonWiringRepair = @($repairs | Where-Object { $_.State -eq "needs-addon-wiring-repair" })
 $reviewGeneratedProject = @($repairs | Where-Object { $_.State -eq "review-generated-project" })
 $plannedRepairChanges = @($repairs | Where-Object { $_.RepairResult -and $_.RepairResult.Changed })
 $missingProjectAddons = @($repairs | ForEach-Object { $_.MissingProjectAddons } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
+$unexpectedProjectAddons = @($repairs | ForEach-Object { $_.UnexpectedProjectAddons } | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
 $nextCommandList = New-Object System.Collections.Generic.List[string]
 foreach ($repair in $repairs) {
 	foreach ($command in @($repair.NextCommands)) {
@@ -671,11 +679,13 @@ $summary = [pscustomobject]@{
 	SelectedTargets = $repairs.Count
 	ReadyForCompileValidation = $readyForCompile.Count
 	NeedsProjectGeneration = $needsProjectGeneration.Count
+	NeedsProjectRegeneration = $needsProjectRegeneration.Count
 	NeedsAddonWiringRepair = $needsAddonWiringRepair.Count
 	ReviewGeneratedProject = $reviewGeneratedProject.Count
 	NeedsAction = $needsAction.Count
 	PlannedRepairChanges = $plannedRepairChanges.Count
 	MissingProjectAddons = $missingProjectAddons.Count
+	UnexpectedProjectAddons = $unexpectedProjectAddons.Count
 	NextCommands = $nextCommands.Count
 	Applied = [bool]$Apply
 	HasSelection = $repairs.Count -gt 0

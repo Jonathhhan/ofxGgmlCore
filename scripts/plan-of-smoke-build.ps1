@@ -26,7 +26,7 @@ function Get-SmokeBuildPhase {
 	if (@($ExampleMetadata | Where-Object { !$_.HasAddonsMake }).Count -gt 0) {
 		return "needs-example-addons-metadata"
 	}
-	if (@($ExampleMetadata | Where-Object { !$_.HasOwnerAddon -or !$_.HasCoreAddon }).Count -gt 0) {
+	if (@($ExampleMetadata | Where-Object { !$_.HasOwnerAddon -or !$_.HasRequiredAddons }).Count -gt 0) {
 		return "needs-example-addon-references"
 	}
 	return "ready-for-project-generation-check"
@@ -41,7 +41,7 @@ function Get-SmokeBuildAction {
 		"needs-local-validation" { "add local validation before project-generation checks" }
 		"needs-root-example-inventory" { "document or add a root-level smoke example before compile validation" }
 		"needs-example-addons-metadata" { "add addons.make to every root-level smoke example before project-generation checks" }
-		"needs-example-addon-references" { "add owner addon and ofxGgmlCore references to example addons.make files" }
+		"needs-example-addon-references" { "add owner addon and declared required addon references to example addons.make files" }
 		"ready-for-project-generation-check" { "plan projectGenerator verification before CI compile gates" }
 		default { "review smoke-build readiness" }
 	}
@@ -97,6 +97,24 @@ function Get-GeneratedProjectFiles {
 	return @($files)
 }
 
+function Get-DeclaredAddonRequirements {
+	param([object]$Status)
+
+	if (!$Status.Present -or [string]::IsNullOrWhiteSpace([string]$Status.Path)) {
+		return @()
+	}
+
+	$metadataPath = Join-Path ([string]$Status.Path) "ofxggml-addon.json"
+	if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+		return @()
+	}
+
+	$metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+	return @($metadata.requires | ForEach-Object { ([string]$_).Trim() } | Where-Object {
+		![string]::IsNullOrWhiteSpace($_)
+	} | Sort-Object -Unique)
+}
+
 function New-ProjectGeneratorCommand {
 	param(
 		[string]$ProjectGeneratorPath,
@@ -122,7 +140,8 @@ function Get-ExampleMetadata {
 	param(
 		[object]$Status,
 		[string]$OfRoot,
-		[string]$ProjectGeneratorPath
+		[string]$ProjectGeneratorPath,
+		[array]$RequiredAddons
 	)
 
 	if (!$Status.Present -or !$Status.Examples -or $Status.Examples.Count -eq 0) {
@@ -147,8 +166,9 @@ function Get-ExampleMetadata {
 		if (!$addons.Contains([string]$Status.Name)) {
 			$missing.Add("owner addon")
 		}
-		if (!$addons.Contains("ofxGgmlCore")) {
-			$missing.Add("ofxGgmlCore")
+		$missingRequiredAddons = @($RequiredAddons | Where-Object { !$addons.Contains([string]$_) })
+		foreach ($requiredAddon in $missingRequiredAddons) {
+			$missing.Add("required addon: $requiredAddon")
 		}
 		$generatedProjectFiles = @(Get-GeneratedProjectFiles -ExamplePath $examplePath -Example $example)
 
@@ -158,6 +178,9 @@ function Get-ExampleMetadata {
 			HasAddonsMake = $hasAddonsMake
 			HasOwnerAddon = $addons.Contains([string]$Status.Name)
 			HasCoreAddon = $addons.Contains("ofxGgmlCore")
+			RequiredAddons = @($RequiredAddons)
+			MissingRequiredAddons = @($missingRequiredAddons)
+			HasRequiredAddons = $missingRequiredAddons.Count -eq 0
 			Addons = $addons
 			Missing = @($missing)
 			HasGeneratedProject = $generatedProjectFiles.Count -gt 0
@@ -260,6 +283,7 @@ function Get-SmokeBuildPlanSummary {
 		ExamplesWithAddonsMake = @($exampleMetadata | Where-Object { $_.HasAddonsMake }).Count
 		ExamplesMissingOwnerAddon = @($exampleMetadata | Where-Object { !$_.HasOwnerAddon }).Count
 		ExamplesMissingCoreAddon = @($exampleMetadata | Where-Object { !$_.HasCoreAddon }).Count
+		ExamplesMissingRequiredAddons = @($exampleMetadata | Where-Object { !$_.HasRequiredAddons }).Count
 		ExamplesWithProjectGeneratorCommands = @($exampleMetadata | Where-Object { ![string]::IsNullOrWhiteSpace($_.ProjectGeneratorCommand) }).Count
 		ExamplesWithGeneratedProjectFiles = @($exampleMetadata | Where-Object { $_.HasGeneratedProject }).Count
 		GenerateProjectTargets = @($Targets | Where-Object { $_.Stage -eq "generate-project" }).Count
@@ -309,7 +333,8 @@ function ConvertTo-MarkdownSmokeBuildPlan {
 	$lines.Add("| Missing root example inventory | $(@($Records | Where-Object { $_.Phase -eq "needs-root-example-inventory" }).Count) |")
 	$lines.Add("| Examples with addons.make | $(@($exampleMetadata | Where-Object { $_.HasAddonsMake }).Count) |")
 	$lines.Add("| Examples missing owner addon | $(@($exampleMetadata | Where-Object { !$_.HasOwnerAddon }).Count) |")
-	$lines.Add("| Examples missing ofxGgmlCore | $(@($exampleMetadata | Where-Object { !$_.HasCoreAddon }).Count) |")
+	$lines.Add("| Examples without optional/direct ofxGgmlCore wiring | $(@($exampleMetadata | Where-Object { !$_.HasCoreAddon }).Count) |")
+	$lines.Add("| Examples missing declared required addons | $(@($exampleMetadata | Where-Object { !$_.HasRequiredAddons }).Count) |")
 	$lines.Add("| Examples with projectGenerator commands | $($projectGeneratorCommands.Count) |")
 	$lines.Add("| Examples with generated project files | $($generatedProjects.Count) |")
 	$lines.Add("| Generate-project targets | $($generateTargets.Count) |")
@@ -371,11 +396,13 @@ $ofRoot = Split-Path -Parent ([string]$status.Root)
 $projectGeneratorPath = Find-ProjectGenerator -OfRoot $ofRoot
 $managed = @($status.Addons | Where-Object { $_.Known })
 $records = @($managed | ForEach-Object {
-	$exampleMetadata = @(Get-ExampleMetadata -Status $_ -OfRoot $ofRoot -ProjectGeneratorPath $projectGeneratorPath)
+	$requiredAddons = @(Get-DeclaredAddonRequirements -Status $_)
+	$exampleMetadata = @(Get-ExampleMetadata -Status $_ -OfRoot $ofRoot -ProjectGeneratorPath $projectGeneratorPath -RequiredAddons $requiredAddons)
 	$phase = Get-SmokeBuildPhase -Status $_ -ExampleMetadata $exampleMetadata
 	[pscustomobject]@{
 		Repository = [string]$_.Name
 		Lane = [string]$_.Lane
+		DeclaredRequirements = @($requiredAddons)
 		Examples = @($_.Examples)
 		ExampleMetadata = $exampleMetadata
 		Phase = $phase

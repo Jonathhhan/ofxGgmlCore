@@ -9,6 +9,20 @@ $postflightScript = Join-Path $scriptRoot "check-smoke-build-target-postflight.p
 $repairPlanScript = Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1"
 $compilePlanScript = Join-Path $scriptRoot "plan-smoke-build-compile.ps1"
 
+$preflightSource = Get-Content -LiteralPath $preflightScript -Raw
+$postflightSource = Get-Content -LiteralPath $postflightScript -Raw
+if ($preflightSource -notmatch [regex]::Escape('[switch]$AllowDirtyRepository')) {
+	throw "smoke-build preflight did not expose the explicit dirty-repository override."
+}
+if ($preflightSource -notmatch [regex]::Escape('$AllowDirtyRepository -and $dirtyCount -gt 0')) {
+	throw "smoke-build preflight dirty-repository override did not remain opt-in."
+}
+foreach ($expected in @('UnexpectedAddons', 'unexpected/stale:', 'UnexpectedProjectAddons')) {
+	if ($postflightSource -notmatch [regex]::Escape($expected)) {
+		throw "smoke-build postflight did not retain stale addon wiring detection: $expected"
+	}
+}
+
 $output = & $planScript *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {
 	throw "plan-of-smoke-build.ps1 failed."
@@ -54,6 +68,7 @@ foreach ($property in @(
 	"ExamplesWithAddonsMake",
 	"ExamplesMissingOwnerAddon",
 	"ExamplesMissingCoreAddon",
+	"ExamplesMissingRequiredAddons",
 	"ExamplesWithProjectGeneratorCommands",
 	"ExamplesWithGeneratedProjectFiles",
 	"GenerateProjectTargets",
@@ -104,10 +119,20 @@ if ($examplesWithMetadata.Count -eq 0) {
 }
 
 $missingMetadata = @($parsed.Records | ForEach-Object { $_.ExampleMetadata } | Where-Object {
-	!$_.HasAddonsMake -or !$_.HasOwnerAddon -or !$_.HasCoreAddon
+	!$_.HasAddonsMake -or !$_.HasOwnerAddon -or !$_.HasRequiredAddons
 })
 if ($missingMetadata.Count -gt 0) {
-	throw "openFrameworks smoke build plan found examples missing addons.make, owner addon, or ofxGgmlCore references."
+	throw "openFrameworks smoke build plan found examples missing addons.make, owner addon, or declared required addon references."
+}
+
+$dependencyLightExamples = @($parsed.Records | Where-Object {
+	@($_.DeclaredRequirements).Count -eq 0 -and $_.Repository -in @("ofxGgmlRag", "ofxGgmlVideo", "ofxGgmlAgents")
+} | ForEach-Object { $_.ExampleMetadata })
+if ($dependencyLightExamples.Count -lt 3) {
+	throw "openFrameworks smoke build plan did not preserve dependency-light RAG, Video, and Agents examples."
+}
+if (@($dependencyLightExamples | Where-Object { $_.HasCoreAddon }).Count -gt 0) {
+	throw "dependency-light RAG, Video, or Agents examples still declare ofxGgmlCore in addons.make."
 }
 
 $examples = @($parsed.Records | ForEach-Object { $_.ExampleMetadata })
@@ -423,6 +448,7 @@ foreach ($property in @(
 	"ReviewTargets",
 	"GeneratedProjectFiles",
 	"MissingProjectAddons",
+	"UnexpectedProjectAddons",
 	"NextCommands",
 	"HasSelection"
 )) {
@@ -479,6 +505,9 @@ $repairPlanOutput = & $repairPlanScript -Stage "verify-generated-project" -Repos
 if (!$?) {
 	throw "plan-smoke-build-project-repair.ps1 failed."
 }
+if ($null -eq $postflightParsed.Postflights[0].UnexpectedProjectAddons) {
+	throw "smoke build target postflight JSON did not include unexpected addon wiring state."
+}
 $repairPlanText = $repairPlanOutput -join "`n"
 $coreProjectFile = Join-Path (Split-Path -Parent $scriptRoot) "ofxGgmlCoreExample\ofxGgmlCoreExample.vcxproj"
 $coreGeneratedProjectPresent = Test-Path -LiteralPath $coreProjectFile -PathType Leaf
@@ -510,11 +539,13 @@ foreach ($property in @(
 	"SelectedTargets",
 	"ReadyForCompileValidation",
 	"NeedsProjectGeneration",
+	"NeedsProjectRegeneration",
 	"NeedsAddonWiringRepair",
 	"ReviewGeneratedProject",
 	"NeedsAction",
 	"PlannedRepairChanges",
 	"MissingProjectAddons",
+	"UnexpectedProjectAddons",
 	"NextCommands",
 	"Applied",
 	"HasSelection"
@@ -572,9 +603,12 @@ $coreWiringCheck = @($corePostflightParsed.Postflights[0].Checks | Where-Object 
 if (!$coreWiringCheck -or $coreWiringCheck.State -ne "OK") {
 	throw "Core generated project postflight did not verify expected addon wiring."
 }
-if ($corePostflightParsed.Postflights[0].MissingProjectAddons.Count -gt 0) {
-	throw "Core generated project postflight reported missing addon wiring."
-}
+	if ($corePostflightParsed.Postflights[0].MissingProjectAddons.Count -gt 0) {
+		throw "Core generated project postflight reported missing addon wiring."
+	}
+	if ($corePostflightParsed.Postflights[0].UnexpectedProjectAddons.Count -gt 0) {
+		throw "Core generated project postflight reported unexpected stale addon wiring."
+	}
 
 $compilePlanOutput = & $compilePlanScript -Repository "ofxGgmlCore" -Example "ofxGgmlCoreExample" *>&1 | ForEach-Object { $_.ToString() }
 if (!$?) {

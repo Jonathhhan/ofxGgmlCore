@@ -105,6 +105,8 @@ foreach ($requiredScript in @(
 	"check-smoke-build-target-postflight.ps1",
 	"plan-smoke-build-project-repair.bat",
 	"plan-smoke-build-project-repair.ps1",
+	"test-example-project-repair.bat",
+	"test-example-project-repair.ps1",
 	"plan-smoke-build-compile.bat",
 	"plan-smoke-build-compile.ps1",
 	"build-smoke-example.bat",
@@ -162,6 +164,10 @@ if (!$SkipSetupDryRun) {
 }
 
 if (!$SkipProjectRepair) {
+	Invoke-CheckedScript `
+		-Label "Checking example project backend synchronization" `
+		-ScriptPath (Join-Path $scriptRoot "test-example-project-repair.ps1")
+
 	Invoke-CheckedScript `
 		-Label "Checking smoke-build project repair planner" `
 		-ScriptPath (Join-Path $scriptRoot "plan-smoke-build-project-repair.ps1") `
