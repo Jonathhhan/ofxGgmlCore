@@ -112,6 +112,45 @@ function New-WorkflowsAppendix {
 "@
 }
 
+function New-WorkflowsCodexAuthorityAppendix {
+	param([string]$AddonName)
+	if ($AddonName -ne "ofxGgmlWorkflows") {
+		return ""
+	}
+	return @'
+
+## Ecosystem Authority
+
+For requests to improve, review, plan, or coordinate the ofxGgml ecosystem:
+
+1. Read `ecosystem.yaml` before proposing changes. Treat its active,
+   experimental, paused, priority, exclusion, and approval fields as binding.
+2. Load the repository-local `$recursive-codex` and
+   `$ofxggml-capability-loop` skills from `.agents/skills`; do not rely on a
+   globally installed skill.
+3. Name the chain from the user goal to an observable capability, a concrete
+   execution that would demonstrate it, the first demonstrated blocker, the
+   smallest necessary change, and claim-matched evidence.
+4. Classify proposed work as runtime capability, required support, or
+   speculative preparation. Speculative preparation requires explicit user
+   approval.
+5. Treat `proof` values in `ecosystem.yaml` as claim identifiers, not evidence.
+   A `proven` status requires current evidence linked to the relevant commit,
+   backend, observation time, and reproducibility context. Otherwise use
+   `verification_required` and name the missing observation.
+6. Do not count documentation, planning, schemas, validators, mocks, workflow
+   infrastructure, or new public abstractions as capability progress by
+   themselves.
+7. Do not create addons, activate paused lanes, change the current priority,
+   add evidence schemas, or introduce speculative public APIs without the
+   authority required by `ecosystem.yaml` or an explicit user decision.
+
+Prefer the smallest vertical path through the responsible addon. Preserve the
+first meaningful failure and distinguish declared, inspected, produced,
+rehearsed, available, and exercised evidence.
+'@
+}
+
 function New-AgentInstructions {
 	param([hashtable]$Addon)
 
@@ -123,6 +162,7 @@ function New-AgentInstructions {
 	$coreSmokeBuildLifecycle = New-CoreSmokeBuildLifecycleAppendix $name
 	$stableDiffusionAppendix = New-StableDiffusionAppendix $name
 	$workflowsAppendix = New-WorkflowsAppendix $name
+	$workflowsCodexAuthorityAppendix = New-WorkflowsCodexAuthorityAppendix $name
 	return @"
 # Codex Repository Instructions
 
@@ -143,7 +183,7 @@ This repository is part of the ofxGgml openFrameworks addon ecosystem.
 - Do not commit generated project files, binaries, model weights, downloaded runtimes, sample media dumps, memory indexes, or caches.
 - Prefer focused tests and local validation over broad refactors.
 - Use openFrameworks `ofLogNotice`, `ofLogWarning`, `ofLogError`, or module-scoped `ofLog(...)` for addon runtime/example logging; keep raw stdout/stderr only for tests and CLI tools with machine-readable output contracts.
-- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix$coreSmokeBuildLifecycle$stableDiffusionAppendix$workflowsAppendix
+- Preserve openFrameworks-style public names and document intentional breaking changes.$coreAppendix$coreSmokeBuildLifecycle$stableDiffusionAppendix$workflowsAppendix$workflowsCodexAuthorityAppendix
 
 ## Validation
 
