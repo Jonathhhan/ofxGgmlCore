@@ -38,15 +38,6 @@ if ([string]::IsNullOrWhiteSpace([string]$parsed.Ggml.IncludeDir) -or
 	[string]::IsNullOrWhiteSpace([string]$parsed.Ggml.LibDir)) {
 	throw "runtime provider manifest JSON did not include ggml include/lib dirs."
 }
-if (!$parsed.Ggml.PSObject.Properties["AceStepOpsReady"]) {
-	throw "runtime provider manifest JSON did not include ACE-Step ggml op readiness."
-}
-if (!$parsed.Ggml.PSObject.Properties["AceStepCol2Im1DReady"]) {
-	throw "runtime provider manifest JSON did not include ACE-Step col2im_1d readiness."
-}
-if (!$parsed.Ggml.PSObject.Properties["AceStepSnakeFusedReady"]) {
-	throw "runtime provider manifest JSON did not include ACE-Step fused Snake readiness."
-}
 if (!$parsed.EnabledBackends.PSObject.Properties["CPU"]) {
 	throw "runtime provider manifest JSON did not include CPU backend state."
 }
@@ -72,14 +63,4 @@ if (!$summary.EnabledBackends.PSObject.Properties["CPU"]) {
 if (!$summary.BackendReadiness -or $summary.BackendReadiness.Count -eq 0) {
 	throw "runtime provider summary JSON did not include backend readiness scoring."
 }
-if (!$summary.PSObject.Properties["AceStepOpsReady"]) {
-	throw "runtime provider summary JSON did not include ACE-Step ggml op readiness."
-}
-if (!$summary.PSObject.Properties["AceStepCol2Im1DReady"]) {
-	throw "runtime provider summary JSON did not include ACE-Step col2im_1d readiness."
-}
-if (!$summary.PSObject.Properties["AceStepSnakeFusedReady"]) {
-	throw "runtime provider summary JSON did not include ACE-Step fused Snake readiness."
-}
-
 Write-Host "==> Runtime provider manifest coverage passed"

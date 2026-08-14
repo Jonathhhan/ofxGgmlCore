@@ -4,8 +4,8 @@ Generated from Core metadata and local ggml runtime files.
 
 | Backend | Declared support | Local runtime evidence | Inference smoke | Status |
 | --- | --- | --- | --- | --- |
-| `cpu` | yes | local library present | not checked | ready for runtime init smoke |
-| `cuda` | yes | local library present | not checked | ready for runtime init smoke |
+| `cpu` | yes | runtime smoke passed | passed | validated locally |
+| `cuda` | yes | runtime smoke passed | passed | validated locally |
 | `metal` | yes | not installed locally | not checked | optional backend absent |
 | `vulkan` | yes | not installed locally | not checked | optional backend absent |
 | `opencl` | yes | not installed locally | not checked | optional backend absent |

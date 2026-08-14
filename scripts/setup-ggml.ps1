@@ -1,8 +1,7 @@
 param(
-	[string]$Revision = "v0.13.1",
+	[string]$Revision = "v0.19.0",
 	[string]$Repo = "https://github.com/ggml-org/ggml.git",
 	[int]$Jobs = 0,
-	[switch]$AceStepOps,
 	# Default behavior when no backend switch is supplied.
 	[switch]$Auto,
 	[switch]$CpuOnly,
@@ -26,19 +25,7 @@ $Include = Join-Path $GgmlRoot "include"
 $Lib = Join-Path $GgmlRoot "lib"
 
 $DefaultGgmlRepo = "https://github.com/ggml-org/ggml.git"
-$DefaultGgmlRevision = "v0.13.1"
-$AceStepGgmlRepo = "https://github.com/ServeurpersoCom/ggml.git"
-$AceStepGgmlRevision = "c044c6f03892f9d5e98213b05f8afea1f8b0d3c9"
-$AceStepGgmlExpectedCommit = "c044c6f03892f9d5e98213b05f8afea1f8b0d3c9"
-
-if ($AceStepOps) {
-	if ($Repo -eq $DefaultGgmlRepo) {
-		$Repo = $AceStepGgmlRepo
-	}
-	if ($Revision -eq $DefaultGgmlRevision) {
-		$Revision = $AceStepGgmlRevision
-	}
-}
+$DefaultGgmlRevision = "v0.19.0"
 
 function Write-Step {
 	param([string]$Message)
@@ -264,49 +251,6 @@ function Test-SourceRepositoryMatches {
 function Test-RevisionLooksLikeCommit {
 	param([string]$Value)
 	return $Value -match '^[0-9a-fA-F]{7,40}$'
-}
-
-function Get-GgmlSourceAceStepOpReadiness {
-	param([string]$Path)
-	$ggmlHeader = Join-Path $Path "include\ggml.h"
-	if (!(Test-Path -LiteralPath $ggmlHeader -PathType Leaf)) {
-		return [pscustomobject]@{
-			Col2Im1DReady = $false
-			SnakeFusedReady = $false
-		}
-	}
-	$headerText = Get-Content -LiteralPath $ggmlHeader -Raw
-	$snakeFusedReady = $false
-	foreach ($candidate in @(
-		(Join-Path $Path "src\ggml-cpu\ops.h"),
-		(Join-Path $Path "src\ggml-cuda\snake.cuh"),
-		(Join-Path $Path "src\ggml-vulkan\vulkan-shaders\snake.comp"),
-		(Join-Path $Path "src\ggml-metal\ggml-metal-ops.h")
-	)) {
-		if ((Test-Path -LiteralPath $candidate -PathType Leaf) -and
-			((Get-Content -LiteralPath $candidate -Raw) -match "snake")) {
-			$snakeFusedReady = $true
-			break
-		}
-	}
-	return [pscustomobject]@{
-		Col2Im1DReady = [bool]($headerText -match "ggml_col2im_1d")
-		SnakeFusedReady = [bool]$snakeFusedReady
-	}
-}
-
-function Test-GgmlSourceHasAceStepOps {
-	param([string]$Path)
-	$readiness = Get-GgmlSourceAceStepOpReadiness $Path
-	return [bool]($readiness.Col2Im1DReady -and $readiness.SnakeFusedReady)
-}
-
-function Assert-GgmlSourceHasAceStepOps {
-	param([string]$Path)
-	$readiness = Get-GgmlSourceAceStepOpReadiness $Path
-	if (!($readiness.Col2Im1DReady -and $readiness.SnakeFusedReady)) {
-		throw "ggml source does not expose the ACE-Step patched ggml_col2im_1d op and fused Snake support. Use -AceStepOps with the ACE-compatible ggml provider, or pass an equivalent -Repo/-Revision."
-	}
 }
 
 $script:VsDevCmd = $null
@@ -601,10 +545,6 @@ function Write-DryRunPlan {
 	Write-Step "Dry run: ggml setup plan"
 	Write-Host "  revision: $Revision"
 	Write-Host "  repo: $Repo"
-	Write-Host "  ACE-Step ops: $(if ($AceStepOps) { 'required' } else { 'not required' })"
-	if ($AceStepOps) {
-		Write-Host "  ACE-Step expected commit: $AceStepGgmlExpectedCommit"
-	}
 	Write-Host "  root: $GgmlRoot"
 	Write-Host "  source action: $(Get-SourceActionLabel)"
 	Write-Host "  mode: $(Get-SetupModeLabel)"
@@ -703,18 +643,6 @@ if ($LASTEXITCODE -ne 0) {
 	throw "git rev-parse ggml failed with exit code $LASTEXITCODE"
 }
 Write-Step "Using ggml commit $commit"
-
-if ($AceStepOps) {
-	$fullCommit = git -C $Source rev-parse HEAD
-	if ($LASTEXITCODE -ne 0) {
-		throw "git rev-parse ggml HEAD failed with exit code $LASTEXITCODE"
-	}
-	if (!$fullCommit.StartsWith($AceStepGgmlExpectedCommit, [System.StringComparison]::OrdinalIgnoreCase)) {
-		throw "ACE-Step ggml provider expected commit $AceStepGgmlExpectedCommit but source is at $fullCommit."
-	}
-	Assert-GgmlSourceHasAceStepOps $Source
-	Write-Step "Verified ACE-Step ggml ops: ggml_col2im_1d and fused Snake support"
-}
 
 function Get-WindowsNativeGeneratorArgs {
 	if ($script:WindowsNativeCMakeGenerator) {

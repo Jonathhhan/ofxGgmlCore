@@ -90,5 +90,5 @@ The workflow-guide rollout is complete across the managed ofxGgml repositories. 
 ## P3: Music Runtime Tooling
 
 - Use `scripts\setup-acestep-server.bat -Auto` in `ofxGgmlMusic` when preparing the local AceStep server build chain for ofxGgmlMusic runtime exploration.
-- Use `scripts\setup-acestep-server.ps1 -DryRun` to review selected backends and ggml source strategy before cloning/building.
+- Use `scripts\setup-acestep-server.ps1 -DryRun` to review selected backends and the Music-owned ACE-Step fork before cloning/building.
 - Use `scripts\test-acestep-setup-dry-run.ps1` to verify dry-run smoke coverage in CI-like checks or after changing setup flags.

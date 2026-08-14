@@ -13,7 +13,11 @@ This project follows the addon-family baseline tags used across the ofxGgml ecos
 
 ### Changed
 
-- Nothing yet.
+- Updated the default official ggml runtime pin from `v0.13.1` to
+  `v0.19.0`.
+- Removed the ACE-Step-specific ggml fork mode and readiness fields. Core now
+  remains an official, model-neutral ggml provider; the fork is owned by
+  `ofxGgmlMusic`.
 
 ### Fixed
 
